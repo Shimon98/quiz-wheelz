@@ -22,6 +22,10 @@ function App() {
           עונים על שאלות, צוברים נקודות ומתקדמים במרוץ.
         </p>
 
+        <button className="w-full min-h-16 rounded-2xl bg-sky-500 text-xl font-bold shadow-md active:scale-95 transition hover:bg-sky-600 focus:outline-none focus:ring-4 focus:ring-sky-200 mt-8">
+          42
+        </button>
+
         <button
           type="button"
           className="mt-8 rounded-xl bg-sky-500 px-6 py-3 font-bold text-white transition hover:bg-sky-600 focus:outline-none focus:ring-4 focus:ring-sky-200"
