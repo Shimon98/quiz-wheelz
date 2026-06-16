@@ -1,9 +1,8 @@
-package com.quiz_wheelz.user;
+package com.quiz_wheelz.enums;
 
 public enum UserRole {
     ADMIN,
     TEACHER,
-    USER,
     STUDENT
 
 }
