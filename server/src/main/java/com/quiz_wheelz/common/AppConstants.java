@@ -5,7 +5,7 @@ public final class AppConstants {
     public static final String API_PREFIX = "/api";
     public static final String BEARER_PREFIX = "Bearer ";
 
-    public static final String DEFAULT_APP_NAME = "Project Boilerplate";
+    public static final String DEFAULT_APP_NAME = "Quiz Wheelz";
     public static final String DEFAULT_CLIENT_URL = "http://localhost:5173";
 
     public static final String DEFAULT_CORS_ALLOWED_ORIGINS =
