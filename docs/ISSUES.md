@@ -18,8 +18,8 @@ BLOCKED
 
 ## Issue 01 — User model, Role enum, Seed teacher
 
-Owner: TBD  
-Status: TODO  
+Owner: shimon  
+Status: IN_PROGRESS
 Branch: `feature/issue-01-user-role-model`
 
 ### Goal
