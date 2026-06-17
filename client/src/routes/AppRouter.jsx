@@ -20,6 +20,18 @@ function TeacherDashboardPlaceholder() {
   );
 }
 
+function AdminDashboardPlaceholder() {
+  return (
+    <AppShell>
+      <section className="flex min-h-screen items-center justify-center bg-sky-100 px-4 text-center">
+        <h1 className="text-2xl font-bold text-slate-900">
+          Admin dashboard placeholder
+        </h1>
+      </section>
+    </AppShell>
+  );
+}
+
 export default function AppRouter() {
   return (
     <BrowserRouter>
@@ -30,8 +42,18 @@ export default function AppRouter() {
           path={ROUTES.TEACHER_DASHBOARD}
           element={
             <ProtectedRoute>
-              <RoleRoute allowedRoles={[USER_ROLES.TEACHER, USER_ROLES.ADMIN]}>
+              <RoleRoute allowedRoles={[USER_ROLES.TEACHER]}>
                 <TeacherDashboardPlaceholder />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.ADMIN_DASHBOARD}
+          element={
+            <ProtectedRoute>
+              <RoleRoute allowedRoles={[USER_ROLES.ADMIN]}>
+                <AdminDashboardPlaceholder />
               </RoleRoute>
             </ProtectedRoute>
           }

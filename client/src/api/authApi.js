@@ -1,4 +1,4 @@
-import { MOCK_TEACHER_USER } from "../constants/authConstants.js";
+import { MOCK_AUTH_USERS } from "../constants/authConstants.js";
 import { ERROR_CODES } from "../errors/errorCodes.js";
 
 const USE_MOCK_AUTH = import.meta.env.VITE_USE_MOCK_AUTH !== "false";
@@ -15,7 +15,7 @@ function createInvalidCredentialsError() {
   return error;
 }
 
-export async function loginTeacher({ username, password }) {
+export async function loginUser({ username, password }) {
   if (!USE_MOCK_AUTH) {
     // Later: return httpClient.post("/auth/login", { username, password });
     throw new Error("Real backend auth is not connected yet");
@@ -23,12 +23,13 @@ export async function loginTeacher({ username, password }) {
 
   await new Promise((resolve) => setTimeout(resolve, 500));
 
-  const isValidMockTeacher =
-    username === MOCK_TEACHER_USER.username &&
-    password === MOCK_TEACHER_USER.password;
+  const mockUser = MOCK_AUTH_USERS.find(
+    (candidate) =>
+      username === candidate.username && password === candidate.password
+  );
 
-  if (isValidMockTeacher) {
-    return MOCK_TEACHER_USER.user;
+  if (mockUser) {
+    return mockUser.user;
   }
 
   throw createInvalidCredentialsError();
