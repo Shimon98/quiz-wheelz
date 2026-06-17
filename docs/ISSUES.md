@@ -72,7 +72,7 @@ Create the basic teacher login UI.
 ## Issue 03 — JwtService and CookieUtils
 
 Owner: DIANA  
-Status: IN_PROGRESS  
+Status: REVIEW  
 Branch: `feature/issue-03-jwt-cookie-auth`
 
 ### Goal
