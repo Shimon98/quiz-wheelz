@@ -7,18 +7,8 @@ import { ROUTES } from "../constants/routeConstants";
 import { USER_ROLES } from "../constants/roleConstants";
 import ProtectedRoute from "./ProtectedRoute";
 import RoleRoute from "./RoleRoute";
+import TeacherDashboardPage from "../pages/TeacherDashboardPage";
 
-function TeacherDashboardPlaceholder() {
-  return (
-    <AppShell>
-      <section className="flex min-h-screen items-center justify-center bg-sky-100 px-4 text-center">
-        <h1 className="text-2xl font-bold text-slate-900">
-          Teacher dashboard placeholder
-        </h1>
-      </section>
-    </AppShell>
-  );
-}
 
 function AdminDashboardPlaceholder() {
   return (
@@ -43,7 +33,7 @@ export default function AppRouter() {
           element={
             <ProtectedRoute>
               <RoleRoute allowedRoles={[USER_ROLES.TEACHER]}>
-                <TeacherDashboardPlaceholder />
+                  <TeacherDashboardPage />
               </RoleRoute>
             </ProtectedRoute>
           }
