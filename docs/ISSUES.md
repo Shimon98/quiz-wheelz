@@ -19,7 +19,7 @@ BLOCKED
 ## Issue 01 — User model, Role enum, Seed teacher
 
 Owner: shimon  
-Status: IN_PROGRESS
+Status: REVIEW
 Branch: `feature/issue-01-user-role-model`
 
 ### Goal

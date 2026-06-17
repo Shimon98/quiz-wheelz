@@ -1,6 +1,7 @@
-package com.quiz_wheelz.user;
+package com.quiz_wheelz.entitys;
 
 import com.quiz_wheelz.common.BaseEntity;
+import com.quiz_wheelz.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,7 +25,7 @@ public class User extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private UserRole role = UserRole.USER;
+    private UserRole role = UserRole.TEACHER;
 
     @Column(nullable = false)
     private boolean active = true;
