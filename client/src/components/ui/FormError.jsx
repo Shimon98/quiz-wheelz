@@ -1,5 +1,7 @@
 
 
+import { UI_CLASSES } from '../../styles/theme';
+
 export default function FormError({ message }) {
     return (
         <div className="min-h-12">

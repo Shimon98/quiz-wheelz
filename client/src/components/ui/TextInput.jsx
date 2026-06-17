@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { UI_CLASSES } from '../../styles/theme';
 
 export default function TextInput({label, error, className = '', type = 'text', wrapperClassName = '',
                                       ...props}) {
