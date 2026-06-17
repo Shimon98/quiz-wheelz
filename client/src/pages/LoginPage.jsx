@@ -3,12 +3,20 @@ import AuthCard from '../components/auth/AuthCard';
 import AppLogo from '../components/brand/AppLogo';
 import LoginForm from '../components/auth/LoginForm';
 import { loginTeacher } from '../api/authApi';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../constants/routeConstants';
+import { useAuthStore } from '../stores/authStore';
 
 export default function LoginPage() {
+  const navigate = useNavigate();
+  const setUser = useAuthStore((state) => state.setUser);
+
   const handleLogin = async (formData) => {
-    // Call the API helper. If it throws, LoginForm will show the error.
     const user = await loginTeacher(formData);
-    console.log('Logged user:', user);
+
+    setUser(user);
+    navigate(ROUTES.TEACHER_DASHBOARD);
+
     return user;
   };
 
