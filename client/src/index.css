@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Varela+Round&display=swap');
 
 * {
   box-sizing: border-box;
@@ -12,7 +13,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  font-family: system-ui, Arial, sans-serif;
+  font-family: 'Varela Round', system-ui, Arial, sans-serif;
   background: #e0f2fe;
 }
 
