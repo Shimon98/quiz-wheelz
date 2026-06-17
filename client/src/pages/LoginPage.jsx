@@ -5,10 +5,9 @@ import AuthCard from "../components/auth/AuthCard";
 import AppLogo from "../components/brand/AppLogo";
 import LoginForm from "../components/auth/LoginForm";
 import { loginUser } from "../api/authApi";
-import { ROUTES } from "../constants/routeConstants";
 import { useAuthStore } from "../stores/authStore";
-import { USER_ROLES } from "../constants/roleConstants";
 import { UI_VARIANTS } from "../constants/uiConstants.js";
+import { getRouteByRole } from "../utils/authRouteUtils";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -21,18 +20,6 @@ export default function LoginPage() {
   );
   const setUser = useAuthStore((state) => state.setUser);
   const loadCurrentUser = useAuthStore((state) => state.loadCurrentUser);
-
-  function getRouteByRole(role) {
-    if (role === USER_ROLES.ADMIN) {
-      return ROUTES.ADMIN_DASHBOARD;
-    }
-
-    if (role === USER_ROLES.TEACHER) {
-      return ROUTES.TEACHER_DASHBOARD;
-    }
-
-    return ROUTES.UNAUTHORIZED;
-  }
 
   useEffect(() => {
     async function redirectIfAlreadyLoggedIn() {
