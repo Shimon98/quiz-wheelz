@@ -1,43 +1,61 @@
 import { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { LockKeyhole, LockKeyholeOpen, UserRound } from 'lucide-react';
 import { UI_CLASSES } from '../../styles/theme';
 
-export default function TextInput({label, error, className = '', type = 'text', wrapperClassName = '',
-                                      ...props}) {
-
+export default function TextInput({
+                                      label,
+                                      error,
+                                      className = '',
+                                      type = 'text',
+                                      wrapperClassName = '',
+                                      ...props
+                                  }) {
     const [showPassword, setShowPassword] = useState(false);
+
     const isPassword = type === 'password';
     const inputType = isPassword && showPassword ? 'text' : type;
-    const borderColor = error ? UI_CLASSES.inputError : UI_CLASSES.inputNormal;
-    const passwordPadding = isPassword ? 'pl-14' : '';
+
+    const inputStateClass = error
+        ? UI_CLASSES.inputError
+        : isPassword
+            ? UI_CLASSES.inputPassword
+            : UI_CLASSES.inputNormal;
 
     const finalClassName =
-        `${passwordPadding} ${UI_CLASSES.input} ${borderColor} ${className}`.trim();
+        `pr-14 pl-4 ${UI_CLASSES.input} ${inputStateClass} ${className}`.trim();
 
     return (
         <div dir="rtl" className={`w-full ${wrapperClassName}`.trim()}>
             {label && (
-                <label className="mb-2 block text-sm font-bold text-slate-700">
+                <label className={UI_CLASSES.inputLabel}>
                     {label}
                 </label>
             )}
 
             <div className="relative">
-                <input type={inputType} className={finalClassName} {...props} />
-
-                {isPassword && (
+                {isPassword ? (
                     <button
                         type="button"
                         onClick={() => setShowPassword((current) => !current)}
-                        className="absolute left-3 top-1/2 z-10 flex -translate-y-1/2 items-center justify-center rounded-xl p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-200"
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        className={UI_CLASSES.inputPasswordIcon}
+                        aria-label={showPassword ? 'הסתר סיסמה' : 'הצג סיסמה'}
                     >
-                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                        {showPassword ? (
+                            <LockKeyholeOpen size={20} />
+                        ) : (
+                            <LockKeyhole size={20} />
+                        )}
                     </button>
+                ) : (
+                    <span className={UI_CLASSES.inputIcon} aria-hidden="true">
+                        <UserRound size={20} />
+                    </span>
                 )}
+
+                <input type={inputType} className={finalClassName} {...props} />
             </div>
 
-            <p className="mt-2 min-h-5 text-right text-sm font-semibold text-red-600">
+            <p className={UI_CLASSES.inputErrorText}>
                 {error || '\u00A0'}
             </p>
         </div>

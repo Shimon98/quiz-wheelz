@@ -11,14 +11,12 @@ import {AUTH_TEXT, AUTH_VALIDATION} from "../../constants/authConstants.js";
 export default function LoginForm({onLogin, onForgotPassword, language = DEFAULT_LANGUAGE,}) {
   const authText = AUTH_TEXT[language] ?? AUTH_TEXT.he;
 
-  const {register, handleSubmit, formState: { errors, isSubmitting },} = useForm(
-      {defaultValues: {username: '', password: '',},});
+  const {register, handleSubmit, formState: { errors, isSubmitting },} = useForm({
+    defaultValues: {username: '', password: '',}, mode: 'onTouched', reValidateMode: 'onChange',});
 
   const {errorMessage, clearErrorMessage, setErrorMessageFromApiError,} = useErrorMessage(language);
-
   async function onSubmit(data) {
     clearErrorMessage();
-
     try {
       await onLogin(data);
     } catch (error) {
@@ -28,11 +26,12 @@ export default function LoginForm({onLogin, onForgotPassword, language = DEFAULT
 
   return (
       <form onSubmit={handleSubmit(onSubmit)} className="w-full" noValidate>
-        <div className="space-y-2">
+        <div className="space-y-0.5">
           <TextInput
-              label={authText.labels.username}
+              label=""
               type="text"
-              placeholder={authText.placeholders.username}
+              placeholder={authText.labels.username}
+              aria-label={authText.labels.username}
               autoComplete="username"
               maxLength={AUTH_VALIDATION.USERNAME_MAX_LENGTH}
               error={errors.username?.message}
@@ -46,9 +45,10 @@ export default function LoginForm({onLogin, onForgotPassword, language = DEFAULT
           />
 
           <TextInput
-              label={authText.labels.password}
+              label=""
               type="password"
-              placeholder={authText.placeholders.password}
+              placeholder={authText.labels.password}
+              aria-label={authText.labels.password}
               autoComplete="current-password"
               maxLength={AUTH_VALIDATION.PASSWORD_MAX_LENGTH}
               error={errors.password?.message}
