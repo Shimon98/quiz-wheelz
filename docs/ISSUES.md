@@ -18,7 +18,7 @@ BLOCKED
 
 ## Issue 01 — User model, Role enum, Seed teacher
 
-Owner: SHIMON  
+Owner: Shimon  
 Status: DONE
 Branch: `feature/issue-01-user-role-model`
 
@@ -45,7 +45,7 @@ Create the base user model for teacher/admin login.
 
 ## Issue 02 — Login page and LoginForm
 
-Owner: SHIMON  
+Owner: Shimon  
 Status: IN_PROGRESS  
 Branch: `feature/issue-02-login-page`
 
