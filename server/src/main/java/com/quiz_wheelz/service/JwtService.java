@@ -1,10 +1,10 @@
 package com.quiz_wheelz.service;
 
+import com.quiz_wheelz.config.TokenConfig;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -14,24 +14,21 @@ import java.util.Date;
 @Service
 public class JwtService {
 
+    private final TokenConfig tokenConfig;
     private final SecretKey secretKey;
-    private final long expirationMs;
 
-    public JwtService(
-            @Value("${app.jwt.secret}") String secret,
-            @Value("${app.jwt.expiration-ms}") long expirationMs
-    ) {
-        if (secret == null || secret.length() < 32) {
-            throw new IllegalArgumentException("JWT secret must be at least 32 characters long");
-        }
-
-        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-        this.expirationMs = expirationMs;
+    public JwtService(TokenConfig tokenConfig) {
+        this.tokenConfig = tokenConfig;
+        this.secretKey = Keys.hmacShaKeyFor(
+                tokenConfig.getTokenSecret().getBytes(StandardCharsets.UTF_8)
+        );
     }
 
     public String createToken(Long userId, String username, String role) {
         Date now = new Date();
-        Date expirationDate = new Date(now.getTime() + expirationMs);
+        Date expirationDate = new Date(
+                now.getTime() + tokenConfig.getTokenExpirationMillis()
+        );
 
         return Jwts.builder()
                 .subject(username)

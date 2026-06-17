@@ -1,9 +1,9 @@
 package com.quiz_wheelz.util;
 
+import com.quiz_wheelz.config.TokenConfig;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -12,25 +12,18 @@ import java.util.Optional;
 @Component
 public class CookieUtils {
 
-    private final String cookieName;
-    private final int cookieMaxAgeSeconds;
-    private final boolean secure;
-    private final String sameSite;
+    private final TokenConfig tokenConfig;
 
-    public CookieUtils(
-            @Value("${app.auth.cookie-name}") String cookieName,
-            @Value("${app.auth.cookie-max-age-seconds}") int cookieMaxAgeSeconds,
-            @Value("${app.auth.cookie-secure}") boolean secure,
-            @Value("${app.auth.cookie-same-site}") String sameSite
-    ) {
-        this.cookieName = cookieName;
-        this.cookieMaxAgeSeconds = cookieMaxAgeSeconds;
-        this.secure = secure;
-        this.sameSite = sameSite;
+    public CookieUtils(TokenConfig tokenConfig) {
+        this.tokenConfig = tokenConfig;
     }
 
     public void addAuthCookie(HttpServletResponse response, String token) {
-        String cookieHeader = buildCookieHeader(token, cookieMaxAgeSeconds);
+        String cookieHeader = buildCookieHeader(
+                token,
+                tokenConfig.getAuthCookieMaxAgeSeconds()
+        );
+
         response.addHeader("Set-Cookie", cookieHeader);
     }
 
@@ -40,7 +33,7 @@ public class CookieUtils {
     }
 
     public Optional<String> getAuthCookieValue(HttpServletRequest request) {
-        return getCookieValue(request, cookieName);
+        return getCookieValue(request, tokenConfig.getAuthCookieName());
     }
 
     public Optional<String> getCookieValue(HttpServletRequest request, String name) {
@@ -57,7 +50,7 @@ public class CookieUtils {
     private String buildCookieHeader(String value, int maxAge) {
         StringBuilder cookie = new StringBuilder();
 
-        cookie.append(cookieName)
+        cookie.append(tokenConfig.getAuthCookieName())
                 .append("=")
                 .append(value)
                 .append("; Path=/")
@@ -65,9 +58,9 @@ public class CookieUtils {
                 .append(maxAge)
                 .append("; HttpOnly")
                 .append("; SameSite=")
-                .append(sameSite);
+                .append(tokenConfig.getAuthCookieSameSite());
 
-        if (secure) {
+        if (tokenConfig.isAuthCookieSecure()) {
             cookie.append("; Secure");
         }
 
