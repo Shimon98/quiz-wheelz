@@ -1,21 +1,24 @@
 import gameLogo from '../../assets/logos/gameLogo.png';
+import {UI_VARIANTS} from "../../constants/uiConstants.js";
 
-const subtitleByVariant = {
-    teacher: 'התחברות מורה למערכת המרוץ',
-    student: 'הצטרפות תלמיד למרוץ',
-};
 
-const sizeByVariant = {
-    teacher: 'h-24 sm:h-28 md:h-32',
-    student: 'h-20 sm:h-24 md:h-28',
-};
 
 export default function AppLogo({
-                                    variant = 'teacher',
+                                    variant = UI_VARIANTS.USER,
                                     subtitle,
                                     showSubtitle = true,
-                                    className = '',
-                                }) {
+                                    className = '',}) {
+
+    const subtitleByVariant = {
+        user: 'התחברות למשתמש רשום',
+        student: 'הצטרפות תלמיד למרוץ',
+    };
+
+    const sizeByVariant = {
+        user: 'h-24 sm:h-28 md:h-32',
+        student: 'h-20 sm:h-24 md:h-28',
+    };
+
     const finalSubtitle = subtitle ?? subtitleByVariant[variant];
     const logoSize = sizeByVariant[variant] ?? sizeByVariant.teacher;
 

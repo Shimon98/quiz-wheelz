@@ -5,4 +5,5 @@ export const UI_SIZES = {
 export const UI_VARIANTS = {
     TEACHER: 'teacher',
     STUDENT: 'student',
+    USER: 'user',
 };

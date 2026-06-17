@@ -1,20 +1,21 @@
 import teacherLoginBg from '../../assets/backgrounds/teacher-login-bg.png';
 import studentLoginBg from '../../assets/backgrounds/student-login-bg.png';
+import {UI_VARIANTS} from "../../constants/uiConstants.js";
 
 export default function PageBackground({
                                            children,
-                                           variant = 'teacher',
+                                           variant =UI_VARIANTS.USER,
                                            className = '',
                                        }) {
 
     const backgroundByVariant = {
-        teacher: teacherLoginBg,
+        user: teacherLoginBg,
         student: studentLoginBg,
     };
 
     const backgroundImage = backgroundByVariant[variant] ?? teacherLoginBg;
     const backgroundPositionByVariant = {
-        teacher: 'center',
+        user: 'center',
         student: 'center bottom',
     };
     return (

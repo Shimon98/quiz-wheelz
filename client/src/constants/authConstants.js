@@ -67,3 +67,18 @@ export const MOCK_TEACHER_USER = {
         role: 'TEACHER',
     },
 };
+
+export const MOCK_ADMIN_USER = {
+    username: 'AdminUser',
+    password: '123456',
+    user: {
+        userId: 2,
+        displayName: 'Admin User',
+        role: 'ADMIN',
+    },
+};
+
+export const MOCK_AUTH_USERS = [
+    MOCK_TEACHER_USER,
+    MOCK_ADMIN_USER,
+];
