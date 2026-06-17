@@ -46,7 +46,7 @@ Create the base user model for teacher/admin login.
 ## Issue 02 — Login page and LoginForm
 
 Owner: Shimon  
-Status: IN_PROGRESS  
+Status: DONE
 Branch: `feature/issue-02-login-page`
 
 ### Goal
@@ -72,7 +72,7 @@ Create the basic teacher login UI.
 ## Issue 03 — JwtService and CookieUtils
 
 Owner: DIANA  
-Status: REVIEW  
+Status: DONE 
 Branch: `feature/issue-03-jwt-cookie-auth`
 
 ### Goal
