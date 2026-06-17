@@ -1,21 +1,23 @@
 import { useState } from 'react';
-import { getApiErrorMessage } from '../utils/apiError';
 
-export default function useErrorMessage() {
+export default function useErrorMessage(language = DEFAULT_LANGUAGE) {
     const [errorMessage, setErrorMessage] = useState('');
 
     function clearErrorMessage() {
         setErrorMessage('');
     }
-
-    function setErrorFromApi(error) {
-        setErrorMessage(getApiErrorMessage(error));
+    function setErrorMessageByCode(errorCode) {
+        setErrorMessage(getErrorMessageByCode(errorCode, language));
+    }
+    function setErrorMessageFromApiError(error) {
+        setErrorMessage(getMessageFromApiError(error, language));
     }
 
     return {
         errorMessage,
         setErrorMessage,
         clearErrorMessage,
-        setErrorFromApi,
+        setErrorMessageByCode,
+        setErrorMessageFromApiError,
     };
 }

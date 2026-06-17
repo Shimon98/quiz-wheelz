@@ -4,23 +4,17 @@ import Button from '../ui/Button';
 import FormError from '../ui/FormError';
 import useErrorMessage from '../../hooks/useErrorMessage';
 
-export default function LoginForm({ onLogin }) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm({
-    defaultValues: {
-      username: '',
-      password: '',
-    },
-  });
+import { UI_CLASSES } from '../../styles/theme';
+import {DEFAULT_LANGUAGE} from "../../constants/messageConstants.js";
+import {AUTH_TEXT, AUTH_VALIDATION} from "../../constants/authConstants.js";
 
-  const {
-    errorMessage,
-    clearErrorMessage,
-    setErrorFromApi,
-  } = useErrorMessage();
+export default function LoginForm({onLogin, onForgotPassword, language = DEFAULT_LANGUAGE,}) {
+  const authText = AUTH_TEXT[language] ?? AUTH_TEXT.he;
+
+  const {register, handleSubmit, formState: { errors, isSubmitting },} = useForm(
+      {defaultValues: {username: '', password: '',},});
+
+  const {errorMessage, clearErrorMessage, setErrorMessageFromApiError,} = useErrorMessage(language);
 
   async function onSubmit(data) {
     clearErrorMessage();
@@ -28,48 +22,58 @@ export default function LoginForm({ onLogin }) {
     try {
       await onLogin(data);
     } catch (error) {
-      setErrorFromApi(error);
+      setErrorMessageFromApiError(error);
     }
   }
 
   return (
       <form onSubmit={handleSubmit(onSubmit)} className="w-full" noValidate>
-        <div className="space-y-4">
+        <div className="space-y-2">
           <TextInput
-              label="שם משתמש"
+              label={authText.labels.username}
               type="text"
-              placeholder="teacher1"
+              placeholder={authText.placeholders.username}
               autoComplete="username"
-              maxLength={100}
+              maxLength={AUTH_VALIDATION.USERNAME_MAX_LENGTH}
               error={errors.username?.message}
               {...register('username', {
-                required: 'חובה להזין שם משתמש',
+                required: authText.messages.usernameRequired,
                 minLength: {
-                  value: 3,
-                  message: 'שם משתמש חייב להכיל לפחות 3 תווים',
+                  value: AUTH_VALIDATION.USERNAME_MIN_LENGTH,
+                  message: authText.messages.usernameMinLength,
                 },
               })}
           />
 
           <TextInput
-              label="סיסמה"
+              label={authText.labels.password}
               type="password"
-              placeholder="123456"
+              placeholder={authText.placeholders.password}
               autoComplete="current-password"
-              maxLength={30}
+              maxLength={AUTH_VALIDATION.PASSWORD_MAX_LENGTH}
               error={errors.password?.message}
               {...register('password', {
-                required: 'חובה להזין סיסמה',
+                required: authText.messages.passwordRequired,
                 minLength: {
-                  value: 4,
-                  message: 'סיסמה חייבת להכיל לפחות 4 תווים',
+                  value: AUTH_VALIDATION.PASSWORD_MIN_LENGTH,
+                  message: authText.messages.passwordMinLength,
                 },
               })}
           />
 
-          <Button type="submit" isLoading={isSubmitting}>
-            התחברות
+          <Button type="submit" isLoading={isSubmitting} language={language}>
+            {authText.labels.loginButton}
           </Button>
+
+          <div className="min-h-6 text-center">
+            <button
+                type="button"
+                onClick={onForgotPassword}
+                className={UI_CLASSES.secondaryLink}
+            >
+              {authText.labels.forgotPassword}
+            </button>
+          </div>
 
           <FormError message={errorMessage} />
         </div>
