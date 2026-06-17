@@ -99,8 +99,8 @@ Build JWT creation/validation and Cookie helpers.
 
 ## Issue 04 — AuthController and real login connection
 
-Owner: TBD  
-Status: TODO  
+Owner: DIANA  
+Status: IN_PROGRESS 
 Branch: `feature/issue-04-auth-controller`
 
 ### Goal

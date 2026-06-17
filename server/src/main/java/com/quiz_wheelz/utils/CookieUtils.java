@@ -1,4 +1,4 @@
-package com.quiz_wheelz.util;
+package com.quiz_wheelz.utils;
 
 import com.quiz_wheelz.config.TokenConfig;
 import jakarta.servlet.http.Cookie;
