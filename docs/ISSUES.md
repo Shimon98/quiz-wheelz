@@ -18,8 +18,8 @@ BLOCKED
 
 ## Issue 01 — User model, Role enum, Seed teacher
 
-Owner: shimon  
-Status: IN_PROGRESS
+Owner: SHIMON  
+Status: DONE
 Branch: `feature/issue-01-user-role-model`
 
 ### Goal
@@ -45,8 +45,8 @@ Create the base user model for teacher/admin login.
 
 ## Issue 02 — Login page and LoginForm
 
-Owner: TBD  
-Status: TODO  
+Owner: SHIMON  
+Status: IN_PROGRESS  
 Branch: `feature/issue-02-login-page`
 
 ### Goal
@@ -71,8 +71,8 @@ Create the basic teacher login UI.
 
 ## Issue 03 — JwtService and CookieUtils
 
-Owner: TBD  
-Status: TODO  
+Owner: DIANA  
+Status: IN_PROGRESS  
 Branch: `feature/issue-03-jwt-cookie-auth`
 
 ### Goal
