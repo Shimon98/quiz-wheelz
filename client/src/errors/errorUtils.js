@@ -1,22 +1,10 @@
 import { ERROR_CODES } from './errorCodes';
-import { AUTH_TEXT } from './authConstants';
-import { DEFAULT_LANGUAGE, GENERAL_MESSAGES } from './messageConstants';
-
-const SECURITY_MESSAGES = {
-    he: {
-        invalidRequest: 'בקשה לא תקינה.',
-        invalidToken: 'החיבור שלך פג תוקף. התחבר מחדש.',
-        unauthorized: 'אין הרשאה. יש להתחבר מחדש.',
-        forbidden: 'אין לך הרשאה לבצע פעולה זו.',
-    },
-
-    en: {
-        invalidRequest: 'Invalid request.',
-        invalidToken: 'Your session has expired. Please log in again.',
-        unauthorized: 'You are not authorized. Please log in again.',
-        forbidden: 'You are not allowed to perform this action.',
-    },
-};
+import { SECURITY_MESSAGES } from './errorMessages';
+import { AUTH_TEXT } from '../constants/authConstants';
+import {
+    DEFAULT_LANGUAGE,
+    GENERAL_MESSAGES,
+} from '../constants/messageConstants';
 
 export function getErrorMessageByCode(errorCode, language = DEFAULT_LANGUAGE) {
     const authText = AUTH_TEXT[language] ?? AUTH_TEXT.he;

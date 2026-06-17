@@ -1,5 +1,5 @@
 import {MOCK_TEACHER_USER} from "../constants/authConstants.js";
-import {ERROR_CODES} from "../constants/errorCodes.js";
+import {ERROR_CODES} from "../errors/errorCodes.js";
 
 export async function loginTeacher({ username, password }) {
   await new Promise((resolve) => setTimeout(resolve, 500));
