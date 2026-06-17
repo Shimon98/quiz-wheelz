@@ -1,4 +1,4 @@
-package com.quiz_wheelz.util;
+package com.quiz_wheelz.utils;
 
 import java.time.LocalDateTime;
 
