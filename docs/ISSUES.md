@@ -240,7 +240,7 @@ Create the base Race model.
 ## Issue 08 — RoomCodeService and Create Race API
 
 Owner: DIANA  
-Status: IN_PROGRESS  
+Status: REVIEW  
 Branch: `feature/issue-08-create-race-api`
 
 ### Goal
