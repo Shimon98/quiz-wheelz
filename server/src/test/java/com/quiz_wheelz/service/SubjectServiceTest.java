@@ -86,4 +86,28 @@ class SubjectServiceTest {
 
         assertThrows(ApiException.class, () -> subjectService.findActiveByCodeOrThrow("OLD"));
     }
+
+    @Test
+    void shouldFindActiveSubjectById() {
+        Subject math = new Subject();
+        math.setCode("MATH");
+        math.setName("Math");
+        math.setActive(true);
+
+        when(subjectRepository.findById(1L)).thenReturn(Optional.of(math));
+
+        assertSame(math, subjectService.findActiveByIdOrThrow(1L));
+    }
+
+    @Test
+    void shouldThrowWhenSubjectByIdIsInactive() {
+        Subject inactiveSubject = new Subject();
+        inactiveSubject.setCode("OLD");
+        inactiveSubject.setName("Old Subject");
+        inactiveSubject.setActive(false);
+
+        when(subjectRepository.findById(2L)).thenReturn(Optional.of(inactiveSubject));
+
+        assertThrows(ApiException.class, () -> subjectService.findActiveByIdOrThrow(2L));
+    }
 }

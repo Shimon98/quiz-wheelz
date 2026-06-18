@@ -40,4 +40,11 @@ public class SubjectService {
                 .filter(Subject::isActive)
                 .orElseThrow(() -> new ApiException(ErrorCode.SUBJECT_NOT_FOUND));
     }
+
+    @Transactional(readOnly = true)
+    public Subject findActiveByIdOrThrow(Long id) {
+        return subjectRepository.findById(id)
+                .filter(Subject::isActive)
+                .orElseThrow(() -> new ApiException(ErrorCode.SUBJECT_NOT_FOUND));
+    }
 }
