@@ -183,6 +183,40 @@ Add generic subjects so the project is not hardcoded to Math.
 
 ---
 
+## Issue 06A — Server Security Foundation: JWT Cookie Filter + Role Authorization
+
+### Owner
+Shimon
+
+### Status
+TODO
+
+### Branch
+`feature/issue-06a-server-security-foundation`
+
+---
+
+## Goal
+
+Create a central server-side security foundation before continuing with future features.
+
+Instead of every controller manually extracting the auth cookie and validating the token, every protected request should pass through one central security flow:
+
+`Cookie -> JWT -> User from DB -> active user validation -> SecurityContext -> Controller`
+
+After this issue, future controllers should be protected using annotations such as:
+
+```java
+//@PreAuthorize("hasRole('TEACHER')")
+//@PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+```
+
+
+
+
+
+
+
 ## Issue 07 — Race entity, RaceStatus, Repository
 
 Owner: TBD  
