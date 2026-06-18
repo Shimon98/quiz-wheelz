@@ -11,6 +11,8 @@ public final class AppConstants {
     public static final String DEFAULT_CORS_ALLOWED_ORIGINS =
             "http://localhost:5173,http://localhost:3000";
 
+    public static final int DEFAULT_TOKEN_EXPIRATION_MINUTES = 120;
+
     public static final long DEFAULT_SSE_TIMEOUT_MILLIS = 1_800_000L;
 
     private AppConstants() {

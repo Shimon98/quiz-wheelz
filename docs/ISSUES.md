@@ -18,8 +18,8 @@ BLOCKED
 
 ## Issue 01 — User model, Role enum, Seed teacher
 
-Owner: SHIMON  
-Status: DONE
+Owner: TBD  
+Status: TODO  
 Branch: `feature/issue-01-user-role-model`
 
 ### Goal
@@ -45,8 +45,8 @@ Create the base user model for teacher/admin login.
 
 ## Issue 02 — Login page and LoginForm
 
-Owner: SHIMON  
-Status: DONE
+Owner: TBD  
+Status: TODO  
 Branch: `feature/issue-02-login-page`
 
 ### Goal
@@ -71,8 +71,8 @@ Create the basic teacher login UI.
 
 ## Issue 03 — JwtService and CookieUtils
 
-Owner: DIANA  
-Status: DONE 
+Owner: TBD  
+Status: TODO  
 Branch: `feature/issue-03-jwt-cookie-auth`
 
 ### Goal
@@ -99,8 +99,8 @@ Build JWT creation/validation and Cookie helpers.
 
 ## Issue 04 — AuthController and real login connection
 
-Owner: DIANA  
-Status: DONE 
+Owner: TBD  
+Status: TODO  
 Branch: `feature/issue-04-auth-controller`
 
 ### Goal
@@ -127,8 +127,8 @@ Create login/logout/me endpoints and connect frontend API.
 
 ## Issue 05 — ProtectedRoute and auth state
 
-Owner: DIANA  
-Status: DONE 
+Owner: TBD  
+Status: TODO  
 Branch: `feature/issue-05-protected-route`
 
 ### Goal
@@ -147,19 +147,13 @@ Protect teacher routes on the client.
 - Authenticated teacher can enter dashboard.
 - Refresh calls `/api/auth/me`.
 - Logout resets auth state.
-- Manual verification completed on develop.
-  Existing files used:
-- client/src/routes/ProtectedRoute.jsx
-- client/src/routes/RoleRoute.jsx
-- client/src/routes/AppRouter.jsx
-- client/src/stores/authStore.js
 
 ---
 
 ## Issue 06 — Subject entity and endpoint
 
-Owner: SHIMON  
-Status: IN_PROGRESS  
+Owner: TBD  
+Status: TODO  
 Branch: `feature/issue-06-subject-endpoint`
 
 ### Goal
@@ -183,40 +177,10 @@ Add generic subjects so the project is not hardcoded to Math.
 
 ---
 
-## Issue 06A — Server Security Foundation: JWT Cookie Filter + Role Authorization
-
-### Owner
-SHIMON & DIANA
-
-### Status
-DONE
-
-### Branch
-`feature/issue-06a-server-security-foundation`
-
----
-
-## Goal
-
-Create a central server-side security foundation before continuing with future features.
-
-Instead of every controller manually extracting the auth cookie and validating the token, every protected request should pass through one central security flow:
-
-`Cookie -> JWT -> User from DB -> active user validation -> SecurityContext -> Controller`
-
-After this issue, future controllers should be protected using annotations such as:
-
-```java
-//@PreAuthorize("hasRole('TEACHER')")
-//@PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
-```
-
-
-
 ## Issue 07 — Race entity, RaceStatus, Repository
 
-Owner: DIANA  
-Status: IN_PROGRESS  
+Owner: TBD  
+Status: TODO  
 Branch: `feature/issue-07-race-entity`
 
 ### Goal
