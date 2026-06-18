@@ -20,6 +20,7 @@ public enum ErrorCode {
     // Request / validation errors: 3000-3999
     VALIDATION_ERROR(3000, "Validation error", HttpStatus.BAD_REQUEST),
     BAD_REQUEST(3001, "Bad request", HttpStatus.BAD_REQUEST),
+    SUBJECT_NOT_FOUND(3002, "Active subject not found", HttpStatus.NOT_FOUND),
 
     // System errors: 9000-9999
     INTERNAL_ERROR(9999, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
