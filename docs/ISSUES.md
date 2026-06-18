@@ -18,7 +18,7 @@ BLOCKED
 
 ## Issue 01 — User model, Role enum, Seed teacher
 
-Owner: Shimon  
+Owner: SHIMON  
 Status: DONE
 Branch: `feature/issue-01-user-role-model`
 
@@ -45,7 +45,7 @@ Create the base user model for teacher/admin login.
 
 ## Issue 02 — Login page and LoginForm
 
-Owner: Shimon  
+Owner: SHIMON  
 Status: DONE
 Branch: `feature/issue-02-login-page`
 
@@ -128,7 +128,7 @@ Create login/logout/me endpoints and connect frontend API.
 ## Issue 05 — ProtectedRoute and auth state
 
 Owner: DIANA  
-Status: IN_PROGRESS  
+Status: DONE 
 Branch: `feature/issue-05-protected-route`
 
 ### Goal
@@ -147,6 +147,12 @@ Protect teacher routes on the client.
 - Authenticated teacher can enter dashboard.
 - Refresh calls `/api/auth/me`.
 - Logout resets auth state.
+- Manual verification completed on develop.
+  Existing files used:
+- client/src/routes/ProtectedRoute.jsx
+- client/src/routes/RoleRoute.jsx
+- client/src/routes/AppRouter.jsx
+- client/src/stores/authStore.js
 
 ---
 
