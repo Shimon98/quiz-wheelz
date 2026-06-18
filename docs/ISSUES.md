@@ -100,7 +100,7 @@ Build JWT creation/validation and Cookie helpers.
 ## Issue 04 — AuthController and real login connection
 
 Owner: DIANA  
-Status: IN_PROGRESS 
+Status: DONE 
 Branch: `feature/issue-04-auth-controller`
 
 ### Goal
@@ -127,8 +127,8 @@ Create login/logout/me endpoints and connect frontend API.
 
 ## Issue 05 — ProtectedRoute and auth state
 
-Owner: TBD  
-Status: TODO  
+Owner: DIANA  
+Status: IN_PROGRESS  
 Branch: `feature/issue-05-protected-route`
 
 ### Goal
@@ -152,8 +152,8 @@ Protect teacher routes on the client.
 
 ## Issue 06 — Subject entity and endpoint
 
-Owner: TBD  
-Status: TODO  
+Owner: SHIMON  
+Status: IN_PROGRESS  
 Branch: `feature/issue-06-subject-endpoint`
 
 ### Goal
