@@ -159,7 +159,7 @@ Protect teacher routes on the client.
 ## Issue 06 — Subject entity and endpoint
 
 Owner: SHIMON  
-Status: DONE 
+Status: DONE  
 Branch: `feature/issue-06-subject-endpoint`
 
 ### Goal
@@ -216,7 +216,7 @@ After this issue, future controllers should be protected using annotations such 
 ## Issue 07 — Race entity, RaceStatus, Repository
 
 Owner: DIANA  
-Status: DONE 
+Status: IN_PROGRESS  
 Branch: `feature/issue-07-race-entity`
 
 ### Goal
@@ -239,8 +239,8 @@ Create the base Race model.
 
 ## Issue 08 — RoomCodeService and Create Race API
 
-Owner: DIANA  
-Status: REVIEW  
+Owner: TBD  
+Status: TODO  
 Branch: `feature/issue-08-create-race-api`
 
 ### Goal
