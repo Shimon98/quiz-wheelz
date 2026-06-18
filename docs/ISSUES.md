@@ -186,10 +186,10 @@ Add generic subjects so the project is not hardcoded to Math.
 ## Issue 06A — Server Security Foundation: JWT Cookie Filter + Role Authorization
 
 ### Owner
-Shimon
+SHIMON & DIANA
 
 ### Status
-TODO
+DONE
 
 ### Branch
 `feature/issue-06a-server-security-foundation`
@@ -213,14 +213,10 @@ After this issue, future controllers should be protected using annotations such 
 
 
 
-
-
-
-
 ## Issue 07 — Race entity, RaceStatus, Repository
 
-Owner: TBD  
-Status: TODO  
+Owner: DIANA  
+Status: IN_PROGRESS  
 Branch: `feature/issue-07-race-entity`
 
 ### Goal
