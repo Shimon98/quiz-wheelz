@@ -15,6 +15,7 @@ public enum ErrorCode {
     INVALID_TOKEN(2000, "Invalid token", HttpStatus.UNAUTHORIZED),
     TOKEN_EXPIRED(2001, "Token expired", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(2002, "Unauthorized", HttpStatus.UNAUTHORIZED),
+    FORBIDDEN(2003, "Forbidden", HttpStatus.FORBIDDEN),
 
     // Request / validation errors: 3000-3999
     VALIDATION_ERROR(3000, "Validation error", HttpStatus.BAD_REQUEST),

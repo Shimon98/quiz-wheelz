@@ -2,14 +2,13 @@ package com.quiz_wheelz.service;
 
 import com.quiz_wheelz.dto.auth.AuthUserResponse;
 import com.quiz_wheelz.dto.auth.LoginRequest;
+import com.quiz_wheelz.dto.auth.LoginResult;
 import com.quiz_wheelz.entitys.User;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
-import com.quiz_wheelz.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.quiz_wheelz.dto.auth.LoginResult;
 
 @Service
 public class AuthService {
@@ -17,25 +16,25 @@ public class AuthService {
     private static final String INVALID_LOGIN_MESSAGE = "Invalid username or password";
     private static final String MISSING_TOKEN_MESSAGE = "Missing auth token";
 
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
     public AuthService(
-            UserRepository userRepository,
+            UserService userService,
             PasswordEncoder passwordEncoder,
             JwtService jwtService
     ) {
-        this.userRepository = userRepository;
+        this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
     }
 
     @Transactional(readOnly = true)
     public LoginResult login(LoginRequest request) {
-        User user = findUserByUsernameOrThrow(request.getUsername());
+        User user = userService.findByUsernameForLoginOrThrow(request.getUsername());
 
-        validateUserIsActive(user);
+        userService.validateUserIsActive(user);
         validatePassword(request.getPassword(), user.getPasswordHash());
 
         String token = createTokenForUser(user);
@@ -50,30 +49,9 @@ public class AuthService {
         validateTokenIsValid(token);
 
         Long userId = jwtService.extractUserId(token);
-        User user = findUserByIdOrThrow(userId);
-
-        validateUserIsActive(user);
+        User user = userService.findActiveByIdOrThrow(userId);
 
         return AuthUserResponse.from(user);
-    }
-
-    private User findUserByUsernameOrThrow(String username) {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new ApiException(
-                        ErrorCode.UNAUTHORIZED,
-                        INVALID_LOGIN_MESSAGE
-                ));
-    }
-
-    private User findUserByIdOrThrow(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
-    }
-
-    private void validateUserIsActive(User user) {
-        if (!user.isActive()) {
-            throw new ApiException(ErrorCode.USER_INACTIVE);
-        }
     }
 
     private void validatePassword(String rawPassword, String encodedPassword) {
