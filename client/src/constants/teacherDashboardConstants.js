@@ -1,31 +1,26 @@
-export const TEACHER_DASHBOARD_TEXT = {
-    areaLabel: "QuizWheelz Teacher Area",
-    title: "דשבורד מורה",
-    greetingPrefix: "שלום",
-    greetingFallback: "מורה",
-    subtitle: "מכאן תוכל לנהל את מרוצי הלמידה שלך.",
-    logoutButton: "התנתקות",
-    logoutLoading: "מתנתק...",
-    racesTitle: "המרוצים שלי",
-    racesDescription: "בהמשך יוצגו כאן המרוצים שהמורה יצר.",
-    createRaceButton: "יצירת מרוץ חדש",
-    emptyRacesMessage: "עדיין אין מרוצים להצגה.",
-};
-
 export const TEACHER_DASHBOARD_STATS = [
     {
-        id: "active-races",
-        label: "מרוצים פעילים",
+        id: "total-races",
+        contentKey: "totalRaces",
+        iconKey: "flag",
         value: 0,
     },
     {
-        id: "connected-students",
-        label: "תלמידים מחוברים",
+        id: "active-races",
+        contentKey: "activeRaces",
+        iconKey: "road",
         value: 0,
     },
     {
         id: "finished-races",
-        label: "מרוצים שהסתיימו",
+        contentKey: "finishedRaces",
+        iconKey: "trophy",
+        value: 0,
+    },
+    {
+        id: "waiting-races",
+        contentKey: "waitingRaces",
+        iconKey: "stopwatch",
         value: 0,
     },
 ];
