@@ -12,6 +12,9 @@ public final class ApiMessages {
     public static final String TEACHER_DASHBOARD_LOADED_SUCCESSFULLY =
             "Teacher dashboard loaded successfully";
 
+    public static final String RACE_ROOM_LOADED_SUCCESSFULLY =
+            "Race room loaded successfully";
+
     private ApiMessages() {
     }
 }

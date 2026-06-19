@@ -17,6 +17,10 @@ public final class ApiPaths {
     public static final String TEACHER_RACES = TEACHER_BASE + "/races";
     public static final String TEACHER_DASHBOARD = TEACHER_BASE + "/dashboard";
 
+    public static final String RACE_ID = "/{raceId}";
+    public static final String ROOM = "/room";
+    public static final String TEACHER_RACE_ROOM = RACE_ID + ROOM;
+
     public static final String ACTUATOR_HEALTH = "/actuator/health";
     public static final String SWAGGER_UI = "/swagger-ui/**";
     public static final String API_DOCS = "/v3/api-docs/**";
