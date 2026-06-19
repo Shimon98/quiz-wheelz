@@ -17,4 +17,6 @@ public interface RaceRepository extends JpaRepository<Race, Long> {
     List<Race> findByTeacherOrderByCreatedAtDesc(User teacher);
 
     List<Race> findByTeacherAndStatusOrderByCreatedAtDesc(User teacher, RaceStatus status);
+
+    Optional<Race> findByIdAndTeacher(Long raceId, User teacher);
 }
