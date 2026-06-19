@@ -36,7 +36,7 @@
    כן → ApiMessages
 
 3. זו הודעת auth שחוזרת בכמה מקומות?
-   כן → ErrorMessages / AuthMessages
+   כן →  AuthMessages
 
 4. זו הודעת שגיאה רגילה עם קוד HTTP?
    כן → להשאיר ב־ErrorCode

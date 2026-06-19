@@ -121,12 +121,12 @@ Test with MockMvc when possible.
 
 ## Stage A Acceptance Checklist
 
-- [ ] Teacher login works.
-- [ ] Cookie JWT is created.
-- [ ] `/api/auth/me` works after refresh.
-- [ ] Logout clears Cookie.
-- [ ] Protected routes work.
-- [ ] Subject endpoint works.
+- [X] Teacher login works.
+- [X] Cookie JWT is created.
+- [X] `/api/auth/me` works after refresh.
+- [X] Logout clears Cookie.
+- [X] Protected routes work.
+- [X] Subject endpoint works.
 - [ ] Teacher dashboard loads from server.
 - [ ] Teacher creates race.
 - [ ] Race saved in DB.
