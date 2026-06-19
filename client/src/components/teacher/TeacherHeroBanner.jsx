@@ -8,13 +8,13 @@ export default function TeacherHeroBanner({ teacherName, isLoggingOut, onLogout 
     const heroImage = getTeacherDashboardAsset("headerHero");
 
     return (
-        <section className="relative h-[170px] max-h-[200px] overflow-hidden rounded-[28px] bg-gradient-to-l from-sky-500 via-sky-400 to-purple-400 text-white shadow-[0_16px_40px_rgba(27,42,65,0.12)] sm:h-[180px] lg:h-[190px]">
+        <section className="relative h-[180px] max-h-[210px] overflow-hidden rounded-[28px] bg-gradient-to-l from-sky-500 via-sky-400 to-purple-400 text-white shadow-[0_16px_40px_rgba(27,42,65,0.12)] sm:h-[190px] lg:h-[200px]">
             {heroImage && (
                 <img
                     src={heroImage}
                     alt=""
                     aria-hidden="true"
-                    className="absolute inset-0 h-full w-full object-cover object-left-bottom"
+                    className="absolute inset-0 h-full w-full object-cover object-left"
                     draggable="false"
                 />
             )}
@@ -36,8 +36,12 @@ export default function TeacherHeroBanner({ teacherName, isLoggingOut, onLogout 
                 </div>
 
                 <div className="ml-auto max-w-md text-right">
-                    <h2 className="text-lg font-bold md:text-xl">{content.title}</h2>
-                    <p className="mt-1 text-sm text-sky-50">{content.subtitle}</p>
+                    <h2 className="text-xl font-extrabold md:text-2xl">
+                        {content.title}
+                    </h2>
+                    <p className="mt-1 text-sm font-semibold text-sky-50 md:text-base">
+                        {content.subtitle}
+                    </p>
                 </div>
             </div>
         </section>

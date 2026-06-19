@@ -23,6 +23,12 @@ export const TEACHER_DASHBOARD_CONTENT = {
             title: "ברוכים השבים למסלול ההוראה",
             subtitle: "מכאן תוכל ליצור מרוצי למידה ולנהל את הכיתה שלך.",
         },
+        racePreview: {
+            racesTitle: "המרוצים שלי",
+            racesDescription: "בהמשך יוצגו כאן המרוצים שהמורה יצר.",
+            createRaceButton: "יצירת מרוץ חדש",
+            emptyRacesMessage: "עדיין אין מרוצים להצגה.",
+        },
     },
     en: {
         sidebar: {
@@ -47,6 +53,12 @@ export const TEACHER_DASHBOARD_CONTENT = {
         hero: {
             title: "Welcome back to the learning track",
             subtitle: "Create learning races and manage your classroom from here.",
+        },
+        racePreview: {
+            racesTitle: "My races",
+            racesDescription: "Races created by the teacher will appear here.",
+            createRaceButton: "Create new race",
+            emptyRacesMessage: "No races to display yet.",
         },
     },
 };

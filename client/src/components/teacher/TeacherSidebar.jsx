@@ -21,24 +21,29 @@ export default function TeacherSidebar() {
     const logo = getTeacherDashboardAsset("sidebarLogo");
 
     return (
-        <aside className="hidden h-full min-h-0 w-60 flex-none overflow-hidden rounded-3xl bg-white/80 p-5 shadow-[0_8px_24px_rgba(27,42,65,0.08)] lg:block">
-            <div className="flex h-full min-h-0 flex-col gap-6">
-                <div className="flex shrink-0 items-center justify-center px-2">
-                {logo ? (
-                    <img
-                        src={logo}
-                        alt={content.logoText}
-                        className="max-w-[180px] object-contain"
-                        draggable="false"
-                    />
-                ) : (
-                    <div className="flex items-center gap-2">
-                        <span className="text-2xl">🏎️</span>
-                        <span className="text-lg font-bold text-sky-700">
-                            {content.logoText}
-                        </span>
-                    </div>
-                )}
+        <aside className="hidden h-full min-h-0 w-64 flex-none overflow-hidden rounded-3xl bg-white/80 p-5 shadow-[0_8px_24px_rgba(27,42,65,0.08)] lg:block">
+            <div className="flex h-full min-h-0 flex-col gap-4">
+                <div className="flex h-28 shrink-0 items-center justify-center overflow-hidden px-2">
+                    {logo ? (
+                        <img
+                            src={logo}
+                            alt={content.logoText}
+                            className="max-h-24 max-w-[190px] object-contain"
+                            draggable="false"
+                        />
+                    ) : (
+                        <div className="flex items-center gap-2 text-sky-700">
+                            <span
+                                aria-hidden="true"
+                                className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-100 text-lg"
+                            >
+                                🏁
+                            </span>
+                            <span className="text-lg font-extrabold">
+                                {content.logoText}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 <nav className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto">
@@ -50,7 +55,7 @@ export default function TeacherSidebar() {
                         return (
                             <div
                                 key={item.key}
-                                className={`flex items-center justify-between rounded-2xl px-3 py-2.5 text-sm font-semibold transition ${
+                                className={`flex items-center justify-between rounded-2xl px-4 py-3 text-[15px] font-bold transition ${
                                     item.isActive
                                         ? "bg-sky-500 text-white shadow-[0_8px_18px_rgba(30,123,230,0.35)]"
                                         : item.isComingSoon
@@ -58,7 +63,7 @@ export default function TeacherSidebar() {
                                           : "text-slate-700 hover:bg-sky-50"
                                 }`}
                             >
-                                <span className="flex items-center gap-2.5">
+                                <span className="flex items-center gap-3">
                                     {icon && (
                                         <img
                                             src={icon}
