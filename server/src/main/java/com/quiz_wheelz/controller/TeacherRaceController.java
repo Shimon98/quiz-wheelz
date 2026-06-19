@@ -1,8 +1,11 @@
 package com.quiz_wheelz.controller;
 
+import com.quiz_wheelz.common.ApiMessages;
+import com.quiz_wheelz.common.ApiPaths;
 import com.quiz_wheelz.common.ApiResponse;
 import com.quiz_wheelz.dto.race.CreateRaceRequest;
 import com.quiz_wheelz.dto.race.RaceSummaryResponse;
+import com.quiz_wheelz.security.SecurityExpressions;
 import com.quiz_wheelz.service.RaceService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -10,8 +13,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/teacher/races")
-@PreAuthorize("hasRole('TEACHER')")
+@RequestMapping(ApiPaths.TEACHER_RACES)
+@PreAuthorize(SecurityExpressions.HAS_ROLE_TEACHER)
 public class TeacherRaceController {
 
     private final RaceService raceService;
@@ -27,7 +30,7 @@ public class TeacherRaceController {
         RaceSummaryResponse race = raceService.createRace(request);
 
         return ResponseEntity.ok(
-                ApiResponse.ok("Race created successfully", race)
+                ApiResponse.ok(ApiMessages.RACE_CREATED_SUCCESSFULLY, race)
         );
     }
 }

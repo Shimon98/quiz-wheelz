@@ -1,5 +1,7 @@
 package com.quiz_wheelz.controller;
 
+import com.quiz_wheelz.common.ApiMessages;
+import com.quiz_wheelz.common.ApiPaths;
 import com.quiz_wheelz.common.ApiResponse;
 import com.quiz_wheelz.dto.auth.AuthUserResponse;
 import com.quiz_wheelz.dto.auth.LoginRequest;
@@ -13,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping(ApiPaths.AUTH_BASE)
 public class AuthController {
 
     private final AuthService authService;
@@ -30,7 +32,7 @@ public class AuthController {
         this.cookieUtils = cookieUtils;
     }
 
-    @PostMapping("/login")
+    @PostMapping(ApiPaths.LOGIN)
     public ResponseEntity<ApiResponse<AuthUserResponse>> login(
             @Valid @RequestBody LoginRequest request, HttpServletResponse response) {
         LoginResult loginResult = authService.login(request);
@@ -38,25 +40,25 @@ public class AuthController {
         cookieUtils.addAuthCookie(response, loginResult.getToken());
 
         return ResponseEntity.ok(
-                ApiResponse.ok("Login successful", loginResult.getUser())
+                ApiResponse.ok(ApiMessages.LOGIN_SUCCESSFUL, loginResult.getUser())
         );
     }
 
-    @GetMapping("/me")
+    @GetMapping(ApiPaths.ME)
     public ResponseEntity<ApiResponse<AuthUserResponse>> me() {
         AuthUserResponse currentUser = currentUserService.getCurrentUserResponse();
 
         return ResponseEntity.ok(
-                ApiResponse.ok("Current user loaded", currentUser)
+                ApiResponse.ok(ApiMessages.CURRENT_USER_LOADED, currentUser)
         );
     }
 
-    @PostMapping("/logout")
+    @PostMapping(ApiPaths.LOGOUT)
     public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse response) {
         cookieUtils.clearAuthCookie(response);
 
         return ResponseEntity.ok(
-                ApiResponse.ok("Logout successful")
+                ApiResponse.ok(ApiMessages.LOGOUT_SUCCESSFUL)
         );
     }
 }

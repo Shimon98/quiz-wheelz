@@ -1,5 +1,6 @@
 package com.quiz_wheelz.config;
 
+import com.quiz_wheelz.common.ApiPaths;
 import com.quiz_wheelz.security.JwtAuthenticationFilter;
 import com.quiz_wheelz.security.RestAccessDeniedHandler;
 import com.quiz_wheelz.security.RestAuthenticationEntryPoint;
@@ -46,13 +47,13 @@ public class SecurityConfig {
                         .accessDeniedHandler(restAccessDeniedHandler)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
-                        .requestMatchers("/swagger-ui/**").permitAll()
-                        .requestMatchers("/v3/api-docs/**").permitAll()
-                        .requestMatchers("/api/auth/me").authenticated()
-                        .requestMatchers("/api/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, ApiPaths.AUTH_LOGIN).permitAll()
+                        .requestMatchers(HttpMethod.POST, ApiPaths.AUTH_LOGOUT).permitAll()
+                        .requestMatchers(HttpMethod.GET, ApiPaths.ACTUATOR_HEALTH).permitAll()
+                        .requestMatchers(ApiPaths.SWAGGER_UI).permitAll()
+                        .requestMatchers(ApiPaths.API_DOCS).permitAll()
+                        .requestMatchers(ApiPaths.AUTH_ME).authenticated()
+                        .requestMatchers(ApiPaths.ALL_API_ENDPOINTS).authenticated()
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(

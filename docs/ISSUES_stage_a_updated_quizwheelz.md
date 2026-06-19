@@ -859,7 +859,7 @@ All modal titles, field labels, placeholders, validation messages, loading messa
 ## Issue 10 — Teacher Dashboard API
 
 Owner: DIANA  
-Status: TODO  
+Status: DONE  
 Branch: `feature/issue-10-teacher-dashboard-api`
 
 ### Goal

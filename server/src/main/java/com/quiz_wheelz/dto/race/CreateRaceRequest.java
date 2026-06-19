@@ -1,5 +1,6 @@
 package com.quiz_wheelz.dto.race;
 
+import com.quiz_wheelz.common.RaceRules;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -13,18 +14,18 @@ import lombok.Setter;
 public class CreateRaceRequest {
 
     @NotBlank
-    @Size(max = 120)
+    @Size(min = RaceRules.MIN_TITLE_LENGTH, max = RaceRules.MAX_TITLE_LENGTH)
     private String title;
 
     @NotNull
     private Long subjectId;
 
     @NotNull
-    @Min(1)
-    @Max(8)
+    @Min(RaceRules.MIN_PLAYERS)
+    @Max(RaceRules.MAX_PLAYERS)
     private Integer maxPlayers;
 
     @NotNull
-    @Min(100)
+    @Min(RaceRules.MIN_TOTAL_DISTANCE)
     private Integer totalDistance;
 }

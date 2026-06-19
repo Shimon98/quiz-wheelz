@@ -4,6 +4,7 @@ import com.quiz_wheelz.config.TokenConfig;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -24,12 +25,12 @@ public class CookieUtils {
                 tokenConfig.getAuthCookieMaxAgeSeconds()
         );
 
-        response.addHeader("Set-Cookie", cookieHeader);
+        response.addHeader(HttpHeaders.SET_COOKIE, cookieHeader);
     }
 
     public void clearAuthCookie(HttpServletResponse response) {
-        String cookieHeader = buildCookieHeader("", 0);
-        response.addHeader("Set-Cookie", cookieHeader);
+        String cookieHeader = buildCookieHeader(CookieConstants.EMPTY_VALUE, 0);
+        response.addHeader(HttpHeaders.SET_COOKIE, cookieHeader);
     }
 
     public Optional<String> getAuthCookieValue(HttpServletRequest request) {
@@ -53,15 +54,15 @@ public class CookieUtils {
         cookie.append(tokenConfig.getAuthCookieName())
                 .append("=")
                 .append(value)
-                .append("; Path=/")
-                .append("; Max-Age=")
+                .append(CookieConstants.PATH_ROOT_ATTRIBUTE)
+                .append(CookieConstants.MAX_AGE_ATTRIBUTE)
                 .append(maxAge)
-                .append("; HttpOnly")
-                .append("; SameSite=")
+                .append(CookieConstants.HTTP_ONLY_ATTRIBUTE)
+                .append(CookieConstants.SAME_SITE_ATTRIBUTE)
                 .append(tokenConfig.getAuthCookieSameSite());
 
         if (tokenConfig.isAuthCookieSecure()) {
-            cookie.append("; Secure");
+            cookie.append(CookieConstants.SECURE_ATTRIBUTE);
         }
 
         return cookie.toString();

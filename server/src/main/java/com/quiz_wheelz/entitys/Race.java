@@ -1,6 +1,7 @@
 package com.quiz_wheelz.entitys;
 
 import com.quiz_wheelz.common.BaseEntity;
+import com.quiz_wheelz.common.RaceRules;
 import com.quiz_wheelz.enums.RaceStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
@@ -22,14 +23,14 @@ import java.time.LocalDateTime;
 public class Race extends BaseEntity {
 
     @NotBlank
-    @Size(max = 20)
-    @Column(name = "room_code", nullable = false, unique = true, length = 20)
+    @Size(max = RaceRules.ROOM_CODE_LENGTH)
+    @Column(name = "room_code", nullable = false, unique = true, length = RaceRules.ROOM_CODE_LENGTH)
     private String roomCode;
 
     @NotBlank
-    @Size(max = 120)
-    @Column(nullable = false, length = 120)
-    private String title;
+    @Size(min = RaceRules.MIN_TITLE_LENGTH, max = RaceRules.MAX_TITLE_LENGTH)
+    @Column(nullable = false, length = RaceRules.MAX_TITLE_LENGTH)
+    private String title;;
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -37,13 +38,13 @@ public class Race extends BaseEntity {
     private RaceStatus status = RaceStatus.WAITING_FOR_PLAYERS;
 
     @NotNull
-    @Min(1)
-    @Max(8)
+    @Min(RaceRules.MIN_PLAYERS)
+    @Max(RaceRules.MAX_PLAYERS)
     @Column(name = "max_players", nullable = false)
     private Integer maxPlayers;
 
     @NotNull
-    @Min(100)
+    @Min(RaceRules.MIN_TOTAL_DISTANCE)
     @Column(name = "total_distance", nullable = false)
     private Integer totalDistance;
 

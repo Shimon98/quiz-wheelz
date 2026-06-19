@@ -13,6 +13,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class DataInitializer implements CommandLineRunner {
 
+    private static final String DEV_TEACHER_USERNAME = "GojoSatoru";
+    private static final String DEV_TEACHER_PASSWORD = "123456";
+    private static final String DEV_TEACHER_DISPLAY_NAME = "Gojo Satoru";
+
+    private static final String DEFAULT_SUBJECT_CODE = "MATH";
+    private static final String DEFAULT_SUBJECT_NAME = "Math";
+
     private final UserRepository userRepository;
     private final SubjectRepository subjectRepository;
     private final PasswordEncoder passwordEncoder;
@@ -34,27 +41,25 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void createTeacherIfMissing() {
-        String username = "GojoSatoru";
-        if (userRepository.existsByUsername(username)) {
+        if (userRepository.existsByUsername(DEV_TEACHER_USERNAME)) {
             return;
         }
         User teacher = new User();
-        teacher.setUsername(username);
-        teacher.setPasswordHash(passwordEncoder.encode("123456"));
-        teacher.setDisplayName("Gojo Satoru");
+        teacher.setUsername(DEV_TEACHER_USERNAME);
+        teacher.setPasswordHash(passwordEncoder.encode(DEV_TEACHER_PASSWORD));
+        teacher.setDisplayName(DEV_TEACHER_DISPLAY_NAME);
         teacher.setRole(UserRole.TEACHER);
         teacher.setActive(true);
         userRepository.save(teacher);
     }
 
     private void createMathSubjectIfMissing() {
-        String code = "MATH";
-        if (subjectRepository.existsByCode(code)) {
+        if (subjectRepository.existsByCode(DEFAULT_SUBJECT_CODE)) {
             return;
         }
         Subject subject = new Subject();
-        subject.setName("Math");
-        subject.setCode(code);
+        subject.setName(DEFAULT_SUBJECT_NAME);
+        subject.setCode(DEFAULT_SUBJECT_CODE);
         subject.setActive(true);
         subjectRepository.save(subject);
     }
