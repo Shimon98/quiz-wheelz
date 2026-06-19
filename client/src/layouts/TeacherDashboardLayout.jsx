@@ -5,7 +5,7 @@ export default function TeacherDashboardLayout({ children }) {
     const generalBackground = getTeacherDashboardAsset("generalBackground");
 
     return (
-        <div className="relative min-h-screen overflow-hidden bg-sky-100 px-4 py-6 md:px-8">
+        <div className="relative h-screen overflow-hidden bg-sky-100 p-3 md:p-4">
             {generalBackground && (
                 <div
                     aria-hidden="true"
@@ -18,10 +18,10 @@ export default function TeacherDashboardLayout({ children }) {
                 />
             )}
 
-            <div className="relative z-10 mx-auto flex max-w-[1320px] gap-4">
+            <div className="relative z-10 mx-auto flex h-full max-w-[1320px] gap-4">
                 <TeacherSidebar />
 
-                <main className="flex min-w-0 flex-1 flex-col gap-4">
+                <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
                     {children}
                 </main>
             </div>

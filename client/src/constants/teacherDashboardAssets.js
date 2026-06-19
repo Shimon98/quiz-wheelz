@@ -1,7 +1,7 @@
 import teacherDashboardHeaderHero from "../assets/backgrounds/TeacherDashboardHeaderHero.png";
 import generalBackground from "../assets/backgrounds/GeneralBackground.png";
+import sidebarLogo from "../assets/brand/quizwheelz-logo.png";
 import carNumbersTrail from "../assets/illustrations/car-numbers-trail.png";
-import sidebarLogo from "../assets/logos/gameLogo.png";
 
 import flagIcon from "../assets/icons/flag.png";
 import pencilIcon from "../assets/icons/pencil.png";

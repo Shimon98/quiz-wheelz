@@ -31,7 +31,9 @@ export default function TeacherDashboardPage() {
 
                 <TeacherStatsGrid stats={TEACHER_DASHBOARD_STATS} />
 
-                <TeacherRaceListPreview />
+                <div className="min-h-0 flex-1">
+                    <TeacherRaceListPreview className="h-full" />
+                </div>
             </TeacherDashboardLayout>
         </AppShell>
     );

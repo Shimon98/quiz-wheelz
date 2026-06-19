@@ -1,4 +1,4 @@
-export const TEACHER_DASHBOARD_TEXT = {
+export const TEACHER_RACE_PREVIEW_TEXT = {
     racesTitle: "המרוצים שלי",
     racesDescription: "בהמשך יוצגו כאן המרוצים שהמורה יצר.",
     createRaceButton: "יצירת מרוץ חדש",

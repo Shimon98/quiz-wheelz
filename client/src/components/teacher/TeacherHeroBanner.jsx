@@ -8,13 +8,13 @@ export default function TeacherHeroBanner({ teacherName, isLoggingOut, onLogout 
     const heroImage = getTeacherDashboardAsset("headerHero");
 
     return (
-        <section className="relative h-[180px] overflow-hidden rounded-[28px] bg-gradient-to-l from-sky-500 via-sky-400 to-purple-400 text-white shadow-[0_16px_40px_rgba(27,42,65,0.12)] sm:h-[200px] md:h-[210px]">
+        <section className="relative h-[170px] max-h-[200px] overflow-hidden rounded-[28px] bg-gradient-to-l from-sky-500 via-sky-400 to-purple-400 text-white shadow-[0_16px_40px_rgba(27,42,65,0.12)] sm:h-[180px] lg:h-[190px]">
             {heroImage && (
                 <img
                     src={heroImage}
                     alt=""
                     aria-hidden="true"
-                    className="absolute inset-0 h-full w-full object-cover object-[left_bottom]"
+                    className="absolute inset-0 h-full w-full object-cover object-left-bottom"
                     draggable="false"
                 />
             )}
@@ -22,11 +22,11 @@ export default function TeacherHeroBanner({ teacherName, isLoggingOut, onLogout 
             {heroImage && (
                 <div
                     aria-hidden="true"
-                    className="absolute inset-0 bg-gradient-to-l from-sky-900/75 via-sky-900/40 to-transparent"
+                    className="absolute inset-0 bg-gradient-to-l from-sky-950/80 via-sky-900/45 to-transparent"
                 />
             )}
 
-            <div className="relative z-10 flex h-full flex-col justify-between p-4 md:p-5">
+            <div className="relative z-10 flex h-full flex-col justify-between p-4">
                 <div className="ml-auto">
                     <TeacherTopBar
                         teacherName={teacherName}

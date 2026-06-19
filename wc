@@ -1,0 +1,36 @@
+warning: in the working copy of 'client/src/components/teacher/TeacherDashboardHeader.jsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'client/src/components/teacher/TeacherRaceListPreview.jsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'client/src/constants/teacherDashboardConstants.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'client/src/pages/TeacherDashboardPage.jsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'client/src/components/teacher/TeacherHeroBanner.jsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'client/src/components/teacher/TeacherSidebar.jsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'client/src/constants/teacherDashboardAssets.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'client/src/layouts/TeacherDashboardLayout.jsx', LF will be replaced by CRLF the next time Git touches it
+ .../src/assets/backgrounds/GeneralBackground.png   | Bin [31m0[m -> [32m1069376[m bytes
+ .../backgrounds/TeacherDashboardHeaderHero.png     | Bin [31m0[m -> [32m1636442[m bytes
+ .../backgrounds/TeacherHeroBackgroundLandscape.png | Bin [31m0[m -> [32m1416430[m bytes
+ client/src/assets/brand/quizwheelz-logo.png        | Bin [31m0[m -> [32m1240064[m bytes
+ .../flag.png}                                      | Bin
+ .../pencil.png}                                    | Bin
+ .../road.png}                                      | Bin
+ .../stopwatch.png}                                 | Bin
+ .../students.png}                                  | Bin
+ .../ticket.png}                                    | Bin
+ .../trophy.png}                                    | Bin
+ .../car-finish-line.png}                           | Bin
+ .../car-numbers-trail.png}                         | Bin
+ .../heroLandscape.png}                             | Bin
+ .../components/teacher/TeacherDashboardHeader.jsx  |  19 [32m++[m[31m--[m
+ .../src/components/teacher/TeacherHeroBanner.jsx   |  45 [32m++++++++++[m
+ .../components/teacher/TeacherRaceListPreview.jsx  |  22 [32m++[m[31m---[m
+ client/src/components/teacher/TeacherSidebar.jsx   |  96 [32m+++++++++++++++++++++[m
+ client/src/components/teacher/TeacherStatCard.jsx  |  18 [32m+++[m[31m-[m
+ client/src/components/teacher/TeacherStatsGrid.jsx |  10 [32m++[m[31m-[m
+ client/src/components/teacher/TeacherTopBar.jsx    |  31 [32m+++++++[m
+ client/src/constants/localeConstants.js            |   7 [32m++[m
+ client/src/constants/teacherDashboardAssets.js     |  35 [32m++++++++[m
+ client/src/constants/teacherDashboardConstants.js  |  30 [32m++++[m[31m---[m
+ client/src/constants/teacherDashboardContent.js    |  67 [32m++++++++++++++[m
+ client/src/layouts/TeacherDashboardLayout.jsx      |  30 [32m+++++++[m
+ client/src/pages/TeacherDashboardPage.jsx          |  27 [32m+++[m[31m---[m
+ 27 files changed, 385 insertions(+), 52 deletions(-)
