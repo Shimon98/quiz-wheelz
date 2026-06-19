@@ -6,7 +6,7 @@ import com.quiz_wheelz.dto.auth.LoginResult;
 import com.quiz_wheelz.entitys.User;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
-import com.quiz_wheelz.exception.ErrorMessages;
+import com.quiz_wheelz.exception.AuthMessages;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,7 +58,7 @@ public class AuthService {
         if (!passwordMatches) {
             throw new ApiException(
                     ErrorCode.UNAUTHORIZED,
-                    ErrorMessages.INVALID_USERNAME_OR_PASSWORD
+                    AuthMessages.INVALID_USERNAME_OR_PASSWORD
             );
         }
     }
@@ -67,7 +67,7 @@ public class AuthService {
         if (token == null || token.isBlank()) {
             throw new ApiException(
                     ErrorCode.UNAUTHORIZED,
-                    ErrorMessages.MISSING_AUTH_TOKEN
+                    AuthMessages.MISSING_AUTH_TOKEN
             );
         }
     }

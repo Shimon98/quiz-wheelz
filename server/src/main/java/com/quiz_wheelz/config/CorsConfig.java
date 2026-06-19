@@ -1,5 +1,6 @@
 package com.quiz_wheelz.config;
 
+import com.quiz_wheelz.common.ApiPaths;
 import com.quiz_wheelz.common.AppConstants;
 import com.quiz_wheelz.exception.ConfigurationException;
 import jakarta.annotation.PostConstruct;
@@ -63,7 +64,7 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping(AppConstants.API_PREFIX + "/**")
+                registry.addMapping(ApiPaths.ALL_API_ENDPOINTS)
                         .allowedOrigins(origins)
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                         .allowedHeaders("*")

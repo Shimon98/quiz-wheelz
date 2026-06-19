@@ -1,5 +1,6 @@
 package com.quiz_wheelz.service;
 
+import com.quiz_wheelz.common.RaceRules;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RaceRepository;
@@ -11,7 +12,6 @@ import java.security.SecureRandom;
 public class RoomCodeService {
 
     private static final String ALLOWED_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    private static final int ROOM_CODE_LENGTH = 6;
     private static final int MAX_ATTEMPTS = 20;
 
     private final RaceRepository raceRepository;
@@ -34,9 +34,9 @@ public class RoomCodeService {
     }
 
     private String generateRoomCode() {
-        StringBuilder code = new StringBuilder(ROOM_CODE_LENGTH);
+        StringBuilder code = new StringBuilder(RaceRules.ROOM_CODE_LENGTH);
 
-        for (int i = 0; i < ROOM_CODE_LENGTH; i++) {
+        for (int i = 0; i < RaceRules.ROOM_CODE_LENGTH; i++) {
             int index = secureRandom.nextInt(ALLOWED_CHARS.length());
             code.append(ALLOWED_CHARS.charAt(index));
         }

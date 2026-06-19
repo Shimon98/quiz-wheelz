@@ -23,14 +23,14 @@ import java.time.LocalDateTime;
 public class Race extends BaseEntity {
 
     @NotBlank
-    @Size(max = 20)
-    @Column(name = "room_code", nullable = false, unique = true, length = 20)
+    @Size(max = RaceRules.ROOM_CODE_LENGTH)
+    @Column(name = "room_code", nullable = false, unique = true, length = RaceRules.ROOM_CODE_LENGTH)
     private String roomCode;
 
     @NotBlank
-    @Size(max = 120)
-    @Column(nullable = false, length = 120)
-    private String title;
+    @Size(min = RaceRules.MIN_TITLE_LENGTH, max = RaceRules.MAX_TITLE_LENGTH)
+    @Column(nullable = false, length = RaceRules.MAX_TITLE_LENGTH)
+    private String title;;
 
     @NotNull
     @Enumerated(EnumType.STRING)

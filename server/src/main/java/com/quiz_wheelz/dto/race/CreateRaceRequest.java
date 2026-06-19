@@ -14,7 +14,7 @@ import lombok.Setter;
 public class CreateRaceRequest {
 
     @NotBlank
-    @Size(max = 120)
+    @Size(min = RaceRules.MIN_TITLE_LENGTH, max = RaceRules.MAX_TITLE_LENGTH)
     private String title;
 
     @NotNull

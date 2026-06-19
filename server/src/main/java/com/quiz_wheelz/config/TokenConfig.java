@@ -71,19 +71,25 @@ public class TokenConfig {
     private void validate() {
         if (tokenSecret == null || tokenSecret.length() < MIN_SECRET_LENGTH) {
             throw new ConfigurationException(
-                    "TOKEN_SECRET must be at least " + MIN_SECRET_LENGTH + " characters long"
+                    ConfigPropertyKeys.TOKEN_SECRET
+                            + " must be at least "
+                            + MIN_SECRET_LENGTH
+                            + " characters long"
             );
         }
 
         if (tokenExpirationMinutes <= 0) {
             throw new ConfigurationException(
-                    "TOKEN_EXPIRATION_MINUTES must be positive. Current value: "
+                    ConfigPropertyKeys.TOKEN_EXPIRATION_MINUTES
+                            + " must be positive. Current value: "
                             + tokenExpirationMinutes
             );
         }
 
         if (authCookieName == null || authCookieName.isBlank()) {
-            throw new ConfigurationException("AUTH_COOKIE_NAME must not be empty");
+            throw new ConfigurationException(
+                    ConfigPropertyKeys.AUTH_COOKIE_NAME + " must not be empty"
+            );
         }
 
         if (authCookieMaxAgeSeconds <= 0) {
@@ -95,7 +101,9 @@ public class TokenConfig {
         }
 
         if (authCookieSameSite == null || authCookieSameSite.isBlank()) {
-            throw new ConfigurationException("AUTH_COOKIE_SAME_SITE must not be empty");
+            throw new ConfigurationException(
+                    ConfigPropertyKeys.AUTH_COOKIE_SAME_SITE + " must not be empty"
+            );
         }
     }
 
