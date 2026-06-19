@@ -4,9 +4,11 @@ export default function TeacherStatCard({ icon, label, value }) {
             <div className="flex items-center gap-3">
                 <span
                     aria-hidden="true"
-                    className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-50 text-xl"
+                    className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-50"
                 >
-                    {icon}
+                    {icon && (
+                        <img src={icon} alt="" className="h-5 w-5 object-contain" />
+                    )}
                 </span>
                 <p className="text-sm font-semibold text-slate-500">{label}</p>
             </div>

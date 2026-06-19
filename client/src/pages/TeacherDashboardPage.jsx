@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import AppShell from "../layouts/AppShell";
 import TeacherDashboardLayout from "../layouts/TeacherDashboardLayout";
-import TeacherTopBar from "../components/teacher/TeacherTopBar";
 import TeacherHeroBanner from "../components/teacher/TeacherHeroBanner";
 import TeacherStatsGrid from "../components/teacher/TeacherStatsGrid";
 import TeacherRaceListPreview from "../components/teacher/TeacherRaceListPreview";
@@ -24,13 +23,11 @@ export default function TeacherDashboardPage() {
     return (
         <AppShell>
             <TeacherDashboardLayout>
-                <TeacherTopBar
+                <TeacherHeroBanner
                     teacherName={user?.displayName}
                     isLoggingOut={isLoading}
                     onLogout={handleLogout}
                 />
-
-                <TeacherHeroBanner />
 
                 <TeacherStatsGrid stats={TEACHER_DASHBOARD_STATS} />
 

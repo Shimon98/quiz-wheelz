@@ -1,6 +1,5 @@
 export const TEACHER_DASHBOARD_CONTENT = {
     he: {
-        areaLabel: "אזור מורה",
         sidebar: {
             logoText: "QuizWheelz",
             nav: {
@@ -26,7 +25,6 @@ export const TEACHER_DASHBOARD_CONTENT = {
         },
     },
     en: {
-        areaLabel: "Teacher Area",
         sidebar: {
             logoText: "QuizWheelz",
             nav: {
