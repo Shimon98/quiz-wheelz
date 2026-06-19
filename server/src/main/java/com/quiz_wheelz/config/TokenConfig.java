@@ -35,33 +35,33 @@ public class TokenConfig {
 
     @PostConstruct
     public void init() {
-        this.tokenSecret = env.getProperty("TOKEN_SECRET");
+        this.tokenSecret = env.getProperty(ConfigPropertyKeys.TOKEN_SECRET);
 
         this.tokenExpirationMinutes = env.getProperty(
-                "TOKEN_EXPIRATION_MINUTES",
+                ConfigPropertyKeys.TOKEN_EXPIRATION_MINUTES,
                 Integer.class,
                 DEFAULT_TOKEN_EXPIRATION_MINUTES
         );
 
         this.authCookieName = env.getProperty(
-                "AUTH_COOKIE_NAME",
+                ConfigPropertyKeys.AUTH_COOKIE_NAME,
                 DEFAULT_COOKIE_NAME
         );
 
         this.authCookieMaxAgeSeconds = env.getProperty(
-                "AUTH_COOKIE_MAX_AGE_SECONDS",
+                ConfigPropertyKeys.AUTH_COOKIE_MAX_AGE_SECONDS,
                 Integer.class,
                 tokenExpirationMinutes * SECONDS_IN_MINUTE
         );
 
         this.authCookieSecure = env.getProperty(
-                "AUTH_COOKIE_SECURE",
+                ConfigPropertyKeys.AUTH_COOKIE_SECURE,
                 Boolean.class,
                 DEFAULT_COOKIE_SECURE
         );
 
         this.authCookieSameSite = env.getProperty(
-                "AUTH_COOKIE_SAME_SITE",
+                ConfigPropertyKeys.AUTH_COOKIE_SAME_SITE,
                 DEFAULT_COOKIE_SAME_SITE
         );
 
@@ -88,7 +88,7 @@ public class TokenConfig {
 
         if (authCookieMaxAgeSeconds <= 0) {
             throw new ConfigurationException(
-                    "AUTH_COOKIE_MAX_AGE_SECONDS must be positive. Current value: "
+                    ConfigPropertyKeys.AUTH_COOKIE_MAX_AGE_SECONDS + "  must be positive. Current value: "
                             + authCookieMaxAgeSeconds
             );
         }

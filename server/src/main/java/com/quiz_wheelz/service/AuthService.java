@@ -6,15 +6,13 @@ import com.quiz_wheelz.dto.auth.LoginResult;
 import com.quiz_wheelz.entitys.User;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
+import com.quiz_wheelz.exception.ErrorMessages;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
-
-    private static final String INVALID_LOGIN_MESSAGE = "Invalid username or password";
-    private static final String MISSING_TOKEN_MESSAGE = "Missing auth token";
 
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
@@ -60,7 +58,7 @@ public class AuthService {
         if (!passwordMatches) {
             throw new ApiException(
                     ErrorCode.UNAUTHORIZED,
-                    INVALID_LOGIN_MESSAGE
+                    ErrorMessages.INVALID_USERNAME_OR_PASSWORD
             );
         }
     }
@@ -69,7 +67,7 @@ public class AuthService {
         if (token == null || token.isBlank()) {
             throw new ApiException(
                     ErrorCode.UNAUTHORIZED,
-                    MISSING_TOKEN_MESSAGE
+                    ErrorMessages.MISSING_AUTH_TOKEN
             );
         }
     }

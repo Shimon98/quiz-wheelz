@@ -1,5 +1,6 @@
 package com.quiz_wheelz.dto.race;
 
+import com.quiz_wheelz.common.RaceRules;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -20,11 +21,11 @@ public class CreateRaceRequest {
     private Long subjectId;
 
     @NotNull
-    @Min(1)
-    @Max(8)
+    @Min(RaceRules.MIN_PLAYERS)
+    @Max(RaceRules.MAX_PLAYERS)
     private Integer maxPlayers;
 
     @NotNull
-    @Min(100)
+    @Min(RaceRules.MIN_TOTAL_DISTANCE)
     private Integer totalDistance;
 }

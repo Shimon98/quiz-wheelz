@@ -1,6 +1,7 @@
 package com.quiz_wheelz.entitys;
 
 import com.quiz_wheelz.common.BaseEntity;
+import com.quiz_wheelz.common.RaceRules;
 import com.quiz_wheelz.enums.RaceStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
@@ -37,13 +38,13 @@ public class Race extends BaseEntity {
     private RaceStatus status = RaceStatus.WAITING_FOR_PLAYERS;
 
     @NotNull
-    @Min(1)
-    @Max(8)
+    @Min(RaceRules.MIN_PLAYERS)
+    @Max(RaceRules.MAX_PLAYERS)
     @Column(name = "max_players", nullable = false)
     private Integer maxPlayers;
 
     @NotNull
-    @Min(100)
+    @Min(RaceRules.MIN_TOTAL_DISTANCE)
     @Column(name = "total_distance", nullable = false)
     private Integer totalDistance;
 

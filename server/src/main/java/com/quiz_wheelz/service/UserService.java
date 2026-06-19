@@ -3,14 +3,13 @@ package com.quiz_wheelz.service;
 import com.quiz_wheelz.entitys.User;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
+import com.quiz_wheelz.exception.ErrorMessages;
 import com.quiz_wheelz.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {
-
-    private static final String INVALID_LOGIN_MESSAGE = "Invalid username or password";
 
     private final UserRepository userRepository;
 
@@ -42,7 +41,7 @@ public class UserService {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ApiException(
                         ErrorCode.UNAUTHORIZED,
-                        INVALID_LOGIN_MESSAGE
+                        ErrorMessages.INVALID_USERNAME_OR_PASSWORD
                 ));
     }
 

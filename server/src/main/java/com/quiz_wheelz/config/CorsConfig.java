@@ -25,7 +25,7 @@ public class CorsConfig {
     @PostConstruct
     public void init() {
         String origins = env.getProperty(
-                "CORS_ALLOWED_ORIGINS",
+                ConfigPropertyKeys.CORS_ALLOWED_ORIGINS,
                 String.class,
                 AppConstants.DEFAULT_CORS_ALLOWED_ORIGINS
         );
