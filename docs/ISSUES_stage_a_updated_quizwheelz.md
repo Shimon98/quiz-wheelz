@@ -1016,7 +1016,7 @@ All loading, error, empty, stat, and dashboard labels must exist in bilingual co
 ## Issue 12A — Teacher Race Room API
 
 Owner: DIANA  
-Status: TODO  
+Status: DONE  
 Branch: `feature/issue-12a-teacher-race-room-api`
 
 ### Goal

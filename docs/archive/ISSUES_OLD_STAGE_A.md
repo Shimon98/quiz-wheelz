@@ -1,3 +1,16 @@
+# Archived Issues Plan
+
+> ⚠️ This file is archived and no longer maintained.
+>
+> It was used as the original planning document for the first stage of QuizWheelz.
+> Current work tracking is now managed in GitHub Issues / the updated issues document.
+>
+> Do not update this file with new task progress.
+
+
+
+
+
 # Stage A Issues
 
 This file tracks the Stage A work split between Shimon and Diana.
