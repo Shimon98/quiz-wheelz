@@ -14,18 +14,27 @@ export const TEACHER_DASHBOARD_TEXT = {
 
 export const TEACHER_DASHBOARD_STATS = [
     {
-        id: "active-races",
-        label: "מרוצים פעילים",
+        id: "total-races",
+        contentKey: "totalRaces",
+        icon: "🏁",
         value: 0,
     },
     {
-        id: "connected-students",
-        label: "תלמידים מחוברים",
+        id: "active-races",
+        contentKey: "activeRaces",
+        icon: "🚗",
         value: 0,
     },
     {
         id: "finished-races",
-        label: "מרוצים שהסתיימו",
+        contentKey: "finishedRaces",
+        icon: "🏆",
+        value: 0,
+    },
+    {
+        id: "waiting-races",
+        contentKey: "waitingRaces",
+        icon: "⏱️",
         value: 0,
     },
 ];
