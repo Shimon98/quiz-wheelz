@@ -1,6 +1,7 @@
 package com.quiz_wheelz.service;
 
 import com.quiz_wheelz.config.TokenConfig;
+import com.quiz_wheelz.security.JwtClaims;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -32,8 +33,8 @@ public class JwtService {
 
         return Jwts.builder()
                 .subject(username)
-                .claim("userId", userId)
-                .claim("role", role)
+                .claim(JwtClaims.USER_ID, userId)
+                .claim(JwtClaims.ROLE, role)
                 .issuedAt(now)
                 .expiration(expirationDate)
                 .signWith(secretKey)
@@ -54,12 +55,12 @@ public class JwtService {
     }
 
     public Long extractUserId(String token) {
-        Number userId = extractAllClaims(token).get("userId", Number.class);
+        Number userId = extractAllClaims(token).get(JwtClaims.USER_ID, Number.class);
         return userId.longValue();
     }
 
     public String extractRole(String token) {
-        return extractAllClaims(token).get("role", String.class);
+        return extractAllClaims(token).get(JwtClaims.ROLE, String.class);
     }
 
     private Claims extractAllClaims(String token) {

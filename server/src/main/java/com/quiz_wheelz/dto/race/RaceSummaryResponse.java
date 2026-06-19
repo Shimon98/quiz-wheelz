@@ -1,5 +1,6 @@
 package com.quiz_wheelz.dto.race;
 
+import com.quiz_wheelz.common.RaceRules;
 import com.quiz_wheelz.entitys.Race;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -32,7 +33,7 @@ public class RaceSummaryResponse {
                 race.getSubject().getCode(),
                 race.getStatus().name(),
                 race.getMaxPlayers(),
-                0,
+                RaceRules.DEFAULT_CURRENT_PLAYERS,
                 race.getTotalDistance(),
                 race.getCreatedAt()
         );
