@@ -58,7 +58,7 @@ public class AuthController {
         cookieUtils.clearAuthCookie(response);
 
         return ResponseEntity.ok(
-                ApiResponse.ok(ApiMessages.LOGOUT_SUCCESSFUL, null)
+                ApiResponse.ok(ApiMessages.LOGOUT_SUCCESSFUL)
         );
     }
 }

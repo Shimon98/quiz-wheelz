@@ -88,7 +88,8 @@ public class TokenConfig {
 
         if (authCookieMaxAgeSeconds <= 0) {
             throw new ConfigurationException(
-                    ConfigPropertyKeys.AUTH_COOKIE_MAX_AGE_SECONDS + "  must be positive. Current value: "
+                    ConfigPropertyKeys.AUTH_COOKIE_MAX_AGE_SECONDS
+                            + " must be positive. Current value: "
                             + authCookieMaxAgeSeconds
             );
         }
