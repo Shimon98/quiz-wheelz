@@ -1,4 +1,4 @@
-import AppShell from "../layouts/AppShell";
+import AppShell from "../../../layouts/AppShell";
 
 export default function AdminDashboardPage() {
     return (

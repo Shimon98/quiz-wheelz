@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import AppShell from "../layouts/AppShell";
-import TeacherDashboardLayout from "../layouts/TeacherDashboardLayout";
-import TeacherDashboardMain from "../components/teacher/TeacherDashboardMain";
-import { ROUTES } from "../constants/routeConstants";
+import AppShell from "../../../layouts/AppShell";
+import TeacherDashboardLayout from "../../../layouts/TeacherDashboardLayout";
+import TeacherDashboardMain from "../components/TeacherDashboardMain";
+import { ROUTES } from "../../../constants/routeConstants";
 import { TEACHER_DASHBOARD_STATS } from "../constants/teacherDashboardConstants";
-import { useAuthStore } from "../stores/authStore";
+import { useAuthStore } from "../../../stores/authStore";
 
 export default function TeacherDashboardPage() {
     const navigate = useNavigate();

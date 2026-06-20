@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { UI_CLASSES } from '../../styles/theme';
+import { UI_CLASSES } from '../../../styles/theme';
 
 export default function AuthCard({ children, className = '' }) {
     return (

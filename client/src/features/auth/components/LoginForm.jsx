@@ -1,12 +1,12 @@
 import { useForm } from 'react-hook-form';
-import TextInput from '../ui/TextInput';
-import Button from '../ui/Button';
-import FormError from '../ui/FormError';
-import useErrorMessage from '../../hooks/useErrorMessage';
+import TextInput from '../../../shared/components/ui/TextInput';
+import Button from '../../../shared/components/ui/Button';
+import FormError from '../../../shared/components/ui/FormError';
+import useErrorMessage from '../../../hooks/useErrorMessage';
 
-import { UI_CLASSES } from '../../styles/theme';
-import {DEFAULT_LANGUAGE} from "../../constants/messageConstants.js";
-import {AUTH_TEXT, AUTH_VALIDATION} from "../../constants/authConstants.js";
+import { UI_CLASSES } from '../../../styles/theme';
+import {DEFAULT_LANGUAGE} from "../../../constants/messageConstants.js";
+import {AUTH_TEXT, AUTH_VALIDATION} from "../../../constants/authConstants.js";
 
 export default function LoginForm({onLogin, onForgotPassword, language = DEFAULT_LANGUAGE,}) {
   const authText = AUTH_TEXT[language] ?? AUTH_TEXT.he;

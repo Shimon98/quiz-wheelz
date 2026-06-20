@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import PageBackground from "../components/layout/PageBackground";
-import AuthCard from "../components/auth/AuthCard";
-import AppLogo from "../components/brand/AppLogo";
-import LoginForm from "../components/auth/LoginForm";
-import { loginUser } from "../api/authApi";
-import { useAuthStore } from "../stores/authStore";
-import { UI_VARIANTS } from "../constants/uiConstants.js";
-import { getRouteByRole } from "../utils/authRouteUtils";
+import PageBackground from "../../../shared/components/ui/PageBackground";
+import AuthCard from "../components/AuthCard";
+import AppLogo from "../../../shared/components/brand/AppLogo";
+import LoginForm from "../components/LoginForm";
+import { loginUser } from "../../../api/authApi";
+import { useAuthStore } from "../../../stores/authStore";
+import { UI_VARIANTS } from "../../../constants/uiConstants.js";
+import { getRouteByRole } from "../../../utils/authRouteUtils";
 
 export default function LoginPage() {
   const navigate = useNavigate();

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LockKeyhole, LockKeyholeOpen, UserRound } from 'lucide-react';
-import { UI_CLASSES } from '../../styles/theme';
+import { UI_CLASSES } from '../../../styles/theme';
 
 export default function TextInput({
                                       label,

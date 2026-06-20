@@ -1,6 +1,6 @@
-import teacherLoginBg from '../../assets/backgrounds/teacher-login-bg.png';
-import studentLoginBg from '../../assets/backgrounds/student-login-bg.png';
-import {UI_VARIANTS} from "../../constants/uiConstants.js";
+import teacherLoginBg from '../../../assets/backgrounds/teacher-login-bg.png';
+import studentLoginBg from '../../../assets/backgrounds/student-login-bg.png';
+import {UI_VARIANTS} from "../../../constants/uiConstants.js";
 
 export default function PageBackground({
                                            children,

@@ -1,5 +1,5 @@
-import gameLogo from '../../assets/logos/gameLogo.png';
-import {UI_VARIANTS} from "../../constants/uiConstants.js";
+import gameLogo from '../../../assets/logos/gameLogo.png';
+import {UI_VARIANTS} from "../../../constants/uiConstants.js";
 
 
 

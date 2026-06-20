@@ -1,5 +1,5 @@
-import { useLocaleContent } from "../../constants/localeConstants";
-import { TEACHER_DASHBOARD_CONTENT } from "../../constants/teacherDashboardContent";
+import { useLocaleContent } from "../../../constants/localeConstants";
+import { TEACHER_DASHBOARD_CONTENT } from "../content/teacherDashboardContent";
 
 export default function TeacherRaceListPreview({ className = "" }) {
     const content = useLocaleContent(TEACHER_DASHBOARD_CONTENT).racePreview;

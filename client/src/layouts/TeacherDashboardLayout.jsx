@@ -1,5 +1,5 @@
-import TeacherSidebar from "../components/teacher/TeacherSidebar";
-import { getTeacherDashboardAsset } from "../constants/teacherDashboardAssets";
+import TeacherSidebar from "../features/teacherDashboard/components/sidebar/TeacherSidebar";
+import { getTeacherDashboardAsset } from "../features/teacherDashboard/constants/teacherDashboardAssets";
 
 export default function TeacherDashboardLayout({ children }) {
     const generalBackground = getTeacherDashboardAsset("generalBackground");

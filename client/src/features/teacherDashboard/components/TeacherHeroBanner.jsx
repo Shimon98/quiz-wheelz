@@ -1,6 +1,6 @@
-import { useLocaleContent } from "../../constants/localeConstants";
-import { TEACHER_DASHBOARD_CONTENT } from "../../constants/teacherDashboardContent";
-import { getTeacherDashboardAsset } from "../../constants/teacherDashboardAssets";
+import { useLocaleContent } from "../../../constants/localeConstants";
+import { TEACHER_DASHBOARD_CONTENT } from "../content/teacherDashboardContent";
+import { getTeacherDashboardAsset } from "../constants/teacherDashboardAssets";
 import TeacherTopBar from "./TeacherTopBar";
 
 export default function TeacherHeroBanner({ teacherName, isLoggingOut, onLogout }) {
