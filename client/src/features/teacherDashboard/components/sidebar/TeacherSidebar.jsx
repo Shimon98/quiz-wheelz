@@ -1,5 +1,5 @@
-import { useLocaleContent } from "../../constants/localeConstants";
-import { TEACHER_DASHBOARD_CONTENT } from "../../constants/teacherDashboardContent";
+import { useLocaleContent } from "../../../../constants/localeConstants";
+import { TEACHER_DASHBOARD_CONTENT } from "../../content/teacherDashboardContent";
 import { TEACHER_DASHBOARD_NAV_ITEMS } from "../../constants/teacherDashboardConstants";
 import { getTeacherDashboardAsset } from "../../constants/teacherDashboardAssets";
 import SidebarBrand from "./SidebarBrand";

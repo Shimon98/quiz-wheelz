@@ -1,9 +1,9 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import LoginPage from "../pages/LoginPage";
-import NotFoundPage from "../pages/NotFoundPage";
-import UnauthorizedPage from "../pages/UnauthorizedPage";
-import TeacherDashboardPage from "../pages/TeacherDashboardPage";
-import AdminDashboardPage from "../pages/AdminDashboardPage";
+import LoginPage from "../features/auth/pages/LoginPage";
+import NotFoundPage from "../features/commonPages/NotFoundPage";
+import UnauthorizedPage from "../features/commonPages/UnauthorizedPage";
+import TeacherDashboardPage from "../features/teacherDashboard/pages/TeacherDashboardPage";
+import AdminDashboardPage from "../features/admin/pages/AdminDashboardPage";
 import { ROUTES } from "../constants/routeConstants";
 import { USER_ROLES } from "../constants/roleConstants";
 import ProtectedRoute from "./ProtectedRoute";
