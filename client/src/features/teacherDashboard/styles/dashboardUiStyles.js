@@ -1,3 +1,9 @@
+export const CREATE_RACE_FORM_STYLES = {
+    form: "mt-5 grid gap-4",
+    fieldGrid: "grid gap-4 md:grid-cols-2",
+    actions: "mt-1 flex items-center justify-between gap-3",
+};
+
 export const DASHBOARD_SURFACE_STYLES = {
     card:
         "rounded-3xl border border-white/80 bg-white shadow-[0_10px_28px_rgba(27,42,65,0.08)]",

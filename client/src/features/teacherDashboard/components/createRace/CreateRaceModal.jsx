@@ -6,6 +6,7 @@ import {
 } from "../../styles/dashboardUiStyles";
 import DashboardButton from "../ui/DashboardButton";
 import CreateRaceForm from "./CreateRaceForm";
+import RaceFlagIcon from "../ui/RaceFlagIcon";
 
 export default function CreateRaceModal({
                                             isOpen,
@@ -49,9 +50,10 @@ export default function CreateRaceModal({
 
                     <h2
                         id="create-race-modal-title"
-                        className={DASHBOARD_TEXT_STYLES.modalTitle}
+                        className="flex items-center justify-center gap-3 text-3xl font-black leading-tight text-slate-900"
                     >
-                        {content.title} 🏁
+                        <RaceFlagIcon className="h-8 w-8 text-slate-900" />
+                        <span>{content.title}</span>
                     </h2>
 
                     <p className={DASHBOARD_TEXT_STYLES.modalDescription}>

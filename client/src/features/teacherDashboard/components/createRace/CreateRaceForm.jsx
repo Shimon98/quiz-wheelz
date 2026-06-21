@@ -4,9 +4,11 @@ import RaceLengthSelector from "./RaceLengthSelector";
 import SubjectSelect from "./SubjectSelect";
 import { useCreateRaceForm } from "../../hooks/useCreateRaceForm";
 import {
+    CREATE_RACE_FORM_STYLES,
     DASHBOARD_FIELD_STYLES,
     DASHBOARD_TEXT_STYLES,
 } from "../../styles/dashboardUiStyles";
+import RaceFlagIcon from "../ui/RaceFlagIcon";
 
 export default function CreateRaceForm({
                                            subjects,
@@ -22,8 +24,8 @@ export default function CreateRaceForm({
     });
 
     return (
-        <form onSubmit={handleSubmit} className="mt-5 grid gap-4">
-            <div className="grid gap-4 md:grid-cols-2">
+        <form onSubmit={handleSubmit} className={CREATE_RACE_FORM_STYLES.form}>
+            <div className={CREATE_RACE_FORM_STYLES.fieldGrid}>
                 <div>
                     <label
                         htmlFor="create-race-title"
@@ -71,7 +73,7 @@ export default function CreateRaceForm({
                 onChange={handleChange}
             />
 
-            <div className="mt-1 flex items-center justify-between gap-3">
+            <div className={CREATE_RACE_FORM_STYLES.actions}>
                 <DashboardButton
                     type="button"
                     variant="secondary"
@@ -90,8 +92,8 @@ export default function CreateRaceForm({
                     disabled={isSubmitting}
                     className="min-w-56"
                 >
-                    {isSubmitting ? content.buttons.submitting : content.buttons.submit}
-                    <span className="ms-2">🏁</span>
+                    <span>{isSubmitting ? content.buttons.submitting : content.buttons.submit}</span>
+                    <RaceFlagIcon className="ms-2 h-5 w-5" />
                 </DashboardButton>
             </div>
         </form>
