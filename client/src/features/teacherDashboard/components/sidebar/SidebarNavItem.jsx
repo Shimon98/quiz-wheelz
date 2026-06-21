@@ -1,7 +1,23 @@
-export default function SidebarNavItem({item, label, icon, comingSoonLabel,}) {
+export default function SidebarNavItem({
+    item,
+    label,
+    icon,
+    comingSoonLabel,
+    onSelect,
+}) {
+    function handleClick() {
+        if (!item.isComingSoon) {
+            onSelect?.(item);
+        }
+    }
+
     return (
-        <div
-            className={`flex items-center justify-between rounded-2xl px-4 py-3 text-[15px] font-bold transition ${
+        <button
+            type="button"
+            onClick={handleClick}
+            disabled={item.isComingSoon}
+            aria-current={item.isActive ? "page" : undefined}
+            className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-start text-[15px] font-bold transition disabled:cursor-not-allowed ${
                 item.isActive
                     ? "bg-sky-500 text-white shadow-[0_8px_18px_rgba(30,123,230,0.35)]"
                     : item.isComingSoon
@@ -29,6 +45,6 @@ export default function SidebarNavItem({item, label, icon, comingSoonLabel,}) {
                     {comingSoonLabel}
                 </span>
             )}
-        </div>
+        </button>
     );
 }

@@ -3,6 +3,7 @@ import LoginPage from "../features/auth/pages/LoginPage";
 import NotFoundPage from "../features/commonPages/NotFoundPage";
 import UnauthorizedPage from "../features/commonPages/UnauthorizedPage";
 import TeacherDashboardPage from "../features/teacherDashboard/pages/TeacherDashboardPage";
+import TeacherRaceRoomPage from "../features/teacherDashboard/pages/TeacherRaceRoomPage";
 import AdminDashboardPage from "../features/admin/pages/AdminDashboardPage";
 import { ROUTES } from "../constants/routeConstants";
 import { USER_ROLES } from "../constants/roleConstants";
@@ -23,6 +24,17 @@ export default function AppRouter() {
                         <ProtectedRoute>
                             <RoleRoute allowedRoles={[USER_ROLES.TEACHER]}>
                                 <TeacherDashboardPage />
+                            </RoleRoute>
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path={ROUTES.TEACHER_RACE_ROOM}
+                    element={
+                        <ProtectedRoute>
+                            <RoleRoute allowedRoles={[USER_ROLES.TEACHER]}>
+                                <TeacherRaceRoomPage />
                             </RoleRoute>
                         </ProtectedRoute>
                     }
