@@ -1,11 +1,5 @@
 
 export const DASHBOARD_SURFACE_STYLES = {
-    modalOverlay:
-        "fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]",
-
-    modalPanel:
-        "relative w-full max-w-[640px] rounded-[2rem] bg-white px-7 py-6 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)]",
-
     card:
         "rounded-3xl border border-white/80 bg-white shadow-[0_10px_28px_rgba(27,42,65,0.08)]",
 

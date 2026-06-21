@@ -73,6 +73,17 @@ export default function CreateRaceForm({
 
             <div className="mt-1 flex items-center justify-between gap-3">
                 <DashboardButton
+                    type="button"
+                    variant="secondary"
+                    size="lg"
+                    onClick={onCancel}
+                    disabled={isSubmitting}
+                    className="min-w-36"
+                >
+                    {content.buttons.cancel}
+                </DashboardButton>
+
+                <DashboardButton
                     type="submit"
                     variant="cta"
                     size="lg"
