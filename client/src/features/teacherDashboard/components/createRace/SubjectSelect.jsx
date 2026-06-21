@@ -1,5 +1,9 @@
 import { useLanguageStore } from "../../../../stores/languageStore";
 import { getSubjectDisplayName } from "../../utils/subjectDisplayUtils";
+import {
+    DASHBOARD_FIELD_STYLES,
+    DASHBOARD_TEXT_STYLES,
+} from "../../styles/dashboardUiStyles";
 
 export default function SubjectSelect({
     id,
@@ -16,7 +20,7 @@ export default function SubjectSelect({
 
     return (
         <div>
-            <label htmlFor={id} className="text-sm font-extrabold text-slate-700">
+            <label htmlFor={id} className={DASHBOARD_TEXT_STYLES.fieldLabel}>
                 {content.fields.subject}
             </label>
 
@@ -26,7 +30,8 @@ export default function SubjectSelect({
                 value={value}
                 onChange={onChange}
                 disabled={isLoading || !hasSubjects}
-                className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-[0_4px_14px_rgba(15,23,42,0.06)] outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"            >
+                className={DASHBOARD_FIELD_STYLES.select}
+            >
                 <option value="">
                     {isLoading
                         ? content.states.loadingSubjects

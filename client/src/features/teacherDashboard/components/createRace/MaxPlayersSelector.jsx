@@ -1,4 +1,9 @@
 import { MAX_PLAYER_OPTIONS } from "../../config/createRaceFormConfig";
+import { cx } from "../../../../utils/classNameUtils";
+import {
+    DASHBOARD_CHOICE_STYLES,
+    DASHBOARD_TEXT_STYLES,
+} from "../../styles/dashboardUiStyles";
 
 export default function MaxPlayersSelector({
                                                value,
@@ -8,14 +13,14 @@ export default function MaxPlayersSelector({
                                            }) {
     return (
         <fieldset>
-            <legend className="flex w-full items-center justify-end gap-2 text-sm font-extrabold text-slate-800">
+            <legend className={`flex w-full items-center justify-end gap-2 ${DASHBOARD_TEXT_STYLES.fieldLabel}`}>
                 <span>{content.fields.maxPlayers}</span>
                 <span aria-hidden="true">👥</span>
             </legend>
 
             <div
                 dir="ltr"
-                className="mt-3 grid grid-cols-7 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1 shadow-sm"
+                className={`${DASHBOARD_CHOICE_STYLES.segmentedGroup} grid-cols-7`}
             >
                 {MAX_PLAYER_OPTIONS.map((option) => {
                     const isSelected = Number(value) === option;
@@ -23,11 +28,12 @@ export default function MaxPlayersSelector({
                     return (
                         <label
                             key={option}
-                            className={`flex min-h-11 cursor-pointer items-center justify-center rounded-xl text-sm font-black transition ${
+                            className={cx(
+                                DASHBOARD_CHOICE_STYLES.segmentedOptionBase,
                                 isSelected
-                                    ? "bg-sky-500 text-white shadow-[0_8px_18px_rgba(14,165,233,0.35)]"
-                                    : "text-slate-700 hover:bg-sky-50"
-                            }`}
+                                    ? DASHBOARD_CHOICE_STYLES.segmentedOptionSelected
+                                    : DASHBOARD_CHOICE_STYLES.segmentedOptionIdle,
+                            )}
                         >
                             <input
                                 type="radio"
@@ -43,7 +49,7 @@ export default function MaxPlayersSelector({
                 })}
             </div>
 
-            <p className="mt-2 min-h-5 text-xs font-bold text-rose-600">
+            <p className={DASHBOARD_TEXT_STYLES.helperError}>
                 {error || "\u00A0"}
             </p>
         </fieldset>

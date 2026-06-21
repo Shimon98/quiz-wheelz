@@ -3,6 +3,10 @@ import MaxPlayersSelector from "./MaxPlayersSelector";
 import RaceLengthSelector from "./RaceLengthSelector";
 import SubjectSelect from "./SubjectSelect";
 import { useCreateRaceForm } from "../../hooks/useCreateRaceForm";
+import {
+    DASHBOARD_FIELD_STYLES,
+    DASHBOARD_TEXT_STYLES,
+} from "../../styles/dashboardUiStyles";
 
 export default function CreateRaceForm({
                                            subjects,
@@ -23,7 +27,7 @@ export default function CreateRaceForm({
                 <div>
                     <label
                         htmlFor="create-race-title"
-                        className="text-sm font-extrabold text-slate-800"
+                        className={DASHBOARD_TEXT_STYLES.fieldLabel}
                     >
                         {content.fields.title}
                     </label>
@@ -34,9 +38,10 @@ export default function CreateRaceForm({
                         value={values.title}
                         onChange={handleChange}
                         placeholder={content.fields.titlePlaceholder}
-                        className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-[0_4px_14px_rgba(15,23,42,0.06)] outline-none transition placeholder:text-slate-400 focus:border-sky-400 focus:ring-4 focus:ring-sky-100"                    />
+                        className={DASHBOARD_FIELD_STYLES.input}
+                    />
 
-                    <p className="mt-2 min-h-5 text-xs font-bold text-rose-600">
+                    <p className={DASHBOARD_TEXT_STYLES.helperError}>
                         {errors.title || "\u00A0"}
                     </p>
                 </div>
