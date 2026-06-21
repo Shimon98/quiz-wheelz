@@ -2,6 +2,7 @@ import teacherDashboardHeaderHero from "../../../assets/backgrounds/TeacherDashb
 import generalBackground from "../../../assets/backgrounds/GeneralBackground.png";
 import sidebarLogo from "../../../assets/logos/gameLogo.png";
 import carNumbersTrail from "../../../assets/illustrations/car-numbers-trail.png";
+import redRaceCar from "../../../assets/illustrations/red-race-car.png";
 
 import flagIcon from "../../../assets/icons/flag.png";
 import pencilIcon from "../../../assets/icons/pencil.png";
@@ -15,6 +16,7 @@ const TEACHER_DASHBOARD_ASSETS = {
     generalBackground,
     carNumbersTrail,
     sidebarLogo,
+    redRaceCar,
 };
 
 const TEACHER_DASHBOARD_ICONS = {

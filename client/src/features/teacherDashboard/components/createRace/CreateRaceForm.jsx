@@ -90,10 +90,10 @@ export default function CreateRaceForm({
                     variant="cta"
                     size="lg"
                     disabled={isSubmitting}
-                    className="min-w-56"
+                    className="inline-flex min-w-60 items-center justify-center gap-2"
                 >
+                    <RaceFlagIcon className="h-5 w-5 shrink-0" />
                     <span>{isSubmitting ? content.buttons.submitting : content.buttons.submit}</span>
-                    <RaceFlagIcon className="ms-2 h-5 w-5" />
                 </DashboardButton>
             </div>
         </form>

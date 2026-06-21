@@ -7,6 +7,7 @@ import {
 import DashboardButton from "../ui/DashboardButton";
 import CreateRaceForm from "./CreateRaceForm";
 import RaceFlagIcon from "../ui/RaceFlagIcon";
+import { getTeacherDashboardAsset } from "../../constants/teacherDashboardAssets";
 
 export default function CreateRaceModal({
                                             isOpen,
@@ -18,6 +19,7 @@ export default function CreateRaceModal({
                                             error = null,
                                         }) {
     const content = useLocaleContent(CREATE_RACE_CONTENT);
+    const redRaceCar = getTeacherDashboardAsset("redRaceCar");
 
     if (!isOpen) {
         return null;
@@ -46,11 +48,17 @@ export default function CreateRaceModal({
                 </DashboardButton>
 
                 <div className={DASHBOARD_MODAL_STYLES.header}>
-                    <div className={DASHBOARD_MODAL_STYLES.heroIcon}>🏎️</div>
+                    {redRaceCar && (
+                        <img
+                            src={redRaceCar}
+                            alt=""
+                            className={DASHBOARD_MODAL_STYLES.heroImage}
+                        />
+                    )}
 
                     <h2
                         id="create-race-modal-title"
-                        className="flex items-center justify-center gap-3 text-3xl font-black leading-tight text-slate-900"
+                        className={DASHBOARD_TEXT_STYLES.modalTitle}
                     >
                         <RaceFlagIcon className="h-8 w-8 text-slate-900" />
                         <span>{content.title}</span>

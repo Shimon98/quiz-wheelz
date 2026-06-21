@@ -14,30 +14,30 @@ export const DASHBOARD_SURFACE_STYLES = {
 
 export const DASHBOARD_TEXT_STYLES = {
     modalTitle:
-        "text-3xl font-black leading-tight text-slate-900",
+        "flex items-center justify-center gap-3 text-4xl font-black leading-tight text-slate-900",
 
     modalDescription:
-        "mt-1 text-sm font-semibold text-slate-500",
+        "mt-1 text-base font-semibold text-slate-500",
 
     fieldLabel:
-        "text-sm font-bold text-slate-800",
+        "text-base font-black text-slate-800",
 
     sectionLabel:
-        "flex w-full items-center justify-start gap-2 text-right text-sm font-bold text-slate-800",
+        "flex w-full items-center justify-start gap-2 text-right text-base font-black text-slate-800",
 
     helperError:
-        "mt-2 min-h-5 text-xs font-bold text-rose-600",
+        "mt-2 min-h-5 text-sm font-bold text-rose-600",
 
     muted:
-        "mt-2 text-xs font-bold text-slate-500",
+        "mt-2 text-sm font-bold text-slate-500",
 };
 
 export const DASHBOARD_FIELD_STYLES = {
     input:
-        "mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-[0_4px_14px_rgba(15,23,42,0.06)] outline-none transition placeholder:text-slate-400 focus:border-sky-400 focus:ring-4 focus:ring-sky-100",
+        "mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-base font-semibold text-slate-800 shadow-[0_4px_14px_rgba(15,23,42,0.06)] outline-none transition placeholder:text-slate-400 focus:border-sky-400 focus:ring-4 focus:ring-sky-100",
 
     select:
-        "mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-[0_4px_14px_rgba(15,23,42,0.06)] outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400",
+        "mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-base font-semibold text-slate-800 shadow-[0_4px_14px_rgba(15,23,42,0.06)] outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400",
 };
 
 export const DASHBOARD_CHOICE_STYLES = {
@@ -45,7 +45,7 @@ export const DASHBOARD_CHOICE_STYLES = {
         "mt-3 grid overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-[0_6px_18px_rgba(15,23,42,0.08)]",
 
     segmentedOptionBase:
-        "flex min-h-11 cursor-pointer items-center justify-center rounded-xl text-sm font-black transition",
+        "flex min-h-11 cursor-pointer items-center justify-center rounded-xl text-base font-black transition",
 
     segmentedOptionSelected:
         "bg-gradient-to-b from-sky-400 to-sky-500 text-white shadow-[0_10px_24px_rgba(14,165,233,0.35)]",
@@ -91,13 +91,15 @@ export const DASHBOARD_MODAL_STYLES = {
         "fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]",
 
     panel:
-        "relative w-full max-w-[680px] overflow-visible rounded-[2rem] bg-white px-7 py-6 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)]",
-
+        "relative w-full max-w-[640px] overflow-visible rounded-[2rem] bg-white px-7 py-6 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)]",
     closeButton:
         "absolute right-5 top-5 flex h-11 w-11 items-center justify-center rounded-2xl p-0 text-2xl leading-none",
 
     header:
-        "mx-auto max-w-xl text-center",
+        "relative mx-auto max-w-xl pt-4 text-center",
+
+    heroImage:
+        "absolute left-0 top-0 hidden h-[85px] w-auto object-contain drop-shadow-[0_10px_18px_rgba(15,23,42,0.18)] sm:block",
 
     heroIcon:
         "mb-1 text-5xl leading-none",
@@ -110,6 +112,6 @@ export const RACE_LENGTH_CARD_STYLES = {
     grid: "mt-3 grid gap-3 md:grid-cols-3",
     content: "grid gap-1",
     icon: "mx-auto flex h-8 w-8 items-center justify-center rounded-xl",
-    title: "text-sm font-black",
-    points: "text-xs font-extrabold text-slate-500",
+    title: "text-base font-black",
+    points: "text-sm font-extrabold text-slate-500",
 };

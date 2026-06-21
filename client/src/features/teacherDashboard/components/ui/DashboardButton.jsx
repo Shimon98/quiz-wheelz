@@ -13,7 +13,7 @@ const VARIANT_CLASSES = {
 const SIZE_CLASSES = {
     sm: "min-h-9 px-4 py-2 text-sm",
     md: "min-h-11 px-5 py-3 text-sm",
-    lg: "min-h-12 px-8 py-3 text-base",
+    lg: "min-h-12 px-8 py-3 text-lg",
 };
 
 export default function DashboardButton({
