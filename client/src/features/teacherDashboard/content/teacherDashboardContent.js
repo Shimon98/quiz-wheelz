@@ -254,3 +254,166 @@ export const TEACHER_RACE_ROOM_CONTENT = {
         joinedLabel: "Joined",
     },
 };
+
+
+
+
+
+
+export const TEACHER_RACE_WAITING_ROOM_CONTENT = {
+    he: {
+        header: {
+            backToRaces: "חזרה למרוצים",
+            titleFallback: "חדר המתנה למרוץ",
+            statusFallback: "סטטוס לא ידוע",
+        },
+
+        joinPanel: {
+            roomCodeTitle: "קוד חדר",
+            roomCodeDescription: "שתפו את הקוד עם התלמידים כדי שיצטרפו למרוץ.",
+            roomCodeFallback: "------",
+            qrText: "סרקו להצטרפות",
+            qrAriaLabel: "אזור קוד QR להצטרפות",
+        },
+
+        actions: {
+            copyCode: "העתק קוד",
+            shareLink: "שתף קישור",
+            editRace: "ערוך מרוץ",
+            startRace: "התחל מרוץ",
+            startRaceDisabledHint: "התחלת מרוץ תחובר בהמשך.",
+        },
+
+        infoCards: {
+            subject: {
+                label: "נושא",
+                emptyValue: "לא נבחר",
+            },
+            maxPlayers: {
+                label: "שחקנים מקסימליים",
+                emptyValue: "0",
+            },
+            joinedPlayers: {
+                label: "הצטרפו",
+                emptyValue: "0",
+            },
+        },
+
+        participants: {
+            title: "תלמידים בחדר",
+            emptySlot: "ממתין לנהג...",
+            playerFallback: "תלמיד",
+            joinedMark: "✓",
+        },
+
+        settings: {
+            title: "הגדרות מרוץ",
+            raceType: {
+                label: "סוג מרוץ",
+                value: "קלאסי",
+            },
+            winCondition: {
+                label: "תנאי ניצחון",
+                value: "ראשון שמגיע",
+            },
+            questionTime: {
+                label: "זמן לשאלה",
+                value: "מותאם",
+            },
+            trackLength: {
+                label: "אורך מסלול",
+                valueFallback: "רגיל",
+                valueUnit: "מטר",
+            },
+            questionOrder: {
+                label: "סדר שאלות",
+                value: "אקראי",
+            },
+        },
+
+        quickActions: {
+            title: "פעולות מהירות",
+            remindStudents: "שלח תזכורת לתלמידים",
+            cancelRace: "בטל מרוץ",
+            futureHint: "פעולה זו תחובר בהמשך.",
+        },
+    },
+
+    en: {
+        header: {
+            backToRaces: "Back to races",
+            titleFallback: "Race waiting room",
+            statusFallback: "Unknown status",
+        },
+
+        joinPanel: {
+            roomCodeTitle: "Room code",
+            roomCodeDescription: "Share the code with students so they can join the race.",
+            roomCodeFallback: "------",
+            qrText: "Scan to join",
+            qrAriaLabel: "QR code area for joining",
+        },
+
+        actions: {
+            copyCode: "Copy code",
+            shareLink: "Share link",
+            editRace: "Edit race",
+            startRace: "Start race",
+            startRaceDisabledHint: "Starting a race will be connected later.",
+        },
+
+        infoCards: {
+            subject: {
+                label: "Subject",
+                emptyValue: "Not selected",
+            },
+            maxPlayers: {
+                label: "Max players",
+                emptyValue: "0",
+            },
+            joinedPlayers: {
+                label: "Joined",
+                emptyValue: "0",
+            },
+        },
+
+        participants: {
+            title: "Students in room",
+            emptySlot: "Waiting for driver...",
+            playerFallback: "Student",
+            joinedMark: "✓",
+        },
+
+        settings: {
+            title: "Race settings",
+            raceType: {
+                label: "Race type",
+                value: "Classic",
+            },
+            winCondition: {
+                label: "Win condition",
+                value: "First to finish",
+            },
+            questionTime: {
+                label: "Question time",
+                value: "Adaptive",
+            },
+            trackLength: {
+                label: "Track length",
+                valueFallback: "Regular",
+                valueUnit: "meters",
+            },
+            questionOrder: {
+                label: "Question order",
+                value: "Random",
+            },
+        },
+
+        quickActions: {
+            title: "Quick actions",
+            remindStudents: "Send reminder to students",
+            cancelRace: "Cancel race",
+            futureHint: "This action will be connected later.",
+        },
+    },
+};
