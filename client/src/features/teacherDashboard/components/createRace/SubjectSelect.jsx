@@ -1,3 +1,6 @@
+import { useLanguageStore } from "../../../../stores/languageStore";
+import { getSubjectDisplayName } from "../../utils/subjectDisplayUtils";
+
 export default function SubjectSelect({
     id,
     name,
@@ -9,6 +12,7 @@ export default function SubjectSelect({
     onChange,
 }) {
     const hasSubjects = subjects.length > 0;
+    const language = useLanguageStore((state) => state.language);
 
     return (
         <div>
@@ -32,7 +36,7 @@ export default function SubjectSelect({
 
                 {subjects.map((subject) => {
                     const subjectId = subject.subjectId ?? subject.id;
-                    const subjectLabel = subject.subjectName ?? subject.name;
+                    const subjectLabel = getSubjectDisplayName(subject, language);
 
                     return (
                         <option key={subjectId} value={subjectId}>

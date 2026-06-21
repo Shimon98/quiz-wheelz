@@ -149,8 +149,8 @@ export const CREATE_RACE_CONTENT = {
             subjectPlaceholder: "בחרו נושא",
             maxPlayers: "מספר שחקנים",
             raceLength: "אורך המרוץ",
-            initialMode: "מצב פתיחה",
-            initialModeValue: "ממתין לתלמידים",
+            // initialMode: "מצב פתיחה",
+            // initialModeValue: "ממתין לתלמידים",
         },
         raceLengths: {
             short: "קצר",
@@ -185,8 +185,8 @@ export const CREATE_RACE_CONTENT = {
             subjectPlaceholder: "Choose a subject",
             maxPlayers: "Players",
             raceLength: "Race length",
-            initialMode: "Initial mode",
-            initialModeValue: "Waiting for students",
+            // initialMode: "Initial mode",
+            // initialModeValue: "Waiting for students",
         },
         raceLengths: {
             short: "Short",

@@ -23,41 +23,42 @@ export default function CreateRaceModal({
     const errorMessage = typeof error === "string" ? error : null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]">
             <section
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="create-race-modal-title"
-                className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 text-start shadow-2xl"
-                dir="auto"
+                className="relative w-full max-w-[720px] overflow-visible rounded-[2rem] bg-white px-7 py-6 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)]"
+                dir="rtl"
             >
-                <div className="flex items-start justify-between gap-4">
-                    <div>
-                        <h2
-                            id="create-race-modal-title"
-                            className="text-2xl font-extrabold text-slate-900"
-                        >
-                            {content.title}
-                        </h2>
-                        <p className="mt-1 text-sm font-bold text-slate-500">
-                            {content.description}
-                        </p>
-                    </div>
+                <DashboardButton
+                    onClick={onClose}
+                    aria-label={content.closeLabel}
+                    disabled={isSubmitting}
+                    variant="secondary"
+                    size="sm"
+                    className="absolute right-5 top-5 flex h-11 w-11 items-center justify-center rounded-2xl p-0 text-2xl leading-none"
+                >
+                    ×
+                </DashboardButton>
 
-                    <DashboardButton
-                        onClick={onClose}
-                        aria-label={content.closeLabel}
-                        disabled={isSubmitting}
-                        variant="ghost"
-                        size="sm"
-                        className="flex h-10 w-10 shrink-0 items-center justify-center p-0 text-xl"
+                <div className="mx-auto max-w-xl text-center">
+                    <div className="mb-2 text-4xl">🏎️</div>
+
+                    <h2
+                        id="create-race-modal-title"
+                        className="text-3xl font-black text-slate-900"
                     >
-                        ×
-                    </DashboardButton>
+                        {content.title} 🏁
+                    </h2>
+
+                    <p className="mt-2 text-sm font-bold text-slate-500">
+                        {content.description}
+                    </p>
                 </div>
 
                 {errorMessage && (
-                    <div className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+                    <div className="mt-5 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
                         {errorMessage}
                     </div>
                 )}
