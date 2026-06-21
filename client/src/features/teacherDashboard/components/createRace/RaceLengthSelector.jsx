@@ -1,12 +1,12 @@
-import { Timer, Trophy } from "lucide-react";
-import { RACE_LENGTH_OPTIONS } from "../../config/createRaceFormConfig";
+import {Timer, Trophy} from "lucide-react";
+import {RACE_LENGTH_OPTIONS} from "../../config/createRaceFormConfig";
 import {
     DASHBOARD_CHOICE_STYLES,
     DASHBOARD_TEXT_STYLES,
     RACE_LENGTH_CARD_STYLES,
     RACE_LENGTH_OPTION_STYLES,
 } from "../../styles/dashboardUiStyles";
-import { cx } from "../../../../utils/classNameUtils";
+import {cx} from "../../../../utils/classNameUtils";
 import RaceFlagIcon from "../ui/RaceFlagIcon";
 
 const RACE_LENGTH_ICONS = {
@@ -28,7 +28,7 @@ export default function RaceLengthSelector({
     return (
         <fieldset dir="rtl">
             <legend className={DASHBOARD_TEXT_STYLES.sectionLabel}>
-                <RaceFlagIcon className="h-4 w-4 text-rose-500" />
+                <RaceFlagIcon className={RACE_LENGTH_CARD_STYLES.sectionIcon}/>
                 <span>{content.fields.raceLength}</span>
             </legend>
 
@@ -78,7 +78,7 @@ export default function RaceLengthSelector({
                                 >
                                     <IconComponent
                                         className={cx(
-                                            "h-5 w-5",
+                                            RACE_LENGTH_CARD_STYLES.optionIcon,
                                             optionStyle.iconColor,
                                         )}
                                         strokeWidth={2.5}

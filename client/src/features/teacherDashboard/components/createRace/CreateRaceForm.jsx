@@ -2,7 +2,7 @@ import DashboardButton from "../ui/DashboardButton";
 import MaxPlayersSelector from "./MaxPlayersSelector";
 import RaceLengthSelector from "./RaceLengthSelector";
 import SubjectSelect from "./SubjectSelect";
-import { useCreateRaceForm } from "../../hooks/useCreateRaceForm";
+import {useCreateRaceForm} from "../../hooks/useCreateRaceForm";
 import {
     CREATE_RACE_FORM_STYLES,
     DASHBOARD_FIELD_STYLES,
@@ -18,7 +18,7 @@ export default function CreateRaceForm({
                                            onCancel,
                                            onSubmit,
                                        }) {
-    const { values, errors, handleChange, handleSubmit } = useCreateRaceForm({
+    const {values, errors, handleChange, handleSubmit} = useCreateRaceForm({
         onSubmit,
         validationContent: content.validation,
     });
@@ -80,7 +80,7 @@ export default function CreateRaceForm({
                     size="lg"
                     onClick={onCancel}
                     disabled={isSubmitting}
-                    className="min-w-36"
+                    className={CREATE_RACE_FORM_STYLES.cancelButton}
                 >
                     {content.buttons.cancel}
                 </DashboardButton>
@@ -90,9 +90,9 @@ export default function CreateRaceForm({
                     variant="cta"
                     size="lg"
                     disabled={isSubmitting}
-                    className="inline-flex min-w-60 items-center justify-center gap-2"
+                    className={CREATE_RACE_FORM_STYLES.submitButton}
                 >
-                    <RaceFlagIcon className="h-5 w-5 shrink-0" />
+                    <RaceFlagIcon className={CREATE_RACE_FORM_STYLES.submitIcon}/>
                     <span>{isSubmitting ? content.buttons.submitting : content.buttons.submit}</span>
                 </DashboardButton>
             </div>

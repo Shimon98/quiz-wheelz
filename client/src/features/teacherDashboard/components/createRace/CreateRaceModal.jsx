@@ -1,5 +1,5 @@
-import { useLocaleContent } from "../../../../constants/localeConstants";
-import { CREATE_RACE_CONTENT } from "../../content/teacherDashboardContent";
+import {useLocaleContent} from "../../../../constants/localeConstants";
+import {CREATE_RACE_CONTENT} from "../../content/teacherDashboardContent";
 import {
     DASHBOARD_MODAL_STYLES,
     DASHBOARD_TEXT_STYLES,
@@ -7,7 +7,7 @@ import {
 import DashboardButton from "../ui/DashboardButton";
 import CreateRaceForm from "./CreateRaceForm";
 import RaceFlagIcon from "../ui/RaceFlagIcon";
-import { getTeacherDashboardAsset } from "../../constants/teacherDashboardAssets";
+import {getTeacherDashboardAsset} from "../../constants/teacherDashboardAssets";
 
 export default function CreateRaceModal({
                                             isOpen,
@@ -62,7 +62,7 @@ export default function CreateRaceModal({
                                 id="create-race-modal-title"
                                 className={DASHBOARD_TEXT_STYLES.modalTitle}
                             >
-                                <RaceFlagIcon className="h-8 w-8 text-slate-900" />
+                                <RaceFlagIcon className={DASHBOARD_MODAL_STYLES.titleIcon}/>
                                 <span>{content.title}</span>
                             </h2>
 

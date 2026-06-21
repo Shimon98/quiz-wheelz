@@ -1,20 +1,20 @@
-import { useLanguageStore } from "../../../../stores/languageStore";
-import { getSubjectDisplayName } from "../../utils/subjectDisplayUtils";
+import {useLanguageStore} from "../../../../stores/languageStore";
+import {getSubjectDisplayName} from "../../utils/subjectDisplayUtils";
 import {
     DASHBOARD_FIELD_STYLES,
     DASHBOARD_TEXT_STYLES,
 } from "../../styles/dashboardUiStyles";
 
 export default function SubjectSelect({
-    id,
-    name,
-    value,
-    subjects,
-    isLoading,
-    error,
-    content,
-    onChange,
-}) {
+                                          id,
+                                          name,
+                                          value,
+                                          subjects,
+                                          isLoading,
+                                          error,
+                                          content,
+                                          onChange,
+                                      }) {
     const hasSubjects = subjects.length > 0;
     const language = useLanguageStore((state) => state.language);
 

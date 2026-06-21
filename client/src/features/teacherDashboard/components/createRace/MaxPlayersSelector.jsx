@@ -1,6 +1,6 @@
-import { UsersRound } from "lucide-react";
-import { MAX_PLAYER_OPTIONS } from "../../config/createRaceFormConfig";
-import { cx } from "../../../../utils/classNameUtils";
+import {UsersRound} from "lucide-react";
+import {MAX_PLAYER_OPTIONS} from "../../config/createRaceFormConfig";
+import {cx} from "../../../../utils/classNameUtils";
 import {
     DASHBOARD_CHOICE_STYLES,
     DASHBOARD_TEXT_STYLES,
@@ -15,7 +15,10 @@ export default function MaxPlayersSelector({
     return (
         <fieldset dir="rtl">
             <legend className={DASHBOARD_TEXT_STYLES.sectionLabel}>
-                <UsersRound className="h-4 w-4 text-violet-700" aria-hidden="true" />
+                <UsersRound
+                    className={DASHBOARD_CHOICE_STYLES.maxPlayersIcon}
+                    aria-hidden="true"
+                />
                 <span>{content.fields.maxPlayers}</span>
             </legend>
 
@@ -23,7 +26,7 @@ export default function MaxPlayersSelector({
                 dir="ltr"
                 className={cx(
                     DASHBOARD_CHOICE_STYLES.segmentedGroup,
-                    "grid-cols-7",
+                    DASHBOARD_CHOICE_STYLES.maxPlayersGrid,
                 )}
             >
                 {MAX_PLAYER_OPTIONS.map((option) => {

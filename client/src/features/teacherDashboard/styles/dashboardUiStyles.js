@@ -2,6 +2,9 @@ export const CREATE_RACE_FORM_STYLES = {
     form: "mt-5 grid gap-4",
     fieldGrid: "grid gap-4 md:grid-cols-2",
     actions: "mt-1 flex items-center justify-between gap-3",
+    cancelButton: "min-w-36",
+    submitButton: "inline-flex min-w-60 items-center justify-center gap-2",
+    submitIcon: "h-5 w-5 shrink-0",
 };
 
 export const DASHBOARD_SURFACE_STYLES = {
@@ -61,6 +64,12 @@ export const DASHBOARD_CHOICE_STYLES = {
 
     selectedCheck:
         "absolute -top-3 right-1/2 flex h-7 w-7 translate-x-1/2 items-center justify-center rounded-full bg-sky-500 text-sm font-black text-white shadow-md",
+
+    maxPlayersGrid:
+        "grid-cols-7",
+
+    maxPlayersIcon:
+        "h-4 w-4 text-violet-700",
 };
 
 export const RACE_LENGTH_OPTION_STYLES = {
@@ -108,6 +117,9 @@ export const DASHBOARD_MODAL_STYLES = {
 
     error:
         "mt-5 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700",
+
+    titleIcon:
+        "h-8 w-8 text-slate-900",
 };
 
 export const RACE_LENGTH_CARD_STYLES = {
@@ -116,4 +128,6 @@ export const RACE_LENGTH_CARD_STYLES = {
     icon: "mx-auto flex h-8 w-8 items-center justify-center rounded-xl",
     title: "text-base font-black",
     points: "text-sm font-extrabold text-slate-500",
+    sectionIcon: "h-4 w-4 text-rose-500",
+    optionIcon: "h-5 w-5",
 };
