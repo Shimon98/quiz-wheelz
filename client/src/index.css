@@ -1,19 +1,27 @@
-@import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Varela+Round&display=swap");
+@import "tailwindcss";
 
-* {
+@theme {
+  --font-sans: "Fredoka", "Varela Round", system-ui, Arial, sans-serif;
+}
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 html {
   direction: rtl;
+  font-family: "Fredoka", "Varela Round", system-ui, Arial, sans-serif;
 }
 
-body {
+body,
+#root {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  font-family: "Fredoka", "Varela Round", system-ui, Arial, sans-serif;
+  font-family: inherit;
   background: #e0f2fe;
 }
 
@@ -21,8 +29,9 @@ button,
 input,
 select,
 textarea,
+optgroup,
 option {
-  font: inherit;
+  font-family: inherit;
 }
 
 button:disabled {

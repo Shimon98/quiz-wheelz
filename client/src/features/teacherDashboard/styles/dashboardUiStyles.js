@@ -1,4 +1,3 @@
-
 export const DASHBOARD_SURFACE_STYLES = {
     card:
         "rounded-3xl border border-white/80 bg-white shadow-[0_10px_28px_rgba(27,42,65,0.08)]",
@@ -16,6 +15,9 @@ export const DASHBOARD_TEXT_STYLES = {
 
     fieldLabel:
         "text-sm font-bold text-slate-800",
+
+    sectionLabel:
+        "flex w-full items-center justify-start gap-2 text-right text-sm font-bold text-slate-800",
 
     helperError:
         "mt-2 min-h-5 text-xs font-bold text-rose-600",
@@ -57,26 +59,27 @@ export const DASHBOARD_CHOICE_STYLES = {
 
 export const RACE_LENGTH_OPTION_STYLES = {
     short: {
-        icon: "⏱️",
         selected: "border-emerald-400 bg-emerald-50 text-emerald-700",
         iconBg: "bg-emerald-100",
+        iconColor: "text-emerald-600",
         text: "text-emerald-700",
     },
 
     regular: {
-        icon: "🏆",
         selected: "border-sky-500 bg-sky-50 text-sky-700",
         iconBg: "bg-sky-100",
+        iconColor: "text-sky-600",
         text: "text-sky-700",
     },
 
     long: {
-        icon: "🏁",
         selected: "border-violet-400 bg-violet-50 text-violet-700",
         iconBg: "bg-violet-100",
+        iconColor: "text-violet-600",
         text: "text-violet-700",
     },
 };
+
 export const DASHBOARD_MODAL_STYLES = {
     overlay:
         "fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]",

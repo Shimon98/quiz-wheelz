@@ -1,3 +1,4 @@
+import { Timer, Trophy } from "lucide-react";
 import { RACE_LENGTH_OPTIONS } from "../../config/createRaceFormConfig";
 import {
     DASHBOARD_CHOICE_STYLES,
@@ -6,6 +7,13 @@ import {
     RACE_LENGTH_OPTION_STYLES,
 } from "../../styles/dashboardUiStyles";
 import { cx } from "../../../../utils/classNameUtils";
+import RaceFlagIcon from "../ui/RaceFlagIcon";
+
+const RACE_LENGTH_ICONS = {
+    short: Timer,
+    regular: Trophy,
+    long: RaceFlagIcon,
+};
 
 function formatPoints(totalDistance, pointsTemplate) {
     return pointsTemplate.replace("{value}", totalDistance);
@@ -18,23 +26,22 @@ export default function RaceLengthSelector({
                                                onChange,
                                            }) {
     return (
-        <fieldset>
-            <legend
-                className={cx(
-                    "flex w-full items-center justify-end gap-2",
-                    DASHBOARD_TEXT_STYLES.fieldLabel,
-                )}
-            >
+        <fieldset dir="rtl">
+            <legend className={DASHBOARD_TEXT_STYLES.sectionLabel}>
+                <RaceFlagIcon className="h-4 w-4 text-rose-500" />
                 <span>{content.fields.raceLength}</span>
-                <span aria-hidden="true">🚩</span>
             </legend>
 
             <div className={RACE_LENGTH_CARD_STYLES.grid}>
                 {RACE_LENGTH_OPTIONS.map((option) => {
                     const isSelected = Number(value) === option.totalDistance;
+
                     const optionStyle =
                         RACE_LENGTH_OPTION_STYLES[option.key] ??
                         RACE_LENGTH_OPTION_STYLES.regular;
+
+                    const IconComponent =
+                        RACE_LENGTH_ICONS[option.key] ?? Trophy;
 
                     return (
                         <label
@@ -63,16 +70,27 @@ export default function RaceLengthSelector({
 
                             <span className={RACE_LENGTH_CARD_STYLES.content}>
                                 <span
-                                    className={cx(RACE_LENGTH_CARD_STYLES.icon, optionStyle.iconBg)}
+                                    className={cx(
+                                        RACE_LENGTH_CARD_STYLES.icon,
+                                        optionStyle.iconBg,
+                                    )}
                                     aria-hidden="true"
                                 >
-                                    {optionStyle.icon}
+                                    <IconComponent
+                                        className={cx(
+                                            "h-5 w-5",
+                                            optionStyle.iconColor,
+                                        )}
+                                        strokeWidth={2.5}
+                                    />
                                 </span>
 
                                 <span
                                     className={cx(
                                         RACE_LENGTH_CARD_STYLES.title,
-                                        isSelected ? optionStyle.text : "text-slate-800",
+                                        isSelected
+                                            ? optionStyle.text
+                                            : "text-slate-800",
                                     )}
                                 >
                                     {content.raceLengths[option.contentKey]}

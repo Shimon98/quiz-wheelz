@@ -1,3 +1,4 @@
+import { UsersRound } from "lucide-react";
 import { MAX_PLAYER_OPTIONS } from "../../config/createRaceFormConfig";
 import { cx } from "../../../../utils/classNameUtils";
 import {
@@ -12,18 +13,18 @@ export default function MaxPlayersSelector({
                                                onChange,
                                            }) {
     return (
-        <fieldset>
-            <legend className={cx(
-                "flex w-full items-center justify-end gap-2",
-                DASHBOARD_TEXT_STYLES.fieldLabel,
-            )}>
+        <fieldset dir="rtl">
+            <legend className={DASHBOARD_TEXT_STYLES.sectionLabel}>
+                <UsersRound className="h-4 w-4 text-violet-700" aria-hidden="true" />
                 <span>{content.fields.maxPlayers}</span>
-                <span aria-hidden="true">👥</span>
             </legend>
 
             <div
                 dir="ltr"
-                className={`${DASHBOARD_CHOICE_STYLES.segmentedGroup} grid-cols-7`}
+                className={cx(
+                    DASHBOARD_CHOICE_STYLES.segmentedGroup,
+                    "grid-cols-7",
+                )}
             >
                 {MAX_PLAYER_OPTIONS.map((option) => {
                     const isSelected = Number(value) === option;
