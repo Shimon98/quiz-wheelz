@@ -48,25 +48,29 @@ export default function CreateRaceModal({
                 </DashboardButton>
 
                 <div className={DASHBOARD_MODAL_STYLES.header}>
-                    {redRaceCar && (
-                        <img
-                            src={redRaceCar}
-                            alt=""
-                            className={DASHBOARD_MODAL_STYLES.heroImage}
-                        />
-                    )}
+                    <div className={DASHBOARD_MODAL_STYLES.headerContent} dir="ltr">
+                        {redRaceCar && (
+                            <img
+                                src={redRaceCar}
+                                alt=""
+                                className={DASHBOARD_MODAL_STYLES.heroImage}
+                            />
+                        )}
 
-                    <h2
-                        id="create-race-modal-title"
-                        className={DASHBOARD_TEXT_STYLES.modalTitle}
-                    >
-                        <RaceFlagIcon className="h-8 w-8 text-slate-900" />
-                        <span>{content.title}</span>
-                    </h2>
+                        <div className={DASHBOARD_MODAL_STYLES.titleBlock} dir="rtl">
+                            <h2
+                                id="create-race-modal-title"
+                                className={DASHBOARD_TEXT_STYLES.modalTitle}
+                            >
+                                <RaceFlagIcon className="h-8 w-8 text-slate-900" />
+                                <span>{content.title}</span>
+                            </h2>
 
-                    <p className={DASHBOARD_TEXT_STYLES.modalDescription}>
-                        {content.description}
-                    </p>
+                            <p className={DASHBOARD_TEXT_STYLES.modalDescription}>
+                                {content.description}
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 {errorMessage && (

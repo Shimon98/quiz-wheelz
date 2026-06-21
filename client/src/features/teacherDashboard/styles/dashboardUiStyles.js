@@ -94,15 +94,17 @@ export const DASHBOARD_MODAL_STYLES = {
         "relative w-full max-w-[640px] overflow-visible rounded-[2rem] bg-white px-7 py-6 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)]",
     closeButton:
         "absolute right-5 top-5 flex h-11 w-11 items-center justify-center rounded-2xl p-0 text-2xl leading-none",
-
     header:
-        "relative mx-auto max-w-xl pt-4 text-center",
+        "mx-auto max-w-xl",
+
+    headerContent:
+        "flex items-center justify-center gap-0",
+
+    titleBlock:
+        "text-center",
 
     heroImage:
-        "absolute left-0 top-0 hidden h-[85px] w-auto object-contain drop-shadow-[0_10px_18px_rgba(15,23,42,0.18)] sm:block",
-
-    heroIcon:
-        "mb-1 text-5xl leading-none",
+        "hidden h-[112px] max-w-[160px] shrink-0 object-contain drop-shadow-[0_10px_18px_rgba(15,23,42,0.18)] sm:block",
 
     error:
         "mt-5 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700",
