@@ -43,16 +43,16 @@ export default function CreateRaceModal({
                 </DashboardButton>
 
                 <div className="mx-auto max-w-xl text-center">
-                    <div className="mb-2 text-4xl">🏎️</div>
+                    <div className="mb-1 text-5xl leading-none">🏎️</div>
 
                     <h2
                         id="create-race-modal-title"
-                        className="text-3xl font-black text-slate-900"
+                        className="text-3xl font-black leading-tight text-slate-900"
                     >
                         {content.title} 🏁
                     </h2>
 
-                    <p className="mt-2 text-sm font-bold text-slate-500">
+                    <p className="mt-1 text-sm font-semibold text-slate-500">
                         {content.description}
                     </p>
                 </div>

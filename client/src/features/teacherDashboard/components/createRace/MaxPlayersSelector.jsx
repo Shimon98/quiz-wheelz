@@ -23,7 +23,7 @@ export default function MaxPlayersSelector({
                     return (
                         <label
                             key={option}
-                            className={`flex min-h-12 cursor-pointer items-center justify-center rounded-xl text-sm font-black transition ${
+                            className={`flex min-h-11 cursor-pointer items-center justify-center rounded-xl text-sm font-black transition ${
                                 isSelected
                                     ? "bg-sky-500 text-white shadow-[0_8px_18px_rgba(14,165,233,0.35)]"
                                     : "text-slate-700 hover:bg-sky-50"

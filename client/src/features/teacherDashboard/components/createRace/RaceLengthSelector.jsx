@@ -43,7 +43,7 @@ export default function RaceLengthSelector({
                     return (
                         <label
                             key={option.key}
-                            className={`relative flex min-h-24 cursor-pointer items-center justify-center rounded-2xl border bg-white p-4 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                            className={`relative flex min-h-20 cursor-pointer items-center justify-center rounded-2xl border bg-white p-3 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
                                 isSelected
                                     ? `${style.selected} shadow-[0_10px_24px_rgba(14,165,233,0.18)]`
                                     : "border-slate-200 text-slate-700 hover:bg-slate-50"
@@ -66,7 +66,7 @@ export default function RaceLengthSelector({
 
                             <span className="grid gap-1">
                                 <span
-                                    className={`mx-auto flex h-9 w-9 items-center justify-center rounded-xl ${style.iconBg}`}
+                                    className={`mx-auto flex h-8 w-8 items-center justify-center rounded-xl ${style.iconBg}`}
                                     aria-hidden="true"
                                 >
                                     {style.icon}

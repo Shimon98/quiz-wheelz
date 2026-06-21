@@ -34,8 +34,7 @@ export default function CreateRaceForm({
                         value={values.title}
                         onChange={handleChange}
                         placeholder={content.fields.titlePlaceholder}
-                        className="mt-2 min-h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
-                    />
+                        className="mt-2 min-h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-[0_4px_14px_rgba(15,23,42,0.06)] outline-none transition placeholder:text-slate-400 focus:border-sky-400 focus:ring-4 focus:ring-sky-100"                    />
 
                     <p className="mt-2 min-h-5 text-xs font-bold text-rose-600">
                         {errors.title || "\u00A0"}
@@ -68,7 +67,7 @@ export default function CreateRaceForm({
                 onChange={handleChange}
             />
 
-            <div className="mt-2 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+            <div className="mt-1 flex items-center justify-between gap-3">
                 <DashboardButton
                     type="button"
                     variant="secondary"
@@ -82,7 +81,7 @@ export default function CreateRaceForm({
                 <DashboardButton
                     type="submit"
                     disabled={isSubmitting}
-                    className="min-w-64 bg-gradient-to-l from-blue-700 to-sky-500 text-base shadow-[0_10px_24px_rgba(2,132,199,0.28)] hover:from-blue-800 hover:to-sky-600"
+                    className="min-w-56 bg-gradient-to-l from-blue-700 to-sky-500 text-base shadow-[0_10px_24px_rgba(2,132,199,0.28)] hover:from-blue-800 hover:to-sky-600"
                 >
                     {isSubmitting ? content.buttons.submitting : content.buttons.submit}
                     <span className="ms-2">🏁</span>
