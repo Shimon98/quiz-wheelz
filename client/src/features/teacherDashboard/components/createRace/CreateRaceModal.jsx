@@ -1,19 +1,23 @@
-import { useLocaleContent } from "../../../../constants/localeConstants";
+import {useLocaleContent} from "../../../../constants/localeConstants";
 import {
     CREATE_RACE_CONTENT,
 } from "../../content/teacherDashboardContent";
 import DashboardButton from "../ui/DashboardButton";
 import CreateRaceForm from "./CreateRaceForm";
+import {
+    DASHBOARD_MODAL_STYLES,
+    DASHBOARD_TEXT_STYLES,
+} from "../../styles/dashboardUiStyles";
 
 export default function CreateRaceModal({
-    isOpen,
-    onClose,
-    onSubmit,
-    subjects = [],
-    isSubmitting = false,
-    isLoadingSubjects = false,
-    error = null,
-}) {
+                                            isOpen,
+                                            onClose,
+                                            onSubmit,
+                                            subjects = [],
+                                            isSubmitting = false,
+                                            isLoadingSubjects = false,
+                                            error = null,
+                                        }) {
     const content = useLocaleContent(CREATE_RACE_CONTENT);
 
     if (!isOpen) {
@@ -23,14 +27,13 @@ export default function CreateRaceModal({
     const errorMessage = typeof error === "string" ? error : null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]">
+        <div className={DASHBOARD_MODAL_STYLES.overlay}>
             <section
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="create-race-modal-title"
-                className="relative w-full max-w-[720px] overflow-visible rounded-[2rem] bg-white px-7 py-6 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)]"
+                className={DASHBOARD_MODAL_STYLES.panel}>
                 dir="rtl"
-            >
                 <DashboardButton
                     onClick={onClose}
                     aria-label={content.closeLabel}

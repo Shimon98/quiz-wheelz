@@ -51,12 +51,12 @@ export default function SubjectSelect({
             </select>
 
             {!isLoading && !hasSubjects && (
-                <p className="mt-2 text-xs font-bold text-slate-500">
+                <p className={DASHBOARD_TEXT_STYLES.muted}>
                     {content.states.noSubjects}
                 </p>
             )}
 
-            <p className="mt-2 min-h-5 text-xs font-bold text-rose-600">
+            <p className={DASHBOARD_TEXT_STYLES.helperError}>
                 {error || "\u00A0"}
             </p>
         </div>

@@ -1,6 +1,6 @@
 import httpClient from "./httpClient";
 import { API_ENDPOINTS } from "../constants/apiEndpointConstants";
-import { unwrapApiResponse } from "../features/teacherDashboard/utils/apiResponseUtils";
+import { unwrapApiResponse } from "./apiResponseUtils.js";
 
 export async function loginUser({ username, password }) {
   const response = await httpClient.post(API_ENDPOINTS.AUTH.LOGIN, {

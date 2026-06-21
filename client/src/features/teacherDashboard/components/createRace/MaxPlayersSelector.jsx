@@ -13,7 +13,10 @@ export default function MaxPlayersSelector({
                                            }) {
     return (
         <fieldset>
-            <legend className={`flex w-full items-center justify-end gap-2 ${DASHBOARD_TEXT_STYLES.fieldLabel}`}>
+            <legend className={cx(
+                "flex w-full items-center justify-end gap-2",
+                DASHBOARD_TEXT_STYLES.fieldLabel,
+            )}>
                 <span>{content.fields.maxPlayers}</span>
                 <span aria-hidden="true">👥</span>
             </legend>

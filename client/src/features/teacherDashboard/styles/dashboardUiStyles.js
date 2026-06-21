@@ -4,7 +4,7 @@ export const DASHBOARD_SURFACE_STYLES = {
         "fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]",
 
     modalPanel:
-        "relative w-full max-w-[720px] rounded-[2rem] bg-white px-7 py-6 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)]",
+        "relative w-full max-w-[640px] rounded-[2rem] bg-white px-7 py-6 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)]",
 
     card:
         "rounded-3xl border border-white/80 bg-white shadow-[0_10px_28px_rgba(27,42,65,0.08)]",
@@ -27,7 +27,7 @@ export const DASHBOARD_TEXT_STYLES = {
         "mt-2 min-h-5 text-xs font-bold text-rose-600",
 
     muted:
-        "text-sm font-semibold text-slate-500",
+        "mt-2 text-xs font-bold text-slate-500",
 };
 
 export const DASHBOARD_FIELD_STYLES = {
@@ -82,4 +82,31 @@ export const RACE_LENGTH_OPTION_STYLES = {
         iconBg: "bg-violet-100",
         text: "text-violet-700",
     },
+};
+export const DASHBOARD_MODAL_STYLES = {
+    overlay:
+        "fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]",
+
+    panel:
+        "relative w-full max-w-[680px] overflow-visible rounded-[2rem] bg-white px-7 py-6 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)]",
+
+    closeButton:
+        "absolute right-5 top-5 flex h-11 w-11 items-center justify-center rounded-2xl p-0 text-2xl leading-none",
+
+    header:
+        "mx-auto max-w-xl text-center",
+
+    heroIcon:
+        "mb-1 text-5xl leading-none",
+
+    error:
+        "mt-5 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700",
+};
+
+export const RACE_LENGTH_CARD_STYLES = {
+    grid: "mt-3 grid gap-3 md:grid-cols-3",
+    content: "grid gap-1",
+    icon: "mx-auto flex h-8 w-8 items-center justify-center rounded-xl",
+    title: "text-sm font-black",
+    points: "text-xs font-extrabold text-slate-500",
 };

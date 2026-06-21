@@ -40,7 +40,6 @@ export default function CreateRaceForm({
                         placeholder={content.fields.titlePlaceholder}
                         className={DASHBOARD_FIELD_STYLES.input}
                     />
-
                     <p className={DASHBOARD_TEXT_STYLES.helperError}>
                         {errors.title || "\u00A0"}
                     </p>
@@ -74,19 +73,11 @@ export default function CreateRaceForm({
 
             <div className="mt-1 flex items-center justify-between gap-3">
                 <DashboardButton
-                    type="button"
-                    variant="secondary"
-                    onClick={onCancel}
-                    disabled={isSubmitting}
-                    className="min-w-32"
-                >
-                    {content.buttons.cancel}
-                </DashboardButton>
-
-                <DashboardButton
                     type="submit"
+                    variant="cta"
+                    size="lg"
                     disabled={isSubmitting}
-                    className="min-w-56 bg-gradient-to-l from-blue-700 to-sky-500 text-base shadow-[0_10px_24px_rgba(2,132,199,0.28)] hover:from-blue-800 hover:to-sky-600"
+                    className="min-w-56"
                 >
                     {isSubmitting ? content.buttons.submitting : content.buttons.submit}
                     <span className="ms-2">🏁</span>
