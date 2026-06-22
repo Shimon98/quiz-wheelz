@@ -1,21 +1,18 @@
-import DashboardButton from "../ui/DashboardButton";
+import Button from "../../../../shared/components/ui/Button";
+import EmptyState from "../../../../shared/components/ui/EmptyState";
 
 export default function EmptyRacesState({
-    message,
-    createRaceLabel,
-    onCreateRaceClick,
-}) {
+                                            message,
+                                            createRaceLabel,
+                                            onCreateRaceClick,
+                                        }) {
     return (
-        <div className="flex min-h-[180px] flex-1 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-            <p className="max-w-md text-sm font-bold text-slate-500">
-                {message}
-            </p>
-
+        <EmptyState message={message}>
             {onCreateRaceClick && (
-                <DashboardButton onClick={onCreateRaceClick} className="mt-5">
+                <Button onClick={onCreateRaceClick}>
                     {createRaceLabel}
-                </DashboardButton>
+                </Button>
             )}
-        </div>
+        </EmptyState>
     );
 }
