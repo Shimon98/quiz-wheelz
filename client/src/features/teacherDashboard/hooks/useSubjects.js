@@ -3,6 +3,12 @@ import { getSubjects } from "../../../api/subjectApi";
 
 const EMPTY_SUBJECTS = Object.freeze([]);
 
+function normalizeSubjects(subjectResponse) {
+    return Array.isArray(subjectResponse)
+        ? subjectResponse
+        : EMPTY_SUBJECTS;
+}
+
 export function useSubjects() {
     const [subjects, setSubjects] = useState(EMPTY_SUBJECTS);
     const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
@@ -14,9 +20,7 @@ export function useSubjects() {
 
         try {
             const subjectResponse = await getSubjects();
-            const nextSubjects = Array.isArray(subjectResponse)
-                ? subjectResponse
-                : EMPTY_SUBJECTS;
+            const nextSubjects = normalizeSubjects(subjectResponse);
 
             setSubjects(nextSubjects);
 
@@ -30,10 +34,36 @@ export function useSubjects() {
     }, []);
 
     useEffect(() => {
-        queueMicrotask(() => {
-            reloadSubjects().catch(() => {});
-        });
-    }, [reloadSubjects]);
+        let isActive = true;
+
+        async function loadSubjects() {
+            setIsLoadingSubjects(true);
+            setSubjectsError(null);
+
+            try {
+                const subjectResponse = await getSubjects();
+                const nextSubjects = normalizeSubjects(subjectResponse);
+
+                if (isActive) {
+                    setSubjects(nextSubjects);
+                }
+            } catch (requestError) {
+                if (isActive) {
+                    setSubjectsError(requestError);
+                }
+            } finally {
+                if (isActive) {
+                    setIsLoadingSubjects(false);
+                }
+            }
+        }
+
+        loadSubjects();
+
+        return () => {
+            isActive = false;
+        };
+    }, []);
 
     return {
         subjects,

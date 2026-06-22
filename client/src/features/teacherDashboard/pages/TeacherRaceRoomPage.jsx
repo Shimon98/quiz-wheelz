@@ -31,14 +31,34 @@ export default function TeacherRaceRoomPage() {
     const isLoggingOut = useAuthStore((state) => state.isLoading);
 
     useEffect(() => {
-        queueMicrotask(() => {
+        let isActive = true;
+
+        async function loadRaceRoom() {
             setIsLoading(true);
             setError(null);
-            getTeacherRaceRoom(raceId)
-                .then(setRaceRoom)
-                .catch(setError)
-                .finally(() => setIsLoading(false));
-        });
+
+            try {
+                const nextRaceRoom = await getTeacherRaceRoom(raceId);
+
+                if (isActive) {
+                    setRaceRoom(nextRaceRoom);
+                }
+            } catch (requestError) {
+                if (isActive) {
+                    setError(requestError);
+                }
+            } finally {
+                if (isActive) {
+                    setIsLoading(false);
+                }
+            }
+        }
+
+        loadRaceRoom();
+
+        return () => {
+            isActive = false;
+        };
     }, [raceId]);
 
     function handleDashboardClick() {

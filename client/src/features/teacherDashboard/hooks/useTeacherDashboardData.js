@@ -46,12 +46,38 @@ export function useTeacherDashboardData() {
     }
 
     useEffect(() => {
-        queueMicrotask(() => {
-            refreshDashboard().catch(() => {});
-        });
-    }, [refreshDashboard]);
+        let isActive = true;
+
+        async function loadDashboard() {
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const dashboardResponse = await getTeacherDashboard();
+
+                if (isActive) {
+                    setDashboard(dashboardResponse);
+                }
+            } catch (requestError) {
+                if (isActive) {
+                    setError(requestError);
+                }
+            } finally {
+                if (isActive) {
+                    setIsLoading(false);
+                }
+            }
+        }
+
+        loadDashboard();
+
+        return () => {
+            isActive = false;
+        };
+    }, []);
 
     const races = getDashboardRaces(dashboard);
+
     const stats = useMemo(
         () => buildStatsFromDashboardResponse(dashboard),
         [dashboard],
