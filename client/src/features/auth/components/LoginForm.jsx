@@ -1,6 +1,6 @@
 import {useForm} from 'react-hook-form';
 import TextInput from '../../../shared/components/ui/TextInput';
-import Button from '../../../shared/components/ui/Button';
+import AuthButton from '../../../shared/components/ui/AuthButton';
 import FormError from '../../../shared/components/ui/FormError';
 import useErrorMessage from '../../../hooks/useErrorMessage';
 
@@ -63,9 +63,9 @@ export default function LoginForm({onLogin, onForgotPassword, language = DEFAULT
                         },
                     })}
                 />
-                <Button type="submit" isLoading={isSubmitting} language={language}>
-                    {authText.labels.loginButton}
-                </Button>
+              <AuthButton type="submit" isLoading={isSubmitting} language={language}>
+                {authText.labels.loginButton}
+              </AuthButton>
 
                 <div className="min-h-6 text-center">
                     <button
