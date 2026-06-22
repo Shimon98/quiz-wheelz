@@ -1,6 +1,6 @@
 
 
-import { UI_CLASSES } from '../../styles/theme.js';
+import { UI_CLASSES } from '../../../styles/theme.js';
 
 export default function FormError({ message }) {
     return (

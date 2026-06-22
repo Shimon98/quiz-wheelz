@@ -150,7 +150,6 @@ client/src/
 
   components/
     ui/
-      Button.jsx
       Input.jsx
       Card.jsx
       Loading.jsx

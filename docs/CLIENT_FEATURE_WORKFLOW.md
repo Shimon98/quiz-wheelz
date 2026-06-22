@@ -222,7 +222,6 @@ Owns reusable code that is truly shared by multiple features.
 Examples:
 
 ```text
-shared/components/ui/Button.jsx
 shared/components/ui/TextInput.jsx
 shared/components/ui/FormError.jsx
 shared/components/brand/AppLogo.jsx
