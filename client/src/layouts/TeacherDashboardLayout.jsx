@@ -1,7 +1,12 @@
 import TeacherSidebar from "../features/teacherDashboard/components/sidebar/TeacherSidebar";
 import { getTeacherDashboardAsset } from "../features/teacherDashboard/constants/teacherDashboardAssets";
 
-export default function TeacherDashboardLayout({ children }) {
+export default function TeacherDashboardLayout({
+    children,
+    onDashboardClick,
+    onRacesClick,
+    onCreateRaceClick,
+}) {
     const generalBackground = getTeacherDashboardAsset("generalBackground");
 
     return (
@@ -19,7 +24,11 @@ export default function TeacherDashboardLayout({ children }) {
             )}
 
             <div className="relative z-10 mx-auto flex h-full max-w-[1320px] gap-4">
-                <TeacherSidebar />
+                <TeacherSidebar
+                    onDashboardClick={onDashboardClick}
+                    onRacesClick={onRacesClick}
+                    onCreateRaceClick={onCreateRaceClick}
+                />
 
                 <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
                     {children}

@@ -1,7 +1,7 @@
 import { getTeacherDashboardIcon } from "../../constants/teacherDashboardAssets";
 import SidebarNavItem from "./SidebarNavItem";
 
-export default function SidebarNavigation({ items, content }) {
+export default function SidebarNavigation({ items, content, onItemSelect }) {
     return (
         <nav className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto">
             {items.map((item) => {
@@ -16,6 +16,7 @@ export default function SidebarNavigation({ items, content }) {
                         label={content.nav[item.key]}
                         icon={icon}
                         comingSoonLabel={content.comingSoon}
+                        onSelect={onItemSelect}
                     />
                 );
             })}

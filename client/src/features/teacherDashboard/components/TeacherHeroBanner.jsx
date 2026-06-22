@@ -1,14 +1,21 @@
+import { memo } from "react";
 import { useLocaleContent } from "../../../constants/localeConstants";
 import { TEACHER_DASHBOARD_CONTENT } from "../content/teacherDashboardContent";
 import { getTeacherDashboardAsset } from "../constants/teacherDashboardAssets";
 import TeacherTopBar from "./TeacherTopBar";
 
-export default function TeacherHeroBanner({ teacherName, isLoggingOut, onLogout }) {
+const HEIGHT_CLASSES_BY_SIZE = Object.freeze({
+    default: "h-[180px] max-h-[210px] sm:h-[190px] lg:h-[200px]",
+    compact: "h-28 max-h-32 sm:h-32 lg:h-36",
+});
+
+function TeacherHeroBanner({ teacherName, isLoggingOut, onLogout, size = "default" }) {
     const content = useLocaleContent(TEACHER_DASHBOARD_CONTENT).hero;
     const heroImage = getTeacherDashboardAsset("headerHero");
+    const heightClasses = HEIGHT_CLASSES_BY_SIZE[size] ?? HEIGHT_CLASSES_BY_SIZE.default;
 
     return (
-        <section className="relative h-[180px] max-h-[210px] overflow-hidden rounded-[28px] bg-gradient-to-l from-sky-500 via-sky-400 to-purple-400 text-white shadow-[0_16px_40px_rgba(27,42,65,0.12)] sm:h-[190px] lg:h-[200px]">
+        <section className={`relative overflow-hidden rounded-3xl bg-gradient-to-l from-sky-500 via-sky-400 to-purple-400 text-white shadow-[0_16px_40px_rgba(27,42,65,0.12)] ${heightClasses}`}>
             {heroImage && (
                 <img
                     src={heroImage}
@@ -47,3 +54,5 @@ export default function TeacherHeroBanner({ teacherName, isLoggingOut, onLogout 
         </section>
     );
 }
+
+export default memo(TeacherHeroBanner);
