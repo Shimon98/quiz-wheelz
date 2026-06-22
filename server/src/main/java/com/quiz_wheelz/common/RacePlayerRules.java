@@ -1,5 +1,7 @@
 package com.quiz_wheelz.common;
 
+import java.util.List;
+
 public final class RacePlayerRules {
 
     public static final int MIN_DISPLAY_NAME_LENGTH = 2;
@@ -19,6 +21,19 @@ public final class RacePlayerRules {
 
     public static final String DEFAULT_VEHICLE_TYPE_KEY = "TOY_CAR";
     public static final String DEFAULT_VEHICLE_COLOR_KEY = "PURPLE";
+
+    public static final List<String> VEHICLE_COLOR_KEYS = List.of(
+            "PURPLE",
+            "RED",
+            "BLUE",
+            "GREEN",
+            "ORANGE",
+            "PINK",
+            "YELLOW",
+            "CYAN"
+    );
+
+    public static final String VEHICLE_ASSET_SEPARATOR = "_";
 
     private RacePlayerRules() {
     }

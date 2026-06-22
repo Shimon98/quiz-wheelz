@@ -49,6 +49,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, ApiPaths.AUTH_LOGIN).permitAll()
                         .requestMatchers(HttpMethod.POST, ApiPaths.AUTH_LOGOUT).permitAll()
+                        .requestMatchers(HttpMethod.POST, ApiPaths.RACE_PLAYERS_JOIN).permitAll()
                         .requestMatchers(HttpMethod.GET, ApiPaths.ACTUATOR_HEALTH).permitAll()
                         .requestMatchers(ApiPaths.SWAGGER_UI).permitAll()
                         .requestMatchers(ApiPaths.API_DOCS).permitAll()

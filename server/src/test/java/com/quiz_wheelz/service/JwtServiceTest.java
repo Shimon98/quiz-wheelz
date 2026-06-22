@@ -1,6 +1,7 @@
 package com.quiz_wheelz.service;
 
 import com.quiz_wheelz.config.TokenConfig;
+import com.quiz_wheelz.security.JwtTokenTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
@@ -37,5 +38,18 @@ class JwtServiceTest {
         assertEquals("teacher1", jwtService.extractUsername(token));
         assertEquals(1L, jwtService.extractUserId(token));
         assertEquals("TEACHER", jwtService.extractRole(token));
+        assertEquals(JwtTokenTypes.AUTH_USER, jwtService.extractTokenType(token));
+    }
+
+    @Test
+    void shouldCreateValidateAndExtractClaimsFromRacePlayerToken() {
+        String token = jwtService.createRacePlayerToken(10L, 20L, "Noa");
+
+        assertNotNull(token);
+        assertTrue(jwtService.isTokenValid(token));
+        assertEquals("race-player-20", jwtService.extractUsername(token));
+        assertEquals(JwtTokenTypes.RACE_PLAYER, jwtService.extractTokenType(token));
+        assertEquals(10L, jwtService.extractRaceId(token));
+        assertEquals(20L, jwtService.extractRacePlayerId(token));
     }
 }
