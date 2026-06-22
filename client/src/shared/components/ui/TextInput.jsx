@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LockKeyhole, LockKeyholeOpen, UserRound } from 'lucide-react';
-import { UI_CLASSES } from '../../styles/theme.js';
+import { UI_CLASSES } from '../../../styles/theme';
 
 export default function TextInput({
                                       label,
@@ -8,6 +8,8 @@ export default function TextInput({
                                       className = '',
                                       type = 'text',
                                       wrapperClassName = '',
+                                      showPasswordLabel,
+                                      hidePasswordLabel,
                                       ...props
                                   }) {
     const [showPassword, setShowPassword] = useState(false);
@@ -20,6 +22,10 @@ export default function TextInput({
         : isPassword
             ? UI_CLASSES.inputPassword
             : UI_CLASSES.inputNormal;
+
+    const passwordToggleLabel = showPassword
+        ? hidePasswordLabel
+        : showPasswordLabel;
 
     const finalClassName =
         `pr-14 pl-4 ${UI_CLASSES.input} ${inputStateClass} ${className}`.trim();
@@ -38,7 +44,7 @@ export default function TextInput({
                         type="button"
                         onClick={() => setShowPassword((current) => !current)}
                         className={UI_CLASSES.inputPasswordIcon}
-                        aria-label={showPassword ? 'הסתר סיסמה' : 'הצג סיסמה'}
+                        aria-label={passwordToggleLabel}
                     >
                         {showPassword ? (
                             <LockKeyholeOpen size={20} />
