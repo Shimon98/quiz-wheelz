@@ -1,4 +1,4 @@
-import TeacherRacePanel from "./TeacherRacePanel";
+import TeacherRacePanel from "./TeacherRacePanel.jsx";
 
 export default function TeacherDashboardPanels({
     races,

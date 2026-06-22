@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppShell from "../../../layouts/AppShell";
 import TeacherDashboardLayout from "../../../layouts/TeacherDashboardLayout";
-import TeacherDashboardMain from "../components/TeacherDashboardMain";
+import TeacherDashboardMain from "../components/general/TeacherDashboardMain.jsx";
 import CreateRaceModal from "../components/createRace/CreateRaceModal";
 import { ROUTES } from "../../../constants/routeConstants";
 import { useAuthStore } from "../../../stores/authStore";

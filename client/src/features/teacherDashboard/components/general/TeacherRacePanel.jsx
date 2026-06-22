@@ -1,4 +1,4 @@
-import TeacherRacesPanel from "./races/TeacherRacesPanel";
+import TeacherRacesPanel from "../races/TeacherRacesPanel.jsx";
 
 export default function TeacherRacePanel({
     className = "",

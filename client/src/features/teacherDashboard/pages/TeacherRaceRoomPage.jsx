@@ -17,7 +17,7 @@ import { useTeacherRaceRoomData } from "../hooks/useTeacherRaceRoomData";
 
 import DashboardErrorState from "../components/ui/DashboardErrorState";
 import DashboardLoadingState from "../components/ui/DashboardLoadingState";
-import TeacherHeroBanner from "../components/TeacherHeroBanner";
+import TeacherHeroBanner from "../components/general/TeacherHeroBanner.jsx";
 import RaceWaitingRoomHeader from "../components/raceWaitingRoom/RaceWaitingRoomHeader";
 import RaceWaitingRoomJoinPanel from "../components/raceWaitingRoom/RaceWaitingRoomJoinPanel";
 import RaceWaitingRoomParticipantsGrid from "../components/raceWaitingRoom/RaceWaitingRoomParticipantsGrid";

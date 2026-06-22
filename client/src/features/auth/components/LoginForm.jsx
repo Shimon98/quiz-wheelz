@@ -63,9 +63,13 @@ export default function LoginForm({onLogin, onForgotPassword, language = DEFAULT
                         },
                     })}
                 />
-              <AuthButton type="submit" isLoading={isSubmitting} language={language}>
-                {authText.labels.loginButton}
-              </AuthButton>
+                <AuthButton
+                    type="submit"
+                    isLoading={isSubmitting}
+                    language={language}
+                >
+                    {authText.labels.loginButton}
+                </AuthButton>
 
                 <div className="min-h-6 text-center">
                     <button

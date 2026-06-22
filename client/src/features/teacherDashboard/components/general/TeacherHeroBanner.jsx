@@ -1,8 +1,8 @@
 import { memo } from "react";
-import { useLocaleContent } from "../../../constants/localeConstants";
-import { TEACHER_DASHBOARD_CONTENT } from "../content/teacherDashboardContent";
-import { getTeacherDashboardAsset } from "../constants/teacherDashboardAssets";
-import TeacherTopBar from "./TeacherTopBar";
+import { useLocaleContent } from "../../../../constants/localeConstants.js";
+import { TEACHER_DASHBOARD_CONTENT } from "../../content/teacherDashboardContent.js";
+import { getTeacherDashboardAsset } from "../../constants/teacherDashboardAssets.js";
+import TeacherTopBar from "./TeacherTopBar.jsx";
 
 const HEIGHT_CLASSES_BY_SIZE = Object.freeze({
     default: "h-[180px] max-h-[210px] sm:h-[190px] lg:h-[200px]",

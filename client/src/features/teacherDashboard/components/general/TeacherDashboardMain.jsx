@@ -1,6 +1,6 @@
-import TeacherHeroBanner from "./TeacherHeroBanner";
-import TeacherStatsSection from "./TeacherStatsSection";
-import TeacherDashboardPanels from "./TeacherDashboardPanels";
+import TeacherHeroBanner from "./TeacherHeroBanner.jsx";
+import TeacherStatsSection from "./TeacherStatsSection.jsx";
+import TeacherDashboardPanels from "./TeacherDashboardPanels.jsx";
 
 export default function TeacherDashboardMain({
     teacherName,

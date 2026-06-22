@@ -1,7 +1,7 @@
-import TeacherStatCard from "./TeacherStatCard";
-import { useLocaleContent } from "../../../constants/localeConstants";
-import { TEACHER_DASHBOARD_STATS_CONTENT } from "../content/teacherDashboardContent";
-import { getTeacherDashboardIcon } from "../constants/teacherDashboardAssets";
+import TeacherStatCard from "./TeacherStatCard.jsx";
+import { useLocaleContent } from "../../../../constants/localeConstants.js";
+import { TEACHER_DASHBOARD_STATS_CONTENT } from "../../content/teacherDashboardContent.js";
+import { getTeacherDashboardIcon } from "../../constants/teacherDashboardAssets.js";
 
 export default function TeacherStatsGrid({ stats }) {
     const labels = useLocaleContent(TEACHER_DASHBOARD_STATS_CONTENT);
