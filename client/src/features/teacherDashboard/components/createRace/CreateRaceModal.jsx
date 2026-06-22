@@ -9,6 +9,7 @@ import DashboardButton from "../ui/DashboardButton";
 import CreateRaceForm from "./CreateRaceForm";
 import RaceFlagIcon from "../ui/RaceFlagIcon";
 import { getTeacherDashboardAsset } from "../../constants/teacherDashboardAssets";
+import ModalCloseButton from "../../../../shared/components/ui/ModalCloseButton";
 
 const MODAL_TITLE_ID = "create-race-modal-title";
 const MODAL_DESCRIPTION_ID = "create-race-modal-description";
@@ -99,17 +100,13 @@ export default function CreateRaceModal({
                 className={DASHBOARD_MODAL_STYLES.panel}
                 dir="rtl"
             >
-                <DashboardButton
+                <ModalCloseButton
                     ref={closeButtonRef}
                     onClick={onClose}
-                    aria-label={content.closeLabel}
+                    ariaLabel={content.closeLabel}
                     disabled={isSubmitting}
-                    variant="secondary"
-                    size="sm"
                     className={DASHBOARD_MODAL_STYLES.closeButton}
-                >
-                    ×
-                </DashboardButton>
+                />
 
                 <div className={DASHBOARD_MODAL_STYLES.header}>
                     <div className={DASHBOARD_MODAL_STYLES.headerContent} dir="ltr">

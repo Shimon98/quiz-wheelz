@@ -130,7 +130,7 @@ export const DASHBOARD_MODAL_STYLES = {
     panel:
         "relative w-full max-w-[640px] overflow-visible rounded-[2rem] bg-white px-7 py-6 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)]",
     closeButton:
-        "absolute right-5 top-5 flex h-11 w-11 items-center justify-center rounded-2xl p-0 text-2xl leading-none",
+        "absolute right-5 top-5",
     header:
         "mx-auto max-w-xl",
 
@@ -256,7 +256,7 @@ export const ALL_RACES_MODAL_STYLES = {
         "mt-1 text-sm font-bold text-slate-500",
 
     closeButton:
-        "h-11 w-11 rounded-2xl p-0 text-xl",
+        "shrink-0",
 
     list:
         "mt-4 grid gap-3 overflow-y-auto pe-1",
