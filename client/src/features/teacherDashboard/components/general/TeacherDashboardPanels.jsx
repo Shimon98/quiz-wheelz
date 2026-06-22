@@ -1,4 +1,4 @@
-import TeacherRacePanel from "./TeacherRacePanel";
+import TeacherRacesPanel from "../races/TeacherRacesPanel.jsx";
 import { TEACHER_DASHBOARD_PANEL_STYLES } from "../../styles/dashboardUiStyles";
 
 export default function TeacherDashboardPanels({
@@ -10,7 +10,7 @@ export default function TeacherDashboardPanels({
                                                }) {
     return (
         <div className={TEACHER_DASHBOARD_PANEL_STYLES.wrapper}>
-            <TeacherRacePanel
+            <TeacherRacesPanel
                 className="h-full"
                 races={races}
                 isLoading={isRacesLoading}
