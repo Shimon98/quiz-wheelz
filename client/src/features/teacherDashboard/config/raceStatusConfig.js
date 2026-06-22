@@ -4,6 +4,7 @@ export const RACE_STATUSES = Object.freeze({
     IN_PROGRESS: "IN_PROGRESS",
     FINISHED: "FINISHED",
     CANCELLED: "CANCELLED",
+    UNKNOWN: "UNKNOWN",
 });
 
 export const RACE_STATUS_LABELS = Object.freeze({
@@ -12,6 +13,7 @@ export const RACE_STATUS_LABELS = Object.freeze({
     [RACE_STATUSES.IN_PROGRESS]: RACE_STATUSES.IN_PROGRESS,
     [RACE_STATUSES.FINISHED]: RACE_STATUSES.FINISHED,
     [RACE_STATUSES.CANCELLED]: RACE_STATUSES.CANCELLED,
+    [RACE_STATUSES.UNKNOWN]: RACE_STATUSES.UNKNOWN,
 });
 
 export const RACE_STATUS_BADGE_CLASSES = Object.freeze({
@@ -20,6 +22,7 @@ export const RACE_STATUS_BADGE_CLASSES = Object.freeze({
     [RACE_STATUSES.IN_PROGRESS]: "bg-sky-100 text-sky-700",
     [RACE_STATUSES.FINISHED]: "bg-slate-200 text-slate-700",
     [RACE_STATUSES.CANCELLED]: "bg-rose-100 text-rose-700",
+    [RACE_STATUSES.UNKNOWN]: "bg-slate-100 text-slate-600",
 });
 
 export const EDITABLE_RACE_STATUSES = Object.freeze([

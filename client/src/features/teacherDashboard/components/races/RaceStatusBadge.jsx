@@ -1,17 +1,19 @@
+import Badge from "../../../../shared/components/ui/Badge";
 import {
+    RACE_STATUSES,
     RACE_STATUS_BADGE_CLASSES,
 } from "../../config/raceStatusConfig";
 
 export default function RaceStatusBadge({ status, labels = {} }) {
-    const label = labels[status] ?? labels.unknown ?? status;
+    const safeStatus = status ?? RACE_STATUSES.UNKNOWN;
+    const label = labels[safeStatus] ?? labels.unknown ?? safeStatus;
     const badgeClasses =
-        RACE_STATUS_BADGE_CLASSES[status] ?? "bg-slate-100 text-slate-600";
+        RACE_STATUS_BADGE_CLASSES[safeStatus] ??
+        RACE_STATUS_BADGE_CLASSES[RACE_STATUSES.UNKNOWN];
 
     return (
-        <span
-            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${badgeClasses}`}
-        >
+        <Badge className={badgeClasses}>
             {label}
-        </span>
+        </Badge>
     );
 }
