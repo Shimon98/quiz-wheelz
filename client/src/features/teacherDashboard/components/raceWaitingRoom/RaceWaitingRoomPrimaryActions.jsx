@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Copy, Edit3, Play, Share2 } from "lucide-react";
-import DashboardButton from "../ui/DashboardButton";
+import Button from "../../../../shared/components/ui/Button";
 import { WAITING_ROOM_BUTTON_STYLES } from "../../styles/raceWaitingRoomStyles";
 
 const COPY_CONFIRMATION_MS = 1600;
@@ -33,7 +33,7 @@ export default function RaceWaitingRoomPrimaryActions({
 
     return (
         <div className={WAITING_ROOM_BUTTON_STYLES.actionsGrid}>
-            <DashboardButton
+            <Button
                 onClick={handleCopyClick}
                 variant="secondary"
                 className={WAITING_ROOM_BUTTON_STYLES.secondaryAction}
@@ -52,9 +52,9 @@ export default function RaceWaitingRoomPrimaryActions({
                     />
                 )}
                 <span>{isCopyConfirmed ? content.copyCodeConfirmed : content.copyCode}</span>
-            </DashboardButton>
+            </Button>
 
-            <DashboardButton
+            <Button
                 onClick={onShareLink}
                 variant="secondary"
                 className={WAITING_ROOM_BUTTON_STYLES.secondaryAction}
@@ -65,9 +65,9 @@ export default function RaceWaitingRoomPrimaryActions({
                     className={WAITING_ROOM_BUTTON_STYLES.icon}
                 />
                 <span>{content.shareLink}</span>
-            </DashboardButton>
+            </Button>
 
-            <DashboardButton
+            <Button
                 onClick={onEditRace}
                 variant="secondary"
                 disabled={!canEditRace}
@@ -79,9 +79,9 @@ export default function RaceWaitingRoomPrimaryActions({
                     className={WAITING_ROOM_BUTTON_STYLES.icon}
                 />
                 <span>{content.editRace}</span>
-            </DashboardButton>
+            </Button>
 
-            <DashboardButton
+            <Button
                 onClick={onStartRace}
                 variant="successCta"
                 size="lg"
@@ -94,7 +94,7 @@ export default function RaceWaitingRoomPrimaryActions({
                     className={WAITING_ROOM_BUTTON_STYLES.icon}
                 />
                 <span>{content.startRace}</span>
-            </DashboardButton>
+            </Button>
         </div>
     );
 }

@@ -1,6 +1,6 @@
 import { Play } from "lucide-react";
 import { RACE_STATUSES } from "../../config/raceStatusConfig";
-import DashboardButton from "../ui/DashboardButton";
+import Button from "../../../../shared/components/ui/Button";
 import {
     getRaceActionLabel,
     isRaceCancellable,
@@ -33,7 +33,7 @@ export default function RaceCardActions({
             <RaceStatusBadge status={race.status} labels={statusLabels} />
 
             <div className={RACE_CARD_COMPACT_STYLES.actions}>
-                <DashboardButton
+                <Button
                     onClick={handleOpenRace}
                     disabled={!canOpenRace}
                     aria-label={getRaceActionLabel(race.status, content)}
@@ -44,7 +44,7 @@ export default function RaceCardActions({
                         aria-hidden="true"
                         strokeWidth={2.5}
                     />
-                </DashboardButton>
+                </Button>
 
                 <RaceMoreMenu
                     race={race}
