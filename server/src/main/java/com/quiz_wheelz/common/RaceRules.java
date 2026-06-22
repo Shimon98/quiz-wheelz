@@ -1,6 +1,6 @@
 package com.quiz_wheelz.common;
 
-public final class RaceRules {
+public final class  RaceRules {
 
     public static final int ROOM_CODE_LENGTH = 6;
 
