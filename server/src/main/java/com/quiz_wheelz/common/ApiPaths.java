@@ -17,6 +17,10 @@ public final class ApiPaths {
     public static final String TEACHER_RACES = TEACHER_BASE + "/races";
     public static final String TEACHER_DASHBOARD = TEACHER_BASE + "/dashboard";
 
+    public static final String RACE_PLAYERS = AppConstants.API_PREFIX + "/race-players";
+    public static final String JOIN = "/join";
+    public static final String RACE_PLAYERS_JOIN = RACE_PLAYERS + JOIN;
+
     public static final String RACE_ID = "/{raceId}";
     public static final String ROOM = "/room";
     public static final String TEACHER_RACE_ROOM = RACE_ID + ROOM;

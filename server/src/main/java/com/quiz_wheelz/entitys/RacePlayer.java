@@ -26,7 +26,7 @@ import java.time.LocalDateTime;
                 ),
                 @UniqueConstraint(
                         name = "uk_race_players_race_display_name",
-                        columnNames = {"race_id", "display_name_normalized"}
+                        columnNames = {"race_id", "display_name"}
                 )
         },
         indexes = {

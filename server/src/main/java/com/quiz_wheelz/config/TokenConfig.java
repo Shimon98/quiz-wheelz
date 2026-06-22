@@ -12,7 +12,10 @@ public class TokenConfig {
 
     private static final int DEFAULT_TOKEN_EXPIRATION_MINUTES = 120;
     private static final String DEFAULT_COOKIE_NAME = "AUTH_TOKEN";
+    private static final String DEFAULT_RACE_PLAYER_COOKIE_NAME = "RACE_PLAYER_TOKEN";
     private static final String DEFAULT_COOKIE_SAME_SITE = "Lax";
+    private static final String MUST_NOT_BE_EMPTY = " must not be empty";
+    private static final String MUST_BE_POSITIVE_CURRENT_VALUE = " must be positive. Current value: ";
     private static final boolean DEFAULT_COOKIE_SECURE = false;
 
     private static final int SECONDS_IN_MINUTE = 60;
@@ -28,6 +31,9 @@ public class TokenConfig {
     private int authCookieMaxAgeSeconds;
     private boolean authCookieSecure;
     private String authCookieSameSite;
+
+    private String racePlayerCookieName;
+    private int racePlayerCookieMaxAgeSeconds;
 
     public TokenConfig(Environment env) {
         this.env = env;
@@ -65,6 +71,17 @@ public class TokenConfig {
                 DEFAULT_COOKIE_SAME_SITE
         );
 
+        this.racePlayerCookieName = env.getProperty(
+                ConfigPropertyKeys.RACE_PLAYER_COOKIE_NAME,
+                DEFAULT_RACE_PLAYER_COOKIE_NAME
+        );
+
+        this.racePlayerCookieMaxAgeSeconds = env.getProperty(
+                ConfigPropertyKeys.RACE_PLAYER_COOKIE_MAX_AGE_SECONDS,
+                Integer.class,
+                authCookieMaxAgeSeconds
+        );
+
         validate();
     }
 
@@ -81,28 +98,42 @@ public class TokenConfig {
         if (tokenExpirationMinutes <= 0) {
             throw new ConfigurationException(
                     ConfigPropertyKeys.TOKEN_EXPIRATION_MINUTES
-                            + " must be positive. Current value: "
+                            + MUST_BE_POSITIVE_CURRENT_VALUE
                             + tokenExpirationMinutes
             );
         }
 
         if (authCookieName == null || authCookieName.isBlank()) {
             throw new ConfigurationException(
-                    ConfigPropertyKeys.AUTH_COOKIE_NAME + " must not be empty"
+                    ConfigPropertyKeys.AUTH_COOKIE_NAME + MUST_NOT_BE_EMPTY
             );
         }
 
         if (authCookieMaxAgeSeconds <= 0) {
             throw new ConfigurationException(
                     ConfigPropertyKeys.AUTH_COOKIE_MAX_AGE_SECONDS
-                            + " must be positive. Current value: "
+                            + MUST_BE_POSITIVE_CURRENT_VALUE
                             + authCookieMaxAgeSeconds
             );
         }
 
         if (authCookieSameSite == null || authCookieSameSite.isBlank()) {
             throw new ConfigurationException(
-                    ConfigPropertyKeys.AUTH_COOKIE_SAME_SITE + " must not be empty"
+                    ConfigPropertyKeys.AUTH_COOKIE_SAME_SITE + MUST_NOT_BE_EMPTY
+            );
+        }
+
+        if (racePlayerCookieName == null || racePlayerCookieName.isBlank()) {
+            throw new ConfigurationException(
+                    ConfigPropertyKeys.RACE_PLAYER_COOKIE_NAME + MUST_NOT_BE_EMPTY
+            );
+        }
+
+        if (racePlayerCookieMaxAgeSeconds <= 0) {
+            throw new ConfigurationException(
+                    ConfigPropertyKeys.RACE_PLAYER_COOKIE_MAX_AGE_SECONDS
+                            +MUST_BE_POSITIVE_CURRENT_VALUE
+                            + racePlayerCookieMaxAgeSeconds
             );
         }
     }

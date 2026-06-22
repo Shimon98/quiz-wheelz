@@ -21,6 +21,7 @@ public class CookieUtils {
 
     public void addAuthCookie(HttpServletResponse response, String token) {
         String cookieHeader = buildCookieHeader(
+                tokenConfig.getAuthCookieName(),
                 token,
                 tokenConfig.getAuthCookieMaxAgeSeconds()
         );
@@ -29,12 +30,40 @@ public class CookieUtils {
     }
 
     public void clearAuthCookie(HttpServletResponse response) {
-        String cookieHeader = buildCookieHeader(CookieConstants.EMPTY_VALUE, 0);
+        String cookieHeader = buildCookieHeader(
+                tokenConfig.getAuthCookieName(),
+                CookieConstants.EMPTY_VALUE,
+                0
+        );
         response.addHeader(HttpHeaders.SET_COOKIE, cookieHeader);
     }
 
     public Optional<String> getAuthCookieValue(HttpServletRequest request) {
         return getCookieValue(request, tokenConfig.getAuthCookieName());
+    }
+
+    public void addRacePlayerCookie(HttpServletResponse response, String token) {
+        String cookieHeader = buildCookieHeader(
+                tokenConfig.getRacePlayerCookieName(),
+                token,
+                tokenConfig.getRacePlayerCookieMaxAgeSeconds()
+        );
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookieHeader);
+    }
+
+    public void clearRacePlayerCookie(HttpServletResponse response) {
+        String cookieHeader = buildCookieHeader(
+                tokenConfig.getRacePlayerCookieName(),
+                CookieConstants.EMPTY_VALUE,
+                0
+        );
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookieHeader);
+    }
+
+    public Optional<String> getRacePlayerCookieValue(HttpServletRequest request) {
+        return getCookieValue(request, tokenConfig.getRacePlayerCookieName());
     }
 
     public Optional<String> getCookieValue(HttpServletRequest request, String name) {
@@ -48,10 +77,10 @@ public class CookieUtils {
                 .findFirst();
     }
 
-    private String buildCookieHeader(String value, int maxAge) {
+    private String buildCookieHeader(String name, String value, int maxAge) {
         StringBuilder cookie = new StringBuilder();
 
-        cookie.append(tokenConfig.getAuthCookieName())
+        cookie.append(name)
                 .append("=")
                 .append(value)
                 .append(CookieConstants.PATH_ROOT_ATTRIBUTE)

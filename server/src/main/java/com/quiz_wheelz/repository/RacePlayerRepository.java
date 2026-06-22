@@ -26,6 +26,4 @@ public interface RacePlayerRepository extends JpaRepository<RacePlayer, Long> {
     boolean existsByRaceAndLaneNumber(Race race, Integer laneNumber);
 
     boolean existsByRaceAndDisplayNameIgnoreCase(Race race, String displayName);
-
-    boolean existsByRaceAndDisplayName(Race race, String displayName);
 }
