@@ -1,10 +1,19 @@
-import { RACE_LENGTH_OPTIONS } from "../../config/createRaceFormConfig";
+import {Timer, Trophy} from "lucide-react";
+import {RACE_LENGTH_OPTIONS} from "../../config/createRaceFormConfig";
 import {
     DASHBOARD_CHOICE_STYLES,
     DASHBOARD_TEXT_STYLES,
+    RACE_LENGTH_CARD_STYLES,
     RACE_LENGTH_OPTION_STYLES,
 } from "../../styles/dashboardUiStyles";
-import { cx } from "../../../../utils/classNameUtils";
+import {cx} from "../../../../utils/classNameUtils";
+import RaceFlagIcon from "../ui/RaceFlagIcon";
+
+const RACE_LENGTH_ICONS = {
+    short: Timer,
+    regular: Trophy,
+    long: RaceFlagIcon,
+};
 
 function formatPoints(totalDistance, pointsTemplate) {
     return pointsTemplate.replace("{value}", totalDistance);
@@ -17,23 +26,22 @@ export default function RaceLengthSelector({
                                                onChange,
                                            }) {
     return (
-        <fieldset>
-            <legend
-                className={cx(
-                    "flex w-full items-center justify-end gap-2",
-                    DASHBOARD_TEXT_STYLES.fieldLabel,
-                )}
-            >
+        <fieldset dir="rtl">
+            <legend className={DASHBOARD_TEXT_STYLES.sectionLabel}>
+                <RaceFlagIcon className={RACE_LENGTH_CARD_STYLES.sectionIcon}/>
                 <span>{content.fields.raceLength}</span>
-                <span aria-hidden="true">🚩</span>
             </legend>
 
-            <div className="mt-3 grid gap-3 md:grid-cols-3">
+            <div className={RACE_LENGTH_CARD_STYLES.grid}>
                 {RACE_LENGTH_OPTIONS.map((option) => {
                     const isSelected = Number(value) === option.totalDistance;
+
                     const optionStyle =
                         RACE_LENGTH_OPTION_STYLES[option.key] ??
                         RACE_LENGTH_OPTION_STYLES.regular;
+
+                    const IconComponent =
+                        RACE_LENGTH_ICONS[option.key] ?? Trophy;
 
                     return (
                         <label
@@ -60,27 +68,35 @@ export default function RaceLengthSelector({
                                 </span>
                             )}
 
-                            <span className="grid gap-1">
+                            <span className={RACE_LENGTH_CARD_STYLES.content}>
                                 <span
                                     className={cx(
-                                        "mx-auto flex h-8 w-8 items-center justify-center rounded-xl",
+                                        RACE_LENGTH_CARD_STYLES.icon,
                                         optionStyle.iconBg,
                                     )}
                                     aria-hidden="true"
                                 >
-                                    {optionStyle.icon}
+                                    <IconComponent
+                                        className={cx(
+                                            RACE_LENGTH_CARD_STYLES.optionIcon,
+                                            optionStyle.iconColor,
+                                        )}
+                                        strokeWidth={2.5}
+                                    />
                                 </span>
 
                                 <span
                                     className={cx(
-                                        "text-sm font-black",
-                                        isSelected ? optionStyle.text : "text-slate-800",
+                                        RACE_LENGTH_CARD_STYLES.title,
+                                        isSelected
+                                            ? optionStyle.text
+                                            : "text-slate-800",
                                     )}
                                 >
                                     {content.raceLengths[option.contentKey]}
                                 </span>
 
-                                <span className="text-xs font-extrabold text-slate-500">
+                                <span className={RACE_LENGTH_CARD_STYLES.points}>
                                     {formatPoints(
                                         option.totalDistance,
                                         content.raceLengths.points,

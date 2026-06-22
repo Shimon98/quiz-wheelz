@@ -1,5 +1,6 @@
-import { MAX_PLAYER_OPTIONS } from "../../config/createRaceFormConfig";
-import { cx } from "../../../../utils/classNameUtils";
+import {UsersRound} from "lucide-react";
+import {MAX_PLAYER_OPTIONS} from "../../config/createRaceFormConfig";
+import {cx} from "../../../../utils/classNameUtils";
 import {
     DASHBOARD_CHOICE_STYLES,
     DASHBOARD_TEXT_STYLES,
@@ -12,15 +13,21 @@ export default function MaxPlayersSelector({
                                                onChange,
                                            }) {
     return (
-        <fieldset>
-            <legend className={`flex w-full items-center justify-end gap-2 ${DASHBOARD_TEXT_STYLES.fieldLabel}`}>
+        <fieldset dir="rtl">
+            <legend className={DASHBOARD_TEXT_STYLES.sectionLabel}>
+                <UsersRound
+                    className={DASHBOARD_CHOICE_STYLES.maxPlayersIcon}
+                    aria-hidden="true"
+                />
                 <span>{content.fields.maxPlayers}</span>
-                <span aria-hidden="true">👥</span>
             </legend>
 
             <div
                 dir="ltr"
-                className={`${DASHBOARD_CHOICE_STYLES.segmentedGroup} grid-cols-7`}
+                className={cx(
+                    DASHBOARD_CHOICE_STYLES.segmentedGroup,
+                    DASHBOARD_CHOICE_STYLES.maxPlayersGrid,
+                )}
             >
                 {MAX_PLAYER_OPTIONS.map((option) => {
                     const isSelected = Number(value) === option;

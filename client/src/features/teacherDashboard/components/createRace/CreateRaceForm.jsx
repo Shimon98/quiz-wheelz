@@ -2,11 +2,13 @@ import DashboardButton from "../ui/DashboardButton";
 import MaxPlayersSelector from "./MaxPlayersSelector";
 import RaceLengthSelector from "./RaceLengthSelector";
 import SubjectSelect from "./SubjectSelect";
-import { useCreateRaceForm } from "../../hooks/useCreateRaceForm";
+import {useCreateRaceForm} from "../../hooks/useCreateRaceForm";
 import {
+    CREATE_RACE_FORM_STYLES,
     DASHBOARD_FIELD_STYLES,
     DASHBOARD_TEXT_STYLES,
 } from "../../styles/dashboardUiStyles";
+import RaceFlagIcon from "../ui/RaceFlagIcon";
 
 export default function CreateRaceForm({
                                            subjects,
@@ -16,14 +18,14 @@ export default function CreateRaceForm({
                                            onCancel,
                                            onSubmit,
                                        }) {
-    const { values, errors, handleChange, handleSubmit } = useCreateRaceForm({
+    const {values, errors, handleChange, handleSubmit} = useCreateRaceForm({
         onSubmit,
         validationContent: content.validation,
     });
 
     return (
-        <form onSubmit={handleSubmit} className="mt-5 grid gap-4">
-            <div className="grid gap-4 md:grid-cols-2">
+        <form onSubmit={handleSubmit} className={CREATE_RACE_FORM_STYLES.form}>
+            <div className={CREATE_RACE_FORM_STYLES.fieldGrid}>
                 <div>
                     <label
                         htmlFor="create-race-title"
@@ -40,7 +42,6 @@ export default function CreateRaceForm({
                         placeholder={content.fields.titlePlaceholder}
                         className={DASHBOARD_FIELD_STYLES.input}
                     />
-
                     <p className={DASHBOARD_TEXT_STYLES.helperError}>
                         {errors.title || "\u00A0"}
                     </p>
@@ -72,24 +73,27 @@ export default function CreateRaceForm({
                 onChange={handleChange}
             />
 
-            <div className="mt-1 flex items-center justify-between gap-3">
+            <div className={CREATE_RACE_FORM_STYLES.actions}>
                 <DashboardButton
                     type="button"
                     variant="secondary"
+                    size="lg"
                     onClick={onCancel}
                     disabled={isSubmitting}
-                    className="min-w-32"
+                    className={CREATE_RACE_FORM_STYLES.cancelButton}
                 >
                     {content.buttons.cancel}
                 </DashboardButton>
 
                 <DashboardButton
                     type="submit"
+                    variant="cta"
+                    size="lg"
                     disabled={isSubmitting}
-                    className="min-w-56 bg-gradient-to-l from-blue-700 to-sky-500 text-base shadow-[0_10px_24px_rgba(2,132,199,0.28)] hover:from-blue-800 hover:to-sky-600"
+                    className={CREATE_RACE_FORM_STYLES.submitButton}
                 >
-                    {isSubmitting ? content.buttons.submitting : content.buttons.submit}
-                    <span className="ms-2">🏁</span>
+                    <RaceFlagIcon className={CREATE_RACE_FORM_STYLES.submitIcon}/>
+                    <span>{isSubmitting ? content.buttons.submitting : content.buttons.submit}</span>
                 </DashboardButton>
             </div>
         </form>

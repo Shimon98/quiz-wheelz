@@ -1,20 +1,20 @@
-import { useLanguageStore } from "../../../../stores/languageStore";
-import { getSubjectDisplayName } from "../../utils/subjectDisplayUtils";
+import {useLanguageStore} from "../../../../stores/languageStore";
+import {getSubjectDisplayName} from "../../utils/subjectDisplayUtils";
 import {
     DASHBOARD_FIELD_STYLES,
     DASHBOARD_TEXT_STYLES,
 } from "../../styles/dashboardUiStyles";
 
 export default function SubjectSelect({
-    id,
-    name,
-    value,
-    subjects,
-    isLoading,
-    error,
-    content,
-    onChange,
-}) {
+                                          id,
+                                          name,
+                                          value,
+                                          subjects,
+                                          isLoading,
+                                          error,
+                                          content,
+                                          onChange,
+                                      }) {
     const hasSubjects = subjects.length > 0;
     const language = useLanguageStore((state) => state.language);
 
@@ -51,12 +51,12 @@ export default function SubjectSelect({
             </select>
 
             {!isLoading && !hasSubjects && (
-                <p className="mt-2 text-xs font-bold text-slate-500">
+                <p className={DASHBOARD_TEXT_STYLES.muted}>
                     {content.states.noSubjects}
                 </p>
             )}
 
-            <p className="mt-2 min-h-5 text-xs font-bold text-rose-600">
+            <p className={DASHBOARD_TEXT_STYLES.helperError}>
                 {error || "\u00A0"}
             </p>
         </div>

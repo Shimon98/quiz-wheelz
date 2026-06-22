@@ -1,34 +1,39 @@
-import { useLocaleContent } from "../../../../constants/localeConstants";
+import {useLocaleContent} from "../../../../constants/localeConstants";
+import {CREATE_RACE_CONTENT} from "../../content/teacherDashboardContent";
 import {
-    CREATE_RACE_CONTENT,
-} from "../../content/teacherDashboardContent";
+    DASHBOARD_MODAL_STYLES,
+    DASHBOARD_TEXT_STYLES,
+} from "../../styles/dashboardUiStyles";
 import DashboardButton from "../ui/DashboardButton";
 import CreateRaceForm from "./CreateRaceForm";
+import RaceFlagIcon from "../ui/RaceFlagIcon";
+import {getTeacherDashboardAsset} from "../../constants/teacherDashboardAssets";
 
 export default function CreateRaceModal({
-    isOpen,
-    onClose,
-    onSubmit,
-    subjects = [],
-    isSubmitting = false,
-    isLoadingSubjects = false,
-    error = null,
-}) {
+                                            isOpen,
+                                            onClose,
+                                            onSubmit,
+                                            subjects = [],
+                                            isSubmitting = false,
+                                            isLoadingSubjects = false,
+                                            error = null,
+                                        }) {
     const content = useLocaleContent(CREATE_RACE_CONTENT);
+    const redRaceCar = getTeacherDashboardAsset("redRaceCar");
 
     if (!isOpen) {
         return null;
     }
 
-    const errorMessage = typeof error === "string" ? error : null;
+    const errorMessage = typeof error === "string" ? error : error?.message ?? null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]">
+        <div className={DASHBOARD_MODAL_STYLES.overlay}>
             <section
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="create-race-modal-title"
-                className="relative w-full max-w-[720px] overflow-visible rounded-[2rem] bg-white px-7 py-6 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)]"
+                className={DASHBOARD_MODAL_STYLES.panel}
                 dir="rtl"
             >
                 <DashboardButton
@@ -37,28 +42,39 @@ export default function CreateRaceModal({
                     disabled={isSubmitting}
                     variant="secondary"
                     size="sm"
-                    className="absolute right-5 top-5 flex h-11 w-11 items-center justify-center rounded-2xl p-0 text-2xl leading-none"
+                    className={DASHBOARD_MODAL_STYLES.closeButton}
                 >
                     ×
                 </DashboardButton>
 
-                <div className="mx-auto max-w-xl text-center">
-                    <div className="mb-1 text-5xl leading-none">🏎️</div>
+                <div className={DASHBOARD_MODAL_STYLES.header}>
+                    <div className={DASHBOARD_MODAL_STYLES.headerContent} dir="ltr">
+                        {redRaceCar && (
+                            <img
+                                src={redRaceCar}
+                                alt=""
+                                className={DASHBOARD_MODAL_STYLES.heroImage}
+                            />
+                        )}
 
-                    <h2
-                        id="create-race-modal-title"
-                        className="text-3xl font-black leading-tight text-slate-900"
-                    >
-                        {content.title} 🏁
-                    </h2>
+                        <div className={DASHBOARD_MODAL_STYLES.titleBlock} dir="rtl">
+                            <h2
+                                id="create-race-modal-title"
+                                className={DASHBOARD_TEXT_STYLES.modalTitle}
+                            >
+                                <RaceFlagIcon className={DASHBOARD_MODAL_STYLES.titleIcon}/>
+                                <span>{content.title}</span>
+                            </h2>
 
-                    <p className="mt-1 text-sm font-semibold text-slate-500">
-                        {content.description}
-                    </p>
+                            <p className={DASHBOARD_TEXT_STYLES.modalDescription}>
+                                {content.description}
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 {errorMessage && (
-                    <div className="mt-5 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+                    <div className={DASHBOARD_MODAL_STYLES.error}>
                         {errorMessage}
                     </div>
                 )}
