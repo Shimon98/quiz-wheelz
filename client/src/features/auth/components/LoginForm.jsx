@@ -7,9 +7,11 @@ import useErrorMessage from '../../../hooks/useErrorMessage';
 import {UI_CLASSES} from '../../../styles/theme';
 import {DEFAULT_LANGUAGE} from "../../../constants/messageConstants.js";
 import {AUTH_TEXT, AUTH_VALIDATION} from "../../../constants/authConstants.js";
+import { getLanguageDirection } from '../../../utils/languageDirectionUtils';
 
 export default function LoginForm({onLogin, onForgotPassword, language = DEFAULT_LANGUAGE,}) {
     const authText = AUTH_TEXT[language] ?? AUTH_TEXT.he;
+    const direction = getLanguageDirection(language);
 
     const {register, handleSubmit, formState: {errors, isSubmitting},} = useForm({
         defaultValues: {username: '', password: '',}, mode: 'onTouched', reValidateMode: 'onChange',
@@ -37,6 +39,7 @@ export default function LoginForm({onLogin, onForgotPassword, language = DEFAULT
                     autoComplete="username"
                     maxLength={AUTH_VALIDATION.USERNAME_MAX_LENGTH}
                     error={errors.username?.message}
+                    direction={direction}
                     {...register('username', {
                         required: authText.messages.usernameRequired,
                         minLength: {
@@ -53,6 +56,7 @@ export default function LoginForm({onLogin, onForgotPassword, language = DEFAULT
                     autoComplete="current-password"
                     maxLength={AUTH_VALIDATION.PASSWORD_MAX_LENGTH}
                     error={errors.password?.message}
+                    direction={direction}
                     showPasswordLabel={authText.labels.showPassword}
                     hidePasswordLabel={authText.labels.hidePassword}
                     {...register('password', {
