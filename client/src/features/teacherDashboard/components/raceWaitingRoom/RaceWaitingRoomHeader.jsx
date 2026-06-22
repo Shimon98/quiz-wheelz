@@ -1,7 +1,9 @@
+import { motion } from "framer-motion";
 import { ArrowRight, Flag } from "lucide-react";
 import DashboardButton from "../ui/DashboardButton";
 import RaceStatusBadge from "../races/RaceStatusBadge";
 import { WAITING_ROOM_HEADER_STYLES } from "../../styles/raceWaitingRoomStyles";
+import { ENTRANCE_TRANSITION, FADE_UP_VARIANTS } from "../../styles/raceWaitingRoomMotion";
 
 export default function RaceWaitingRoomHeader({
                                                   raceTitle,
@@ -13,7 +15,14 @@ export default function RaceWaitingRoomHeader({
     const title = raceTitle || content.titleFallback;
 
     return (
-        <section className={WAITING_ROOM_HEADER_STYLES.wrapper} dir="auto">
+        <motion.section
+            className={WAITING_ROOM_HEADER_STYLES.wrapper}
+            dir="auto"
+            initial="hidden"
+            animate="visible"
+            variants={FADE_UP_VARIANTS}
+            transition={ENTRANCE_TRANSITION}
+        >
             <div className={WAITING_ROOM_HEADER_STYLES.titleGroup}>
                 <DashboardButton
                     onClick={onBackToRaces}
@@ -40,6 +49,6 @@ export default function RaceWaitingRoomHeader({
                 status={raceStatus}
                 labels={statusLabels}
             />
-        </section>
+        </motion.section>
     );
 }

@@ -1,6 +1,8 @@
+import { motion } from "framer-motion";
 import { Car } from "lucide-react";
 import { cx } from "../../../../utils/classNameUtils";
 import { WAITING_ROOM_PARTICIPANT_STYLES } from "../../styles/raceWaitingRoomStyles";
+import { ENTRANCE_TRANSITION, FADE_SCALE_VARIANTS } from "../../styles/raceWaitingRoomMotion";
 
 export default function RaceWaitingRoomParticipantSlot({
                                                            player,
@@ -16,7 +18,9 @@ export default function RaceWaitingRoomParticipantSlot({
         `${content.playerFallback} ${slotNumber}`;
 
     return (
-        <article
+        <motion.article
+            variants={FADE_SCALE_VARIANTS}
+            transition={ENTRANCE_TRANSITION}
             className={cx(
                 WAITING_ROOM_PARTICIPANT_STYLES.slot,
                 hasPlayer
@@ -77,6 +81,6 @@ export default function RaceWaitingRoomParticipantSlot({
                     {content.emptySlot}
                 </p>
             )}
-        </article>
+        </motion.article>
     );
 }

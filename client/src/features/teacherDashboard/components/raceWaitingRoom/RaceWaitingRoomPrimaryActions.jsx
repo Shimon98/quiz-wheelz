@@ -1,6 +1,9 @@
-import { Copy, Edit3, Play, Share2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Check, Copy, Edit3, Play, Share2 } from "lucide-react";
 import DashboardButton from "../ui/DashboardButton";
 import { WAITING_ROOM_BUTTON_STYLES } from "../../styles/raceWaitingRoomStyles";
+
+const COPY_CONFIRMATION_MS = 1600;
 
 export default function RaceWaitingRoomPrimaryActions({
                                                           content,
@@ -11,19 +14,44 @@ export default function RaceWaitingRoomPrimaryActions({
                                                           canEditRace = false,
                                                           canStartRace = false,
                                                       }) {
+    const [isCopyConfirmed, setIsCopyConfirmed] = useState(false);
+    const confirmationTimeoutRef = useRef(null);
+
+    useEffect(() => {
+        return () => clearTimeout(confirmationTimeoutRef.current);
+    }, []);
+
+    function handleCopyClick() {
+        onCopyCode?.();
+        setIsCopyConfirmed(true);
+        clearTimeout(confirmationTimeoutRef.current);
+        confirmationTimeoutRef.current = setTimeout(
+            () => setIsCopyConfirmed(false),
+            COPY_CONFIRMATION_MS,
+        );
+    }
+
     return (
         <div className={WAITING_ROOM_BUTTON_STYLES.actionsGrid}>
             <DashboardButton
-                onClick={onCopyCode}
+                onClick={handleCopyClick}
                 variant="secondary"
                 className={WAITING_ROOM_BUTTON_STYLES.secondaryAction}
             >
-                <Copy
-                    size={18}
-                    aria-hidden="true"
-                    className={WAITING_ROOM_BUTTON_STYLES.icon}
-                />
-                <span>{content.copyCode}</span>
+                {isCopyConfirmed ? (
+                    <Check
+                        size={18}
+                        aria-hidden="true"
+                        className={WAITING_ROOM_BUTTON_STYLES.confirmedIcon}
+                    />
+                ) : (
+                    <Copy
+                        size={18}
+                        aria-hidden="true"
+                        className={WAITING_ROOM_BUTTON_STYLES.icon}
+                    />
+                )}
+                <span>{isCopyConfirmed ? content.copyCodeConfirmed : content.copyCode}</span>
             </DashboardButton>
 
             <DashboardButton
@@ -55,7 +83,8 @@ export default function RaceWaitingRoomPrimaryActions({
 
             <DashboardButton
                 onClick={onStartRace}
-                variant="primary"
+                variant="successCta"
+                size="lg"
                 disabled={!canStartRace}
                 className={WAITING_ROOM_BUTTON_STYLES.startRace}
             >

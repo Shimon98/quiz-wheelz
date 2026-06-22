@@ -278,6 +278,7 @@ export const TEACHER_RACE_WAITING_ROOM_CONTENT = {
 
         actions: {
             copyCode: "העתק קוד",
+            copyCodeConfirmed: "הקוד הועתק!",
             shareLink: "שתף קישור",
             editRace: "ערוך מרוץ",
             startRace: "התחל מרוץ",
@@ -355,6 +356,7 @@ export const TEACHER_RACE_WAITING_ROOM_CONTENT = {
 
         actions: {
             copyCode: "Copy code",
+            copyCodeConfirmed: "Code copied!",
             shareLink: "Share link",
             editRace: "Edit race",
             startRace: "Start race",

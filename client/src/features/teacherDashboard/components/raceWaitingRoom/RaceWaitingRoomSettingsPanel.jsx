@@ -1,6 +1,7 @@
 import { Clock, Gamepad2, Route, Shuffle, Trophy } from "lucide-react";
 import {WAITING_ROOM_SETTINGS_ITEMS, WAITING_ROOM_SETTINGS_KEYS,} from "../../config/raceWaitingRoomConfig";
 import {WAITING_ROOM_SIDE_PANEL_STYLES, WAITING_ROOM_TEXT_STYLES,} from "../../styles/raceWaitingRoomStyles";
+import { cx } from "../../../../utils/classNameUtils";
 
 export default function RaceWaitingRoomSettingsPanel({race, content,}) {
     const SETTINGS_ICONS = Object.freeze({
@@ -25,10 +26,14 @@ export default function RaceWaitingRoomSettingsPanel({race, content,}) {
             </h2>
 
             <div className={WAITING_ROOM_SIDE_PANEL_STYLES.list}>
-                {WAITING_ROOM_SETTINGS_ITEMS.map((item) => {
+                {WAITING_ROOM_SETTINGS_ITEMS.map((item, index) => {
                     const itemContent = content[item.contentKey];
                     const Icon = SETTINGS_ICONS[item.key];
                     const value = getSettingValue(item, race, itemContent);
+                    const iconVariant =
+                        WAITING_ROOM_SIDE_PANEL_STYLES.itemIconVariants[
+                            index % WAITING_ROOM_SIDE_PANEL_STYLES.itemIconVariants.length
+                        ];
 
                     return (
                         <article
@@ -36,10 +41,10 @@ export default function RaceWaitingRoomSettingsPanel({race, content,}) {
                             className={WAITING_ROOM_SIDE_PANEL_STYLES.item}
                         >
                             <div className={WAITING_ROOM_SIDE_PANEL_STYLES.itemLeft}>
-                                <div className={WAITING_ROOM_SIDE_PANEL_STYLES.itemIcon}>
+                                <div className={cx(WAITING_ROOM_SIDE_PANEL_STYLES.itemIcon, iconVariant)}>
                                     {Icon && (
                                         <Icon
-                                            size={20}
+                                            size={18}
                                             aria-hidden="true"
                                         />
                                     )}

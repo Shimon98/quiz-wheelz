@@ -1,8 +1,10 @@
+import { motion } from "framer-motion";
 import {
     WAITING_ROOM_DEFAULT_MAX_PLAYERS,
     WAITING_ROOM_SLOT_COLORS,
 } from "../../config/raceWaitingRoomConfig";
 import { WAITING_ROOM_PARTICIPANT_STYLES } from "../../styles/raceWaitingRoomStyles";
+import { STAGGER_CONTAINER_VARIANTS } from "../../styles/raceWaitingRoomMotion";
 import RaceWaitingRoomParticipantSlot from "./RaceWaitingRoomParticipantSlot";
 
 export default function RaceWaitingRoomParticipantsGrid({
@@ -27,7 +29,12 @@ export default function RaceWaitingRoomParticipantsGrid({
 
     return (
         <section className={WAITING_ROOM_PARTICIPANT_STYLES.panel}>
-            <div className={WAITING_ROOM_PARTICIPANT_STYLES.grid}>
+            <motion.div
+                className={WAITING_ROOM_PARTICIPANT_STYLES.grid}
+                initial="hidden"
+                animate="visible"
+                variants={STAGGER_CONTAINER_VARIANTS}
+            >
                 {slots.map((slot) => (
                     <RaceWaitingRoomParticipantSlot
                         key={slot.slotNumber}
@@ -38,7 +45,7 @@ export default function RaceWaitingRoomParticipantsGrid({
                         vehicleImageSrc={slot.vehicleImageSrc}
                     />
                 ))}
-            </div>
+            </motion.div>
         </section>
     );
 }

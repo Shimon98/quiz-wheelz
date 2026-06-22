@@ -38,6 +38,15 @@ export default function RaceWaitingRoomInfoCards({
                         key={item.key}
                         className={WAITING_ROOM_INFO_STYLES.card}
                     >
+                        <div className={cx(WAITING_ROOM_INFO_STYLES.icon, iconVariant)}>
+                            {Icon && (
+                                <Icon
+                                    aria-hidden="true"
+                                    className={WAITING_ROOM_INFO_STYLES.iconSvg}
+                                />
+                            )}
+                        </div>
+
                         <div className={WAITING_ROOM_INFO_STYLES.content}>
                             <p className={WAITING_ROOM_TEXT_STYLES.label}>
                                 {itemContent.label}
@@ -46,15 +55,6 @@ export default function RaceWaitingRoomInfoCards({
                             <p className={WAITING_ROOM_TEXT_STYLES.value}>
                                 {value}
                             </p>
-                        </div>
-
-                        <div className={cx(WAITING_ROOM_INFO_STYLES.icon, iconVariant)}>
-                            {Icon && (
-                                <Icon
-                                    aria-hidden="true"
-                                    className={WAITING_ROOM_INFO_STYLES.iconSvg}
-                                />
-                            )}
                         </div>
                     </article>
                 );
