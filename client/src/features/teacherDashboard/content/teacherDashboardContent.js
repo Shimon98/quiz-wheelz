@@ -25,9 +25,13 @@ export const TEACHER_DASHBOARD_CONTENT = {
         },
         racePreview: {
             racesTitle: "המרוצים שלי",
-            racesDescription: "בהמשך יוצגו כאן המרוצים שהמורה יצר.",
+            racesDescription: "המרוצים האחרונים שיצרת מוצגים כאן.",
             createRaceButton: "יצירת מרוץ חדש",
             emptyRacesMessage: "עדיין אין מרוצים להצגה.",
+            filterAll: "כל המרוצים",
+            showAllRaces: "הצג את כל המרוצים",
+            allRacesTitle: "כל המרוצים שלי",
+            allRacesDescription: "כאן ניתן לראות את כל המרוצים שיצרת.",
         },
     },
     en: {
@@ -56,9 +60,13 @@ export const TEACHER_DASHBOARD_CONTENT = {
         },
         racePreview: {
             racesTitle: "My races",
-            racesDescription: "Races created by the teacher will appear here.",
+            racesDescription: "Your latest created races are shown here.",
             createRaceButton: "Create new race",
             emptyRacesMessage: "No races to display yet.",
+            filterAll: "All races",
+            showAllRaces: "Show all races",
+            allRacesTitle: "All my races",
+            allRacesDescription: "View all races you created.",
         },
     },
 };

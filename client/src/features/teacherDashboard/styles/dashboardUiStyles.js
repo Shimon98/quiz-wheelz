@@ -159,3 +159,105 @@ export const RACE_LENGTH_CARD_STYLES = {
     sectionIcon: "h-4 w-4 text-rose-500",
     optionIcon: "h-5 w-5",
 };
+
+export const TEACHER_RACES_PREVIEW_STYLES = {
+    header:
+        "flex shrink-0 flex-col gap-4 border-b border-slate-100 pb-4 md:flex-row md:items-center md:justify-between",
+
+    titleGroup:
+        "flex items-center gap-3",
+
+    titleIcon:
+        "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-sky-50 text-slate-900",
+
+    title:
+        "text-2xl font-black text-slate-900",
+
+    description:
+        "mt-1 text-base font-semibold text-slate-500",
+
+    filterButton:
+        "inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-extrabold text-slate-700 shadow-sm transition hover:bg-slate-50",
+
+    content:
+        "mt-4",
+
+    footer:
+        "mt-4 flex justify-center border-t border-slate-100 pt-4",
+
+    showAllButton:
+        "inline-flex min-w-56 items-center justify-center gap-2",
+};
+
+export const RACE_CARD_COMPACT_STYLES = {
+    card:
+        "grid min-h-[76px] items-center gap-4 rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-[0_8px_22px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(15,23,42,0.10)] lg:grid-cols-[minmax(260px,1.35fr)_minmax(130px,0.75fr)_minmax(110px,0.65fr)_auto_auto]",
+
+    identity:
+        "flex min-w-0 items-center gap-3",
+
+    iconBox:
+        "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 [&>svg]:block",
+
+    titleBlock:
+        "min-w-0",
+
+    titleRow:
+        "flex min-w-0 items-center gap-2",
+
+    title:
+        "truncate text-base font-black text-slate-900",
+
+    favoriteIcon:
+        "h-4 w-4 shrink-0 text-amber-400",
+
+    roomCodeRow:
+        "mt-1 flex items-center gap-2 text-sm font-bold text-slate-500",
+
+    roomCodeBadge:
+        "rounded-full bg-sky-50 px-2.5 py-1 text-xs font-black text-sky-700",
+
+    subject:
+        "flex items-center gap-2 text-sm font-extrabold text-slate-600",
+
+    subjectIcon:
+        "h-5 w-5 text-sky-500",
+
+    players:
+        "flex items-center gap-2 text-sm font-extrabold text-slate-700",
+
+    playersIcon:
+        "h-5 w-5 text-slate-400",
+
+    actions:
+        "flex items-center justify-end gap-2 justify-self-end",
+
+    openButton:
+        "shrink-0 text-white [&>svg]:block",
+
+    moreButton:
+        "inline-flex h-11 w-11 shrink-0 cursor-pointer list-none items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 group-open:bg-slate-200 [&>svg]:block [&::-webkit-details-marker]:hidden",
+};
+
+export const ALL_RACES_MODAL_STYLES = {
+    overlay:
+        "fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]",
+
+    panel:
+        "relative flex max-h-[86vh] w-full max-w-[920px] flex-col rounded-[2rem] bg-white p-6 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)]",
+
+    header:
+        "flex shrink-0 items-start justify-between gap-4 border-b border-slate-100 pb-4",
+
+    title:
+        "text-2xl font-black text-slate-900",
+
+    description:
+        "mt-1 text-sm font-bold text-slate-500",
+
+    closeButton:
+        "h-11 w-11 rounded-2xl p-0 text-xl",
+
+    list:
+        "mt-4 grid gap-3 overflow-y-auto pe-1",
+};

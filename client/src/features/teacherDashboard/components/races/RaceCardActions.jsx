@@ -1,3 +1,4 @@
+import { Play } from "lucide-react";
 import { RACE_STATUSES } from "../../config/raceStatusConfig";
 import DashboardButton from "../ui/DashboardButton";
 import {
@@ -6,14 +7,17 @@ import {
     isRaceEditable,
 } from "../../utils/raceStatusUtils";
 import RaceMoreMenu from "./RaceMoreMenu";
+import RaceStatusBadge from "./RaceStatusBadge";
+import { RACE_CARD_COMPACT_STYLES } from "../../styles/dashboardUiStyles";
 
 export default function RaceCardActions({
-    race,
-    content,
-    onOpenRace,
-    onEditRace,
-    onCancelRace,
-}) {
+                                            race,
+                                            content,
+                                            statusLabels,
+                                            onOpenRace,
+                                            onEditRace,
+                                            onCancelRace,
+                                        }) {
     const canOpenRace = race.status !== RACE_STATUSES.CANCELLED && Boolean(onOpenRace);
     const canEdit = isRaceEditable(race.status) && Boolean(onEditRace);
     const canCancel = isRaceCancellable(race.status) && Boolean(onCancelRace);
@@ -25,23 +29,32 @@ export default function RaceCardActions({
     }
 
     return (
-        <div className="flex items-center justify-between gap-3">
-            <DashboardButton
-                onClick={handleOpenRace}
-                disabled={!canOpenRace}
-                className="flex-1"
-            >
-                {getRaceActionLabel(race.status, content)}
-            </DashboardButton>
+        <>
+            <RaceStatusBadge status={race.status} labels={statusLabels} />
 
-            <RaceMoreMenu
-                race={race}
-                content={content}
-                canEdit={canEdit}
-                canCancel={canCancel}
-                onEditRace={onEditRace}
-                onCancelRace={onCancelRace}
-            />
-        </div>
+            <div className={RACE_CARD_COMPACT_STYLES.actions}>
+                <DashboardButton
+                    onClick={handleOpenRace}
+                    disabled={!canOpenRace}
+                    aria-label={getRaceActionLabel(race.status, content)}
+                    className={RACE_CARD_COMPACT_STYLES.openButton}
+                >
+                    <Play
+                        size={20}
+                        aria-hidden="true"
+                        strokeWidth={2.5}
+                    />
+                </DashboardButton>
+
+                <RaceMoreMenu
+                    race={race}
+                    content={content}
+                    canEdit={canEdit}
+                    canCancel={canCancel}
+                    onEditRace={onEditRace}
+                    onCancelRace={onCancelRace}
+                />
+            </div>
+        </>
     );
 }

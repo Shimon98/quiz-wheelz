@@ -1,0 +1,1 @@
+export const TEACHER_RACES_PREVIEW_LIMIT = 4;
