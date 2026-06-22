@@ -6,6 +6,7 @@ const VARIANT_CLASSES = Object.freeze({
     secondary:
         "bg-white text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50",
     danger: "bg-rose-50 text-rose-600 hover:bg-rose-100",
+    dangerSolid: "bg-red-500 text-white shadow-md hover:bg-red-600",
     ghost: "bg-transparent text-slate-600 hover:bg-slate-100",
     cta:
         "bg-gradient-to-l from-blue-700 via-sky-500 to-cyan-400 text-white shadow-[0_14px_28px_rgba(2,132,199,0.35)] hover:from-blue-800 hover:via-sky-600 hover:to-cyan-500",

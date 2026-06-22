@@ -1,5 +1,7 @@
 import { useLocaleContent } from "../../../../constants/localeConstants.js";
 import { TEACHER_DASHBOARD_CONTENT } from "../../content/teacherDashboardContent.js";
+import Button from "../../../../shared/components/ui/Button";
+
 
 export default function TeacherTopBar({ teacherName, isLoggingOut, onLogout }) {
     const content = useLocaleContent(TEACHER_DASHBOARD_CONTENT).topBar;
@@ -23,14 +25,15 @@ export default function TeacherTopBar({ teacherName, isLoggingOut, onLogout }) {
                 🔔
             </span>
 
-            <button
-                type="button"
+            <Button
                 onClick={onLogout}
                 disabled={isLoggingOut}
-                className="shrink-0 rounded-xl bg-red-500 px-3 py-1.5 text-xs font-bold text-white shadow-md transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
+                variant="dangerSolid"
+                size="sm"
+                className="shrink-0 rounded-xl px-3 py-1.5 text-xs sm:text-sm"
             >
                 {isLoggingOut ? content.logoutLoading : content.logoutButton}
-            </button>
+            </Button>
         </div>
     );
 }
