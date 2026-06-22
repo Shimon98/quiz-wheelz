@@ -2,10 +2,7 @@ import {
     WAITING_ROOM_DEFAULT_MAX_PLAYERS,
     WAITING_ROOM_SLOT_COLORS,
 } from "../../config/raceWaitingRoomConfig";
-import {
-    WAITING_ROOM_PARTICIPANT_STYLES,
-    WAITING_ROOM_TEXT_STYLES,
-} from "../../styles/raceWaitingRoomStyles";
+import { WAITING_ROOM_PARTICIPANT_STYLES } from "../../styles/raceWaitingRoomStyles";
 import RaceWaitingRoomParticipantSlot from "./RaceWaitingRoomParticipantSlot";
 
 export default function RaceWaitingRoomParticipantsGrid({
@@ -30,10 +27,6 @@ export default function RaceWaitingRoomParticipantsGrid({
 
     return (
         <section className={WAITING_ROOM_PARTICIPANT_STYLES.panel}>
-            <h2 className={WAITING_ROOM_TEXT_STYLES.sectionTitle}>
-                {content.title}
-            </h2>
-
             <div className={WAITING_ROOM_PARTICIPANT_STYLES.grid}>
                 {slots.map((slot) => (
                     <RaceWaitingRoomParticipantSlot

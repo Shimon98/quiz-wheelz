@@ -67,10 +67,6 @@ export default function TeacherRaceRoomPage() {
         // Future feature.
     }
 
-    function handleRemindStudents() {
-        // Future feature.
-    }
-
     function handleCancelRace() {
         // Future feature.
     }
@@ -121,7 +117,6 @@ export default function TeacherRaceRoomPage() {
                                 <RaceWaitingRoomSidePanel
                                     race={raceRoom}
                                     content={content}
-                                    onRemindStudents={handleRemindStudents}
                                     onCancelRace={handleCancelRace}
                                     canCancelRace={false}
                                 />

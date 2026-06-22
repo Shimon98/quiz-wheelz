@@ -333,7 +333,6 @@ export const TEACHER_RACE_WAITING_ROOM_CONTENT = {
 
         quickActions: {
             title: "פעולות מהירות",
-            remindStudents: "שלח תזכורת לתלמידים",
             cancelRace: "בטל מרוץ",
             futureHint: "פעולה זו תחובר בהמשך.",
         },
@@ -411,7 +410,6 @@ export const TEACHER_RACE_WAITING_ROOM_CONTENT = {
 
         quickActions: {
             title: "Quick actions",
-            remindStudents: "Send reminder to students",
             cancelRace: "Cancel race",
             futureHint: "This action will be connected later.",
         },

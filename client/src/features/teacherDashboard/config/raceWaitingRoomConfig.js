@@ -41,18 +41,10 @@ export const WAITING_ROOM_SETTINGS_KEYS = Object.freeze({
 });
 
 export const WAITING_ROOM_QUICK_ACTION_KEYS = Object.freeze({
-    REMIND_STUDENTS: "remindStudents",
     CANCEL_RACE: "cancelRace",
 });
 
 export const WAITING_ROOM_QUICK_ACTION_ITEMS = Object.freeze([
-    {
-        key: WAITING_ROOM_QUICK_ACTION_KEYS.REMIND_STUDENTS,
-        contentKey: "remindStudents",
-        actionType: "remind",
-        variant: "secondary",
-        disabled: true,
-    },
     {
         key: WAITING_ROOM_QUICK_ACTION_KEYS.CANCEL_RACE,
         contentKey: "cancelRace",
@@ -120,21 +112,4 @@ export const WAITING_ROOM_DEFAULT_SETTINGS = Object.freeze({
     winCondition: "firstToFinish",
     questionTime: "adaptive",
     questionOrder: "random",
-});
-
-export const WAITING_ROOM_INFO_STYLES = Object.freeze({
-    grid:
-        "grid gap-3 md:grid-cols-3",
-
-    card:
-        "flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-[0_6px_18px_rgba(15,23,42,0.06)]",
-
-    icon:
-        "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-50 text-sky-600",
-
-    iconSvg:
-        "h-6 w-6",
-
-    content:
-        "min-w-0 text-end",
 });

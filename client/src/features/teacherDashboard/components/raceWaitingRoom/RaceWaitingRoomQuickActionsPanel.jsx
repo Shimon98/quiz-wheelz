@@ -1,4 +1,4 @@
-import { Bell, XCircle } from "lucide-react";
+import { XCircle } from "lucide-react";
 import DashboardButton from "../ui/DashboardButton";
 import {
     WAITING_ROOM_QUICK_ACTION_ITEMS,
@@ -10,38 +10,35 @@ import {
     WAITING_ROOM_TEXT_STYLES,
 } from "../../styles/raceWaitingRoomStyles";
 
+const QUICK_ACTION_ICONS = Object.freeze({
+    [WAITING_ROOM_QUICK_ACTION_KEYS.CANCEL_RACE]: XCircle,
+});
 
+function getActionHandler(actionType, handlers) {
+    if (actionType === "cancel") {
+        return handlers.onCancelRace;
+    }
+
+    return undefined;
+}
+
+function getActionDisabled(item, canCancelRace) {
+    if (item.actionType === "cancel") {
+        return !canCancelRace;
+    }
+
+    return item.disabled;
+}
 
 export default function RaceWaitingRoomQuickActionsPanel({
-                                                             content,
-                                                             onRemindStudents,
-                                                             onCancelRace,
-                                                             canCancelRace = false,
-                                                         }) {
-
-    const QUICK_ACTION_ICONS = Object.freeze({
-        [WAITING_ROOM_QUICK_ACTION_KEYS.REMIND_STUDENTS]: Bell,
-        [WAITING_ROOM_QUICK_ACTION_KEYS.CANCEL_RACE]: XCircle,
-    });
-
-    function getActionHandler(actionType, handlers) {
-        if (actionType === "remind") {
-            return handlers.onRemindStudents;}
-        if (actionType === "cancel") {
-            return handlers.onCancelRace;}
-        return undefined;
-    }
-
-    function getActionDisabled(item, canCancelRace) {
-        if (item.actionType === "cancel") {
-            return !canCancelRace;}
-        return item.disabled;
-    }
-
-    const handlers = {onRemindStudents, onCancelRace,};
+    content,
+    onCancelRace,
+    canCancelRace = false,
+}) {
+    const handlers = { onCancelRace };
 
     return (
-        <section className={WAITING_ROOM_SIDE_PANEL_STYLES.panel}>
+        <section className={WAITING_ROOM_SIDE_PANEL_STYLES.sectionDivider}>
             <h2 className={WAITING_ROOM_TEXT_STYLES.sectionTitle}>
                 {content.title}
             </h2>

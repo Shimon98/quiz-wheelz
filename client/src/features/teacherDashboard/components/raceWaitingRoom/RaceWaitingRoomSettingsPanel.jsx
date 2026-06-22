@@ -19,7 +19,7 @@ export default function RaceWaitingRoomSettingsPanel({race, content,}) {
 
 
     return (
-        <section className={WAITING_ROOM_SIDE_PANEL_STYLES.panel}>
+        <section className={WAITING_ROOM_SIDE_PANEL_STYLES.section}>
             <h2 className={WAITING_ROOM_TEXT_STYLES.sectionTitle}>
                 {content.title}
             </h2>

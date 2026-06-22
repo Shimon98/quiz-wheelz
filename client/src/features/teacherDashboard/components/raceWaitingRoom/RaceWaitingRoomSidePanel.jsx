@@ -2,7 +2,12 @@ import RaceWaitingRoomQuickActionsPanel from "./RaceWaitingRoomQuickActionsPanel
 import RaceWaitingRoomSettingsPanel from "./RaceWaitingRoomSettingsPanel";
 import { WAITING_ROOM_LAYOUT_STYLES } from "../../styles/raceWaitingRoomStyles";
 
-export default function RaceWaitingRoomSidePanel({race, content, onRemindStudents, onCancelRace, canCancelRace = false,}) {
+export default function RaceWaitingRoomSidePanel({
+    race,
+    content,
+    onCancelRace,
+    canCancelRace = false,
+}) {
     return (
         <aside className={WAITING_ROOM_LAYOUT_STYLES.sideColumn}>
             <RaceWaitingRoomSettingsPanel
@@ -12,7 +17,6 @@ export default function RaceWaitingRoomSidePanel({race, content, onRemindStudent
 
             <RaceWaitingRoomQuickActionsPanel
                 content={content.quickActions}
-                onRemindStudents={onRemindStudents}
                 onCancelRace={onCancelRace}
                 canCancelRace={canCancelRace}
             />

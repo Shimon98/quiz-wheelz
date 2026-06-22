@@ -15,27 +15,25 @@ export default function RaceWaitingRoomJoinPanel({
                                                  }) {
     return (
         <section className={WAITING_ROOM_CARD_STYLES.joinPanel}>
-            <div className={WAITING_ROOM_CARD_STYLES.joinPanelContent}>
-                <RoomCodeQrCard
-                    roomCode={race.roomCode}
-                    content={content.joinPanel}
-                />
+            <RoomCodeQrCard
+                roomCode={race.roomCode}
+                content={content.joinPanel}
+            />
 
-                <RaceWaitingRoomPrimaryActions
-                    content={content.actions}
-                    onCopyCode={onCopyCode}
-                    onShareLink={onShareLink}
-                    onEditRace={onEditRace}
-                    onStartRace={onStartRace}
-                    canEditRace={canEditRace}
-                    canStartRace={canStartRace}
-                />
+            <RaceWaitingRoomPrimaryActions
+                content={content.actions}
+                onCopyCode={onCopyCode}
+                onShareLink={onShareLink}
+                onEditRace={onEditRace}
+                onStartRace={onStartRace}
+                canEditRace={canEditRace}
+                canStartRace={canStartRace}
+            />
 
-                <RaceWaitingRoomInfoCards
-                    race={race}
-                    content={content.infoCards}
-                />
-            </div>
+            <RaceWaitingRoomInfoCards
+                race={race}
+                content={content.infoCards}
+            />
         </section>
     );
 }
