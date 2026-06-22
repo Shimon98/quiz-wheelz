@@ -1,14 +1,15 @@
+import { TEACHER_DASHBOARD_PANEL_STYLES } from "../../styles/dashboardUiStyles";
 import RaceCard from "./RaceCard";
 
 export default function RaceList({
-    races,
-    content,
-    onOpenRace,
-    onEditRace,
-    onCancelRace,
-}) {
+                                     races,
+                                     content,
+                                     onOpenRace,
+                                     onEditRace,
+                                     onCancelRace,
+                                 }) {
     return (
-        <div className="grid gap-4 overflow-y-auto pe-1">
+        <div className={TEACHER_DASHBOARD_PANEL_STYLES.raceList}>
             {races.map((race) => (
                 <RaceCard
                     key={race.raceId}

@@ -1,14 +1,15 @@
-import TeacherRacePanel from "./TeacherRacePanel.jsx";
+import TeacherRacePanel from "./TeacherRacePanel";
+import { TEACHER_DASHBOARD_PANEL_STYLES } from "../../styles/dashboardUiStyles";
 
 export default function TeacherDashboardPanels({
-    races,
-    isRacesLoading,
-    racesError,
-    onCreateRaceClick,
-    onOpenRace,
-}) {
+                                                   races,
+                                                   isRacesLoading,
+                                                   racesError,
+                                                   onCreateRaceClick,
+                                                   onOpenRace,
+                                               }) {
     return (
-        <div className="min-h-0 flex-1">
+        <div className={TEACHER_DASHBOARD_PANEL_STYLES.wrapper}>
             <TeacherRacePanel
                 className="h-full"
                 races={races}

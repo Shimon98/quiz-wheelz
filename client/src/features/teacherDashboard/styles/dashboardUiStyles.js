@@ -15,6 +15,34 @@ export const DASHBOARD_SURFACE_STYLES = {
         "rounded-2xl border border-slate-200 bg-white shadow-[0_6px_18px_rgba(15,23,42,0.08)]",
 };
 
+export const TEACHER_DASHBOARD_LAYOUT_STYLES = {
+    page:
+        "relative min-h-screen overflow-x-hidden bg-sky-100 p-3 md:p-4",
+
+    background:
+        "absolute inset-0 opacity-40",
+
+    content:
+        "relative z-10 mx-auto flex max-w-[1320px] gap-4",
+
+    main:
+        "flex min-w-0 flex-1 flex-col gap-3",
+};
+
+export const TEACHER_DASHBOARD_PANEL_STYLES = {
+    wrapper:
+        "flex-1",
+
+    racesPanel:
+        "flex flex-col rounded-3xl bg-white/80 p-6 text-start shadow-md",
+
+    racesContent:
+        "mt-6",
+
+    raceList:
+        "grid gap-4 pe-1",
+};
+
 export const DASHBOARD_TEXT_STYLES = {
     modalTitle:
         "flex items-center justify-center gap-3 text-4xl font-black leading-tight text-slate-900",

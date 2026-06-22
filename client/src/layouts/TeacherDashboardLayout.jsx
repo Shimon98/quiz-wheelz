@@ -1,20 +1,21 @@
 import TeacherSidebar from "../features/teacherDashboard/components/sidebar/TeacherSidebar";
 import { getTeacherDashboardAsset } from "../features/teacherDashboard/constants/teacherDashboardAssets";
+import { TEACHER_DASHBOARD_LAYOUT_STYLES } from "../features/teacherDashboard/styles/dashboardUiStyles";
 
 export default function TeacherDashboardLayout({
-    children,
-    onDashboardClick,
-    onRacesClick,
-    onCreateRaceClick,
-}) {
+                                                   children,
+                                                   onDashboardClick,
+                                                   onRacesClick,
+                                                   onCreateRaceClick,
+                                               }) {
     const generalBackground = getTeacherDashboardAsset("generalBackground");
 
     return (
-        <div className="relative h-screen overflow-hidden bg-sky-100 p-3 md:p-4">
+        <div className={TEACHER_DASHBOARD_LAYOUT_STYLES.page}>
             {generalBackground && (
                 <div
                     aria-hidden="true"
-                    className="absolute inset-0 opacity-40"
+                    className={TEACHER_DASHBOARD_LAYOUT_STYLES.background}
                     style={{
                         backgroundImage: `url(${generalBackground})`,
                         backgroundSize: "cover",
@@ -23,14 +24,14 @@ export default function TeacherDashboardLayout({
                 />
             )}
 
-            <div className="relative z-10 mx-auto flex h-full max-w-[1320px] gap-4">
+            <div className={TEACHER_DASHBOARD_LAYOUT_STYLES.content}>
                 <TeacherSidebar
                     onDashboardClick={onDashboardClick}
                     onRacesClick={onRacesClick}
                     onCreateRaceClick={onCreateRaceClick}
                 />
 
-                <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
+                <main className={TEACHER_DASHBOARD_LAYOUT_STYLES.main}>
                     {children}
                 </main>
             </div>

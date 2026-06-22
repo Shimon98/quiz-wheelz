@@ -3,6 +3,7 @@ import {
     TEACHER_DASHBOARD_CONTENT,
     TEACHER_DASHBOARD_RACE_CONTENT,
 } from "../../content/teacherDashboardContent";
+import { TEACHER_DASHBOARD_PANEL_STYLES } from "../../styles/dashboardUiStyles";
 import DashboardButton from "../ui/DashboardButton";
 import DashboardErrorState from "../ui/DashboardErrorState";
 import DashboardLoadingState from "../ui/DashboardLoadingState";
@@ -10,15 +11,15 @@ import EmptyRacesState from "./EmptyRacesState";
 import RaceList from "./RaceList";
 
 export default function TeacherRacesPanel({
-    races = [],
-    isLoading = false,
-    error = null,
-    onCreateRaceClick,
-    onOpenRace,
-    onEditRace,
-    onCancelRace,
-    className = "",
-}) {
+                                              races = [],
+                                              isLoading = false,
+                                              error = null,
+                                              onCreateRaceClick,
+                                              onOpenRace,
+                                              onEditRace,
+                                              onCancelRace,
+                                              className = "",
+                                          }) {
     const content = useLocaleContent(TEACHER_DASHBOARD_CONTENT).racePreview;
     const raceContent = useLocaleContent(TEACHER_DASHBOARD_RACE_CONTENT);
     const hasRaces = races.length > 0;
@@ -27,7 +28,7 @@ export default function TeacherRacesPanel({
 
     return (
         <section
-            className={`flex min-h-0 flex-col rounded-3xl bg-white/80 p-6 text-start shadow-md ${className}`}
+            className={`${TEACHER_DASHBOARD_PANEL_STYLES.racesPanel} ${className}`.trim()}
             dir="auto"
         >
             <div className="flex shrink-0 flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -48,7 +49,7 @@ export default function TeacherRacesPanel({
                 )}
             </div>
 
-            <div className="mt-6 min-h-0 flex-1 overflow-hidden">
+            <div className={TEACHER_DASHBOARD_PANEL_STYLES.racesContent}>
                 {isLoading && <DashboardLoadingState />}
 
                 {!isLoading && error && <DashboardErrorState message={errorMessage} />}
