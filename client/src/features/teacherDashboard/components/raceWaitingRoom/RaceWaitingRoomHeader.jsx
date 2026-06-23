@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Flag } from "lucide-react";
-import DashboardButton from "../ui/DashboardButton";
+import Button from "../../../../shared/components/ui/Button";
 import RaceStatusBadge from "../races/RaceStatusBadge";
 import { WAITING_ROOM_HEADER_STYLES } from "../../styles/raceWaitingRoomStyles";
 import { ENTRANCE_TRANSITION, FADE_UP_VARIANTS } from "../../styles/raceWaitingRoomMotion";
@@ -24,7 +24,7 @@ export default function RaceWaitingRoomHeader({
             transition={ENTRANCE_TRANSITION}
         >
             <div className={WAITING_ROOM_HEADER_STYLES.titleGroup}>
-                <DashboardButton
+                <Button
                     onClick={onBackToRaces}
                     variant="secondary"
                     size="sm"
@@ -32,7 +32,7 @@ export default function RaceWaitingRoomHeader({
                 >
                     <ArrowRight size={18} aria-hidden="true" />
                     <span>{content.backToRaces}</span>
-                </DashboardButton>
+                </Button>
 
                 <Flag
                     size={32}

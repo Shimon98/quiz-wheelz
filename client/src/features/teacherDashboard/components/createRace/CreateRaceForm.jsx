@@ -1,4 +1,4 @@
-import DashboardButton from "../ui/DashboardButton";
+import Button from "../../../../shared/components/ui/Button";
 import MaxPlayersSelector from "./MaxPlayersSelector";
 import RaceLengthSelector from "./RaceLengthSelector";
 import SubjectSelect from "./SubjectSelect";
@@ -74,7 +74,7 @@ export default function CreateRaceForm({
             />
 
             <div className={CREATE_RACE_FORM_STYLES.actions}>
-                <DashboardButton
+                <Button
                     type="button"
                     variant="secondary"
                     size="lg"
@@ -83,9 +83,9 @@ export default function CreateRaceForm({
                     className={CREATE_RACE_FORM_STYLES.cancelButton}
                 >
                     {content.buttons.cancel}
-                </DashboardButton>
+                </Button>
 
-                <DashboardButton
+                <Button
                     type="submit"
                     variant="cta"
                     size="lg"
@@ -94,7 +94,7 @@ export default function CreateRaceForm({
                 >
                     <RaceFlagIcon className={CREATE_RACE_FORM_STYLES.submitIcon}/>
                     <span>{isSubmitting ? content.buttons.submitting : content.buttons.submit}</span>
-                </DashboardButton>
+                </Button>
             </div>
         </form>
     );
