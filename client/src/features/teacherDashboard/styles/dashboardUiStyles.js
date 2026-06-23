@@ -345,7 +345,10 @@ export const RACE_CARD_COMPACT_STYLES = {
         "flex items-center justify-end gap-2 justify-self-end",
 
     openButton:
-        "shrink-0 bg-sky-50 text-sky-600 shadow-none ring-1 ring-sky-100 hover:bg-sky-100 hover:text-sky-700 [&>svg]:block",
+        "h-12 min-h-12 w-12 shrink-0 rounded-2xl p-0 [&>svg]:block",
+
+    openIcon:
+        "h-5 w-5",
 
     moreButton:
         "inline-flex h-10 w-10 shrink-0 cursor-pointer list-none items-center justify-center rounded-2xl bg-slate-50 text-slate-500 ring-1 ring-slate-100 transition hover:bg-slate-100 group-open:bg-slate-100 [&>svg]:block [&::-webkit-details-marker]:hidden",
@@ -363,6 +366,10 @@ export const RACE_CARD_STATUS_TONE_STYLES = {
             "bg-amber-50 text-amber-700 ring-amber-100",
         subjectIcon:
             "text-amber-500",
+        actionButton:
+            "bg-amber-400 text-white shadow-[0_12px_24px_rgba(245,158,11,0.28)] hover:bg-amber-500",
+        actionIcon:
+            "text-white",
     },
 
     emerald: {
@@ -376,6 +383,10 @@ export const RACE_CARD_STATUS_TONE_STYLES = {
             "bg-emerald-50 text-emerald-700 ring-emerald-100",
         subjectIcon:
             "text-emerald-500",
+        actionButton:
+            "bg-emerald-500 text-white shadow-[0_12px_24px_rgba(16,185,129,0.26)] hover:bg-emerald-600",
+        actionIcon:
+            "text-white",
     },
 
     green: {
@@ -389,6 +400,10 @@ export const RACE_CARD_STATUS_TONE_STYLES = {
             "bg-green-50 text-green-700 ring-green-100",
         subjectIcon:
             "text-green-500",
+        actionButton:
+            "bg-green-500 text-white shadow-[0_12px_24px_rgba(34,197,94,0.26)] hover:bg-green-600",
+        actionIcon:
+            "text-white",
     },
 
     violet: {
@@ -402,6 +417,10 @@ export const RACE_CARD_STATUS_TONE_STYLES = {
             "bg-violet-50 text-violet-700 ring-violet-100",
         subjectIcon:
             "text-violet-500",
+        actionButton:
+            "bg-violet-500 text-white shadow-[0_12px_24px_rgba(139,92,246,0.26)] hover:bg-violet-600",
+        actionIcon:
+            "text-white",
     },
 
     rose: {
@@ -415,6 +434,10 @@ export const RACE_CARD_STATUS_TONE_STYLES = {
             "bg-rose-50 text-rose-700 ring-rose-100",
         subjectIcon:
             "text-rose-500",
+        actionButton:
+            "bg-rose-100 text-rose-500 ring-1 ring-rose-200 shadow-none",
+        actionIcon:
+            "text-rose-500",
     },
 
     slate: {
@@ -427,6 +450,10 @@ export const RACE_CARD_STATUS_TONE_STYLES = {
         subject:
             "bg-slate-50 text-slate-700 ring-slate-100",
         subjectIcon:
+            "text-slate-500",
+        actionButton:
+            "bg-slate-100 text-slate-500 ring-1 ring-slate-200 shadow-none hover:bg-slate-200",
+        actionIcon:
             "text-slate-500",
     },
 };

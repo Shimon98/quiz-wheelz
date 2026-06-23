@@ -8,12 +8,14 @@ import {
 } from "../../utils/raceStatusUtils";
 import RaceMoreMenu from "./RaceMoreMenu";
 import RaceStatusBadge from "./RaceStatusBadge";
+import { cx } from "../../../../utils/classNameUtils";
 import { RACE_CARD_COMPACT_STYLES } from "../../styles/dashboardUiStyles";
 
 export default function RaceCardActions({
                                             race,
                                             content,
                                             statusLabels,
+                                            toneStyles,
                                             onOpenRace,
                                             onEditRace,
                                             onCancelRace,
@@ -34,17 +36,23 @@ export default function RaceCardActions({
 
             <div className={RACE_CARD_COMPACT_STYLES.actions}>
                 <Button
-                    variant="secondary"
+                    variant="plain"
                     size="icon"
                     onClick={handleOpenRace}
                     disabled={!canOpenRace}
                     aria-label={getRaceActionLabel(race.status, content)}
-                    className={RACE_CARD_COMPACT_STYLES.openButton}
+                    className={cx(
+                        RACE_CARD_COMPACT_STYLES.openButton,
+                        toneStyles.actionButton,
+                    )}
                 >
                     <Play
-                        size={19}
                         aria-hidden="true"
-                        strokeWidth={2.7}
+                        strokeWidth={2.8}
+                        className={cx(
+                            RACE_CARD_COMPACT_STYLES.openIcon,
+                            toneStyles.actionIcon,
+                        )}
                     />
                 </Button>
 

@@ -12,6 +12,7 @@ const VARIANT_CLASSES = Object.freeze({
         "bg-gradient-to-l from-blue-700 via-sky-500 to-cyan-400 text-white shadow-[0_14px_28px_rgba(2,132,199,0.35)] hover:from-blue-800 hover:via-sky-600 hover:to-cyan-500",
     successCta:
         "bg-gradient-to-l from-emerald-700 via-emerald-500 to-lime-400 text-white shadow-[0_14px_28px_rgba(5,150,105,0.32)] hover:from-emerald-800 hover:via-emerald-600 hover:to-lime-500",
+    plain: "",
 });
 
 const SIZE_CLASSES = Object.freeze({

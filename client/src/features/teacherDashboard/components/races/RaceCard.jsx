@@ -49,6 +49,7 @@ export default function RaceCard({
                 race={race}
                 content={content.actions}
                 statusLabels={content.statusLabels}
+                toneStyles={toneStyles}
                 onOpenRace={onOpenRace}
                 onEditRace={onEditRace}
                 onCancelRace={onCancelRace}
