@@ -410,7 +410,6 @@ Example:
 
 ```text
 features/teacherDashboard/components/TeacherDashboardMain.jsx
-features/teacherDashboard/components/TeacherRacePanel.jsx
 ```
 
 Allowed:
@@ -868,9 +867,7 @@ TeacherDashboardLayout
 
 Future Issue 09B race list work should happen inside:
 
-```text
-features/teacherDashboard/components/TeacherRacePanel.jsx
-```
+
 
 or inside subcomponents rendered by it.
 

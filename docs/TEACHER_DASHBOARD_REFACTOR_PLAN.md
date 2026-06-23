@@ -606,9 +606,7 @@ The main race management area.
 
 ### Suggested component
 
-```text
-TeacherRacePanel.jsx
-```
+
 
 ### Current behavior
 
@@ -880,7 +878,7 @@ Create:
 TeacherDashboardMain.jsx
 TeacherStatsSection.jsx
 TeacherDashboardPanels.jsx
-TeacherRacePanel.jsx
+
 ```
 
 Update:
@@ -993,9 +991,7 @@ Create these components:
 - For now renders TeacherRacePanel only.
 - This is where future live updates can be added.
 
-8. TeacherRacePanel.jsx
-- Wraps the current TeacherRaceListPreview.
-- This is the future home of the real RaceList in Issue 09B.
+
 
 Update:
 - TeacherSidebar.jsx to compose SidebarBrand, SidebarNavigation, SidebarDecoration.
@@ -1064,9 +1060,6 @@ Create:
 - Owns the remaining-space panel area under stats.
 - For now renders TeacherRacePanel only.
 
-4. TeacherRacePanel.jsx
-- Wraps TeacherRaceListPreview.
-- This is the future home of the real RaceList in Issue 09B.
 
 Update:
 - TeacherDashboardPage.jsx to render TeacherDashboardMain inside TeacherDashboardLayout.
