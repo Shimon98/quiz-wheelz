@@ -8,6 +8,8 @@ public final class ErrorMessages {
             "Display name is already taken in this race";
 
     public static final String INVALID_PATH_PARAMETER = "Invalid path parameter";
+    public static final String RACE_CANNOT_START_WITHOUT_PLAYERS = "Race cannot start without players";
+    public static final String RACE_CANNOT_START_IN_CURRENT_STATUS = "Race cannot start in its current status";
 
     private ErrorMessages() {
     }

@@ -15,22 +15,22 @@ BLOCKED
 
 ## Stage B Issue List
 
-| Issue | Title | Main Area | Status |
-|---|---|---|---|
-| 15 | Stage B planning and documentation | Docs | DONE |
-| 16 | RacePlayer domain | Backend domain | DONE |
-| 17 | Student join API and session | Backend API/auth | DONE |
-| 18 | Student join page | Frontend mobile UI | TODO |
-| 19 | Teacher waiting room real participants | Backend + Frontend | TODO |
-| 20 | Start race flow | Backend + Frontend | TODO |
-| 21 | Question generation system | Backend logic | TODO |
-| 22 | Player question delivery | Backend API | TODO |
-| 23 | Answer validation and submission | Backend API/logic | TODO |
-| 24 | Scoring and race engine | Backend game logic | TODO |
-| 25 | Student race page | Frontend mobile UI | TODO |
-| 26 | Teacher race live page | Frontend + Backend state | TODO |
-| 27 | Race SSE stream | Backend + Frontend live updates | TODO |
-| 28 | Stage B integration and QA | Full flow | TODO |
+| Issue | Title | Main Area | Status                      |
+|---|---|---|-----------------------------|
+| 15 | Stage B planning and documentation | Docs | DONE                        |
+| 16 | RacePlayer domain | Backend domain | DONE                        |
+| 17 | Student join API and session | Backend API/auth | DONE                        |
+| 18 | Student join page | Frontend mobile UI | TODO                        |
+| 19 | Teacher waiting room real participants | Backend + Frontend | Backend DANE +Frontend TODO |
+| 20 | Start race flow | Backend + Frontend | TODO                        |
+| 21 | Question generation system | Backend logic | TODO                        |
+| 22 | Player question delivery | Backend API | TODO                        |
+| 23 | Answer validation and submission | Backend API/logic | TODO                        |
+| 24 | Scoring and race engine | Backend game logic | TODO                        |
+| 25 | Student race page | Frontend mobile UI | TODO                        |
+| 26 | Teacher race live page | Frontend + Backend state | TODO                        |
+| 27 | Race SSE stream | Backend + Frontend live updates | TODO                        |
+| 28 | Stage B integration and QA | Full flow | TODO                        |
 
 ## Required Issue Standard
 

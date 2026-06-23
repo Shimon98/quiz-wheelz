@@ -22,11 +22,15 @@ public enum ErrorCode {
     BAD_REQUEST(3001, "Bad request", HttpStatus.BAD_REQUEST),
     SUBJECT_NOT_FOUND(3002, "Active subject not found", HttpStatus.NOT_FOUND),
     ROOM_CODE_GENERATION_FAILED(3003, "Could not generate unique room code", HttpStatus.INTERNAL_SERVER_ERROR),
+
     RACE_NOT_FOUND(3004, "Race not found", HttpStatus.NOT_FOUND),
     RACE_NOT_JOINABLE(3005, ErrorMessages.RACE_NOT_JOINABLE, HttpStatus.CONFLICT),
     RACE_FULL(3006, ErrorMessages.RACE_FULL, HttpStatus.CONFLICT),
     RACE_PLAYER_NAME_TAKEN(3007, ErrorMessages.RACE_PLAYER_NAME_TAKEN, HttpStatus.CONFLICT),
+    RACE_CANNOT_START_WITHOUT_PLAYERS(3008, ErrorMessages.RACE_CANNOT_START_WITHOUT_PLAYERS, HttpStatus.CONFLICT),
+    RACE_CANNOT_START_IN_CURRENT_STATUS(3009, ErrorMessages.RACE_CANNOT_START_IN_CURRENT_STATUS, HttpStatus.CONFLICT),
 
+    
     // System errors: 9000-9999
     INTERNAL_ERROR(9999, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
 

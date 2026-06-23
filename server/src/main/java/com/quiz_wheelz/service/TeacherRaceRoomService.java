@@ -19,18 +19,18 @@ public class TeacherRaceRoomService {
     private final CurrentUserService currentUserService;
     private final UserService userService;
     private final RaceRepository raceRepository;
-    private final RacePlayerRepository racePlayerRepository;
+    private final RacePlayerService racePlayerService;
 
     public TeacherRaceRoomService(
             CurrentUserService currentUserService,
             UserService userService,
             RaceRepository raceRepository,
-            RacePlayerRepository racePlayerRepository) {
+            RacePlayerService racePlayerService) {
 
         this.currentUserService = currentUserService;
         this.userService = userService;
         this.raceRepository = raceRepository;
-        this.racePlayerRepository = racePlayerRepository;
+        this.racePlayerService = racePlayerService;
     }
 
     @Transactional(readOnly = true)
@@ -39,7 +39,7 @@ public class TeacherRaceRoomService {
         User teacher = userService.findActiveByIdOrThrow(teacherId);
         Race race = raceRepository.findByIdAndTeacher(raceId, teacher)
                 .orElseThrow(() -> new ApiException(ErrorCode.RACE_NOT_FOUND));
-        List<RacePlayer> players = racePlayerRepository.findByRaceOrderByLaneNumberAsc(race);
+        List<RacePlayer> players = racePlayerService.findPlayersByRaceOrderedByLane(race);
 
         return TeacherRaceRoomResponse.from(race, players);
     }
