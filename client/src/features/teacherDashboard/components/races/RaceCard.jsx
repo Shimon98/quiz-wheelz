@@ -18,7 +18,7 @@ export default function RaceCard({
 
     return (
         <article className={RACE_CARD_COMPACT_STYLES.card} dir={direction}>
-            <RaceCardHeader race={race} language={language} />
+            <RaceCardHeader race={race} />
 
             <RaceCardMeta race={race} language={language} />
 

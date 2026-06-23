@@ -34,6 +34,8 @@ export default function RaceCardActions({
 
             <div className={RACE_CARD_COMPACT_STYLES.actions}>
                 <Button
+                    variant="cta"
+                    size="icon"
                     onClick={handleOpenRace}
                     disabled={!canOpenRace}
                     aria-label={getRaceActionLabel(race.status, content)}
@@ -42,7 +44,7 @@ export default function RaceCardActions({
                     <Play
                         size={20}
                         aria-hidden="true"
-                        strokeWidth={2.5}
+                        strokeWidth={2.7}
                     />
                 </Button>
 

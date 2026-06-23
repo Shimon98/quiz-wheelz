@@ -289,13 +289,13 @@ export const TEACHER_RACES_PREVIEW_STYLES = {
 
 export const RACE_CARD_COMPACT_STYLES = {
     card:
-        "grid min-h-[76px] items-center gap-4 rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-[0_8px_22px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(15,23,42,0.10)] lg:grid-cols-[minmax(260px,1.35fr)_minmax(130px,0.75fr)_minmax(110px,0.65fr)_auto_auto]",
+        "relative grid min-h-[88px] items-center gap-4 overflow-hidden rounded-[1.45rem] border border-white/90 bg-gradient-to-l from-white via-white to-sky-50/70 px-4 py-3 shadow-[0_8px_22px_rgba(15,23,42,0.06)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(15,23,42,0.12)] lg:grid-cols-[minmax(280px,1.45fr)_minmax(150px,0.75fr)_minmax(120px,0.65fr)_auto_auto]",
 
     identity:
-        "flex min-w-0 items-center gap-3",
+        "relative z-10 flex min-w-0 items-center gap-3",
 
     iconBox:
-        "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 [&>svg]:block",
+        "relative flex h-16 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-sky-400 via-cyan-400 to-blue-600 text-white shadow-[0_12px_26px_rgba(2,132,199,0.24)] [&>svg]:block",
 
     titleBlock:
         "min-w-0",
@@ -307,22 +307,22 @@ export const RACE_CARD_COMPACT_STYLES = {
         "truncate text-base font-black text-slate-900",
 
     favoriteIcon:
-        "h-4 w-4 shrink-0 text-amber-400",
+        "h-4 w-4 shrink-0 text-amber-400 drop-shadow-sm",
 
     roomCodeRow:
-        "mt-1 flex items-center gap-2 text-sm font-bold text-slate-500",
+        "mt-1 flex min-h-7 items-center gap-2 text-sm font-bold text-slate-500",
 
     roomCodeBadge:
-        "rounded-full bg-sky-50 px-2.5 py-1 text-xs font-black text-sky-700",
+        "rounded-full bg-white px-3 py-1 text-xs font-black text-sky-700 shadow-[0_4px_12px_rgba(14,165,233,0.14)] ring-1 ring-sky-100",
 
     subject:
-        "flex items-center gap-2 text-sm font-extrabold text-slate-600",
+        "inline-flex min-h-10 items-center gap-2 rounded-2xl bg-sky-50/90 px-3 text-sm font-extrabold text-slate-700 ring-1 ring-sky-100/80",
 
     subjectIcon:
         "h-5 w-5 text-sky-500",
 
     players:
-        "flex items-center gap-2 text-sm font-extrabold text-slate-700",
+        "inline-flex min-h-10 items-center gap-2 rounded-2xl bg-slate-50/90 px-3 text-sm font-extrabold text-slate-700 ring-1 ring-slate-100",
 
     playersIcon:
         "h-5 w-5 text-slate-400",
@@ -331,7 +331,7 @@ export const RACE_CARD_COMPACT_STYLES = {
         "flex items-center justify-end gap-2 justify-self-end",
 
     openButton:
-        "shrink-0 text-white [&>svg]:block",
+        "shrink-0 text-white shadow-[0_10px_22px_rgba(14,165,233,0.28)] [&>svg]:block",
 
     moreButton:
         "inline-flex h-11 w-11 shrink-0 cursor-pointer list-none items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 group-open:bg-slate-200 [&>svg]:block [&::-webkit-details-marker]:hidden",

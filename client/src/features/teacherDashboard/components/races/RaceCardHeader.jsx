@@ -1,14 +1,11 @@
 import { Flag, Star } from "lucide-react";
-import { getSubjectDisplayName } from "../../utils/subjectDisplayUtils";
 import { RACE_CARD_COMPACT_STYLES } from "../../styles/dashboardUiStyles";
 
-export default function RaceCardHeader({ race, language }) {
-    const subjectName = getSubjectDisplayName(race, language);
-
+export default function RaceCardHeader({ race }) {
     return (
         <div className={RACE_CARD_COMPACT_STYLES.identity}>
             <span className={RACE_CARD_COMPACT_STYLES.iconBox}>
-                <Flag size={24} aria-hidden="true" />
+                <Flag size={26} aria-hidden="true" strokeWidth={2.5} />
             </span>
 
             <div className={RACE_CARD_COMPACT_STYLES.titleBlock}>
@@ -24,15 +21,13 @@ export default function RaceCardHeader({ race, language }) {
                     />
                 </div>
 
-                <p className={RACE_CARD_COMPACT_STYLES.roomCodeRow}>
-                    <span>{subjectName}</span>
-
-                    {race.roomCode && (
+                {race.roomCode && (
+                    <p className={RACE_CARD_COMPACT_STYLES.roomCodeRow}>
                         <span className={RACE_CARD_COMPACT_STYLES.roomCodeBadge}>
                             {race.roomCode}
                         </span>
-                    )}
-                </p>
+                    </p>
+                )}
             </div>
         </div>
     );
