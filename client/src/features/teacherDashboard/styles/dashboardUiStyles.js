@@ -7,6 +7,14 @@ export const CREATE_RACE_FORM_STYLES = {
     submitIcon: "h-5 w-5 shrink-0",
 };
 
+export const CREATE_RACE_BUTTON_STYLES = {
+    base:
+        "inline-flex items-center justify-center gap-2",
+
+    icon:
+        "h-5 w-5 shrink-0",
+};
+
 export const DASHBOARD_SURFACE_STYLES = {
     card:
         "rounded-3xl border border-white/80 bg-white shadow-[0_10px_28px_rgba(27,42,65,0.08)]",
@@ -285,6 +293,9 @@ export const TEACHER_RACES_PREVIEW_STYLES = {
 
     showAllButton:
         "inline-flex min-h-10 min-w-56 items-center justify-center gap-2 rounded-2xl",
+
+    createRaceButton:
+        "min-w-44 shadow-[0_14px_28px_rgba(2,132,199,0.28)]",
 };
 
 export const RACE_CARD_COMPACT_STYLES = {

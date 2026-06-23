@@ -15,6 +15,7 @@ import {
 } from "../../styles/dashboardUiStyles";
 
 import Button from "../../../../shared/components/ui/Button";
+import CreateRaceButton from "../createRace/CreateRaceButton";
 import DashboardErrorState from "../ui/DashboardErrorState";
 import DashboardLoadingState from "../ui/DashboardLoadingState";
 import EmptyRacesState from "./EmptyRacesState";
@@ -79,9 +80,12 @@ export default function TeacherRacesPanel({
                 </div>
 
                 {showHeaderCreateButton && (
-                    <Button onClick={onCreateRaceClick}>
+                    <CreateRaceButton
+                        onClick={onCreateRaceClick}
+                        className={TEACHER_RACES_PREVIEW_STYLES.createRaceButton}
+                    >
                         {content.createRaceButton}
-                    </Button>
+                    </CreateRaceButton>
                 )}
             </div>
 

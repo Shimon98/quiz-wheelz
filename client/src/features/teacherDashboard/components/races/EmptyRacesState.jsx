@@ -1,5 +1,5 @@
-import Button from "../../../../shared/components/ui/Button";
 import EmptyState from "../../../../shared/components/ui/EmptyState";
+import CreateRaceButton from "../createRace/CreateRaceButton";
 
 export default function EmptyRacesState({
                                             message,
@@ -9,9 +9,9 @@ export default function EmptyRacesState({
     return (
         <EmptyState message={message}>
             {onCreateRaceClick && (
-                <Button onClick={onCreateRaceClick}>
+                <CreateRaceButton onClick={onCreateRaceClick}>
                     {createRaceLabel}
-                </Button>
+                </CreateRaceButton>
             )}
         </EmptyState>
     );
