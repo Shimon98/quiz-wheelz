@@ -3,24 +3,28 @@ export const TEACHER_DASHBOARD_STATS = [
         id: "total-races",
         contentKey: "totalRaces",
         iconName: "Flag",
+        tone: "sky",
         value: 0,
     },
     {
         id: "active-races",
         contentKey: "activeRaces",
         iconName: "Gauge",
+        tone: "emerald",
         value: 0,
     },
     {
         id: "finished-races",
         contentKey: "finishedRaces",
         iconName: "Trophy",
+        tone: "violet",
         value: 0,
     },
     {
         id: "waiting-races",
         contentKey: "waitingRaces",
         iconName: "Timer",
+        tone: "amber",
         value: 0,
     },
 ];
@@ -75,6 +79,3 @@ export const TEACHER_DASHBOARD_NAV_ITEMS = [
         isComingSoon: true,
     },
 ];
-
-
-

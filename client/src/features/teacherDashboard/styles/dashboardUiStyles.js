@@ -51,6 +51,94 @@ export const TEACHER_DASHBOARD_PANEL_STYLES = {
         "grid content-start gap-3 pe-1",
 };
 
+export const TEACHER_STATS_GRID_STYLES = {
+    wrapper:
+        "grid gap-3 sm:grid-cols-2 lg:grid-cols-4",
+};
+
+export const TEACHER_STAT_CARD_STYLES = {
+    card:
+        "group relative min-h-[104px] overflow-hidden border border-white/80 transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(15,23,42,0.12)]",
+
+    content:
+        "relative z-10 flex h-full items-start justify-between gap-3",
+
+    textBlock:
+        "min-w-0",
+
+    label:
+        "text-sm font-extrabold text-slate-500",
+
+    value:
+        "mt-2 text-3xl font-black leading-none",
+
+    iconBox:
+        "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-[0_10px_22px_rgba(15,23,42,0.12)]",
+
+    icon:
+        "h-6 w-6",
+
+    decorativeBlob:
+        "pointer-events-none absolute -bottom-10 -end-8 h-28 w-28 rounded-full blur-2xl transition duration-200 group-hover:scale-110",
+
+    sparkline:
+        "pointer-events-none absolute bottom-3 end-4 h-8 w-20 opacity-70",
+};
+
+export const TEACHER_STAT_CARD_TONE_STYLES = {
+    sky: {
+        card:
+            "bg-gradient-to-br from-white via-sky-50 to-white",
+        iconBox:
+            "bg-sky-500 text-white",
+        value:
+            "text-sky-700",
+        decorativeBlob:
+            "bg-sky-200/70",
+        sparkline:
+            "text-sky-300",
+    },
+
+    emerald: {
+        card:
+            "bg-gradient-to-br from-white via-emerald-50 to-white",
+        iconBox:
+            "bg-emerald-500 text-white",
+        value:
+            "text-emerald-700",
+        decorativeBlob:
+            "bg-emerald-200/70",
+        sparkline:
+            "text-emerald-300",
+    },
+
+    violet: {
+        card:
+            "bg-gradient-to-br from-white via-violet-50 to-white",
+        iconBox:
+            "bg-violet-500 text-white",
+        value:
+            "text-violet-700",
+        decorativeBlob:
+            "bg-violet-200/70",
+        sparkline:
+            "text-violet-300",
+    },
+
+    amber: {
+        card:
+            "bg-gradient-to-br from-white via-amber-50 to-white",
+        iconBox:
+            "bg-amber-400 text-white",
+        value:
+            "text-amber-700",
+        decorativeBlob:
+            "bg-amber-200/80",
+        sparkline:
+            "text-amber-300",
+    },
+};
+
 export const DASHBOARD_TEXT_STYLES = {
     modalTitle:
         "flex items-center justify-center gap-3 text-4xl font-black leading-tight text-slate-900",
