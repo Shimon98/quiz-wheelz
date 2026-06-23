@@ -7,6 +7,8 @@ public final class ErrorMessages {
     public static final String RACE_PLAYER_NAME_TAKEN =
             "Display name is already taken in this race";
 
+    public static final String INVALID_PATH_PARAMETER = "Invalid path parameter";
+
     private ErrorMessages() {
     }
 }

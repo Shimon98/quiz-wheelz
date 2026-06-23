@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -29,6 +30,22 @@ public class GlobalExceptionHandler {
         );
         ErrorCode errorCode = ErrorCode.VALIDATION_ERROR;
         ErrorResponse response = ErrorResponse.validation(errorCode, request.getRequestURI(), validationErrors);
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
+
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(
+            MethodArgumentTypeMismatchException ex,
+            HttpServletRequest request
+    ) {
+        ErrorCode errorCode = ErrorCode.BAD_REQUEST;
+        ErrorResponse response = ErrorResponse.from(
+                errorCode,
+                ErrorMessages.INVALID_PATH_PARAMETER,
+                request.getRequestURI()
+        );
+
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 
