@@ -289,13 +289,16 @@ export const TEACHER_RACES_PREVIEW_STYLES = {
 
 export const RACE_CARD_COMPACT_STYLES = {
     card:
-        "relative grid min-h-[88px] items-center gap-4 overflow-hidden rounded-[1.45rem] border border-white/90 bg-gradient-to-l from-white via-white to-sky-50/70 px-4 py-3 shadow-[0_8px_22px_rgba(15,23,42,0.06)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(15,23,42,0.12)] lg:grid-cols-[minmax(280px,1.45fr)_minmax(150px,0.75fr)_minmax(120px,0.65fr)_auto_auto]",
+        "relative grid min-h-[82px] items-center gap-4 overflow-hidden rounded-[1.35rem] border border-white/90 bg-white px-4 py-3 shadow-[0_8px_22px_rgba(15,23,42,0.06)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(15,23,42,0.12)] lg:grid-cols-[minmax(260px,1.45fr)_minmax(150px,0.75fr)_minmax(120px,0.65fr)_auto_auto]",
 
     identity:
         "relative z-10 flex min-w-0 items-center gap-3",
 
     iconBox:
-        "relative flex h-16 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-sky-400 via-cyan-400 to-blue-600 text-white shadow-[0_12px_26px_rgba(2,132,199,0.24)] [&>svg]:block",
+        "relative flex h-14 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl shadow-[0_10px_22px_rgba(15,23,42,0.10)]",
+
+    icon:
+        "h-6 w-6",
 
     titleBlock:
         "min-w-0",
@@ -306,20 +309,20 @@ export const RACE_CARD_COMPACT_STYLES = {
     title:
         "truncate text-base font-black text-slate-900",
 
-    favoriteIcon:
-        "h-4 w-4 shrink-0 text-amber-400 drop-shadow-sm",
-
     roomCodeRow:
         "mt-1 flex min-h-7 items-center gap-2 text-sm font-bold text-slate-500",
 
+    roomCodeLabel:
+        "text-xs font-black text-slate-400",
+
     roomCodeBadge:
-        "rounded-full bg-white px-3 py-1 text-xs font-black text-sky-700 shadow-[0_4px_12px_rgba(14,165,233,0.14)] ring-1 ring-sky-100",
+        "rounded-full bg-white px-3 py-1 text-xs font-black shadow-[0_4px_12px_rgba(15,23,42,0.08)] ring-1",
 
     subject:
-        "inline-flex min-h-10 items-center gap-2 rounded-2xl bg-sky-50/90 px-3 text-sm font-extrabold text-slate-700 ring-1 ring-sky-100/80",
+        "inline-flex min-h-10 items-center gap-2 rounded-2xl px-3 text-sm font-extrabold ring-1",
 
     subjectIcon:
-        "h-5 w-5 text-sky-500",
+        "h-5 w-5",
 
     players:
         "inline-flex min-h-10 items-center gap-2 rounded-2xl bg-slate-50/90 px-3 text-sm font-extrabold text-slate-700 ring-1 ring-slate-100",
@@ -335,6 +338,86 @@ export const RACE_CARD_COMPACT_STYLES = {
 
     moreButton:
         "inline-flex h-11 w-11 shrink-0 cursor-pointer list-none items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 group-open:bg-slate-200 [&>svg]:block [&::-webkit-details-marker]:hidden",
+};
+
+export const RACE_CARD_STATUS_TONE_STYLES = {
+    amber: {
+        card:
+            "bg-gradient-to-l from-white via-white to-amber-50/80",
+        iconBox:
+            "bg-amber-100 text-amber-600",
+        roomCodeBadge:
+            "text-amber-700 ring-amber-100",
+        subject:
+            "bg-amber-50/90 text-amber-700 ring-amber-100",
+        subjectIcon:
+            "text-amber-500",
+    },
+
+    emerald: {
+        card:
+            "bg-gradient-to-l from-white via-white to-emerald-50/70",
+        iconBox:
+            "bg-emerald-100 text-emerald-600",
+        roomCodeBadge:
+            "text-emerald-700 ring-emerald-100",
+        subject:
+            "bg-emerald-50/90 text-emerald-700 ring-emerald-100",
+        subjectIcon:
+            "text-emerald-500",
+    },
+
+    green: {
+        card:
+            "bg-gradient-to-l from-white via-white to-green-50/70",
+        iconBox:
+            "bg-green-100 text-green-600",
+        roomCodeBadge:
+            "text-green-700 ring-green-100",
+        subject:
+            "bg-green-50/90 text-green-700 ring-green-100",
+        subjectIcon:
+            "text-green-500",
+    },
+
+    violet: {
+        card:
+            "bg-gradient-to-l from-white via-white to-violet-50/70",
+        iconBox:
+            "bg-violet-100 text-violet-600",
+        roomCodeBadge:
+            "text-violet-700 ring-violet-100",
+        subject:
+            "bg-violet-50/90 text-violet-700 ring-violet-100",
+        subjectIcon:
+            "text-violet-500",
+    },
+
+    rose: {
+        card:
+            "bg-gradient-to-l from-white via-white to-rose-50/70",
+        iconBox:
+            "bg-rose-100 text-rose-600",
+        roomCodeBadge:
+            "text-rose-700 ring-rose-100",
+        subject:
+            "bg-rose-50/90 text-rose-700 ring-rose-100",
+        subjectIcon:
+            "text-rose-500",
+    },
+
+    slate: {
+        card:
+            "bg-gradient-to-l from-white via-white to-slate-50",
+        iconBox:
+            "bg-slate-100 text-slate-500",
+        roomCodeBadge:
+            "text-slate-700 ring-slate-100",
+        subject:
+            "bg-slate-50 text-slate-700 ring-slate-100",
+        subjectIcon:
+            "text-slate-500",
+    },
 };
 
 export const ALL_RACES_MODAL_STYLES = {

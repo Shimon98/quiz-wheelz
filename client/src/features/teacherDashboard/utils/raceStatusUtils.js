@@ -2,6 +2,7 @@ import {
     CANCELLABLE_RACE_STATUSES,
     EDITABLE_RACE_STATUSES,
     RACE_STATUSES,
+    RACE_STATUS_TONES,
 } from "../config/raceStatusConfig";
 
 export function isRaceEditable(status) {
@@ -22,6 +23,13 @@ export function isRaceInProgress(status) {
 
 export function isRaceFinished(status) {
     return status === RACE_STATUSES.FINISHED;
+}
+
+export function getRaceStatusTone(status) {
+    return (
+        RACE_STATUS_TONES[status] ??
+        RACE_STATUS_TONES[RACE_STATUSES.UNKNOWN]
+    );
 }
 
 export function getRaceActionLabel(status, actionLabels = {}) {
