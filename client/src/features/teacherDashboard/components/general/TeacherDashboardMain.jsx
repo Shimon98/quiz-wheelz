@@ -1,5 +1,5 @@
 import TeacherHeroBanner from "./TeacherHeroBanner.jsx";
-import TeacherStatsSection from "./TeacherStatsSection.jsx";
+import TeacherStatsGrid from "./TeacherStatsGrid.jsx";
 import TeacherDashboardPanels from "./TeacherDashboardPanels.jsx";
 
 export default function TeacherDashboardMain({
@@ -21,7 +21,7 @@ export default function TeacherDashboardMain({
                 onLogout={onLogout}
             />
 
-            <TeacherStatsSection stats={stats} />
+            <TeacherStatsGrid stats={stats} />
 
             <TeacherDashboardPanels
                 races={races}
