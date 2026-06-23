@@ -15,32 +15,40 @@ export const DASHBOARD_SURFACE_STYLES = {
         "rounded-2xl border border-slate-200 bg-white shadow-[0_6px_18px_rgba(15,23,42,0.08)]",
 };
 
+export const TEACHER_DASHBOARD_MAIN_STYLES = {
+    wrapper:
+        "flex h-full min-h-0 flex-col gap-3 overflow-hidden",
+};
+
 export const TEACHER_DASHBOARD_LAYOUT_STYLES = {
     page:
-        "relative min-h-screen overflow-x-hidden bg-sky-100 p-3 md:p-4",
+        "relative h-screen overflow-hidden bg-sky-100 p-3 md:p-4",
 
     background:
         "absolute inset-0 opacity-40",
 
     content:
-        "relative z-10 mx-auto flex max-w-[1320px] gap-4",
+        "relative z-10 mx-auto flex h-full max-w-[1320px] min-h-0 gap-4",
 
     main:
-        "flex min-w-0 flex-1 flex-col gap-3",
+        "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
 };
 
 export const TEACHER_DASHBOARD_PANEL_STYLES = {
     wrapper:
-        "flex-1",
+        "min-h-0 flex-1",
 
     racesPanel:
-        "flex flex-col rounded-3xl bg-white/80 p-6 text-start shadow-md",
+        "flex h-full min-h-0 flex-col overflow-hidden rounded-3xl bg-white/80 p-5 text-start shadow-md",
 
     racesContent:
-        "mt-6",
+        "mt-4 flex min-h-0 flex-1 flex-col overflow-hidden",
+
+    racePreviewViewport:
+        "min-h-0 flex-1 overflow-hidden",
 
     raceList:
-        "grid gap-4 pe-1",
+        "grid content-start gap-3 pe-1",
 };
 
 export const DASHBOARD_TEXT_STYLES = {
@@ -185,7 +193,7 @@ export const TEACHER_RACES_PREVIEW_STYLES = {
         "mt-4",
 
     footer:
-        "mt-4 flex justify-center border-t border-slate-100 pt-4",
+        "mt-4 flex shrink-0 justify-center border-t border-slate-100 pt-4",
 
     showAllButton:
         "inline-flex min-w-56 items-center justify-center gap-2",
@@ -261,5 +269,5 @@ export const ALL_RACES_MODAL_STYLES = {
         "shrink-0",
 
     list:
-        "mt-4 grid gap-3 overflow-y-auto pe-1",
+        "mt-4 grid min-h-0 gap-3 overflow-y-auto pe-1",
 };

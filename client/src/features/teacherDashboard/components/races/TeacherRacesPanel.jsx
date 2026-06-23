@@ -18,6 +18,7 @@ import DashboardLoadingState from "../ui/DashboardLoadingState";
 import AllRacesModal from "./AllRacesModal";
 import EmptyRacesState from "./EmptyRacesState";
 import RaceList from "./RaceList";
+import { useFittingRacePreviewCount } from "../../hooks/useFittingRacePreviewCount";
 
 export default function TeacherRacesPanel({
                                               races = [],
@@ -38,8 +39,18 @@ export default function TeacherRacesPanel({
     const raceContent = useLocaleContent(TEACHER_DASHBOARD_RACE_CONTENT);
 
     const hasRaces = races.length > 0;
-    const previewRaces = races.slice(0, TEACHER_RACES_PREVIEW_LIMIT);
-    const hasMoreRaces = races.length > TEACHER_RACES_PREVIEW_LIMIT;
+
+    const {
+        viewportRef: racePreviewViewportRef,
+        visibleCount: visibleRaceCount,
+    } = useFittingRacePreviewCount({
+        totalItems: races.length,
+        minCount: 1,
+        maxCount: TEACHER_RACES_PREVIEW_LIMIT,
+    });
+
+    const previewRaces = races.slice(0, visibleRaceCount);
+    const hasMoreRaces = races.length > visibleRaceCount;
     const showHeaderCreateButton = hasRaces && Boolean(onCreateRaceClick);
     const errorMessage = typeof error === "string" ? error : raceContent.loadError;
 
@@ -84,7 +95,9 @@ export default function TeacherRacesPanel({
                 <div className={TEACHER_DASHBOARD_PANEL_STYLES.racesContent}>
                     {isLoading && <DashboardLoadingState />}
 
-                    {!isLoading && error && <DashboardErrorState message={errorMessage} />}
+                    {!isLoading && error && (
+                        <DashboardErrorState message={errorMessage} />
+                    )}
 
                     {!isLoading && !error && !hasRaces && (
                         <EmptyRacesState
@@ -96,15 +109,20 @@ export default function TeacherRacesPanel({
 
                     {!isLoading && !error && hasRaces && (
                         <>
-                            <RaceList
-                                races={previewRaces}
-                                content={raceContent}
-                                language={language}
-                                direction={direction}
-                                onOpenRace={onOpenRace}
-                                onEditRace={onEditRace}
-                                onCancelRace={onCancelRace}
-                            />
+                            <div
+                                ref={racePreviewViewportRef}
+                                className={TEACHER_DASHBOARD_PANEL_STYLES.racePreviewViewport}
+                            >
+                                <RaceList
+                                    races={previewRaces}
+                                    content={raceContent}
+                                    language={language}
+                                    direction={direction}
+                                    onOpenRace={onOpenRace}
+                                    onEditRace={onEditRace}
+                                    onCancelRace={onCancelRace}
+                                />
+                            </div>
 
                             {hasMoreRaces && (
                                 <div className={TEACHER_RACES_PREVIEW_STYLES.footer}>
