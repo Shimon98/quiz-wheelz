@@ -27,4 +27,11 @@ public interface RaceRepository extends JpaRepository<Race, Long> {
     List<Race> findByTeacherAndStatusOrderByCreatedAtDesc(User teacher, RaceStatus status);
 
     Optional<Race> findByIdAndTeacher(Long raceId, User teacher);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select r from Race r where r.id = :raceId and r.teacher = :teacher")
+    Optional<Race> findByIdAndTeacherForUpdate(
+            @Param("raceId") Long raceId,
+            @Param("teacher") User teacher
+    );
 }

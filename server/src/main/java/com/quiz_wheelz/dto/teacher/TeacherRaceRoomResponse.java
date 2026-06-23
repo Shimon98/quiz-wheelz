@@ -1,7 +1,7 @@
 package com.quiz_wheelz.dto.teacher;
 
-import com.quiz_wheelz.common.RaceRules;
 import com.quiz_wheelz.entitys.Race;
+import com.quiz_wheelz.entitys.RacePlayer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -29,9 +29,17 @@ public class TeacherRaceRoomResponse {
     private LocalDateTime startedAt;
     private LocalDateTime finishedAt;
 
-    private List<TeacherRaceRoomPlayerResponse> players; //כרגע יחזור מערך ריק כי אין עדיין RacePlayer
+    private List<TeacherRaceRoomPlayerResponse> players;
 
     public static TeacherRaceRoomResponse from(Race race) {
+        return from(race, List.of());
+    }
+
+    public static TeacherRaceRoomResponse from(Race race, List<RacePlayer> players) {
+        List<TeacherRaceRoomPlayerResponse> playerResponses = players.stream()
+                .map(TeacherRaceRoomPlayerResponse::from)
+                .toList();
+
         return new TeacherRaceRoomResponse(
                 race.getId(),
                 race.getTitle(),
@@ -41,12 +49,12 @@ public class TeacherRaceRoomResponse {
                 race.getSubject().getCode(),
                 race.getStatus().name(),
                 race.getMaxPlayers(),
-                RaceRules.DEFAULT_CURRENT_PLAYERS,
+                playerResponses.size(),
                 race.getTotalDistance(),
                 race.getCreatedAt(),
                 race.getStartedAt(),
                 race.getFinishedAt(),
-                List.of()
+                playerResponses
         );
     }
 }

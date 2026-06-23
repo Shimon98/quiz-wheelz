@@ -18,6 +18,9 @@ public final class ApiMessages {
     public static final String RACE_PLAYER_JOINED_SUCCESSFULLY =
             "Race player joined successfully";
 
+    public static final String RACE_STARTED_SUCCESSFULLY =
+            "Race started successfully";
+
     private ApiMessages() {
     }
 }

@@ -23,7 +23,11 @@ public final class ApiPaths {
 
     public static final String RACE_ID = "/{raceId}";
     public static final String ROOM = "/room";
+    public static final String START = "/start";
     public static final String TEACHER_RACE_ROOM = RACE_ID + ROOM;
+    public static final String TEACHER_RACE_START = RACE_ID + START;
+
+
 
     public static final String ACTUATOR_HEALTH = "/actuator/health";
     public static final String SWAGGER_UI = "/swagger-ui/**";
