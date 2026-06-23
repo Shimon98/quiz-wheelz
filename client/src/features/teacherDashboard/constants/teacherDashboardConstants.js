@@ -2,25 +2,25 @@ export const TEACHER_DASHBOARD_STATS = [
     {
         id: "total-races",
         contentKey: "totalRaces",
-        iconKey: "flag",
+        iconName: "Flag",
         value: 0,
     },
     {
         id: "active-races",
         contentKey: "activeRaces",
-        iconKey: "road",
+        iconName: "Gauge",
         value: 0,
     },
     {
         id: "finished-races",
         contentKey: "finishedRaces",
-        iconKey: "trophy",
+        iconName: "Trophy",
         value: 0,
     },
     {
         id: "waiting-races",
         contentKey: "waitingRaces",
-        iconKey: "stopwatch",
+        iconName: "Timer",
         value: 0,
     },
 ];

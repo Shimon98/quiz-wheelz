@@ -1,11 +1,11 @@
 import TeacherStatCard from "./TeacherStatCard.jsx";
 import { useLocaleContent } from "../../../../constants/localeConstants.js";
 import { TEACHER_DASHBOARD_STATS_CONTENT } from "../../content/teacherDashboardContent.js";
-import { getTeacherDashboardIcon } from "../../constants/teacherDashboardAssets.js";
+import { getTeacherDashboardLucideIcon } from "../../constants/teacherDashboardIcons.js";
 
 const TEACHER_STATS_GRID_STYLES = Object.freeze({
     wrapper:
-        "grid gap-4 sm:grid-cols-2 lg:grid-cols-4",
+        "grid gap-3 sm:grid-cols-2 lg:grid-cols-4",
 });
 
 export default function TeacherStatsGrid({ stats }) {
@@ -16,7 +16,7 @@ export default function TeacherStatsGrid({ stats }) {
             {stats.map((stat) => (
                 <TeacherStatCard
                     key={stat.id}
-                    icon={getTeacherDashboardIcon(stat.iconKey)}
+                    Icon={getTeacherDashboardLucideIcon(stat.iconName)}
                     label={labels[stat.contentKey]}
                     value={stat.value}
                 />
