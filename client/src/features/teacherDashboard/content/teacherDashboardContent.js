@@ -32,6 +32,7 @@ export const TEACHER_DASHBOARD_CONTENT = {
             showAllRaces: "הצג את כל המרוצים",
             allRacesTitle: "כל המרוצים שלי",
             allRacesDescription: "כאן ניתן לראות את כל המרוצים שיצרת.",
+            closeAllRacesModal: "סגירת חלון כל המרוצים",
         },
     },
     en: {
@@ -67,6 +68,7 @@ export const TEACHER_DASHBOARD_CONTENT = {
             showAllRaces: "Show all races",
             allRacesTitle: "All my races",
             allRacesDescription: "View all races you created.",
+            closeAllRacesModal: "Close all races dialog",
         },
     },
 };

@@ -129,8 +129,10 @@ export const DASHBOARD_MODAL_STYLES = {
 
     panel:
         "relative w-full max-w-[640px] overflow-visible rounded-[2rem] bg-white px-7 py-6 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)]",
+
     closeButton:
-        "absolute right-5 top-5",
+        "absolute end-5 top-5 z-30",
+
     header:
         "mx-auto max-w-xl",
 
