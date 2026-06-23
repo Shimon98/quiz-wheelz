@@ -1,5 +1,5 @@
 import { MoreVertical } from "lucide-react";
-import DashboardButton from "../ui/DashboardButton";
+import Button from "../../../../shared/components/ui/Button";
 import { RACE_CARD_COMPACT_STYLES } from "../../styles/dashboardUiStyles";
 
 export default function RaceMoreMenu({
@@ -39,25 +39,25 @@ export default function RaceMoreMenu({
 
             <div className="absolute end-0 z-10 mt-2 min-w-36 overflow-hidden rounded-2xl border border-slate-100 bg-white py-2 text-sm font-bold shadow-xl">
                 {canEdit && (
-                    <DashboardButton
+                    <Button
                         onClick={handleEditRace}
                         variant="ghost"
                         size="sm"
                         className="block w-full rounded-none text-start"
                     >
                         {content.edit}
-                    </DashboardButton>
+                    </Button>
                 )}
 
                 {canCancel && (
-                    <DashboardButton
+                    <Button
                         onClick={handleCancelRace}
                         variant="danger"
                         size="sm"
                         className="block w-full rounded-none text-start"
                     >
                         {content.cancel}
-                    </DashboardButton>
+                    </Button>
                 )}
             </div>
         </details>
