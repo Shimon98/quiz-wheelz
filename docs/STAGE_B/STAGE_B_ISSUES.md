@@ -18,8 +18,8 @@ BLOCKED
 | Issue | Title | Main Area | Status |
 |---|---|---|---|
 | 15 | Stage B planning and documentation | Docs | DONE |
-| 16 | RacePlayer domain | Backend domain | TODO |
-| 17 | Student join API and session | Backend API/auth | TODO |
+| 16 | RacePlayer domain | Backend domain | DONE |
+| 17 | Student join API and session | Backend API/auth | DONE |
 | 18 | Student join page | Frontend mobile UI | TODO |
 | 19 | Teacher waiting room real participants | Backend + Frontend | TODO |
 | 20 | Start race flow | Backend + Frontend | TODO |
