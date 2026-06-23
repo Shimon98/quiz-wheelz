@@ -14,6 +14,7 @@ import {
 } from "../content/teacherDashboardContent";
 
 import { useTeacherRaceRoomData } from "../hooks/useTeacherRaceRoomData";
+import { useTeacherWorkspace } from "../context/TeacherWorkspaceContext";
 
 import DashboardErrorState from "../components/ui/DashboardErrorState";
 import DashboardLoadingState from "../components/ui/DashboardLoadingState";
@@ -25,9 +26,11 @@ import RaceWaitingRoomSidePanel from "../components/raceWaitingRoom/RaceWaitingR
 
 import { WAITING_ROOM_LAYOUT_STYLES } from "../styles/raceWaitingRoomStyles";
 
-export default function TeacherRaceRoomPage() {
+function TeacherRaceRoomContent() {
     const { raceId } = useParams();
     const navigate = useNavigate();
+
+    const { openAllRacesModal } = useTeacherWorkspace();
 
     const content = useLocaleContent(TEACHER_RACE_WAITING_ROOM_CONTENT);
     const raceContent = useLocaleContent(TEACHER_DASHBOARD_RACE_CONTENT);
@@ -41,14 +44,6 @@ export default function TeacherRaceRoomPage() {
     const user = useAuthStore((state) => state.user);
     const logout = useAuthStore((state) => state.logout);
     const isLoggingOut = useAuthStore((state) => state.isLoading);
-
-    function handleDashboardClick() {
-        navigate(ROUTES.TEACHER_DASHBOARD);
-    }
-
-    function handleRacesClick() {
-        navigate(ROUTES.TEACHER_DASHBOARD);
-    }
 
     const handleLogout = useCallback(async () => {
         await logout();
@@ -87,66 +82,71 @@ export default function TeacherRaceRoomPage() {
     }
 
     return (
+        <>
+            <TeacherHeroBanner
+                size="compact"
+                teacherName={user?.displayName}
+                isLoggingOut={isLoggingOut}
+                onLogout={handleLogout}
+            />
+
+            {!isLoading && !error && raceRoom && (
+                <RaceWaitingRoomHeader
+                    raceTitle={raceRoom.title}
+                    raceStatus={raceRoom.status}
+                    statusLabels={raceContent.statusLabels}
+                    content={content.header}
+                    onBackToRaces={openAllRacesModal}
+                />
+            )}
+
+            <div className={WAITING_ROOM_LAYOUT_STYLES.page}>
+                {isLoading && <DashboardLoadingState />}
+
+                {!isLoading && error && (
+                    <DashboardErrorState message={content.loadingError} />
+                )}
+
+                {!isLoading && !error && raceRoom && (
+                    <div className={WAITING_ROOM_LAYOUT_STYLES.contentGrid}>
+                        <div className={WAITING_ROOM_LAYOUT_STYLES.mainColumn}>
+                            <RaceWaitingRoomJoinPanel
+                                race={raceRoom}
+                                content={content}
+                                onCopyCode={handleCopyCode}
+                                onShareLink={handleShareLink}
+                                onEditRace={handleEditRace}
+                                onStartRace={handleStartRace}
+                                canEditRace={false}
+                                canStartRace={false}
+                            />
+
+                            <RaceWaitingRoomParticipantsGrid
+                                players={raceRoom.players}
+                                maxPlayers={raceRoom.maxPlayers}
+                                content={content.participants}
+                            />
+                        </div>
+
+                        <RaceWaitingRoomSidePanel
+                            race={raceRoom}
+                            content={content}
+                            onCancelRace={handleCancelRace}
+                            canCancelRace={false}
+                        />
+                    </div>
+                )}
+            </div>
+        </>
+    );
+}
+
+export default function TeacherRaceRoomPage() {
+    return (
         <MotionConfig reducedMotion="user">
             <AppShell>
-                <TeacherDashboardLayout
-                    onDashboardClick={handleDashboardClick}
-                    onRacesClick={handleRacesClick}
-                >
-                    <TeacherHeroBanner
-                        size="compact"
-                        teacherName={user?.displayName}
-                        isLoggingOut={isLoggingOut}
-                        onLogout={handleLogout}
-                    />
-
-                    {!isLoading && !error && raceRoom && (
-                        <RaceWaitingRoomHeader
-                            raceTitle={raceRoom.title}
-                            raceStatus={raceRoom.status}
-                            statusLabels={raceContent.statusLabels}
-                            content={content.header}
-                            onBackToRaces={handleRacesClick}
-                        />
-                    )}
-
-                    <div className={WAITING_ROOM_LAYOUT_STYLES.page}>
-                        {isLoading && <DashboardLoadingState />}
-
-                        {!isLoading && error && (
-                            <DashboardErrorState message={content.loadingError} />
-                        )}
-
-                        {!isLoading && !error && raceRoom && (
-                            <div className={WAITING_ROOM_LAYOUT_STYLES.contentGrid}>
-                                <div className={WAITING_ROOM_LAYOUT_STYLES.mainColumn}>
-                                    <RaceWaitingRoomJoinPanel
-                                        race={raceRoom}
-                                        content={content}
-                                        onCopyCode={handleCopyCode}
-                                        onShareLink={handleShareLink}
-                                        onEditRace={handleEditRace}
-                                        onStartRace={handleStartRace}
-                                        canEditRace={false}
-                                        canStartRace={false}
-                                    />
-
-                                    <RaceWaitingRoomParticipantsGrid
-                                        players={raceRoom.players}
-                                        maxPlayers={raceRoom.maxPlayers}
-                                        content={content.participants}
-                                    />
-                                </div>
-
-                                <RaceWaitingRoomSidePanel
-                                    race={raceRoom}
-                                    content={content}
-                                    onCancelRace={handleCancelRace}
-                                    canCancelRace={false}
-                                />
-                            </div>
-                        )}
-                    </div>
+                <TeacherDashboardLayout>
+                    <TeacherRaceRoomContent />
                 </TeacherDashboardLayout>
             </AppShell>
         </MotionConfig>

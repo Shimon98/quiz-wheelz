@@ -13,6 +13,7 @@ export default function TeacherDashboardMain({
                                                  racesError,
                                                  onCreateRaceClick,
                                                  onOpenRace,
+                                                 onShowAllRacesClick,
                                              }) {
     return (
         <div className={TEACHER_DASHBOARD_MAIN_STYLES.wrapper}>
@@ -30,6 +31,7 @@ export default function TeacherDashboardMain({
                 racesError={racesError}
                 onCreateRaceClick={onCreateRaceClick}
                 onOpenRace={onOpenRace}
+                onShowAllRacesClick={onShowAllRacesClick}
             />
         </div>
     );
