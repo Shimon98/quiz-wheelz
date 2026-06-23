@@ -1,12 +1,9 @@
-import { useCallback } from "react";
 import { MotionConfig } from "framer-motion";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 import AppShell from "../../../layouts/AppShell";
 import TeacherDashboardLayout from "../../../layouts/TeacherDashboardLayout";
-import { ROUTES } from "../../../constants/routeConstants";
 import { useLocaleContent } from "../../../constants/localeConstants";
-import { useAuthStore } from "../../../stores/authStore";
 
 import {
     TEACHER_DASHBOARD_RACE_CONTENT,
@@ -18,7 +15,6 @@ import { useTeacherWorkspace } from "../context/TeacherWorkspaceContext";
 
 import DashboardErrorState from "../components/ui/DashboardErrorState";
 import DashboardLoadingState from "../components/ui/DashboardLoadingState";
-import TeacherHeroBanner from "../components/general/TeacherHeroBanner.jsx";
 import RaceWaitingRoomHeader from "../components/raceWaitingRoom/RaceWaitingRoomHeader";
 import RaceWaitingRoomJoinPanel from "../components/raceWaitingRoom/RaceWaitingRoomJoinPanel";
 import RaceWaitingRoomParticipantsGrid from "../components/raceWaitingRoom/RaceWaitingRoomParticipantsGrid";
@@ -28,7 +24,6 @@ import { WAITING_ROOM_LAYOUT_STYLES } from "../styles/raceWaitingRoomStyles";
 
 function TeacherRaceRoomContent() {
     const { raceId } = useParams();
-    const navigate = useNavigate();
 
     const { openAllRacesModal } = useTeacherWorkspace();
 
@@ -40,15 +35,6 @@ function TeacherRaceRoomContent() {
         isLoading,
         error,
     } = useTeacherRaceRoomData(raceId);
-
-    const user = useAuthStore((state) => state.user);
-    const logout = useAuthStore((state) => state.logout);
-    const isLoggingOut = useAuthStore((state) => state.isLoading);
-
-    const handleLogout = useCallback(async () => {
-        await logout();
-        navigate(ROUTES.LOGIN, { replace: true });
-    }, [logout, navigate]);
 
     function handleCopyCode() {
         if (!raceRoom?.roomCode) {
@@ -82,25 +68,16 @@ function TeacherRaceRoomContent() {
     }
 
     return (
-        <>
-            <TeacherHeroBanner
-                size="compact"
-                teacherName={user?.displayName}
-                isLoggingOut={isLoggingOut}
-                onLogout={handleLogout}
+        <section className={WAITING_ROOM_LAYOUT_STYLES.panel}>
+            <RaceWaitingRoomHeader
+                raceTitle={raceRoom?.title}
+                raceStatus={raceRoom?.status}
+                statusLabels={raceContent.statusLabels}
+                content={content.header}
+                onBackToRaces={openAllRacesModal}
             />
 
-            {!isLoading && !error && raceRoom && (
-                <RaceWaitingRoomHeader
-                    raceTitle={raceRoom.title}
-                    raceStatus={raceRoom.status}
-                    statusLabels={raceContent.statusLabels}
-                    content={content.header}
-                    onBackToRaces={openAllRacesModal}
-                />
-            )}
-
-            <div className={WAITING_ROOM_LAYOUT_STYLES.page}>
+            <div className={WAITING_ROOM_LAYOUT_STYLES.body}>
                 {isLoading && <DashboardLoadingState />}
 
                 {!isLoading && error && (
@@ -137,7 +114,7 @@ function TeacherRaceRoomContent() {
                     </div>
                 )}
             </div>
-        </>
+        </section>
     );
 }
 

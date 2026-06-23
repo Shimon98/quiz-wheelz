@@ -28,7 +28,7 @@ export default function RoomCodeQrCard({
                 aria-label={content.qrAriaLabel}
             >
                 <QrCode
-                    size={56}
+                    size={64}
                     aria-hidden="true"
                     className={WAITING_ROOM_CODE_STYLES.qrIcon}
                 />
