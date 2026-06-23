@@ -1,20 +1,23 @@
-import { getTeacherDashboardIcon } from "../../constants/teacherDashboardAssets";
+import { getTeacherDashboardLucideIcon } from "../../constants/teacherDashboardIcons";
 import SidebarNavItem from "./SidebarNavItem";
+
+const SIDEBAR_NAVIGATION_STYLES = Object.freeze({
+    nav:
+        "flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto",
+});
 
 export default function SidebarNavigation({ items, content, onItemSelect }) {
     return (
-        <nav className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto">
+        <nav className={SIDEBAR_NAVIGATION_STYLES.nav}>
             {items.map((item) => {
-                const icon = item.iconKey
-                    ? getTeacherDashboardIcon(item.iconKey)
-                    : null;
+                const Icon = getTeacherDashboardLucideIcon(item.iconName);
 
                 return (
                     <SidebarNavItem
                         key={item.key}
                         item={item}
                         label={content.nav[item.key]}
-                        icon={icon}
+                        Icon={Icon}
                         comingSoonLabel={content.comingSoon}
                         onSelect={onItemSelect}
                     />
