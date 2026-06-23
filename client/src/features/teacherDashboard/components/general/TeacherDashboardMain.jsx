@@ -1,20 +1,21 @@
 import TeacherHeroBanner from "./TeacherHeroBanner.jsx";
 import TeacherStatsGrid from "./TeacherStatsGrid.jsx";
 import TeacherDashboardPanels from "./TeacherDashboardPanels.jsx";
+import { TEACHER_DASHBOARD_MAIN_STYLES } from "../../styles/dashboardUiStyles";
 
 export default function TeacherDashboardMain({
-    teacherName,
-    isLoggingOut,
-    onLogout,
-    stats,
-    races,
-    isRacesLoading,
-    racesError,
-    onCreateRaceClick,
-    onOpenRace,
-}) {
+                                                 teacherName,
+                                                 isLoggingOut,
+                                                 onLogout,
+                                                 stats,
+                                                 races,
+                                                 isRacesLoading,
+                                                 racesError,
+                                                 onCreateRaceClick,
+                                                 onOpenRace,
+                                             }) {
     return (
-        <>
+        <div className={TEACHER_DASHBOARD_MAIN_STYLES.wrapper}>
             <TeacherHeroBanner
                 teacherName={teacherName}
                 isLoggingOut={isLoggingOut}
@@ -30,6 +31,6 @@ export default function TeacherDashboardMain({
                 onCreateRaceClick={onCreateRaceClick}
                 onOpenRace={onOpenRace}
             />
-        </>
+        </div>
     );
 }

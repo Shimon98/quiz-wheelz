@@ -107,41 +107,43 @@ export default function TeacherRacesPanel({
                         />
                     )}
 
-                    {!isLoading && !error && hasRaces && (
-                        <>
-                            <div
-                                ref={racePreviewViewportRef}
-                                className={TEACHER_DASHBOARD_PANEL_STYLES.racePreviewViewport}
-                            >
-                                <RaceList
-                                    races={previewRaces}
-                                    content={raceContent}
-                                    language={language}
-                                    direction={direction}
-                                    onOpenRace={onOpenRace}
-                                    onEditRace={onEditRace}
-                                    onCancelRace={onCancelRace}
-                                />
-                            </div>
-
-                            {hasMoreRaces && (
-                                <div className={TEACHER_RACES_PREVIEW_STYLES.footer}>
-                                    <Button
-                                        variant="secondary"
-                                        onClick={openAllRacesModal}
-                                        className={TEACHER_RACES_PREVIEW_STYLES.showAllButton}
-                                    >
-                                        <span>{content.showAllRaces}</span>
-                                        <ChevronDown
-                                            size={18}
-                                            aria-hidden="true"
-                                            strokeWidth={2.5}
-                                        />
-                                    </Button>
+                    <div className={TEACHER_DASHBOARD_PANEL_STYLES.racesContent}>
+                        {!isLoading && !error && hasRaces && (
+                            <>
+                                <div
+                                    ref={racePreviewViewportRef}
+                                    className={TEACHER_DASHBOARD_PANEL_STYLES.racePreviewViewport}
+                                >
+                                    <RaceList
+                                        races={previewRaces}
+                                        content={raceContent}
+                                        language={language}
+                                        direction={direction}
+                                        onOpenRace={onOpenRace}
+                                        onEditRace={onEditRace}
+                                        onCancelRace={onCancelRace}
+                                    />
                                 </div>
-                            )}
-                        </>
-                    )}
+
+                                {hasMoreRaces && (
+                                    <div className={TEACHER_RACES_PREVIEW_STYLES.footer}>
+                                        <Button
+                                            variant="secondary"
+                                            onClick={openAllRacesModal}
+                                            className={TEACHER_RACES_PREVIEW_STYLES.showAllButton}
+                                        >
+                                            <span>{content.showAllRaces}</span>
+                                            <ChevronDown
+                                                size={18}
+                                                aria-hidden="true"
+                                                strokeWidth={2.5}
+                                            />
+                                        </Button>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
                 </div>
             </section>
 

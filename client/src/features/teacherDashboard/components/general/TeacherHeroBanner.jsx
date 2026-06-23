@@ -5,8 +5,8 @@ import { getTeacherDashboardAsset } from "../../constants/teacherDashboardAssets
 import TeacherTopBar from "./TeacherTopBar.jsx";
 
 const HEIGHT_CLASSES_BY_SIZE = Object.freeze({
-    default: "h-[180px] max-h-[210px] sm:h-[190px] lg:h-[200px]",
-    compact: "h-28 max-h-32 sm:h-32 lg:h-36",
+    default: "h-[140px] sm:h-[150px] lg:h-[155px]",
+    compact: "h-24 sm:h-28 lg:h-32",
 });
 
 const TEACHER_HERO_BANNER_STYLES = Object.freeze({

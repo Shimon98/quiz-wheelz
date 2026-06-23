@@ -193,10 +193,10 @@ export const TEACHER_RACES_PREVIEW_STYLES = {
         "mt-4",
 
     footer:
-        "mt-4 flex shrink-0 justify-center border-t border-slate-100 pt-4",
+        "mt-3 flex shrink-0 justify-center border-t border-slate-100 pt-3",
 
     showAllButton:
-        "inline-flex min-w-56 items-center justify-center gap-2",
+        "inline-flex min-h-10 min-w-56 items-center justify-center gap-2 rounded-2xl",
 };
 
 export const RACE_CARD_COMPACT_STYLES = {
