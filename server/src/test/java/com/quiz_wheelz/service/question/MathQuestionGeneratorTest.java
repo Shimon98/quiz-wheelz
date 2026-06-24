@@ -1,6 +1,7 @@
 package com.quiz_wheelz.service.question;
 
 import com.quiz_wheelz.common.MathQuestionTextRules;
+import com.quiz_wheelz.common.MathPatternRules;
 import com.quiz_wheelz.common.QuestionRules;
 import com.quiz_wheelz.dto.question.MathQuestionData;
 import com.quiz_wheelz.dto.question.QuestionPlan;
@@ -114,6 +115,118 @@ class MathQuestionGeneratorTest {
     }
 
     @Test
+    void shouldGenerateAddThenMultiplyQuestion() {
+        QuestionPlan questionPlan = createQuestionPlan(
+                QuestionType.ORDER_OF_OPERATIONS,
+                Difficulty.MEDIUM,
+                1,
+                10,
+                QuestionGenerationPattern.ADD_THEN_MULTIPLY
+        );
+
+        MathQuestionData result = mathQuestionGenerator.generate(questionPlan);
+
+        assertNotNull(result);
+        assertEquals(QuestionType.ORDER_OF_OPERATIONS, result.getQuestionType());
+        assertEquals(MathExpressionPattern.ADD_THEN_MULTIPLY, result.getExpressionPattern());
+        assertEquals(QuestionRules.COMPLEX_EXPRESSION_OPERANDS_COUNT, result.getOperands().size());
+        assertEquals(
+                List.of(MathOperator.ADDITION, MathOperator.MULTIPLICATION),
+                result.getOperators()
+        );
+
+        int firstOperand = result.getOperands().get(QuestionRules.FIRST_OPERAND_INDEX);
+        int secondOperand = result.getOperands().get(QuestionRules.SECOND_OPERAND_INDEX);
+        int thirdOperand = result.getOperands().get(QuestionRules.THIRD_OPERAND_INDEX);
+
+        assertEquals(
+                firstOperand + secondOperand * thirdOperand,
+                result.getCorrectAnswerValue()
+        );
+
+        assertTrue(secondOperand <= MathPatternRules.COMPLEX_MAX_MULTIPLICATION_FACTOR);
+        assertTrue(thirdOperand <= MathPatternRules.COMPLEX_MAX_MULTIPLICATION_FACTOR);
+
+        assertTrue(result.getQuestionText().contains(MathQuestionTextRules.ADDITION_OPERATOR));
+        assertTrue(result.getQuestionText().contains(MathQuestionTextRules.MULTIPLICATION_OPERATOR));
+    }
+
+    @Test
+    void shouldGeneratePreferredDistractorForAddThenMultiplyQuestion() {
+        QuestionPlan questionPlan = createQuestionPlan(
+                QuestionType.ORDER_OF_OPERATIONS,
+                Difficulty.MEDIUM,
+                1,
+                10,
+                QuestionGenerationPattern.ADD_THEN_MULTIPLY
+        );
+
+        MathQuestionData result = mathQuestionGenerator.generate(questionPlan);
+
+        int firstOperand = result.getOperands().get(QuestionRules.FIRST_OPERAND_INDEX);
+        int secondOperand = result.getOperands().get(QuestionRules.SECOND_OPERAND_INDEX);
+        int thirdOperand = result.getOperands().get(QuestionRules.THIRD_OPERAND_INDEX);
+
+        int leftToRightMistake = (firstOperand + secondOperand) * thirdOperand;
+
+        assertTrue(result.getPreferredDistractorValues().contains(leftToRightMistake));
+    }
+
+    @Test
+    void shouldRejectAddThenMultiplyForEasyDifficulty() {
+        QuestionPlan questionPlan = createQuestionPlan(
+                QuestionType.ORDER_OF_OPERATIONS,
+                Difficulty.EASY,
+                1,
+                10,
+                QuestionGenerationPattern.ADD_THEN_MULTIPLY
+        );
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> mathQuestionGenerator.generate(questionPlan)
+        );
+
+        assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
+    }
+
+    @Test
+    void shouldRejectAddThenMultiplyWithWrongQuestionType() {
+        QuestionPlan questionPlan = createQuestionPlan(
+                QuestionType.MULTIPLICATION,
+                Difficulty.MEDIUM,
+                1,
+                10,
+                QuestionGenerationPattern.ADD_THEN_MULTIPLY
+        );
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> mathQuestionGenerator.generate(questionPlan)
+        );
+
+        assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
+    }
+
+    @Test
+    void shouldRejectParenthesesPatternUntilGeneratorSupportsIt() {
+        QuestionPlan questionPlan = createQuestionPlan(
+                QuestionType.PARENTHESES,
+                Difficulty.MEDIUM,
+                1,
+                10,
+                QuestionGenerationPattern.PARENTHESES_SUM_THEN_MULTIPLY
+        );
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> mathQuestionGenerator.generate(questionPlan)
+        );
+
+        assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
+    }
+
+    @Test
     void shouldThrowWhenOrderOfOperationsIsNotSupportedInStageB() {
         QuestionPlan questionPlan = createQuestionPlan(QuestionType.ORDER_OF_OPERATIONS, 1, 10);
 
@@ -188,15 +301,31 @@ class MathQuestionGeneratorTest {
             Integer minValue,
             Integer maxValue
     ) {
-        return new QuestionPlan(
-                createMathSubject(),
+        return createQuestionPlan(
                 questionType,
                 Difficulty.EASY,
                 minValue,
                 maxValue,
-                30,
-                4,
-                QuestionGenerationPattern.BINARY_OPERATION,
+                QuestionGenerationPattern.BINARY_OPERATION
+        );
+    }
+
+    private QuestionPlan createQuestionPlan(
+            QuestionType questionType,
+            Difficulty difficulty,
+            Integer minValue,
+            Integer maxValue,
+            QuestionGenerationPattern generationPattern
+    ) {
+        return new QuestionPlan(
+                createMathSubject(),
+                questionType,
+                difficulty,
+                minValue,
+                maxValue,
+                QuestionRules.DEFAULT_TIME_LIMIT_SECONDS,
+                QuestionRules.DEFAULT_CHOICES_COUNT,
+                generationPattern,
                 AdaptiveMode.BASIC,
                 AssistanceLevel.NONE
         );

@@ -28,7 +28,11 @@ public enum MathExpressionPattern {
     ADD_THEN_MULTIPLY(
             QuestionType.ORDER_OF_OPERATIONS,
             List.of(MathOperator.ADDITION, MathOperator.MULTIPLICATION),
-            List.of(MathOperandRole.ADDEND, MathOperandRole.ANY, MathOperandRole.MULTIPLIER),
+            List.of(
+                    MathOperandRole.ADDEND,
+                    MathOperandRole.MULTIPLIER,
+                    MathOperandRole.MULTIPLIER
+            ),
             MathQuestionTextLayout.STANDARD
     ) {
         @Override
