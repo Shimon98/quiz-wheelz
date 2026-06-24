@@ -22,4 +22,10 @@ public interface QuestionTemplateRepository extends JpaRepository<QuestionTempla
             QuestionType type,
             Difficulty difficulty
     );
+
+    List<QuestionTemplate> findBySubjectAndTypeAndDifficultyAndActiveTrueOrderByIdAsc(
+            Subject subject,
+            QuestionType type,
+            Difficulty difficulty
+    );
 }
