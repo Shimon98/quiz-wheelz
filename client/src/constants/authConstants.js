@@ -14,6 +14,8 @@ export const AUTH_TEXT = {
             loginButton: 'התחברות',
             loading: 'טוען...',
             forgotPassword: 'שכחת סיסמה?',
+            showPassword: 'הצג סיסמה',
+            hidePassword: 'הסתר סיסמה',
         },
 
         placeholders: {
@@ -39,6 +41,8 @@ export const AUTH_TEXT = {
             loginButton: 'Sign in',
             loading: 'Loading...',
             forgotPassword: 'Forgot password?',
+            showPassword: 'Show password',
+            hidePassword: 'Hide password',
         },
 
         placeholders: {

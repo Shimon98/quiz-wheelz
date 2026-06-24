@@ -1,28 +1,55 @@
 import RaceCardActions from "./RaceCardActions";
 import RaceCardHeader from "./RaceCardHeader";
 import RaceCardMeta from "./RaceCardMeta";
+import { cx } from "../../../../utils/classNameUtils";
+import {
+    RACE_CARD_COMPACT_STYLES,
+    RACE_CARD_STATUS_TONE_STYLES,
+} from "../../styles/dashboardUiStyles";
+import { getRaceStatusTone } from "../../utils/raceStatusUtils";
+
+const DEFAULT_RACE_CARD_TONE = "slate";
 
 export default function RaceCard({
-    race,
-    content,
-    onOpenRace,
-    onEditRace,
-    onCancelRace,
-}) {
+                                     race,
+                                     content,
+                                     language,
+                                     direction,
+                                     onOpenRace,
+                                     onEditRace,
+                                     onCancelRace,
+                                 }) {
     if (!race) {
         return null;
     }
 
+    const tone = getRaceStatusTone(race.status);
+    const toneStyles =
+        RACE_CARD_STATUS_TONE_STYLES[tone] ??
+        RACE_CARD_STATUS_TONE_STYLES[DEFAULT_RACE_CARD_TONE];
+
     return (
         <article
-            className="flex flex-col gap-5 rounded-3xl border border-white/80 bg-white p-5 text-start shadow-[0_10px_28px_rgba(27,42,65,0.08)]"
-            dir="auto"
+            className={cx(RACE_CARD_COMPACT_STYLES.card, toneStyles.card)}
+            dir={direction}
         >
-            <RaceCardHeader race={race} statusLabels={content.statusLabels} />
-            <RaceCardMeta race={race} content={content.meta} />
+            <RaceCardHeader
+                race={race}
+                roomCodeLabel={content.meta.roomCode}
+                toneStyles={toneStyles}
+            />
+
+            <RaceCardMeta
+                race={race}
+                language={language}
+                toneStyles={toneStyles}
+            />
+
             <RaceCardActions
                 race={race}
                 content={content.actions}
+                statusLabels={content.statusLabels}
+                toneStyles={toneStyles}
                 onOpenRace={onOpenRace}
                 onEditRace={onEditRace}
                 onCancelRace={onCancelRace}

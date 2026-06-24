@@ -1,25 +1,24 @@
-import { getTeacherDashboardIcon } from "../../constants/teacherDashboardAssets";
+import { getTeacherDashboardLucideIcon } from "../../constants/teacherDashboardIcons";
+import { TEACHER_SIDEBAR_STYLES } from "../../styles/dashboardUiStyles";
 import SidebarNavItem from "./SidebarNavItem";
 
 export default function SidebarNavigation({ items, content, onItemSelect }) {
     return (
-        <nav className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto">
+        <div className={TEACHER_SIDEBAR_STYLES.navGroup}>
             {items.map((item) => {
-                const icon = item.iconKey
-                    ? getTeacherDashboardIcon(item.iconKey)
-                    : null;
+                const Icon = getTeacherDashboardLucideIcon(item.iconName);
 
                 return (
                     <SidebarNavItem
                         key={item.key}
                         item={item}
                         label={content.nav[item.key]}
-                        icon={icon}
+                        Icon={Icon}
                         comingSoonLabel={content.comingSoon}
                         onSelect={onItemSelect}
                     />
                 );
             })}
-        </nav>
+        </div>
     );
 }

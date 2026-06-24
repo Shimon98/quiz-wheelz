@@ -1,5 +1,5 @@
 import { XCircle } from "lucide-react";
-import DashboardButton from "../ui/DashboardButton";
+import Button from "../../../../shared/components/ui/Button";
 import {
     WAITING_ROOM_QUICK_ACTION_ITEMS,
     WAITING_ROOM_QUICK_ACTION_KEYS,
@@ -50,7 +50,7 @@ export default function RaceWaitingRoomQuickActionsPanel({
                     const onClick = getActionHandler(item.actionType, handlers);
 
                     return (
-                        <DashboardButton
+                        <Button
                             key={item.key}
                             onClick={onClick}
                             variant={item.variant}
@@ -66,7 +66,7 @@ export default function RaceWaitingRoomQuickActionsPanel({
                             )}
 
                             <span>{content[item.contentKey]}</span>
-                        </DashboardButton>
+                        </Button>
                     );
                 })}
             </div>

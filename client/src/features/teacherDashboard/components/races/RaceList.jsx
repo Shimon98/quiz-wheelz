@@ -1,23 +1,34 @@
+import { TEACHER_DASHBOARD_PANEL_STYLES } from "../../styles/dashboardUiStyles";
+import { cx } from "../../../../utils/classNameUtils";
 import RaceCard from "./RaceCard";
 
 export default function RaceList({
-    races,
-    content,
-    onOpenRace,
-    onEditRace,
-    onCancelRace,
-}) {
+                                     races,
+                                     content,
+                                     language,
+                                     direction,
+                                     onOpenRace,
+                                     onEditRace,
+                                     onCancelRace,
+                                     className = "",
+                                 }) {
     return (
-        <div className="grid gap-4 overflow-y-auto pe-1">
+        <div
+            className={cx(TEACHER_DASHBOARD_PANEL_STYLES.raceList, className)}
+            dir={direction}
+        >
             {races.map((race) => (
-                <RaceCard
-                    key={race.raceId}
-                    race={race}
-                    content={content}
-                    onOpenRace={onOpenRace}
-                    onEditRace={onEditRace}
-                    onCancelRace={onCancelRace}
-                />
+                <div key={race.raceId} data-race-card-item>
+                    <RaceCard
+                        race={race}
+                        content={content}
+                        language={language}
+                        direction={direction}
+                        onOpenRace={onOpenRace}
+                        onEditRace={onEditRace}
+                        onCancelRace={onCancelRace}
+                    />
+                </div>
             ))}
         </div>
     );

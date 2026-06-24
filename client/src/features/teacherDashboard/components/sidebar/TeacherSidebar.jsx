@@ -5,22 +5,36 @@ import {
     TEACHER_DASHBOARD_NAV_ITEMS,
 } from "../../constants/teacherDashboardConstants";
 import { getTeacherDashboardAsset } from "../../constants/teacherDashboardAssets";
+import { TEACHER_SIDEBAR_STYLES } from "../../styles/dashboardUiStyles";
+import CreateRaceButton from "../createRace/CreateRaceButton";
 import SidebarBrand from "./SidebarBrand";
 import SidebarNavigation from "./SidebarNavigation";
-import SidebarDecoration from "./SidebarDecoration";
+import SidebarUserCard from "./SidebarUserCard";
+
+const PRIMARY_NAV_ITEMS = TEACHER_DASHBOARD_NAV_ITEMS.filter(
+    (item) =>
+        !item.isComingSoon &&
+        item.actionKey !== TEACHER_DASHBOARD_NAV_ACTIONS.CREATE_RACE,
+);
+
+const COMING_SOON_NAV_ITEMS = TEACHER_DASHBOARD_NAV_ITEMS.filter(
+    (item) => item.isComingSoon,
+);
 
 export default function TeacherSidebar({
     onDashboardClick,
     onRacesClick,
     onCreateRaceClick,
+    teacherName,
+    onLogout,
+    isLoggingOut = false,
 }) {
     const content = useLocaleContent(TEACHER_DASHBOARD_CONTENT).sidebar;
-    const sidebarIllustration = getTeacherDashboardAsset("carNumbersTrail");
     const logo = getTeacherDashboardAsset("sidebarLogo");
+
     const navActions = {
         [TEACHER_DASHBOARD_NAV_ACTIONS.DASHBOARD]: onDashboardClick,
         [TEACHER_DASHBOARD_NAV_ACTIONS.RACES]: onRacesClick,
-        [TEACHER_DASHBOARD_NAV_ACTIONS.CREATE_RACE]: onCreateRaceClick,
     };
 
     function handleNavItemSelect(item) {
@@ -28,21 +42,39 @@ export default function TeacherSidebar({
     }
 
     return (
-        <aside className="hidden h-full min-h-0 w-64 flex-none overflow-hidden rounded-3xl bg-white/80 p-5 shadow-[0_8px_24px_rgba(27,42,65,0.08)] lg:block">
-            <div className="flex h-full min-h-0 flex-col gap-4">
-                <SidebarBrand
-                    logoSrc={logo}
-                    logoText={content.logoText}
-                />
+        <aside className={TEACHER_SIDEBAR_STYLES.aside}>
+            <SidebarBrand logoSrc={logo} logoText={content.logoText} />
 
+            <nav className={TEACHER_SIDEBAR_STYLES.navRegion}>
                 <SidebarNavigation
-                    items={TEACHER_DASHBOARD_NAV_ITEMS}
+                    items={PRIMARY_NAV_ITEMS}
                     content={content}
                     onItemSelect={handleNavItemSelect}
                 />
 
-                <SidebarDecoration imageSrc={sidebarIllustration} />
-            </div>
+                <div className={TEACHER_SIDEBAR_STYLES.ctaWrapper}>
+                    <CreateRaceButton
+                        onClick={onCreateRaceClick}
+                        className={TEACHER_SIDEBAR_STYLES.cta}
+                    >
+                        {content.nav.createRace}
+                    </CreateRaceButton>
+                </div>
+
+                <div className={TEACHER_SIDEBAR_STYLES.divider} />
+
+                <SidebarNavigation
+                    items={COMING_SOON_NAV_ITEMS}
+                    content={content}
+                    onItemSelect={handleNavItemSelect}
+                />
+            </nav>
+
+            <SidebarUserCard
+                teacherName={teacherName}
+                onLogout={onLogout}
+                isLoggingOut={isLoggingOut}
+            />
         </aside>
     );
 }

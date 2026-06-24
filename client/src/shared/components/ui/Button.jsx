@@ -1,35 +1,56 @@
-import { UI_CLASSES } from '../../../styles/theme';
-import { DEFAULT_LANGUAGE } from '../../../constants/messageConstants.js';
-import { AUTH_TEXT } from '../../../constants/authConstants.js';
+import { forwardRef } from "react";
+import { cx } from "../../../utils/classNameUtils";
 
-export default function Button({children, type = 'button', isLoading = false, disabled = false, className = '',
-                                   fullWidth = true, language = DEFAULT_LANGUAGE, ...props}) {
+const VARIANT_CLASSES = Object.freeze({
+    primary: "bg-sky-500 text-white shadow-md hover:bg-sky-600",
+    secondary:
+        "bg-white text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50",
+    danger: "bg-rose-50 text-rose-600 hover:bg-rose-100",
+    dangerSolid: "bg-red-500 text-white shadow-md hover:bg-red-600",
+    ghost: "bg-transparent text-slate-600 hover:bg-slate-100",
+    cta:
+        "bg-gradient-to-l from-blue-700 via-sky-500 to-cyan-400 text-white shadow-[0_14px_28px_rgba(2,132,199,0.35)] hover:from-blue-800 hover:via-sky-600 hover:to-cyan-500",
+    successCta:
+        "bg-gradient-to-l from-emerald-700 via-emerald-500 to-lime-400 text-white shadow-[0_14px_28px_rgba(5,150,105,0.32)] hover:from-emerald-800 hover:via-emerald-600 hover:to-lime-500",
+    plain: "",
+});
 
-    const authText = AUTH_TEXT[language] ?? AUTH_TEXT.he;
-    const baseStyles =
-        'relative min-h-16 px-7 py-4 rounded-[26px] transition-all duration-150 ease-out active:scale-[0.98] focus:outline-none focus:ring-4';
+const SIZE_CLASSES = Object.freeze({
+    sm: "min-h-9 px-4 py-2 text-sm",
+    md: "min-h-11 px-5 py-3 text-sm",
+    lg: "min-h-12 px-8 py-3 text-lg",
+    icon: "h-11 min-h-11 w-11 px-0 py-0 text-base",
+});
 
-    const widthStyles = fullWidth ? 'w-full' : 'w-auto';
-    const colorStyles =
-        disabled || isLoading
-            ? UI_CLASSES.disabledButton
-            : UI_CLASSES.primaryButton;
+const BASE_CLASSES =
+    "inline-flex items-center justify-center rounded-2xl font-extrabold transition active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none disabled:active:scale-100";
 
-    const finalClassName =
-        `${baseStyles} ${widthStyles} ${colorStyles} ${className}`.trim();
+const Button = forwardRef(function Button(
+    {
+        children,
+        type = "button",
+        variant = "primary",
+        size = "md",
+        disabled = false,
+        className = "",
+        ...props
+    },
+    ref,
+) {
+    const variantClasses = VARIANT_CLASSES[variant] ?? VARIANT_CLASSES.primary;
+    const sizeClasses = SIZE_CLASSES[size] ?? SIZE_CLASSES.md;
 
     return (
         <button
+            ref={ref}
             type={type}
-            disabled={disabled || isLoading}
-            className={finalClassName}
+            disabled={disabled}
+            className={cx(BASE_CLASSES, variantClasses, sizeClasses, className)}
             {...props}
         >
-            <span className="pointer-events-none absolute inset-x-5 top-1.5 h-1.5 rounded-full bg-white/30" />
-
-            <span className="relative z-10 text-[30px] font-black leading-none tracking-wide drop-shadow-[0_2px_1px_rgba(124,45,18,0.45)]">
-                {isLoading ? authText.labels.loading : children}</span>
-
+            {children}
         </button>
     );
-}
+});
+
+export default Button;

@@ -1,14 +1,14 @@
-import DashboardButton from "../ui/DashboardButton";
+import Button from "../../../../shared/components/ui/Button";
 import MaxPlayersSelector from "./MaxPlayersSelector";
 import RaceLengthSelector from "./RaceLengthSelector";
 import SubjectSelect from "./SubjectSelect";
+import CreateRaceButton from "./CreateRaceButton";
 import {useCreateRaceForm} from "../../hooks/useCreateRaceForm";
 import {
     CREATE_RACE_FORM_STYLES,
     DASHBOARD_FIELD_STYLES,
     DASHBOARD_TEXT_STYLES,
 } from "../../styles/dashboardUiStyles";
-import RaceFlagIcon from "../ui/RaceFlagIcon";
 
 export default function CreateRaceForm({
                                            subjects,
@@ -42,6 +42,7 @@ export default function CreateRaceForm({
                         placeholder={content.fields.titlePlaceholder}
                         className={DASHBOARD_FIELD_STYLES.input}
                     />
+
                     <p className={DASHBOARD_TEXT_STYLES.helperError}>
                         {errors.title || "\u00A0"}
                     </p>
@@ -74,7 +75,7 @@ export default function CreateRaceForm({
             />
 
             <div className={CREATE_RACE_FORM_STYLES.actions}>
-                <DashboardButton
+                <Button
                     type="button"
                     variant="secondary"
                     size="lg"
@@ -83,18 +84,15 @@ export default function CreateRaceForm({
                     className={CREATE_RACE_FORM_STYLES.cancelButton}
                 >
                     {content.buttons.cancel}
-                </DashboardButton>
+                </Button>
 
-                <DashboardButton
+                <CreateRaceButton
                     type="submit"
-                    variant="cta"
-                    size="lg"
                     disabled={isSubmitting}
                     className={CREATE_RACE_FORM_STYLES.submitButton}
                 >
-                    <RaceFlagIcon className={CREATE_RACE_FORM_STYLES.submitIcon}/>
-                    <span>{isSubmitting ? content.buttons.submitting : content.buttons.submit}</span>
-                </DashboardButton>
+                    {isSubmitting ? content.buttons.submitting : content.buttons.submit}
+                </CreateRaceButton>
             </div>
         </form>
     );

@@ -22,10 +22,10 @@ export const UI_CLASSES = {
         'border-rose-300 bg-rose-50/70 text-slate-700 placeholder:text-slate-400 shadow-sm focus:border-rose-400 focus:ring-rose-100',
 
     inputIcon:
-        'absolute right-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-violet-600 shadow-sm ring-1 ring-white/80',
+        'absolute top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-violet-600 shadow-sm ring-1 ring-white/80',
 
     inputPasswordIcon:
-        'absolute right-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-orange-500 shadow-sm ring-1 ring-white/80 transition hover:scale-105 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-orange-200',
+        'absolute top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-orange-500 shadow-sm ring-1 ring-white/80 transition hover:scale-105 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-orange-200',
 
     inputLabel:
         'mb-2 block text-sm font-extrabold tracking-wide text-indigo-800 drop-shadow-sm sm:text-base',
