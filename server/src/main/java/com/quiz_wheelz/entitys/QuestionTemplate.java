@@ -2,6 +2,7 @@ package com.quiz_wheelz.entitys;
 
 import com.quiz_wheelz.common.BaseEntity;
 import com.quiz_wheelz.enums.Difficulty;
+import com.quiz_wheelz.enums.QuestionGenerationPattern;
 import com.quiz_wheelz.enums.QuestionType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
@@ -32,6 +33,11 @@ public class QuestionTemplate extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Difficulty difficulty;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "generation_pattern", nullable = false, length = 60)
+    private QuestionGenerationPattern generationPattern = QuestionGenerationPattern.BINARY_OPERATION;
 
     @NotNull
     @Min(0)

@@ -5,6 +5,7 @@ import com.quiz_wheelz.entitys.Subject;
 import com.quiz_wheelz.enums.AdaptiveMode;
 import com.quiz_wheelz.enums.AssistanceLevel;
 import com.quiz_wheelz.enums.Difficulty;
+import com.quiz_wheelz.enums.QuestionGenerationPattern;
 import com.quiz_wheelz.enums.QuestionType;
 import lombok.Getter;
 
@@ -18,6 +19,7 @@ public class QuestionPlan {
     private final Integer maxValue;
     private final Integer timeLimitSeconds;
     private final Integer choicesCount;
+    private final QuestionGenerationPattern generationPattern;
     private final AdaptiveMode adaptiveMode;
     private final AssistanceLevel assistanceLevel;
 
@@ -32,6 +34,32 @@ public class QuestionPlan {
             AdaptiveMode adaptiveMode,
             AssistanceLevel assistanceLevel
     ) {
+        this(
+                subject,
+                questionType,
+                difficulty,
+                minValue,
+                maxValue,
+                timeLimitSeconds,
+                choicesCount,
+                QuestionGenerationPattern.BINARY_OPERATION,
+                adaptiveMode,
+                assistanceLevel
+        );
+    }
+
+    public QuestionPlan(
+            Subject subject,
+            QuestionType questionType,
+            Difficulty difficulty,
+            Integer minValue,
+            Integer maxValue,
+            Integer timeLimitSeconds,
+            Integer choicesCount,
+            QuestionGenerationPattern generationPattern,
+            AdaptiveMode adaptiveMode,
+            AssistanceLevel assistanceLevel
+    ) {
         this.subject = subject;
         this.questionType = questionType;
         this.difficulty = difficulty;
@@ -43,6 +71,9 @@ public class QuestionPlan {
         this.choicesCount = choicesCount == null
                 ? QuestionRules.DEFAULT_CHOICES_COUNT
                 : choicesCount;
+        this.generationPattern = generationPattern == null
+                ? QuestionGenerationPattern.BINARY_OPERATION
+                : generationPattern;
         this.adaptiveMode = adaptiveMode == null ? AdaptiveMode.BASIC : adaptiveMode;
         this.assistanceLevel = assistanceLevel == null ? AssistanceLevel.NONE : assistanceLevel;
     }

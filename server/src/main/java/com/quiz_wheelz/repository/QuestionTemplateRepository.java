@@ -3,6 +3,7 @@ package com.quiz_wheelz.repository;
 import com.quiz_wheelz.entitys.QuestionTemplate;
 import com.quiz_wheelz.entitys.Subject;
 import com.quiz_wheelz.enums.Difficulty;
+import com.quiz_wheelz.enums.QuestionGenerationPattern;
 import com.quiz_wheelz.enums.QuestionType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -27,5 +28,12 @@ public interface QuestionTemplateRepository extends JpaRepository<QuestionTempla
             Subject subject,
             QuestionType type,
             Difficulty difficulty
+    );
+
+    boolean existsBySubjectAndTypeAndDifficultyAndGenerationPattern(
+            Subject subject,
+            QuestionType type,
+            Difficulty difficulty,
+            QuestionGenerationPattern generationPattern
     );
 }

@@ -37,9 +37,7 @@ public final class QuestionRules {
             QuestionType.ADDITION,
             QuestionType.SUBTRACTION,
             QuestionType.MULTIPLICATION,
-            QuestionType.DIVISION,
-            QuestionType.ORDER_OF_OPERATIONS,
-            QuestionType.PARENTHESES
+            QuestionType.DIVISION
     );
 
     private QuestionRules() {

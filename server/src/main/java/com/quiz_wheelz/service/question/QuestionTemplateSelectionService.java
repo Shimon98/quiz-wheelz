@@ -5,6 +5,7 @@ import com.quiz_wheelz.dto.question.QuestionPlan;
 import com.quiz_wheelz.entitys.QuestionTemplate;
 import com.quiz_wheelz.entitys.Subject;
 import com.quiz_wheelz.enums.Difficulty;
+import com.quiz_wheelz.enums.QuestionGenerationPattern;
 import com.quiz_wheelz.enums.QuestionType;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
@@ -80,7 +81,12 @@ public class QuestionTemplateSelectionService {
                 || template.getMinValue() == null
                 || template.getMaxValue() == null
                 || template.getTimeLimitSeconds() == null
-                || template.getChoicesCount() == null) {
+                || template.getChoicesCount() == null
+                || template.getGenerationPattern() == null) {
+            throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
+        }
+
+        if (template.getGenerationPattern() != QuestionGenerationPattern.BINARY_OPERATION) {
             throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
         }
 

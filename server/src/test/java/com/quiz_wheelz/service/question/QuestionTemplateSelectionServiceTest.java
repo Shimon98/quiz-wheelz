@@ -6,6 +6,7 @@ import com.quiz_wheelz.entitys.Subject;
 import com.quiz_wheelz.enums.AdaptiveMode;
 import com.quiz_wheelz.enums.AssistanceLevel;
 import com.quiz_wheelz.enums.Difficulty;
+import com.quiz_wheelz.enums.QuestionGenerationPattern;
 import com.quiz_wheelz.enums.QuestionType;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
@@ -135,6 +136,22 @@ class QuestionTemplateSelectionServiceTest {
     }
 
     @Test
+    void shouldThrowWhenOrderOfOperationsTemplateIsRequestedInStageB() {
+        Subject subject = createMathSubject();
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> questionTemplateSelectionService.selectTemplate(
+                        subject,
+                        QuestionType.ORDER_OF_OPERATIONS,
+                        Difficulty.EASY
+                )
+        );
+
+        assertEquals(ErrorCode.QUESTION_TYPE_NOT_SUPPORTED, exception.getErrorCode());
+    }
+
+    @Test
     void shouldThrowWhenInputIsMissing() {
         ApiException exception = assertThrows(
                 ApiException.class,
@@ -251,6 +268,38 @@ class QuestionTemplateSelectionServiceTest {
         assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
     }
 
+    @Test
+    void shouldThrowWhenTemplateGenerationPatternIsMissing() {
+        Subject subject = createMathSubject();
+        QuestionTemplate template = createTemplate(
+                subject,
+                QuestionType.ADDITION,
+                Difficulty.EASY,
+                1,
+                20,
+                30,
+                4
+        );
+        template.setGenerationPattern(null);
+
+        when(questionTemplateRepository.findBySubjectAndTypeAndDifficultyAndActiveTrueOrderByIdAsc(
+                subject,
+                QuestionType.ADDITION,
+                Difficulty.EASY
+        )).thenReturn(List.of(template));
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> questionTemplateSelectionService.selectTemplate(
+                        subject,
+                        QuestionType.ADDITION,
+                        Difficulty.EASY
+                )
+        );
+
+        assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
+    }
+
     private Subject createMathSubject() {
         Subject subject = new Subject();
         subject.setCode("MATH");
@@ -272,6 +321,7 @@ class QuestionTemplateSelectionServiceTest {
         template.setSubject(subject);
         template.setType(questionType);
         template.setDifficulty(difficulty);
+        template.setGenerationPattern(QuestionGenerationPattern.BINARY_OPERATION);
         template.setMinValue(minValue);
         template.setMaxValue(maxValue);
         template.setTimeLimitSeconds(timeLimitSeconds);
