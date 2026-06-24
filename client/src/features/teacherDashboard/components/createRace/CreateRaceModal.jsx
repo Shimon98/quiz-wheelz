@@ -49,6 +49,7 @@ export default function CreateRaceModal({
             direction="rtl"
             closeOnEscape={!isSubmitting}
             closeOnOverlayClick={!isSubmitting}
+            overlayClassName={DASHBOARD_MODAL_STYLES.overlay}
             panelClassName={DASHBOARD_MODAL_STYLES.panel}
         >
             <ModalCloseButton

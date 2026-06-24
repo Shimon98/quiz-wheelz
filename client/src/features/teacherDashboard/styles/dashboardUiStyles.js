@@ -1,11 +1,24 @@
 export const CREATE_RACE_FORM_STYLES = {
-    form: "flex h-full min-h-0 flex-col",
-    fieldsScroll: "mt-5 grid min-h-0 flex-1 gap-4 overflow-y-auto pe-1",
-    fieldGrid: "grid gap-4 md:grid-cols-2",
-    actions: "mt-4 flex shrink-0 items-center justify-between gap-3 border-t border-slate-100 pt-4",
-    cancelButton: "min-w-36",
-    submitButton: "inline-flex min-w-60 items-center justify-center gap-2",
-    submitIcon: "h-5 w-5 shrink-0",
+    form:
+        "flex min-h-0 flex-col",
+
+    fieldsScroll:
+        "mt-4 grid gap-3 pe-1 sm:mt-5 sm:gap-4",
+
+    fieldGrid:
+        "grid gap-4 md:grid-cols-2",
+
+    actions:
+        "mt-4 flex shrink-0 flex-col-reverse items-stretch gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between",
+
+    cancelButton:
+        "w-full sm:w-auto sm:min-w-36",
+
+    submitButton:
+        "inline-flex w-full items-center justify-center gap-2 sm:w-auto sm:min-w-60",
+
+    submitIcon:
+        "h-5 w-5 shrink-0",
 };
 
 export const CREATE_RACE_BUTTON_STYLES = {
@@ -229,16 +242,16 @@ export const RACE_LENGTH_OPTION_STYLES = {
 
 export const DASHBOARD_MODAL_STYLES = {
     overlay:
-        "fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]",
+        "fixed inset-0 z-50 flex !items-start justify-center overflow-y-auto overscroll-contain bg-slate-950/55 px-3 py-4 backdrop-blur-[2px] md:!items-center md:p-4",
 
     panel:
-        "relative flex max-h-[calc(100dvh-2rem)] w-full max-w-[640px] flex-col overflow-hidden rounded-[2rem] bg-white px-5 py-5 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)] sm:px-7 sm:py-6",
+        "relative my-auto w-full max-w-[640px] rounded-[2rem] bg-white px-5 py-5 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)] sm:px-7 sm:py-6",
 
     closeButton:
         "absolute end-5 top-5 z-30",
 
     header:
-        "mx-auto max-w-xl shrink-0",
+        "mx-auto max-w-xl",
 
     headerContent:
         "flex items-center justify-center gap-0",
@@ -247,13 +260,13 @@ export const DASHBOARD_MODAL_STYLES = {
         "text-center",
 
     heroImage:
-        "hidden h-[132px] max-w-[200px] shrink-0 object-contain drop-shadow-[0_10px_18px_rgba(15,23,42,0.18)] sm:block",
+        "hidden h-[132px] max-w-[200px] shrink-0 object-contain drop-shadow-[0_10px_18px_rgba(15,23,42,0.18)] md:block",
 
     error:
-        "mt-5 shrink-0 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700",
+        "mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 sm:mt-5",
 
     formWrapper:
-        "min-h-0 flex-1",
+        "mt-4",
 
     titleIcon:
         "h-8 w-8 text-slate-900",
