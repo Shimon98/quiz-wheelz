@@ -131,7 +131,7 @@ export const WAITING_ROOM_PARTICIPANT_STYLES = Object.freeze({
         "grid gap-4 border-t border-slate-100 pt-5",
 
     grid:
-        "grid grid-cols-4 gap-3",
+        "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4",
 
     slot:
         "relative flex h-28 flex-col items-center justify-end overflow-hidden rounded-2xl border p-2.5 text-center shadow-[0_8px_18px_rgba(15,23,42,0.07)] transition-shadow duration-200 hover:shadow-[0_14px_28px_rgba(15,23,42,0.14)]",

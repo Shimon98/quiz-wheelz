@@ -12,6 +12,9 @@ export const TEACHER_DASHBOARD_CONTENT = {
                 settings: "הגדרות",
             },
             comingSoon: "בקרוב",
+            openMenu: "פתיחת תפריט הניווט",
+            closeMenu: "סגירת תפריט הניווט",
+            navTitle: "תפריט ניווט",
         },
         topBar: {
             roleLabel: "מורה",
@@ -48,6 +51,9 @@ export const TEACHER_DASHBOARD_CONTENT = {
                 settings: "Settings",
             },
             comingSoon: "Coming soon",
+            openMenu: "Open navigation menu",
+            closeMenu: "Close navigation menu",
+            navTitle: "Navigation menu",
         },
         topBar: {
             roleLabel: "Teacher",

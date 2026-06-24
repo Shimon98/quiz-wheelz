@@ -8,7 +8,11 @@ import {
     TEACHER_DASHBOARD_CONTENT,
     TEACHER_DASHBOARD_RACE_CONTENT,
 } from "../../content/teacherDashboardContent";
-import { TEACHER_RACES_PREVIEW_LIMIT } from "../../config/teacherDashboardConfig";
+import {
+    TEACHER_RACES_PREVIEW_LIMIT,
+    RACES_PANEL_MIN_HEIGHT,
+    RACE_PREVIEW_VIEWPORT_MIN_HEIGHT,
+} from "../../config/teacherDashboardConfig";
 import {
     TEACHER_DASHBOARD_PANEL_STYLES,
     TEACHER_RACES_PREVIEW_STYLES,
@@ -61,6 +65,7 @@ export default function TeacherRacesPanel({
         <section
             className={`${TEACHER_DASHBOARD_PANEL_STYLES.racesPanel} ${className}`.trim()}
             dir={direction}
+            style={{ minHeight: RACES_PANEL_MIN_HEIGHT }}
         >
             <div className={TEACHER_RACES_PREVIEW_STYLES.header}>
                 <div className={TEACHER_RACES_PREVIEW_STYLES.titleGroup}>
@@ -109,6 +114,7 @@ export default function TeacherRacesPanel({
                         <div
                             ref={racePreviewViewportRef}
                             className={TEACHER_DASHBOARD_PANEL_STYLES.racePreviewViewport}
+                            style={{ minHeight: RACE_PREVIEW_VIEWPORT_MIN_HEIGHT }}
                         >
                             <RaceList
                                 races={previewRaces}

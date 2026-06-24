@@ -94,14 +94,16 @@ export default function CreateRaceModal({
                 </div>
             )}
 
-            <CreateRaceForm
-                subjects={subjects}
-                isSubmitting={isSubmitting}
-                isLoadingSubjects={isLoadingSubjects}
-                content={content}
-                onCancel={onClose}
-                onSubmit={onSubmit}
-            />
+            <div className={DASHBOARD_MODAL_STYLES.bodyScroll}>
+                <CreateRaceForm
+                    subjects={subjects}
+                    isSubmitting={isSubmitting}
+                    isLoadingSubjects={isLoadingSubjects}
+                    content={content}
+                    onCancel={onClose}
+                    onSubmit={onSubmit}
+                />
+            </div>
         </Modal>
     );
 }

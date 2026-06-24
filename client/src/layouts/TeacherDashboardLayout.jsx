@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import TeacherSidebar from "../features/teacherDashboard/components/sidebar/TeacherSidebar";
+import TeacherMobileNavigation from "../features/teacherDashboard/components/sidebar/TeacherMobileNavigation";
 import CreateRaceModal from "../features/teacherDashboard/components/createRace/CreateRaceModal";
 import AllRacesModal from "../features/teacherDashboard/components/races/AllRacesModal";
 
@@ -144,6 +145,15 @@ export default function TeacherDashboardLayout({ children }) {
                     />
 
                     <main className={TEACHER_DASHBOARD_LAYOUT_STYLES.main}>
+                        <TeacherMobileNavigation
+                            onDashboardClick={handleDashboardClick}
+                            onRacesClick={openAllRacesModal}
+                            onCreateRaceClick={openCreateRaceModal}
+                            teacherName={teacherName}
+                            onLogout={handleLogout}
+                            isLoggingOut={isLoggingOut}
+                        />
+
                         {children}
                     </main>
                 </div>

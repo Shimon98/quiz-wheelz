@@ -25,12 +25,12 @@ export const DASHBOARD_SURFACE_STYLES = {
 
 export const TEACHER_DASHBOARD_MAIN_STYLES = {
     wrapper:
-        "flex h-full min-h-0 flex-col gap-3 overflow-hidden",
+        "flex min-h-full flex-col gap-3",
 };
 
 export const TEACHER_DASHBOARD_LAYOUT_STYLES = {
     page:
-        "relative h-screen overflow-hidden bg-sky-100 p-3 md:p-4",
+        "relative h-dvh overflow-hidden bg-sky-100 p-3 md:p-4",
 
     background:
         "absolute inset-0 opacity-40",
@@ -39,7 +39,7 @@ export const TEACHER_DASHBOARD_LAYOUT_STYLES = {
         "relative z-10 mx-auto flex h-full max-w-[1320px] min-h-0 gap-4",
 
     main:
-        "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
+        "flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden",
 };
 
 export const TEACHER_DASHBOARD_PANEL_STYLES = {
@@ -47,13 +47,13 @@ export const TEACHER_DASHBOARD_PANEL_STYLES = {
         "min-h-0 flex-1",
 
     racesPanel:
-        "flex h-full min-h-0 flex-col overflow-hidden rounded-3xl bg-white/82 p-4 text-start shadow-md",
+        "flex h-full flex-col overflow-hidden rounded-3xl bg-white/82 p-4 text-start shadow-md",
 
     racesContent:
         "mt-3 flex min-h-0 flex-1 flex-col gap-3 overflow-hidden",
 
     racePreviewViewport:
-        "min-h-0 flex-1 overflow-hidden pb-1",
+        "flex-1 overflow-hidden pb-1",
 
     raceList:
         "grid content-start gap-3 pe-1",
@@ -232,13 +232,13 @@ export const DASHBOARD_MODAL_STYLES = {
         "fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]",
 
     panel:
-        "relative w-full max-w-[640px] overflow-visible rounded-[2rem] bg-white px-7 py-6 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)]",
+        "relative flex max-h-[90dvh] w-full max-w-[640px] flex-col overflow-hidden rounded-[2rem] bg-white px-7 py-6 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)]",
 
     closeButton:
         "absolute end-5 top-5 z-30",
 
     header:
-        "mx-auto max-w-xl",
+        "mx-auto max-w-xl shrink-0",
 
     headerContent:
         "flex items-center justify-center gap-0",
@@ -250,7 +250,10 @@ export const DASHBOARD_MODAL_STYLES = {
         "hidden h-[132px] max-w-[200px] shrink-0 object-contain drop-shadow-[0_10px_18px_rgba(15,23,42,0.18)] sm:block",
 
     error:
-        "mt-5 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700",
+        "mt-5 shrink-0 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700",
+
+    bodyScroll:
+        "-mx-1 min-h-0 flex-1 overflow-y-auto px-1",
 
     titleIcon:
         "h-8 w-8 text-slate-900",
@@ -463,7 +466,7 @@ export const ALL_RACES_MODAL_STYLES = {
         "fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]",
 
     panel:
-        "relative flex max-h-[86vh] w-full max-w-[920px] flex-col rounded-[2rem] bg-white p-6 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)]",
+        "relative flex max-h-[86dvh] w-full max-w-[920px] flex-col overflow-hidden rounded-[2rem] bg-white p-6 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)]",
 
     header:
         "flex shrink-0 items-start justify-between gap-4 border-b border-slate-100 pb-4",
@@ -543,6 +546,26 @@ export const SIDEBAR_NAV_ITEM_STYLES = Object.freeze({
 
     comingSoonBadge:
         "bg-slate-100 text-slate-400",
+});
+
+export const TEACHER_MOBILE_NAV_STYLES = Object.freeze({
+    triggerRow:
+        "mb-3 flex items-center gap-3 lg:hidden",
+
+    triggerButton:
+        "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/70 bg-white/85 text-slate-700 shadow-[0_8px_20px_rgba(15,23,42,0.10)] backdrop-blur-sm transition hover:bg-white active:scale-[0.97]",
+
+    triggerIcon:
+        "h-6 w-6",
+
+    drawerOverlay:
+        "!items-stretch !justify-start !p-0",
+
+    drawerPanel:
+        "flex h-dvh w-[280px] max-w-[82vw] flex-col gap-3 overflow-hidden rounded-e-3xl border border-white/70 p-4",
+
+    drawerClose:
+        "absolute end-4 top-4 z-10",
 });
 
 export const SIDEBAR_USER_CARD_STYLES = Object.freeze({
