@@ -1,6 +1,7 @@
 package com.quiz_wheelz.service.question;
 
 import com.quiz_wheelz.common.MathQuestionTextRules;
+import com.quiz_wheelz.common.QuestionRules;
 import com.quiz_wheelz.dto.question.MathQuestionData;
 import com.quiz_wheelz.dto.question.QuestionPlan;
 import com.quiz_wheelz.entitys.Subject;
@@ -13,9 +14,11 @@ import com.quiz_wheelz.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -44,6 +47,8 @@ class MathQuestionGeneratorTest {
         assertTrue(result.getLeftOperand() >= 1 && result.getLeftOperand() <= 10);
         assertTrue(result.getRightOperand() >= 1 && result.getRightOperand() <= 10);
         assertTrue(result.getQuestionText().contains(MathQuestionTextRules.ADDITION_OPERATOR));
+        assertEquals(QuestionRules.SIMPLE_BINARY_OPERANDS_COUNT, result.getOperands().size());
+        assertTrue(result.getPreferredDistractorValues().isEmpty());
     }
 
     @Test
@@ -61,6 +66,8 @@ class MathQuestionGeneratorTest {
                 result.getCorrectAnswerValue()
         );
         assertTrue(result.getQuestionText().contains(MathQuestionTextRules.SUBTRACTION_OPERATOR));
+        assertEquals(QuestionRules.SIMPLE_BINARY_OPERANDS_COUNT, result.getOperands().size());
+        assertTrue(result.getPreferredDistractorValues().isEmpty());
     }
 
     @Test
@@ -78,6 +85,8 @@ class MathQuestionGeneratorTest {
         assertTrue(result.getLeftOperand() >= 2 && result.getLeftOperand() <= 10);
         assertTrue(result.getRightOperand() >= 2 && result.getRightOperand() <= 10);
         assertTrue(result.getQuestionText().contains(MathQuestionTextRules.MULTIPLICATION_OPERATOR));
+        assertEquals(QuestionRules.SIMPLE_BINARY_OPERANDS_COUNT, result.getOperands().size());
+        assertTrue(result.getPreferredDistractorValues().isEmpty());
     }
 
     @Test
@@ -99,6 +108,61 @@ class MathQuestionGeneratorTest {
                 result.getCorrectAnswerValue()
         );
         assertTrue(result.getQuestionText().contains(MathQuestionTextRules.DIVISION_OPERATOR));
+        assertEquals(QuestionRules.SIMPLE_BINARY_OPERANDS_COUNT, result.getOperands().size());
+        assertTrue(result.getPreferredDistractorValues().isEmpty());
+    }
+
+    @Test
+    void shouldGenerateOrderOfOperationsQuestionWithPreferredDistractor() {
+        QuestionPlan questionPlan = createQuestionPlan(QuestionType.ORDER_OF_OPERATIONS, 1, 10);
+
+        MathQuestionData result = mathQuestionGenerator.generate(questionPlan);
+
+        assertNotNull(result);
+        assertEquals(QuestionType.ORDER_OF_OPERATIONS, result.getQuestionType());
+        assertEquals(QuestionRules.COMPLEX_EXPRESSION_OPERANDS_COUNT, result.getOperands().size());
+
+        List<Integer> operands = result.getOperands();
+        int firstOperand = operands.get(0);
+        int secondOperand = operands.get(1);
+        int thirdOperand = operands.get(2);
+
+        int expectedCorrectAnswer = firstOperand + secondOperand * thirdOperand;
+        int expectedLeftToRightMistake = (firstOperand + secondOperand) * thirdOperand;
+
+        assertEquals(expectedCorrectAnswer, result.getCorrectAnswerValue());
+        assertTrue(result.getPreferredDistractorValues().contains(expectedLeftToRightMistake));
+        assertFalse(result.getPreferredDistractorValues().contains(expectedCorrectAnswer));
+
+        assertTrue(result.getQuestionText().contains(MathQuestionTextRules.ADDITION_OPERATOR));
+        assertTrue(result.getQuestionText().contains(MathQuestionTextRules.MULTIPLICATION_OPERATOR));
+    }
+
+    @Test
+    void shouldGenerateParenthesesQuestionWithPreferredDistractor() {
+        QuestionPlan questionPlan = createQuestionPlan(QuestionType.PARENTHESES, 1, 10);
+
+        MathQuestionData result = mathQuestionGenerator.generate(questionPlan);
+
+        assertNotNull(result);
+        assertEquals(QuestionType.PARENTHESES, result.getQuestionType());
+        assertEquals(QuestionRules.COMPLEX_EXPRESSION_OPERANDS_COUNT, result.getOperands().size());
+
+        List<Integer> operands = result.getOperands();
+        int firstOperand = operands.get(0);
+        int secondOperand = operands.get(1);
+        int thirdOperand = operands.get(2);
+
+        int expectedCorrectAnswer = (firstOperand + secondOperand) * thirdOperand;
+        int expectedIgnoreParenthesesMistake = firstOperand + secondOperand * thirdOperand;
+
+        assertEquals(expectedCorrectAnswer, result.getCorrectAnswerValue());
+        assertTrue(result.getPreferredDistractorValues().contains(expectedIgnoreParenthesesMistake));
+        assertFalse(result.getPreferredDistractorValues().contains(expectedCorrectAnswer));
+
+        assertTrue(result.getQuestionText().contains(MathQuestionTextRules.OPEN_PARENTHESIS));
+        assertTrue(result.getQuestionText().contains(MathQuestionTextRules.CLOSE_PARENTHESIS));
+        assertTrue(result.getQuestionText().contains(MathQuestionTextRules.MULTIPLICATION_OPERATOR));
     }
 
     @Test
@@ -138,6 +202,18 @@ class MathQuestionGeneratorTest {
     @Test
     void shouldThrowWhenDivisionRangeCannotAvoidZero() {
         QuestionPlan questionPlan = createQuestionPlan(QuestionType.DIVISION, 0, 0);
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> mathQuestionGenerator.generate(questionPlan)
+        );
+
+        assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
+    }
+
+    @Test
+    void shouldThrowWhenComplexExpressionRangeIsTooSmall() {
+        QuestionPlan questionPlan = createQuestionPlan(QuestionType.PARENTHESES, 0, 1);
 
         ApiException exception = assertThrows(
                 ApiException.class,

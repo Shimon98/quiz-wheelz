@@ -9,6 +9,8 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 @Service
@@ -32,6 +34,8 @@ public class MathQuestionGenerator {
             case SUBTRACTION -> generateSubtraction(questionPlan);
             case MULTIPLICATION -> generateMultiplication(questionPlan);
             case DIVISION -> generateDivision(questionPlan);
+            case ORDER_OF_OPERATIONS -> generateOrderOfOperations(questionPlan);
+            case PARENTHESES -> generateParentheses(questionPlan);
             default -> throw new ApiException(ErrorCode.QUESTION_TYPE_NOT_SUPPORTED);
         };
     }
@@ -97,12 +101,12 @@ public class MathQuestionGenerator {
         validateDivisionRange(questionPlan);
 
         int divisor = randomValue(
-                Math.max(1, questionPlan.getMinValue()),
+                Math.max(QuestionRules.MIN_DIVISION_FACTOR_VALUE, questionPlan.getMinValue()),
                 questionPlan.getMaxValue()
         );
 
         int quotient = randomValue(
-                Math.max(1, questionPlan.getMinValue()),
+                Math.max(QuestionRules.MIN_DIVISION_FACTOR_VALUE, questionPlan.getMinValue()),
                 questionPlan.getMaxValue()
         );
 
@@ -119,6 +123,84 @@ public class MathQuestionGenerator {
                 divisor,
                 QuestionType.DIVISION
         );
+    }
+
+    private MathQuestionData generateOrderOfOperations(QuestionPlan questionPlan) {
+        validateComplexExpressionRange(questionPlan);
+
+        int firstOperand = randomValue(questionPlan.getMinValue(), questionPlan.getMaxValue());
+        int secondOperand = randomValue(questionPlan.getMinValue(), questionPlan.getMaxValue());
+        int thirdOperand = randomValue(
+                Math.max(QuestionRules.MIN_COMPLEX_EXPRESSION_MULTIPLIER_VALUE, questionPlan.getMinValue()),
+                questionPlan.getMaxValue()
+        );
+
+        int correctAnswer = firstOperand + secondOperand * thirdOperand;
+        int leftToRightMistake = (firstOperand + secondOperand) * thirdOperand;
+
+        return new MathQuestionData(
+                MathQuestionTextRules.buildOrderOfOperationsQuestionText(
+                        firstOperand,
+                        MathQuestionTextRules.ADDITION_OPERATOR,
+                        secondOperand,
+                        MathQuestionTextRules.MULTIPLICATION_OPERATOR,
+                        thirdOperand
+                ),
+                correctAnswer,
+                firstOperand,
+                secondOperand,
+                QuestionType.ORDER_OF_OPERATIONS,
+                List.of(firstOperand, secondOperand, thirdOperand),
+                preferredDistractors(correctAnswer, leftToRightMistake)
+        );
+    }
+
+    private MathQuestionData generateParentheses(QuestionPlan questionPlan) {
+        validateComplexExpressionRange(questionPlan);
+
+        int firstOperand = randomValue(questionPlan.getMinValue(), questionPlan.getMaxValue());
+        int secondOperand = randomValue(questionPlan.getMinValue(), questionPlan.getMaxValue());
+        int thirdOperand = randomValue(
+                Math.max(QuestionRules.MIN_COMPLEX_EXPRESSION_MULTIPLIER_VALUE, questionPlan.getMinValue()),
+                questionPlan.getMaxValue()
+        );
+
+        int correctAnswer = (firstOperand + secondOperand) * thirdOperand;
+        int ignoreParenthesesMistake = firstOperand + secondOperand * thirdOperand;
+
+        return new MathQuestionData(
+                MathQuestionTextRules.buildParenthesesQuestionText(
+                        firstOperand,
+                        MathQuestionTextRules.ADDITION_OPERATOR,
+                        secondOperand,
+                        MathQuestionTextRules.MULTIPLICATION_OPERATOR,
+                        thirdOperand
+                ),
+                correctAnswer,
+                firstOperand,
+                secondOperand,
+                QuestionType.PARENTHESES,
+                List.of(firstOperand, secondOperand, thirdOperand),
+                preferredDistractors(correctAnswer, ignoreParenthesesMistake)
+        );
+    }
+
+    private List<Integer> preferredDistractors(
+            Integer correctAnswer,
+            Integer... candidates
+    ) {
+        List<Integer> distractors = new ArrayList<>();
+
+        for (Integer candidate : candidates) {
+            if (candidate != null
+                    && candidate >= QuestionRules.MIN_DISTRACTOR_VALUE
+                    && !candidate.equals(correctAnswer)
+                    && !distractors.contains(candidate)) {
+                distractors.add(candidate);
+            }
+        }
+
+        return distractors;
     }
 
     private int randomValue(Integer minValue, Integer maxValue) {
@@ -140,10 +222,20 @@ public class MathQuestionGenerator {
         if (questionPlan.getMinValue() > questionPlan.getMaxValue()) {
             throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
         }
+
+        if (questionPlan.getMinValue() < QuestionRules.MIN_DISTRACTOR_VALUE) {
+            throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
+        }
     }
 
     private void validateDivisionRange(QuestionPlan questionPlan) {
-        if (questionPlan.getMaxValue() < 1) {
+        if (questionPlan.getMaxValue() < QuestionRules.MIN_DIVISION_FACTOR_VALUE) {
+            throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
+        }
+    }
+
+    private void validateComplexExpressionRange(QuestionPlan questionPlan) {
+        if (questionPlan.getMaxValue() < QuestionRules.MIN_COMPLEX_EXPRESSION_MULTIPLIER_VALUE) {
             throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
         }
     }

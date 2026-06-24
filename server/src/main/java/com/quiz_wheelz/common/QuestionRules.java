@@ -19,17 +19,25 @@ public final class QuestionRules {
     public static final int MIN_DISTRACTOR_VALUE = 0;
     public static final int MAX_DISTRACTOR_GENERATION_ATTEMPTS = 30;
 
+    public static final int SIMPLE_BINARY_OPERANDS_COUNT = 2;
+    public static final int COMPLEX_EXPRESSION_OPERANDS_COUNT = 3;
+
+    public static final int MIN_DIVISION_FACTOR_VALUE = 1;
+    public static final int MIN_COMPLEX_EXPRESSION_MULTIPLIER_VALUE = 2;
+
     public static final Set<QuestionType> SUPPORTED_MATH_QUESTION_TYPES = Set.of(
             QuestionType.ADDITION,
             QuestionType.SUBTRACTION,
             QuestionType.MULTIPLICATION,
-            QuestionType.DIVISION
+            QuestionType.DIVISION,
+            QuestionType.ORDER_OF_OPERATIONS,
+            QuestionType.PARENTHESES
     );
 
     private QuestionRules() {
     }
 
     public static boolean isSupportedMathQuestionType(QuestionType questionType) {
-        return SUPPORTED_MATH_QUESTION_TYPES.contains(questionType);
+        return questionType != null && SUPPORTED_MATH_QUESTION_TYPES.contains(questionType);
     }
 }
