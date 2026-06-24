@@ -3,7 +3,7 @@ export const TEACHER_DASHBOARD_CONTENT = {
         sidebar: {
             logoText: "QuizWheelz",
             nav: {
-                dashboard: "לוח מחוונים",
+                dashboard: "בית",
                 races: "מרוצים",
                 createRace: "יצירת מרוץ חדש",
                 students: "תלמידים",

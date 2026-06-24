@@ -39,42 +39,35 @@ export const TEACHER_DASHBOARD_NAV_ITEMS = [
     {
         key: "dashboard",
         actionKey: TEACHER_DASHBOARD_NAV_ACTIONS.DASHBOARD,
-        isActive: true,
         iconName: "Home",
     },
     {
         key: "races",
         actionKey: TEACHER_DASHBOARD_NAV_ACTIONS.RACES,
-        isActive: false,
         iconName: "Flag",
     },
     {
         key: "createRace",
         actionKey: TEACHER_DASHBOARD_NAV_ACTIONS.CREATE_RACE,
-        isActive: false,
         iconName: "Pencil",
     },
     {
         key: "students",
-        isActive: false,
         iconName: "Users",
         isComingSoon: true,
     },
     {
         key: "subjects",
-        isActive: false,
         iconName: "BookOpen",
         isComingSoon: true,
     },
     {
         key: "results",
-        isActive: false,
         iconName: "Trophy",
         isComingSoon: true,
     },
     {
         key: "settings",
-        isActive: false,
         iconName: "Settings",
         isComingSoon: true,
     },

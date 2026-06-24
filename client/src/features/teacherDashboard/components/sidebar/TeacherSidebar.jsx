@@ -1,3 +1,5 @@
+import { useLocation } from "react-router-dom";
+
 import { useLocaleContent } from "../../../../constants/localeConstants";
 import { TEACHER_DASHBOARD_CONTENT } from "../../content/teacherDashboardContent";
 import {
@@ -5,6 +7,7 @@ import {
     TEACHER_DASHBOARD_NAV_ITEMS,
 } from "../../constants/teacherDashboardConstants";
 import { getTeacherDashboardAsset } from "../../constants/teacherDashboardAssets";
+import { getActiveTeacherNavKey } from "../../utils/teacherSidebarNavUtils";
 import { TEACHER_SIDEBAR_STYLES } from "../../styles/dashboardUiStyles";
 import CreateRaceButton from "../createRace/CreateRaceButton";
 import SidebarBrand from "./SidebarBrand";
@@ -21,6 +24,13 @@ const COMING_SOON_NAV_ITEMS = TEACHER_DASHBOARD_NAV_ITEMS.filter(
     (item) => item.isComingSoon,
 );
 
+function withActiveState(items, activeNavKey) {
+    return items.map((item) => ({
+        ...item,
+        isActive: item.key === activeNavKey,
+    }));
+}
+
 export default function TeacherSidebar({
     onDashboardClick,
     onRacesClick,
@@ -31,6 +41,11 @@ export default function TeacherSidebar({
 }) {
     const content = useLocaleContent(TEACHER_DASHBOARD_CONTENT).sidebar;
     const logo = getTeacherDashboardAsset("sidebarLogo");
+
+    const { pathname } = useLocation();
+    const activeNavKey = getActiveTeacherNavKey(pathname);
+    const primaryNavItems = withActiveState(PRIMARY_NAV_ITEMS, activeNavKey);
+    const comingSoonNavItems = withActiveState(COMING_SOON_NAV_ITEMS, activeNavKey);
 
     const navActions = {
         [TEACHER_DASHBOARD_NAV_ACTIONS.DASHBOARD]: onDashboardClick,
@@ -47,7 +62,7 @@ export default function TeacherSidebar({
 
             <nav className={TEACHER_SIDEBAR_STYLES.navRegion}>
                 <SidebarNavigation
-                    items={PRIMARY_NAV_ITEMS}
+                    items={primaryNavItems}
                     content={content}
                     onItemSelect={handleNavItemSelect}
                 />
@@ -64,7 +79,7 @@ export default function TeacherSidebar({
                 <div className={TEACHER_SIDEBAR_STYLES.divider} />
 
                 <SidebarNavigation
-                    items={COMING_SOON_NAV_ITEMS}
+                    items={comingSoonNavItems}
                     content={content}
                     onItemSelect={handleNavItemSelect}
                 />
