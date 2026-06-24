@@ -1,5 +1,14 @@
 package com.quiz_wheelz.enums;
 
 public enum QuestionGenerationPattern {
-    BINARY_OPERATION
+    BINARY_OPERATION,
+
+    ADD_THEN_MULTIPLY,
+
+    PARENTHESES_SUM_THEN_MULTIPLY,
+    MULTIPLY_BY_PARENTHESES_SUM,
+
+    ADD_MULTIPLY_SUBTRACT,
+
+    SMALL_MULTIPLICATION_CHAIN
 }
