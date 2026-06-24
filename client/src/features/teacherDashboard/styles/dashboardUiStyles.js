@@ -549,11 +549,23 @@ export const SIDEBAR_NAV_ITEM_STYLES = Object.freeze({
 });
 
 export const TEACHER_MOBILE_NAV_STYLES = Object.freeze({
-    triggerRow:
-        "mb-3 flex items-center gap-3 lg:hidden",
+    topBar:
+        "sticky top-0 z-20 mb-3 flex items-center gap-2 rounded-2xl border border-white/70 bg-white/85 px-2 py-2 shadow-[0_8px_20px_rgba(15,23,42,0.10)] backdrop-blur-sm lg:hidden",
+
+    topBarBrand:
+        "flex min-w-0 flex-1 items-center justify-center",
+
+    topBarLogo:
+        "h-8 w-auto max-w-[160px] object-contain",
+
+    topBarBrandText:
+        "truncate text-base font-extrabold text-sky-700",
+
+    topBarSpacer:
+        "h-10 w-10 shrink-0",
 
     triggerButton:
-        "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/70 bg-white/85 text-slate-700 shadow-[0_8px_20px_rgba(15,23,42,0.10)] backdrop-blur-sm transition hover:bg-white active:scale-[0.97]",
+        "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-700 transition hover:bg-sky-50 active:scale-[0.97]",
 
     triggerIcon:
         "h-6 w-6",

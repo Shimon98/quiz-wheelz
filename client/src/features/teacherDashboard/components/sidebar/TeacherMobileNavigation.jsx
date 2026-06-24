@@ -5,6 +5,7 @@ import { useLocaleContent } from "../../../../constants/localeConstants";
 import { useLanguageStore } from "../../../../stores/languageStore";
 import { getLanguageDirection } from "../../../../utils/languageDirectionUtils";
 import { TEACHER_DASHBOARD_CONTENT } from "../../content/teacherDashboardContent";
+import { getTeacherDashboardAsset } from "../../constants/teacherDashboardAssets";
 import { TEACHER_MOBILE_NAV_STYLES } from "../../styles/dashboardUiStyles";
 import Modal from "../../../../shared/components/ui/Modal";
 import ModalCloseButton from "../../../../shared/components/ui/ModalCloseButton";
@@ -23,6 +24,7 @@ export default function TeacherMobileNavigation({
     const [isOpen, setIsOpen] = useState(false);
 
     const content = useLocaleContent(TEACHER_DASHBOARD_CONTENT).sidebar;
+    const logo = getTeacherDashboardAsset("sidebarLogo");
     const language = useLanguageStore((state) => state.language);
     const direction = getLanguageDirection(language);
 
@@ -36,7 +38,7 @@ export default function TeacherMobileNavigation({
 
     return (
         <>
-            <div className={TEACHER_MOBILE_NAV_STYLES.triggerRow}>
+            <div className={TEACHER_MOBILE_NAV_STYLES.topBar}>
                 <button
                     type="button"
                     onClick={openDrawer}
@@ -49,6 +51,26 @@ export default function TeacherMobileNavigation({
                         className={TEACHER_MOBILE_NAV_STYLES.triggerIcon}
                     />
                 </button>
+
+                <div className={TEACHER_MOBILE_NAV_STYLES.topBarBrand}>
+                    {logo ? (
+                        <img
+                            src={logo}
+                            alt={content.logoText}
+                            className={TEACHER_MOBILE_NAV_STYLES.topBarLogo}
+                            draggable="false"
+                        />
+                    ) : (
+                        <span className={TEACHER_MOBILE_NAV_STYLES.topBarBrandText}>
+                            {content.logoText}
+                        </span>
+                    )}
+                </div>
+
+                <span
+                    aria-hidden="true"
+                    className={TEACHER_MOBILE_NAV_STYLES.topBarSpacer}
+                />
             </div>
 
             <Modal
