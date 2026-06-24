@@ -1,14 +1,10 @@
 import { getTeacherDashboardLucideIcon } from "../../constants/teacherDashboardIcons";
+import { TEACHER_SIDEBAR_STYLES } from "../../styles/dashboardUiStyles";
 import SidebarNavItem from "./SidebarNavItem";
-
-const SIDEBAR_NAVIGATION_STYLES = Object.freeze({
-    nav:
-        "flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto",
-});
 
 export default function SidebarNavigation({ items, content, onItemSelect }) {
     return (
-        <nav className={SIDEBAR_NAVIGATION_STYLES.nav}>
+        <div className={TEACHER_SIDEBAR_STYLES.navGroup}>
             {items.map((item) => {
                 const Icon = getTeacherDashboardLucideIcon(item.iconName);
 
@@ -23,6 +19,6 @@ export default function SidebarNavigation({ items, content, onItemSelect }) {
                     />
                 );
             })}
-        </nav>
+        </div>
     );
 }

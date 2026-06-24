@@ -32,11 +32,15 @@ export default function RaceWaitingRoomInfoCards({
                     WAITING_ROOM_INFO_STYLES.iconVariants[
                         index % WAITING_ROOM_INFO_STYLES.iconVariants.length
                     ];
+                const cardVariant =
+                    WAITING_ROOM_INFO_STYLES.cardVariants[
+                        index % WAITING_ROOM_INFO_STYLES.cardVariants.length
+                    ];
 
                 return (
                     <article
                         key={item.key}
-                        className={WAITING_ROOM_INFO_STYLES.card}
+                        className={cx(WAITING_ROOM_INFO_STYLES.card, cardVariant)}
                     >
                         <div className={cx(WAITING_ROOM_INFO_STYLES.icon, iconVariant)}>
                             {Icon && (
