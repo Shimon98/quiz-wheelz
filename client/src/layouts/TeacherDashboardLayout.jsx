@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import TeacherSidebar from "../features/teacherDashboard/components/sidebar/TeacherSidebar";
@@ -21,6 +21,7 @@ import { useRaceNavigation } from "../features/teacherDashboard/hooks/useRaceNav
 import { ROUTES } from "../constants/routeConstants";
 import { useLocaleContent } from "../constants/localeConstants";
 import { useLanguageStore } from "../stores/languageStore";
+import { useAuthStore } from "../stores/authStore";
 import { getLanguageDirection } from "../utils/languageDirectionUtils";
 
 export default function TeacherDashboardLayout({ children }) {
@@ -52,6 +53,14 @@ export default function TeacherDashboardLayout({ children }) {
     } = useSubjects();
 
     const { handleOpenRace } = useRaceNavigation();
+
+    const logout = useAuthStore((state) => state.logout);
+    const isLoggingOut = useAuthStore((state) => state.isLoading);
+
+    const handleLogout = useCallback(async () => {
+        await logout();
+        navigate(ROUTES.LOGIN, { replace: true });
+    }, [logout, navigate]);
 
     const language = useLanguageStore((state) => state.language);
     const direction = getLanguageDirection(language);
@@ -129,6 +138,9 @@ export default function TeacherDashboardLayout({ children }) {
                         onDashboardClick={handleDashboardClick}
                         onRacesClick={openAllRacesModal}
                         onCreateRaceClick={openCreateRaceModal}
+                        teacherName={teacherName}
+                        onLogout={handleLogout}
+                        isLoggingOut={isLoggingOut}
                     />
 
                     <main className={TEACHER_DASHBOARD_LAYOUT_STYLES.main}>

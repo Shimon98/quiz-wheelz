@@ -11,7 +11,6 @@ import {
 } from "../content/teacherDashboardContent";
 
 import { useTeacherRaceRoomData } from "../hooks/useTeacherRaceRoomData";
-import { useTeacherWorkspace } from "../context/TeacherWorkspaceContext";
 
 import DashboardErrorState from "../components/ui/DashboardErrorState";
 import DashboardLoadingState from "../components/ui/DashboardLoadingState";
@@ -24,8 +23,6 @@ import { WAITING_ROOM_LAYOUT_STYLES } from "../styles/raceWaitingRoomStyles";
 
 function TeacherRaceRoomContent() {
     const { raceId } = useParams();
-
-    const { openAllRacesModal } = useTeacherWorkspace();
 
     const content = useLocaleContent(TEACHER_RACE_WAITING_ROOM_CONTENT);
     const raceContent = useLocaleContent(TEACHER_DASHBOARD_RACE_CONTENT);
@@ -74,7 +71,6 @@ function TeacherRaceRoomContent() {
                 raceStatus={raceRoom?.status}
                 statusLabels={raceContent.statusLabels}
                 content={content.header}
-                onBackToRaces={openAllRacesModal}
             />
 
             <div className={WAITING_ROOM_LAYOUT_STYLES.body}>

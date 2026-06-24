@@ -480,3 +480,96 @@ export const ALL_RACES_MODAL_STYLES = {
     list:
         "mt-4 grid min-h-0 gap-3 overflow-y-auto pe-1",
 };
+
+export const TEACHER_SIDEBAR_STYLES = Object.freeze({
+    aside:
+        "hidden h-full min-h-0 w-64 flex-none flex-col gap-3 overflow-hidden rounded-3xl border border-white/70 bg-white/80 p-4 shadow-[0_10px_30px_rgba(27,42,65,0.10)] backdrop-blur-sm lg:flex",
+
+    navRegion:
+        "flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pe-1",
+
+    navGroup:
+        "flex flex-col gap-1.5",
+
+    ctaWrapper:
+        "py-1",
+
+    cta:
+        "w-full",
+
+    divider:
+        "my-1 border-t border-slate-100",
+});
+
+export const SIDEBAR_NAV_ITEM_STYLES = Object.freeze({
+    base:
+        "group relative flex w-full items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-start text-[15px] font-bold transition disabled:cursor-not-allowed",
+
+    active:
+        "bg-sky-50 text-sky-700",
+
+    idle:
+        "text-slate-700 hover:bg-sky-50",
+
+    comingSoon:
+        "text-slate-400",
+
+    indicator:
+        "absolute inset-y-2 start-0 w-1 rounded-full bg-sky-500",
+
+    content:
+        "flex min-w-0 items-center gap-3",
+
+    iconTile:
+        "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition",
+
+    iconTileActive:
+        "bg-sky-500 text-white shadow-[0_8px_16px_rgba(14,165,233,0.34)]",
+
+    iconTileIdle:
+        "bg-sky-50 text-sky-600 group-hover:bg-sky-100",
+
+    iconTileRacing:
+        "bg-amber-50 text-amber-600 group-hover:bg-amber-100",
+
+    iconTileComingSoon:
+        "bg-slate-100 text-slate-400",
+
+    icon:
+        "h-5 w-5",
+
+    label:
+        "truncate",
+
+    comingSoonBadge:
+        "bg-slate-100 text-slate-400",
+});
+
+export const SIDEBAR_USER_CARD_STYLES = Object.freeze({
+    wrapper:
+        "shrink-0 border-t border-slate-100 pt-3",
+
+    card:
+        "flex items-center gap-3 rounded-2xl border border-white/70 bg-sky-50/70 px-3 py-2.5 shadow-[0_6px_16px_rgba(15,23,42,0.05)]",
+
+    avatar:
+        "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-violet-500 text-sm font-black text-white shadow-[0_6px_14px_rgba(14,165,233,0.30)]",
+
+    avatarIcon:
+        "h-5 w-5",
+
+    textBlock:
+        "min-w-0",
+
+    name:
+        "truncate text-sm font-black text-slate-800",
+
+    role:
+        "truncate text-xs font-bold text-slate-400",
+
+    logoutButton:
+        "mt-2 w-full gap-2",
+
+    logoutIcon:
+        "h-4 w-4 shrink-0",
+});

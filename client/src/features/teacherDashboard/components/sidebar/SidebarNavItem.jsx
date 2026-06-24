@@ -1,31 +1,24 @@
 import Badge from "../../../../shared/components/ui/Badge";
 import { cx } from "../../../../utils/classNameUtils";
+import { SIDEBAR_NAV_ITEM_STYLES } from "../../styles/dashboardUiStyles";
 
-const SIDEBAR_NAV_ITEM_STYLES = Object.freeze({
-    button:
-        "flex w-full items-center justify-between rounded-2xl px-4 py-3 text-start text-[15px] font-bold transition disabled:cursor-not-allowed",
+const RACING_ITEM_KEY = "races";
 
-    active:
-        "bg-sky-500 text-white shadow-[0_8px_18px_rgba(30,123,230,0.35)]",
+function getIconTileClass(item) {
+    if (item.isActive) {
+        return SIDEBAR_NAV_ITEM_STYLES.iconTileActive;
+    }
 
-    idle:
-        "text-slate-700 hover:bg-sky-50",
+    if (item.isComingSoon) {
+        return SIDEBAR_NAV_ITEM_STYLES.iconTileComingSoon;
+    }
 
-    comingSoon:
-        "text-slate-400",
+    if (item.key === RACING_ITEM_KEY) {
+        return SIDEBAR_NAV_ITEM_STYLES.iconTileRacing;
+    }
 
-    content:
-        "flex items-center gap-3",
-
-    icon:
-        "h-5 w-5 shrink-0",
-
-    iconMuted:
-        "opacity-40",
-
-    comingSoonBadge:
-        "bg-slate-100 text-slate-400",
-});
+    return SIDEBAR_NAV_ITEM_STYLES.iconTileIdle;
+}
 
 export default function SidebarNavItem({
                                            item,
@@ -52,20 +45,26 @@ export default function SidebarNavItem({
             onClick={handleClick}
             disabled={item.isComingSoon}
             aria-current={item.isActive ? "page" : undefined}
-            className={cx(SIDEBAR_NAV_ITEM_STYLES.button, buttonStateClass)}
+            className={cx(SIDEBAR_NAV_ITEM_STYLES.base, buttonStateClass)}
         >
-            <span className={SIDEBAR_NAV_ITEM_STYLES.content}>
-                {Icon && (
-                    <Icon
-                        aria-hidden="true"
-                        className={cx(
-                            SIDEBAR_NAV_ITEM_STYLES.icon,
-                            item.isComingSoon && SIDEBAR_NAV_ITEM_STYLES.iconMuted,
-                        )}
-                    />
-                )}
+            {item.isActive && (
+                <span
+                    aria-hidden="true"
+                    className={SIDEBAR_NAV_ITEM_STYLES.indicator}
+                />
+            )}
 
-                {label}
+            <span className={SIDEBAR_NAV_ITEM_STYLES.content}>
+                <span className={cx(SIDEBAR_NAV_ITEM_STYLES.iconTile, getIconTileClass(item))}>
+                    {Icon && (
+                        <Icon
+                            aria-hidden="true"
+                            className={SIDEBAR_NAV_ITEM_STYLES.icon}
+                        />
+                    )}
+                </span>
+
+                <span className={SIDEBAR_NAV_ITEM_STYLES.label}>{label}</span>
             </span>
 
             {item.isComingSoon && (
