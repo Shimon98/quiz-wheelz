@@ -135,6 +135,7 @@ class MathQuestionGeneratorTest {
         MathQuestionData result = mathQuestionGenerator.generate(questionPlan);
 
         assertNotNull(result);
+        assertTrue(result.getCorrectAnswerValue() >= QuestionRules.MIN_DISTRACTOR_VALUE);
         assertEquals(QuestionType.ORDER_OF_OPERATIONS, result.getQuestionType());
         assertFalse(result.getPreferredDistractorValues().isEmpty());
 
@@ -185,6 +186,7 @@ class MathQuestionGeneratorTest {
         MathQuestionData result = mathQuestionGenerator.generate(questionPlan);
 
         assertNotNull(result);
+        assertTrue(result.getCorrectAnswerValue() >= QuestionRules.MIN_DISTRACTOR_VALUE);
         assertEquals(QuestionType.PARENTHESES, result.getQuestionType());
         assertEquals(QuestionRules.COMPLEX_EXPRESSION_OPERANDS_COUNT, result.getOperands().size());
         assertEquals(2, result.getOperators().size());

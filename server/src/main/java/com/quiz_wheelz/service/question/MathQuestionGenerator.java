@@ -5,7 +5,7 @@ import com.quiz_wheelz.common.QuestionRules;
 import com.quiz_wheelz.dto.question.MathQuestionData;
 import com.quiz_wheelz.dto.question.QuestionPlan;
 import com.quiz_wheelz.enums.MathExpressionPattern;
-import com.quiz_wheelz.enums.MathOperator;
+import com.quiz_wheelz.enums.MathOperandRole;
 import com.quiz_wheelz.enums.QuestionType;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
@@ -14,30 +14,22 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.function.BiFunction;
 
 @Service
 public class MathQuestionGenerator {
 
-    private static final List<MathOperator> MULTIPLICATION_CHAIN_OPERATORS = List.of(
-            MathOperator.MULTIPLICATION,
-            MathOperator.MULTIPLICATION
+    private static final List<MathExpressionPattern> MULTIPLICATION_PATTERNS = List.of(
+            MathExpressionPattern.MULTIPLICATION_CHAIN
     );
 
-    private static final List<MathOperator> ADD_THEN_MULTIPLY_OPERATORS = List.of(
-            MathOperator.ADDITION,
-            MathOperator.MULTIPLICATION
+    private static final List<MathExpressionPattern> ORDER_OF_OPERATIONS_PATTERNS = List.of(
+            MathExpressionPattern.ADD_THEN_MULTIPLY,
+            MathExpressionPattern.ADD_MULTIPLY_SUBTRACT
     );
 
-    private static final List<MathOperator> ADD_MULTIPLY_SUBTRACT_OPERATORS = List.of(
-            MathOperator.ADDITION,
-            MathOperator.MULTIPLICATION,
-            MathOperator.SUBTRACTION
-    );
-
-    private static final List<MathOperator> MULTIPLY_BY_PARENTHESES_SUM_OPERATORS = List.of(
-            MathOperator.MULTIPLICATION,
-            MathOperator.ADDITION
+    private static final List<MathExpressionPattern> PARENTHESES_PATTERNS = List.of(
+            MathExpressionPattern.PARENTHESES_SUM_THEN_MULTIPLY,
+            MathExpressionPattern.MULTIPLY_BY_PARENTHESES_SUM
     );
 
     private final Random random;
@@ -67,11 +59,11 @@ public class MathQuestionGenerator {
     private MathQuestionData generateAddition(QuestionPlan questionPlan) {
         List<Integer> operands = createOperands(
                 questionPlan,
-                OperandRole.ANY,
-                OperandRole.ANY
+                MathOperandRole.ANY,
+                MathOperandRole.ANY
         );
 
-        int correctAnswer = operands.get(0) + operands.get(1);
+        int correctAnswer = first(operands) + second(operands);
 
         return buildBinaryQuestion(
                 QuestionType.ADDITION,
@@ -82,15 +74,15 @@ public class MathQuestionGenerator {
     }
 
     private MathQuestionData generateSubtraction(QuestionPlan questionPlan) {
-        int firstValue = randomOperand(questionPlan, OperandRole.ANY);
-        int secondValue = randomOperand(questionPlan, OperandRole.ANY);
+        int firstValue = randomOperand(questionPlan, MathOperandRole.ANY);
+        int secondValue = randomOperand(questionPlan, MathOperandRole.ANY);
 
         List<Integer> operands = List.of(
                 Math.max(firstValue, secondValue),
                 Math.min(firstValue, secondValue)
         );
 
-        int correctAnswer = operands.get(0) - operands.get(1);
+        int correctAnswer = first(operands) - second(operands);
 
         return buildBinaryQuestion(
                 QuestionType.SUBTRACTION,
@@ -102,7 +94,10 @@ public class MathQuestionGenerator {
 
     private MathQuestionData generateMultiplication(QuestionPlan questionPlan) {
         if (random.nextBoolean()) {
-            return generateMultiplicationChain(questionPlan);
+            return generateExpressionQuestion(
+                    questionPlan,
+                    randomPattern(MULTIPLICATION_PATTERNS)
+            );
         }
 
         return generateBinaryMultiplication(questionPlan);
@@ -111,11 +106,11 @@ public class MathQuestionGenerator {
     private MathQuestionData generateBinaryMultiplication(QuestionPlan questionPlan) {
         List<Integer> operands = createOperands(
                 questionPlan,
-                OperandRole.ANY,
-                OperandRole.ANY
+                MathOperandRole.ANY,
+                MathOperandRole.ANY
         );
 
-        int correctAnswer = operands.get(0) * operands.get(1);
+        int correctAnswer = first(operands) * second(operands);
 
         return buildBinaryQuestion(
                 QuestionType.MULTIPLICATION,
@@ -125,32 +120,11 @@ public class MathQuestionGenerator {
         );
     }
 
-    private MathQuestionData generateMultiplicationChain(QuestionPlan questionPlan) {
-        List<Integer> operands = createOperands(
-                questionPlan,
-                OperandRole.ANY,
-                OperandRole.ANY,
-                OperandRole.ANY
-        );
-
-        int correctAnswer = operands.get(0) * operands.get(1) * operands.get(2);
-
-        return buildExpressionQuestion(
-                QuestionType.MULTIPLICATION,
-                MathExpressionPattern.MULTIPLICATION_CHAIN,
-                operands,
-                MULTIPLICATION_CHAIN_OPERATORS,
-                correctAnswer,
-                List.of(),
-                MathQuestionTextRules::buildExpressionQuestionText
-        );
-    }
-
     private MathQuestionData generateDivision(QuestionPlan questionPlan) {
         validateDivisionRange(questionPlan);
 
-        int divisor = randomOperand(questionPlan, OperandRole.DIVISION_FACTOR);
-        int quotient = randomOperand(questionPlan, OperandRole.DIVISION_FACTOR);
+        int divisor = randomOperand(questionPlan, MathOperandRole.DIVISION_FACTOR);
+        int quotient = randomOperand(questionPlan, MathOperandRole.DIVISION_FACTOR);
         int dividend = divisor * quotient;
 
         return buildBinaryQuestion(
@@ -164,115 +138,49 @@ public class MathQuestionGenerator {
     private MathQuestionData generateOrderOfOperations(QuestionPlan questionPlan) {
         validateComplexExpressionRange(questionPlan);
 
-        if (random.nextBoolean()) {
-            return generateAddMultiplySubtract(questionPlan);
-        }
-
-        return generateAddThenMultiply(questionPlan);
-    }
-
-    private MathQuestionData generateAddThenMultiply(QuestionPlan questionPlan) {
-        List<Integer> operands = createOperands(
+        return generateExpressionQuestion(
                 questionPlan,
-                OperandRole.ADDEND,
-                OperandRole.ANY,
-                OperandRole.MULTIPLIER
-        );
-
-        int correctAnswer = operands.get(0) + operands.get(1) * operands.get(2);
-        int leftToRightMistake = (operands.get(0) + operands.get(1)) * operands.get(2);
-
-        return buildExpressionQuestion(
-                QuestionType.ORDER_OF_OPERATIONS,
-                MathExpressionPattern.ADD_THEN_MULTIPLY,
-                operands,
-                ADD_THEN_MULTIPLY_OPERATORS,
-                correctAnswer,
-                preferredDistractors(correctAnswer, leftToRightMistake),
-                MathQuestionTextRules::buildExpressionQuestionText
-        );
-    }
-
-    private MathQuestionData generateAddMultiplySubtract(QuestionPlan questionPlan) {
-        List<Integer> operands = createOperands(
-                questionPlan,
-                OperandRole.ADDEND,
-                OperandRole.ANY,
-                OperandRole.MULTIPLIER,
-                OperandRole.ANY
-        );
-
-        int correctAnswer = operands.get(0)
-                + operands.get(1) * operands.get(2)
-                - operands.get(3);
-
-        int leftToRightMistake = (operands.get(0) + operands.get(1))
-                * operands.get(2)
-                - operands.get(3);
-
-        return buildExpressionQuestion(
-                QuestionType.ORDER_OF_OPERATIONS,
-                MathExpressionPattern.ADD_MULTIPLY_SUBTRACT,
-                operands,
-                ADD_MULTIPLY_SUBTRACT_OPERATORS,
-                correctAnswer,
-                preferredDistractors(correctAnswer, leftToRightMistake),
-                MathQuestionTextRules::buildExpressionQuestionText
+                randomPattern(ORDER_OF_OPERATIONS_PATTERNS)
         );
     }
 
     private MathQuestionData generateParentheses(QuestionPlan questionPlan) {
         validateComplexExpressionRange(questionPlan);
 
-        if (random.nextBoolean()) {
-            return generateMultiplyByParenthesesSum(questionPlan);
+        return generateExpressionQuestion(
+                questionPlan,
+                randomPattern(PARENTHESES_PATTERNS)
+        );
+    }
+
+    private MathQuestionData generateExpressionQuestion(
+            QuestionPlan questionPlan,
+            MathExpressionPattern expressionPattern
+    ) {
+        for (int attempt = 0;
+             attempt < QuestionRules.MAX_QUESTION_GENERATION_ATTEMPTS;
+             attempt++) {
+            List<Integer> operands = createOperands(
+                    questionPlan,
+                    expressionPattern.getOperandRoles()
+            );
+
+            int correctAnswer = expressionPattern.calculateCorrectAnswer(operands);
+
+            if (correctAnswer >= QuestionRules.MIN_DISTRACTOR_VALUE) {
+                return buildExpressionQuestion(
+                        expressionPattern,
+                        operands,
+                        correctAnswer,
+                        preferredDistractors(
+                                correctAnswer,
+                                expressionPattern.calculatePreferredDistractorCandidates(operands)
+                        )
+                );
+            }
         }
 
-        return generateParenthesesSumThenMultiply(questionPlan);
-    }
-
-    private MathQuestionData generateParenthesesSumThenMultiply(QuestionPlan questionPlan) {
-        List<Integer> operands = createOperands(
-                questionPlan,
-                OperandRole.ADDEND,
-                OperandRole.ANY,
-                OperandRole.MULTIPLIER
-        );
-
-        int correctAnswer = (operands.get(0) + operands.get(1)) * operands.get(2);
-        int ignoreParenthesesMistake = operands.get(0) + operands.get(1) * operands.get(2);
-
-        return buildExpressionQuestion(
-                QuestionType.PARENTHESES,
-                MathExpressionPattern.PARENTHESES_SUM_THEN_MULTIPLY,
-                operands,
-                ADD_THEN_MULTIPLY_OPERATORS,
-                correctAnswer,
-                preferredDistractors(correctAnswer, ignoreParenthesesMistake),
-                MathQuestionTextRules::buildParenthesesAroundFirstTwoOperandsQuestionText
-        );
-    }
-
-    private MathQuestionData generateMultiplyByParenthesesSum(QuestionPlan questionPlan) {
-        List<Integer> operands = createOperands(
-                questionPlan,
-                OperandRole.MULTIPLIER,
-                OperandRole.ANY,
-                OperandRole.ADDEND
-        );
-
-        int correctAnswer = operands.get(0) * (operands.get(1) + operands.get(2));
-        int ignoreParenthesesMistake = operands.get(0) * operands.get(1) + operands.get(2);
-
-        return buildExpressionQuestion(
-                QuestionType.PARENTHESES,
-                MathExpressionPattern.MULTIPLY_BY_PARENTHESES_SUM,
-                operands,
-                MULTIPLY_BY_PARENTHESES_SUM_OPERATORS,
-                correctAnswer,
-                preferredDistractors(correctAnswer, ignoreParenthesesMistake),
-                MathQuestionTextRules::buildParenthesesAroundLastTwoOperandsQuestionText
-        );
+        throw new ApiException(ErrorCode.QUESTION_GENERATION_FAILED);
     }
 
     private MathQuestionData buildBinaryQuestion(
@@ -283,46 +191,60 @@ public class MathQuestionGenerator {
     ) {
         return new MathQuestionData(
                 MathQuestionTextRules.buildBinaryQuestionText(
-                        operands.get(0),
+                        first(operands),
                         operator,
-                        operands.get(1)
+                        second(operands)
                 ),
                 correctAnswer,
-                operands.get(0),
-                operands.get(1),
+                first(operands),
+                second(operands),
                 questionType
         );
     }
 
     private MathQuestionData buildExpressionQuestion(
-            QuestionType questionType,
             MathExpressionPattern expressionPattern,
             List<Integer> operands,
-            List<MathOperator> operators,
             Integer correctAnswer,
-            List<Integer> preferredDistractorValues,
-            BiFunction<List<Integer>, List<MathOperator>, String> questionTextBuilder
+            List<Integer> preferredDistractorValues
     ) {
         return new MathQuestionData(
-                questionTextBuilder.apply(operands, operators),
+                MathQuestionTextRules.buildExpressionQuestionText(
+                        operands,
+                        expressionPattern.getOperators(),
+                        expressionPattern.getTextLayout()
+                ),
                 correctAnswer,
-                operands.get(0),
-                operands.get(1),
-                questionType,
+                first(operands),
+                second(operands),
+                expressionPattern.getQuestionType(),
                 expressionPattern,
                 operands,
-                operators,
+                expressionPattern.getOperators(),
                 preferredDistractorValues
         );
     }
 
     private List<Integer> createOperands(
             QuestionPlan questionPlan,
-            OperandRole... operandRoles
+            MathOperandRole... operandRoles
     ) {
         List<Integer> operands = new ArrayList<>();
 
-        for (OperandRole operandRole : operandRoles) {
+        for (MathOperandRole operandRole : operandRoles) {
+            operands.add(randomOperand(questionPlan, operandRole));
+        }
+
+        return operands;
+    }
+
+    private List<Integer> createOperands(
+            QuestionPlan questionPlan,
+            List<MathOperandRole> operandRoles
+    ) {
+        List<Integer> operands = new ArrayList<>();
+
+        for (MathOperandRole operandRole : operandRoles) {
             operands.add(randomOperand(questionPlan, operandRole));
         }
 
@@ -331,7 +253,7 @@ public class MathQuestionGenerator {
 
     private int randomOperand(
             QuestionPlan questionPlan,
-            OperandRole operandRole
+            MathOperandRole operandRole
     ) {
         return switch (operandRole) {
             case ANY -> randomValue(
@@ -365,17 +287,22 @@ public class MathQuestionGenerator {
         };
     }
 
+    private MathExpressionPattern randomPattern(List<MathExpressionPattern> expressionPatterns) {
+        return expressionPatterns.get(random.nextInt(expressionPatterns.size()));
+    }
+
     private List<Integer> preferredDistractors(
             Integer correctAnswer,
-            Integer... candidates
+            List<Integer> candidates
     ) {
+        if (candidates == null || candidates.isEmpty()) {
+            return List.of();
+        }
+
         List<Integer> distractors = new ArrayList<>();
 
         for (Integer candidate : candidates) {
-            if (candidate != null
-                    && candidate >= QuestionRules.MIN_DISTRACTOR_VALUE
-                    && !candidate.equals(correctAnswer)
-                    && !distractors.contains(candidate)) {
+            if (isValidPreferredDistractor(correctAnswer, candidate, distractors)) {
                 distractors.add(candidate);
             }
         }
@@ -383,8 +310,27 @@ public class MathQuestionGenerator {
         return distractors;
     }
 
+    private boolean isValidPreferredDistractor(
+            Integer correctAnswer,
+            Integer candidate,
+            List<Integer> existingDistractors
+    ) {
+        return candidate != null
+                && candidate >= QuestionRules.MIN_DISTRACTOR_VALUE
+                && !candidate.equals(correctAnswer)
+                && !existingDistractors.contains(candidate);
+    }
+
     private int randomValue(Integer minValue, Integer maxValue) {
         return random.nextInt(maxValue - minValue + 1) + minValue;
+    }
+
+    private int first(List<Integer> operands) {
+        return operands.get(QuestionRules.FIRST_OPERAND_INDEX);
+    }
+
+    private int second(List<Integer> operands) {
+        return operands.get(QuestionRules.SECOND_OPERAND_INDEX);
     }
 
     private void validateQuestionPlan(QuestionPlan questionPlan) {
@@ -418,12 +364,5 @@ public class MathQuestionGenerator {
         if (questionPlan.getMaxValue() < QuestionRules.MIN_COMPLEX_EXPRESSION_MULTIPLIER_VALUE) {
             throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
         }
-    }
-
-    private enum OperandRole {
-        ANY,
-        ADDEND,
-        MULTIPLIER,
-        DIVISION_FACTOR
     }
 }

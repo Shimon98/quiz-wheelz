@@ -1,6 +1,7 @@
 package com.quiz_wheelz.common;
 
 import com.quiz_wheelz.enums.MathOperator;
+import com.quiz_wheelz.enums.MathQuestionTextLayout;
 
 import java.util.List;
 
@@ -36,10 +37,82 @@ public final class MathQuestionTextRules {
             List<Integer> operands,
             List<MathOperator> operators
     ) {
+        return buildExpressionQuestionText(
+                operands,
+                operators,
+                MathQuestionTextLayout.STANDARD
+        );
+    }
+
+    public static String buildExpressionQuestionText(
+            List<Integer> operands,
+            List<MathOperator> operators,
+            MathQuestionTextLayout textLayout
+    ) {
         validateExpressionParts(operands, operators);
 
+        return switch (textLayout) {
+            case STANDARD -> buildStandardExpressionQuestionText(operands, operators);
+            case PARENTHESES_FIRST_TWO -> buildParenthesesAroundFirstTwoOperandsQuestionText(
+                    operands,
+                    operators
+            );
+            case PARENTHESES_LAST_TWO -> buildParenthesesAroundLastTwoOperandsQuestionText(
+                    operands,
+                    operators
+            );
+        };
+    }
+
+    public static String buildParenthesesAroundFirstTwoOperandsQuestionText(
+            List<Integer> operands,
+            List<MathOperator> operators
+    ) {
+        validateExpressionParts(operands, operators);
+
+        return OPEN_PARENTHESIS
+                + operands.get(QuestionRules.FIRST_OPERAND_INDEX)
+                + TOKEN_SEPARATOR + operatorSymbol(operators.get(QuestionRules.FIRST_OPERAND_INDEX))
+                + TOKEN_SEPARATOR + operands.get(QuestionRules.SECOND_OPERAND_INDEX)
+                + CLOSE_PARENTHESIS
+                + TOKEN_SEPARATOR + operatorSymbol(operators.get(QuestionRules.SECOND_OPERAND_INDEX))
+                + TOKEN_SEPARATOR + operands.get(QuestionRules.THIRD_OPERAND_INDEX)
+                + TOKEN_SEPARATOR + EQUALS_SIGN
+                + TOKEN_SEPARATOR + ANSWER_PLACEHOLDER;
+    }
+
+    public static String buildParenthesesAroundLastTwoOperandsQuestionText(
+            List<Integer> operands,
+            List<MathOperator> operators
+    ) {
+        validateExpressionParts(operands, operators);
+
+        return operands.get(QuestionRules.FIRST_OPERAND_INDEX)
+                + TOKEN_SEPARATOR + operatorSymbol(operators.get(QuestionRules.FIRST_OPERAND_INDEX))
+                + TOKEN_SEPARATOR + OPEN_PARENTHESIS
+                + operands.get(QuestionRules.SECOND_OPERAND_INDEX)
+                + TOKEN_SEPARATOR + operatorSymbol(operators.get(QuestionRules.SECOND_OPERAND_INDEX))
+                + TOKEN_SEPARATOR + operands.get(QuestionRules.THIRD_OPERAND_INDEX)
+                + CLOSE_PARENTHESIS
+                + TOKEN_SEPARATOR + EQUALS_SIGN
+                + TOKEN_SEPARATOR + ANSWER_PLACEHOLDER;
+    }
+
+    public static String operatorSymbol(MathOperator operator) {
+        return switch (operator) {
+            case ADDITION -> ADDITION_OPERATOR;
+            case SUBTRACTION -> SUBTRACTION_OPERATOR;
+            case MULTIPLICATION -> MULTIPLICATION_OPERATOR;
+            case DIVISION -> DIVISION_OPERATOR;
+        };
+    }
+
+    private static String buildStandardExpressionQuestionText(
+            List<Integer> operands,
+            List<MathOperator> operators
+    ) {
         StringBuilder questionText = new StringBuilder();
-        questionText.append(operands.get(0));
+        questionText.append(operands.get(QuestionRules.FIRST_OPERAND_INDEX));
 
         for (int index = 0; index < operators.size(); index++) {
             questionText
@@ -56,49 +129,6 @@ public final class MathQuestionTextRules {
                 .append(ANSWER_PLACEHOLDER);
 
         return questionText.toString();
-    }
-
-    public static String buildParenthesesAroundFirstTwoOperandsQuestionText(
-            List<Integer> operands,
-            List<MathOperator> operators
-    ) {
-        validateExpressionParts(operands, operators);
-
-        return OPEN_PARENTHESIS
-                + operands.get(0)
-                + TOKEN_SEPARATOR + operatorSymbol(operators.get(0))
-                + TOKEN_SEPARATOR + operands.get(1)
-                + CLOSE_PARENTHESIS
-                + TOKEN_SEPARATOR + operatorSymbol(operators.get(1))
-                + TOKEN_SEPARATOR + operands.get(2)
-                + TOKEN_SEPARATOR + EQUALS_SIGN
-                + TOKEN_SEPARATOR + ANSWER_PLACEHOLDER;
-    }
-
-    public static String buildParenthesesAroundLastTwoOperandsQuestionText(
-            List<Integer> operands,
-            List<MathOperator> operators
-    ) {
-        validateExpressionParts(operands, operators);
-
-        return operands.get(0)
-                + TOKEN_SEPARATOR + operatorSymbol(operators.get(0))
-                + TOKEN_SEPARATOR + OPEN_PARENTHESIS
-                + operands.get(1)
-                + TOKEN_SEPARATOR + operatorSymbol(operators.get(1))
-                + TOKEN_SEPARATOR + operands.get(2)
-                + CLOSE_PARENTHESIS
-                + TOKEN_SEPARATOR + EQUALS_SIGN
-                + TOKEN_SEPARATOR + ANSWER_PLACEHOLDER;
-    }
-
-    public static String operatorSymbol(MathOperator operator) {
-        return switch (operator) {
-            case ADDITION -> ADDITION_OPERATOR;
-            case SUBTRACTION -> SUBTRACTION_OPERATOR;
-            case MULTIPLICATION -> MULTIPLICATION_OPERATOR;
-            case DIVISION -> DIVISION_OPERATOR;
-        };
     }
 
     private static void validateExpressionParts(
