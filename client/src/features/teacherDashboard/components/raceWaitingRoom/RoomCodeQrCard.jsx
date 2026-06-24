@@ -8,7 +8,7 @@ export default function RoomCodeQrCard({
     const displayRoomCode = roomCode || content.roomCodeFallback;
 
     return (
-        <section className={WAITING_ROOM_CODE_STYLES.wrapper} dir="auto">
+        <section className={WAITING_ROOM_CODE_STYLES.wrapper}>
             <div className={WAITING_ROOM_CODE_STYLES.codeArea}>
                 <p className={WAITING_ROOM_CODE_STYLES.codeLabel}>
                     {content.roomCodeTitle}

@@ -8,11 +8,7 @@ import {
     TEACHER_DASHBOARD_CONTENT,
     TEACHER_DASHBOARD_RACE_CONTENT,
 } from "../../content/teacherDashboardContent";
-import {
-    TEACHER_RACES_PREVIEW_LIMIT,
-    RACES_PANEL_MIN_HEIGHT,
-    RACE_PREVIEW_VIEWPORT_MIN_HEIGHT,
-} from "../../config/teacherDashboardConfig";
+import { TEACHER_RACES_PREVIEW_LIMIT } from "../../config/teacherDashboardConfig";
 import {
     TEACHER_DASHBOARD_PANEL_STYLES,
     TEACHER_RACES_PREVIEW_STYLES,
@@ -24,8 +20,6 @@ import DashboardErrorState from "../ui/DashboardErrorState";
 import DashboardLoadingState from "../ui/DashboardLoadingState";
 import EmptyRacesState from "./EmptyRacesState";
 import RaceList from "./RaceList";
-
-import { useFittingRacePreviewCount } from "../../hooks/useFittingRacePreviewCount";
 
 export default function TeacherRacesPanel({
                                               races = [],
@@ -45,19 +39,9 @@ export default function TeacherRacesPanel({
     const raceContent = useLocaleContent(TEACHER_DASHBOARD_RACE_CONTENT);
 
     const hasRaces = races.length > 0;
-
-    const {
-        viewportRef: racePreviewViewportRef,
-        visibleCount: visibleRaceCount,
-    } = useFittingRacePreviewCount({
-        totalItems: races.length,
-        minCount: 1,
-        maxCount: TEACHER_RACES_PREVIEW_LIMIT,
-    });
-
-    const previewRaces = races.slice(0, visibleRaceCount);
-    const hasMoreRaces = races.length > visibleRaceCount;
-    const canShowAllRaces = hasMoreRaces && Boolean(onShowAllRacesClick);
+    // Pure synchronous slice — correct the instant races load, no measurement, no async gate.
+    const previewRaces = races.slice(0, TEACHER_RACES_PREVIEW_LIMIT);
+    const canShowAllRaces = hasRaces && Boolean(onShowAllRacesClick);
     const showHeaderCreateButton = hasRaces && Boolean(onCreateRaceClick);
     const errorMessage = typeof error === "string" ? error : raceContent.loadError;
 
@@ -65,7 +49,6 @@ export default function TeacherRacesPanel({
         <section
             className={`${TEACHER_DASHBOARD_PANEL_STYLES.racesPanel} ${className}`.trim()}
             dir={direction}
-            style={{ minHeight: RACES_PANEL_MIN_HEIGHT }}
         >
             <div className={TEACHER_RACES_PREVIEW_STYLES.header}>
                 <div className={TEACHER_RACES_PREVIEW_STYLES.titleGroup}>
@@ -110,42 +93,34 @@ export default function TeacherRacesPanel({
                 )}
 
                 {!isLoading && !error && hasRaces && (
-                    <>
-                        <div
-                            ref={racePreviewViewportRef}
-                            className={TEACHER_DASHBOARD_PANEL_STYLES.racePreviewViewport}
-                            style={{ minHeight: RACE_PREVIEW_VIEWPORT_MIN_HEIGHT }}
-                        >
-                            <RaceList
-                                races={previewRaces}
-                                content={raceContent}
-                                language={language}
-                                direction={direction}
-                                onOpenRace={onOpenRace}
-                                onEditRace={onEditRace}
-                                onCancelRace={onCancelRace}
-                            />
-                        </div>
-
-                        {canShowAllRaces && (
-                            <div className={TEACHER_RACES_PREVIEW_STYLES.footer}>
-                                <Button
-                                    variant="secondary"
-                                    onClick={onShowAllRacesClick}
-                                    className={TEACHER_RACES_PREVIEW_STYLES.showAllButton}
-                                >
-                                    <span>{content.showAllRaces}</span>
-                                    <ChevronDown
-                                        size={18}
-                                        aria-hidden="true"
-                                        strokeWidth={2.5}
-                                    />
-                                </Button>
-                            </div>
-                        )}
-                    </>
+                    <RaceList
+                        races={previewRaces}
+                        content={raceContent}
+                        language={language}
+                        direction={direction}
+                        onOpenRace={onOpenRace}
+                        onEditRace={onEditRace}
+                        onCancelRace={onCancelRace}
+                    />
                 )}
             </div>
+
+            {!isLoading && !error && canShowAllRaces && (
+                <div className={TEACHER_RACES_PREVIEW_STYLES.footer}>
+                    <Button
+                        variant="secondary"
+                        onClick={onShowAllRacesClick}
+                        className={TEACHER_RACES_PREVIEW_STYLES.showAllButton}
+                    >
+                        <span>{content.showAllRaces}</span>
+                        <ChevronDown
+                            size={18}
+                            aria-hidden="true"
+                            strokeWidth={2.5}
+                        />
+                    </Button>
+                </div>
+            )}
         </section>
     );
 }

@@ -18,6 +18,7 @@ export default function RaceCard({
                                      onOpenRace,
                                      onEditRace,
                                      onCancelRace,
+                                     actionPresentation = "icon",
                                  }) {
     if (!race) {
         return null;
@@ -53,6 +54,7 @@ export default function RaceCard({
                 onOpenRace={onOpenRace}
                 onEditRace={onEditRace}
                 onCancelRace={onCancelRace}
+                actionPresentation={actionPresentation}
             />
         </article>
     );

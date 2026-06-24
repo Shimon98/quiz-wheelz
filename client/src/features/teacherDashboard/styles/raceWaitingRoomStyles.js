@@ -1,9 +1,9 @@
 export const WAITING_ROOM_LAYOUT_STYLES = Object.freeze({
     panel:
-        "flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl bg-white/82 p-4 text-start shadow-md xl:p-5",
+        "flex min-h-0 flex-1 flex-col overflow-visible rounded-3xl bg-white/82 p-4 text-start shadow-md lg:overflow-hidden xl:p-5",
 
     body:
-        "min-h-0 flex-1 overflow-y-auto pe-1 pt-4",
+        "min-h-0 pt-4 lg:flex-1 lg:overflow-y-auto lg:pe-1",
 
     contentGrid:
         "grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]",

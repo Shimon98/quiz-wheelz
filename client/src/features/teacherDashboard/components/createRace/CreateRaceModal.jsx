@@ -94,7 +94,7 @@ export default function CreateRaceModal({
                 </div>
             )}
 
-            <div className={DASHBOARD_MODAL_STYLES.bodyScroll}>
+            <div className={DASHBOARD_MODAL_STYLES.formWrapper}>
                 <CreateRaceForm
                     subjects={subjects}
                     isSubmitting={isSubmitting}

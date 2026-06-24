@@ -1,7 +1,8 @@
 export const CREATE_RACE_FORM_STYLES = {
-    form: "mt-5 grid gap-4",
+    form: "flex h-full min-h-0 flex-col",
+    fieldsScroll: "mt-5 grid min-h-0 flex-1 gap-4 overflow-y-auto pe-1",
     fieldGrid: "grid gap-4 md:grid-cols-2",
-    actions: "mt-1 flex items-center justify-between gap-3",
+    actions: "mt-4 flex shrink-0 items-center justify-between gap-3 border-t border-slate-100 pt-4",
     cancelButton: "min-w-36",
     submitButton: "inline-flex min-w-60 items-center justify-center gap-2",
     submitIcon: "h-5 w-5 shrink-0",
@@ -39,24 +40,23 @@ export const TEACHER_DASHBOARD_LAYOUT_STYLES = {
         "relative z-10 mx-auto flex h-full max-w-[1320px] min-h-0 gap-4",
 
     main:
-        "flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden",
+        "flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden max-lg:[scrollbar-gutter:stable]",
 };
 
 export const TEACHER_DASHBOARD_PANEL_STYLES = {
+    // Below lg the panel sizes to its content and the page scrolls; at lg+ it fills the
+    // column as an app-shell and the preview list scrolls internally (see racesContent).
     wrapper:
-        "min-h-0 flex-1",
+        "min-h-0 lg:flex-1",
 
     racesPanel:
-        "flex h-full flex-col overflow-hidden rounded-3xl bg-white/82 p-4 text-start shadow-md",
+        "flex flex-col overflow-hidden rounded-3xl bg-white/82 p-4 text-start shadow-md lg:h-full lg:min-h-0",
 
     racesContent:
-        "mt-3 flex min-h-0 flex-1 flex-col gap-3 overflow-hidden",
-
-    racePreviewViewport:
-        "flex-1 overflow-hidden pb-1",
+        "mt-3 flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:pe-1",
 
     raceList:
-        "grid content-start gap-3 pe-1",
+        "grid content-start gap-3",
 };
 
 export const TEACHER_STATS_GRID_STYLES = {
@@ -149,7 +149,7 @@ export const TEACHER_STAT_CARD_TONE_STYLES = {
 
 export const DASHBOARD_TEXT_STYLES = {
     modalTitle:
-        "flex items-center justify-center gap-3 text-4xl font-black leading-tight text-slate-900",
+        "flex items-center justify-center gap-2 text-2xl font-black leading-tight text-slate-900 sm:gap-3 sm:text-4xl",
 
     modalDescription:
         "mt-1 text-base font-semibold text-slate-500",
@@ -232,7 +232,7 @@ export const DASHBOARD_MODAL_STYLES = {
         "fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]",
 
     panel:
-        "relative flex max-h-[90dvh] w-full max-w-[640px] flex-col overflow-hidden rounded-[2rem] bg-white px-7 py-6 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)]",
+        "relative flex max-h-[calc(100dvh-2rem)] w-full max-w-[640px] flex-col overflow-hidden rounded-[2rem] bg-white px-5 py-5 text-start shadow-[0_24px_80px_rgba(15,23,42,0.28)] sm:px-7 sm:py-6",
 
     closeButton:
         "absolute end-5 top-5 z-30",
@@ -252,8 +252,8 @@ export const DASHBOARD_MODAL_STYLES = {
     error:
         "mt-5 shrink-0 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700",
 
-    bodyScroll:
-        "-mx-1 min-h-0 flex-1 overflow-y-auto px-1",
+    formWrapper:
+        "min-h-0 flex-1",
 
     titleIcon:
         "h-8 w-8 text-slate-900",
@@ -292,7 +292,7 @@ export const TEACHER_RACES_PREVIEW_STYLES = {
         "mt-4",
 
     footer:
-        "flex min-h-14 shrink-0 items-center justify-center border-t border-slate-100 pt-2",
+        "mt-3 flex min-h-14 shrink-0 items-center justify-center border-t border-slate-100 pt-2",
 
     showAllButton:
         "inline-flex min-h-10 min-w-52 items-center justify-center gap-2 rounded-2xl bg-white text-sm shadow-sm ring-1 ring-slate-200 hover:bg-slate-50",
@@ -347,8 +347,17 @@ export const RACE_CARD_COMPACT_STYLES = {
     actions:
         "flex items-center justify-end gap-2 justify-self-end",
 
+    actionsExpanded:
+        "w-full justify-between lg:w-auto lg:justify-end",
+
     openButton:
         "h-12 min-h-12 w-12 shrink-0 rounded-2xl p-0 [&>svg]:block",
+
+    openButtonExpanded:
+        "h-11 min-h-11 flex-1 justify-center gap-2 rounded-2xl px-4 text-sm font-black sm:min-w-44 sm:flex-none lg:h-12 lg:min-h-12 lg:w-12 lg:min-w-0 lg:px-0",
+
+    openButtonLabel:
+        "lg:sr-only",
 
     openIcon:
         "h-5 w-5",
@@ -550,25 +559,25 @@ export const SIDEBAR_NAV_ITEM_STYLES = Object.freeze({
 
 export const TEACHER_MOBILE_NAV_STYLES = Object.freeze({
     topBar:
-        "sticky top-0 z-20 mb-3 flex items-center gap-2 rounded-2xl border border-white/70 bg-white/85 px-2 py-2 shadow-[0_8px_20px_rgba(15,23,42,0.10)] backdrop-blur-sm lg:hidden",
+        "z-20 mb-2 flex min-h-[60px] items-center gap-2 rounded-[1.15rem] border border-white/75 bg-white/82 px-2.5 py-1.5 shadow-[0_6px_16px_rgba(15,23,42,0.07)] backdrop-blur-md lg:hidden",
 
     topBarBrand:
         "flex min-w-0 flex-1 items-center justify-center",
 
     topBarLogo:
-        "h-8 w-auto max-w-[160px] object-contain",
+        "h-7 w-auto max-w-[150px] object-contain",
 
     topBarBrandText:
         "truncate text-base font-extrabold text-sky-700",
 
     topBarSpacer:
-        "h-10 w-10 shrink-0",
+        "h-11 w-11 shrink-0",
 
     triggerButton:
-        "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-700 transition hover:bg-sky-50 active:scale-[0.97]",
+        "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-slate-700 transition hover:bg-sky-50 active:scale-[0.97]",
 
     triggerIcon:
-        "h-6 w-6",
+        "h-6 w-6 stroke-[2.35]",
 
     drawerOverlay:
         "!items-stretch !justify-start !p-0",

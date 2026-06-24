@@ -84,6 +84,7 @@ export default function AllRacesModal({
                         onOpenRace={onOpenRace}
                         onEditRace={onEditRace}
                         onCancelRace={onCancelRace}
+                        actionPresentation="expanded"
                     />
                 ) : (
                     <EmptyRacesState
