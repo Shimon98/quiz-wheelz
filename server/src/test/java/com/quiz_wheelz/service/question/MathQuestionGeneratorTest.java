@@ -8,6 +8,8 @@ import com.quiz_wheelz.entitys.Subject;
 import com.quiz_wheelz.enums.AdaptiveMode;
 import com.quiz_wheelz.enums.AssistanceLevel;
 import com.quiz_wheelz.enums.Difficulty;
+import com.quiz_wheelz.enums.MathExpressionPattern;
+import com.quiz_wheelz.enums.MathOperator;
 import com.quiz_wheelz.enums.QuestionType;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
@@ -40,13 +42,12 @@ class MathQuestionGeneratorTest {
 
         assertNotNull(result);
         assertEquals(QuestionType.ADDITION, result.getQuestionType());
+        assertEquals(MathExpressionPattern.BINARY_OPERATION, result.getExpressionPattern());
+        assertEquals(List.of(MathOperator.ADDITION), result.getOperators());
         assertEquals(
                 result.getLeftOperand() + result.getRightOperand(),
                 result.getCorrectAnswerValue()
         );
-        assertTrue(result.getLeftOperand() >= 1 && result.getLeftOperand() <= 10);
-        assertTrue(result.getRightOperand() >= 1 && result.getRightOperand() <= 10);
-        assertTrue(result.getQuestionText().contains(MathQuestionTextRules.ADDITION_OPERATOR));
         assertEquals(QuestionRules.SIMPLE_BINARY_OPERANDS_COUNT, result.getOperands().size());
         assertTrue(result.getPreferredDistractorValues().isEmpty());
     }
@@ -59,33 +60,49 @@ class MathQuestionGeneratorTest {
 
         assertNotNull(result);
         assertEquals(QuestionType.SUBTRACTION, result.getQuestionType());
+        assertEquals(MathExpressionPattern.BINARY_OPERATION, result.getExpressionPattern());
+        assertEquals(List.of(MathOperator.SUBTRACTION), result.getOperators());
         assertTrue(result.getCorrectAnswerValue() >= 0);
         assertTrue(result.getLeftOperand() >= result.getRightOperand());
         assertEquals(
                 result.getLeftOperand() - result.getRightOperand(),
                 result.getCorrectAnswerValue()
         );
-        assertTrue(result.getQuestionText().contains(MathQuestionTextRules.SUBTRACTION_OPERATOR));
         assertEquals(QuestionRules.SIMPLE_BINARY_OPERANDS_COUNT, result.getOperands().size());
         assertTrue(result.getPreferredDistractorValues().isEmpty());
     }
 
     @Test
-    void shouldGenerateMultiplicationQuestion() {
-        QuestionPlan questionPlan = createQuestionPlan(QuestionType.MULTIPLICATION, 2, 10);
+    void shouldGenerateMultiplicationQuestionOrChain() {
+        QuestionPlan questionPlan = createQuestionPlan(QuestionType.MULTIPLICATION, 1, 10);
 
         MathQuestionData result = mathQuestionGenerator.generate(questionPlan);
 
         assertNotNull(result);
         assertEquals(QuestionType.MULTIPLICATION, result.getQuestionType());
-        assertEquals(
-                result.getLeftOperand() * result.getRightOperand(),
-                result.getCorrectAnswerValue()
-        );
-        assertTrue(result.getLeftOperand() >= 2 && result.getLeftOperand() <= 10);
-        assertTrue(result.getRightOperand() >= 2 && result.getRightOperand() <= 10);
+
+        if (result.getExpressionPattern() == MathExpressionPattern.BINARY_OPERATION) {
+            assertEquals(QuestionRules.SIMPLE_BINARY_OPERANDS_COUNT, result.getOperands().size());
+            assertEquals(List.of(MathOperator.MULTIPLICATION), result.getOperators());
+            assertEquals(
+                    result.getLeftOperand() * result.getRightOperand(),
+                    result.getCorrectAnswerValue()
+            );
+        } else {
+            assertEquals(MathExpressionPattern.MULTIPLICATION_CHAIN, result.getExpressionPattern());
+            assertEquals(QuestionRules.COMPLEX_EXPRESSION_OPERANDS_COUNT, result.getOperands().size());
+            assertEquals(
+                    List.of(MathOperator.MULTIPLICATION, MathOperator.MULTIPLICATION),
+                    result.getOperators()
+            );
+
+            int expectedCorrectAnswer = result.getOperands().stream()
+                    .reduce(1, (left, right) -> left * right);
+
+            assertEquals(expectedCorrectAnswer, result.getCorrectAnswerValue());
+        }
+
         assertTrue(result.getQuestionText().contains(MathQuestionTextRules.MULTIPLICATION_OPERATOR));
-        assertEquals(QuestionRules.SIMPLE_BINARY_OPERANDS_COUNT, result.getOperands().size());
         assertTrue(result.getPreferredDistractorValues().isEmpty());
     }
 
@@ -97,18 +114,17 @@ class MathQuestionGeneratorTest {
 
         assertNotNull(result);
         assertEquals(QuestionType.DIVISION, result.getQuestionType());
+        assertEquals(MathExpressionPattern.BINARY_OPERATION, result.getExpressionPattern());
+        assertEquals(List.of(MathOperator.DIVISION), result.getOperators());
         assertTrue(result.getRightOperand() >= 1 && result.getRightOperand() <= 10);
         assertTrue(result.getCorrectAnswerValue() >= 1 && result.getCorrectAnswerValue() <= 10);
-        assertEquals(
-                0,
-                result.getLeftOperand() % result.getRightOperand()
-        );
+        assertEquals(0, result.getLeftOperand() % result.getRightOperand());
         assertEquals(
                 result.getLeftOperand() / result.getRightOperand(),
                 result.getCorrectAnswerValue()
         );
-        assertTrue(result.getQuestionText().contains(MathQuestionTextRules.DIVISION_OPERATOR));
         assertEquals(QuestionRules.SIMPLE_BINARY_OPERANDS_COUNT, result.getOperands().size());
+        assertTrue(result.getQuestionText().contains(MathQuestionTextRules.DIVISION_OPERATOR));
         assertTrue(result.getPreferredDistractorValues().isEmpty());
     }
 
@@ -120,21 +136,45 @@ class MathQuestionGeneratorTest {
 
         assertNotNull(result);
         assertEquals(QuestionType.ORDER_OF_OPERATIONS, result.getQuestionType());
-        assertEquals(QuestionRules.COMPLEX_EXPRESSION_OPERANDS_COUNT, result.getOperands().size());
+        assertFalse(result.getPreferredDistractorValues().isEmpty());
 
-        List<Integer> operands = result.getOperands();
-        int firstOperand = operands.get(0);
-        int secondOperand = operands.get(1);
-        int thirdOperand = operands.get(2);
+        if (result.getExpressionPattern() == MathExpressionPattern.ADD_THEN_MULTIPLY) {
+            assertEquals(QuestionRules.COMPLEX_EXPRESSION_OPERANDS_COUNT, result.getOperands().size());
+            assertEquals(
+                    List.of(MathOperator.ADDITION, MathOperator.MULTIPLICATION),
+                    result.getOperators()
+            );
 
-        int expectedCorrectAnswer = firstOperand + secondOperand * thirdOperand;
-        int expectedLeftToRightMistake = (firstOperand + secondOperand) * thirdOperand;
+            List<Integer> operands = result.getOperands();
+            int expectedCorrectAnswer = operands.get(0) + operands.get(1) * operands.get(2);
+            int expectedLeftToRightMistake = (operands.get(0) + operands.get(1)) * operands.get(2);
 
-        assertEquals(expectedCorrectAnswer, result.getCorrectAnswerValue());
-        assertTrue(result.getPreferredDistractorValues().contains(expectedLeftToRightMistake));
-        assertFalse(result.getPreferredDistractorValues().contains(expectedCorrectAnswer));
+            assertEquals(expectedCorrectAnswer, result.getCorrectAnswerValue());
+            assertTrue(result.getPreferredDistractorValues().contains(expectedLeftToRightMistake));
+        } else {
+            assertEquals(MathExpressionPattern.ADD_MULTIPLY_SUBTRACT, result.getExpressionPattern());
+            assertEquals(
+                    QuestionRules.MIXED_OPERATORS_EXPRESSION_OPERANDS_COUNT,
+                    result.getOperands().size()
+            );
+            assertEquals(
+                    List.of(MathOperator.ADDITION, MathOperator.MULTIPLICATION, MathOperator.SUBTRACTION),
+                    result.getOperators()
+            );
 
-        assertTrue(result.getQuestionText().contains(MathQuestionTextRules.ADDITION_OPERATOR));
+            List<Integer> operands = result.getOperands();
+            int expectedCorrectAnswer = operands.get(0)
+                    + operands.get(1) * operands.get(2)
+                    - operands.get(3);
+            int expectedLeftToRightMistake = (operands.get(0) + operands.get(1))
+                    * operands.get(2)
+                    - operands.get(3);
+
+            assertEquals(expectedCorrectAnswer, result.getCorrectAnswerValue());
+            assertTrue(result.getPreferredDistractorValues().contains(expectedLeftToRightMistake));
+        }
+
+        assertFalse(result.getPreferredDistractorValues().contains(result.getCorrectAnswerValue()));
         assertTrue(result.getQuestionText().contains(MathQuestionTextRules.MULTIPLICATION_OPERATOR));
     }
 
@@ -147,22 +187,39 @@ class MathQuestionGeneratorTest {
         assertNotNull(result);
         assertEquals(QuestionType.PARENTHESES, result.getQuestionType());
         assertEquals(QuestionRules.COMPLEX_EXPRESSION_OPERANDS_COUNT, result.getOperands().size());
+        assertEquals(2, result.getOperators().size());
+        assertFalse(result.getPreferredDistractorValues().isEmpty());
 
         List<Integer> operands = result.getOperands();
-        int firstOperand = operands.get(0);
-        int secondOperand = operands.get(1);
-        int thirdOperand = operands.get(2);
 
-        int expectedCorrectAnswer = (firstOperand + secondOperand) * thirdOperand;
-        int expectedIgnoreParenthesesMistake = firstOperand + secondOperand * thirdOperand;
+        if (result.getExpressionPattern() == MathExpressionPattern.PARENTHESES_SUM_THEN_MULTIPLY) {
+            assertEquals(
+                    List.of(MathOperator.ADDITION, MathOperator.MULTIPLICATION),
+                    result.getOperators()
+            );
 
-        assertEquals(expectedCorrectAnswer, result.getCorrectAnswerValue());
-        assertTrue(result.getPreferredDistractorValues().contains(expectedIgnoreParenthesesMistake));
-        assertFalse(result.getPreferredDistractorValues().contains(expectedCorrectAnswer));
+            int expectedCorrectAnswer = (operands.get(0) + operands.get(1)) * operands.get(2);
+            int expectedIgnoreParenthesesMistake = operands.get(0) + operands.get(1) * operands.get(2);
 
+            assertEquals(expectedCorrectAnswer, result.getCorrectAnswerValue());
+            assertTrue(result.getPreferredDistractorValues().contains(expectedIgnoreParenthesesMistake));
+        } else {
+            assertEquals(MathExpressionPattern.MULTIPLY_BY_PARENTHESES_SUM, result.getExpressionPattern());
+            assertEquals(
+                    List.of(MathOperator.MULTIPLICATION, MathOperator.ADDITION),
+                    result.getOperators()
+            );
+
+            int expectedCorrectAnswer = operands.get(0) * (operands.get(1) + operands.get(2));
+            int expectedIgnoreParenthesesMistake = operands.get(0) * operands.get(1) + operands.get(2);
+
+            assertEquals(expectedCorrectAnswer, result.getCorrectAnswerValue());
+            assertTrue(result.getPreferredDistractorValues().contains(expectedIgnoreParenthesesMistake));
+        }
+
+        assertFalse(result.getPreferredDistractorValues().contains(result.getCorrectAnswerValue()));
         assertTrue(result.getQuestionText().contains(MathQuestionTextRules.OPEN_PARENTHESIS));
         assertTrue(result.getQuestionText().contains(MathQuestionTextRules.CLOSE_PARENTHESIS));
-        assertTrue(result.getQuestionText().contains(MathQuestionTextRules.MULTIPLICATION_OPERATOR));
     }
 
     @Test

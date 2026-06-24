@@ -1,0 +1,10 @@
+package com.quiz_wheelz.enums;
+
+public enum MathExpressionPattern {
+    BINARY_OPERATION,
+    MULTIPLICATION_CHAIN,
+    ADD_THEN_MULTIPLY,
+    ADD_MULTIPLY_SUBTRACT,
+    PARENTHESES_SUM_THEN_MULTIPLY,
+    MULTIPLY_BY_PARENTHESES_SUM
+}

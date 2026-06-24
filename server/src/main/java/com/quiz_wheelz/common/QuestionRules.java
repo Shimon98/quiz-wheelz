@@ -21,8 +21,10 @@ public final class QuestionRules {
 
     public static final int SIMPLE_BINARY_OPERANDS_COUNT = 2;
     public static final int COMPLEX_EXPRESSION_OPERANDS_COUNT = 3;
+    public static final int MIXED_OPERATORS_EXPRESSION_OPERANDS_COUNT = 4;
 
     public static final int MIN_DIVISION_FACTOR_VALUE = 1;
+    public static final int MIN_COMPLEX_EXPRESSION_ADDEND_VALUE = 1;
     public static final int MIN_COMPLEX_EXPRESSION_MULTIPLIER_VALUE = 2;
 
     public static final Set<QuestionType> SUPPORTED_MATH_QUESTION_TYPES = Set.of(
