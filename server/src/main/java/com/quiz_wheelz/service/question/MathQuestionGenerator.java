@@ -13,10 +13,8 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 @Service
 public class MathQuestionGenerator {
@@ -27,18 +25,19 @@ public class MathQuestionGenerator {
             MathExpressionPattern.ADD_THEN_MULTIPLY
     );
 
-    private final Random random;
+    private final MathQuestionPlanValidator mathQuestionPlanValidator;
+    private final MathOperandGenerator mathOperandGenerator;
 
-    public MathQuestionGenerator() {
-        this(new Random());
-    }
-
-    MathQuestionGenerator(Random random) {
-        this.random = random;
+    public MathQuestionGenerator(
+            MathQuestionPlanValidator mathQuestionPlanValidator,
+            MathOperandGenerator mathOperandGenerator
+    ) {
+        this.mathQuestionPlanValidator = mathQuestionPlanValidator;
+        this.mathOperandGenerator = mathOperandGenerator;
     }
 
     public MathQuestionData generate(QuestionPlan questionPlan) {
-        validateQuestionPlan(questionPlan);
+        mathQuestionPlanValidator.validate(questionPlan);
 
         if (questionPlan.getGenerationPattern() != QuestionGenerationPattern.BINARY_OPERATION) {
             return generateExpressionQuestion(
@@ -57,7 +56,7 @@ public class MathQuestionGenerator {
     }
 
     private MathQuestionData generateAddition(QuestionPlan questionPlan) {
-        List<Integer> operands = createOperands(
+        List<Integer> operands = mathOperandGenerator.createOperands(
                 questionPlan,
                 MathOperandRole.ANY,
                 MathOperandRole.ANY
@@ -74,12 +73,15 @@ public class MathQuestionGenerator {
     }
 
     private MathQuestionData generateSubtraction(QuestionPlan questionPlan) {
-        int firstValue = randomOperand(questionPlan, MathOperandRole.ANY);
-        int secondValue = randomOperand(questionPlan, MathOperandRole.ANY);
+        List<Integer> generatedOperands = mathOperandGenerator.createOperands(
+                questionPlan,
+                MathOperandRole.ANY,
+                MathOperandRole.ANY
+        );
 
         List<Integer> operands = List.of(
-                Math.max(firstValue, secondValue),
-                Math.min(firstValue, secondValue)
+                Math.max(first(generatedOperands), second(generatedOperands)),
+                Math.min(first(generatedOperands), second(generatedOperands))
         );
 
         int correctAnswer = first(operands) - second(operands);
@@ -93,7 +95,7 @@ public class MathQuestionGenerator {
     }
 
     private MathQuestionData generateMultiplication(QuestionPlan questionPlan) {
-        List<Integer> operands = createOperands(
+        List<Integer> operands = mathOperandGenerator.createOperands(
                 questionPlan,
                 MathOperandRole.ANY,
                 MathOperandRole.ANY
@@ -110,10 +112,16 @@ public class MathQuestionGenerator {
     }
 
     private MathQuestionData generateDivision(QuestionPlan questionPlan) {
-        validateDivisionRange(questionPlan);
+        mathQuestionPlanValidator.validateDivisionRange(questionPlan);
 
-        int divisor = randomOperand(questionPlan, MathOperandRole.DIVISION_FACTOR);
-        int quotient = randomOperand(questionPlan, MathOperandRole.DIVISION_FACTOR);
+        List<Integer> divisionFactors = mathOperandGenerator.createOperands(
+                questionPlan,
+                MathOperandRole.DIVISION_FACTOR,
+                MathOperandRole.DIVISION_FACTOR
+        );
+
+        int divisor = first(divisionFactors);
+        int quotient = second(divisionFactors);
         int dividend = divisor * quotient;
 
         return buildBinaryQuestion(
@@ -150,9 +158,9 @@ public class MathQuestionGenerator {
         for (int attempt = 0;
              attempt < QuestionRules.MAX_QUESTION_GENERATION_ATTEMPTS;
              attempt++) {
-            List<Integer> operands = createOperands(
+            List<Integer> operands = mathOperandGenerator.createOperands(
                     questionPlan,
-                    expressionPattern.getOperandRoles().toArray(MathOperandRole[]::new)
+                    expressionPattern.getOperandRoles()
             );
 
             int correctAnswer = expressionPattern.calculateCorrectAnswer(operands);
@@ -218,147 +226,11 @@ public class MathQuestionGenerator {
         return expressionPattern;
     }
 
-    private List<Integer> createOperands(QuestionPlan questionPlan, MathOperandRole... operandRoles) {
-        List<Integer> operands = new ArrayList<>();
-
-        for (MathOperandRole operandRole : operandRoles) {
-            operands.add(randomOperand(questionPlan, operandRole));
-        }
-
-        return operands;
-    }
-
-    private int randomOperand(QuestionPlan questionPlan, MathOperandRole operandRole) {
-        return switch (operandRole) {
-            case ANY -> randomValue(
-                    questionPlan.getMinValue(),
-                    questionPlan.getMaxValue()
-            );
-
-            case ADDEND -> randomValue(
-                    Math.max(
-                            QuestionRules.MIN_COMPLEX_EXPRESSION_ADDEND_VALUE,
-                            questionPlan.getMinValue()
-                    ),
-                    questionPlan.getMaxValue()
-            );
-
-            case MULTIPLIER -> randomValue(
-                    Math.max(
-                            QuestionRules.MIN_COMPLEX_EXPRESSION_MULTIPLIER_VALUE,
-                            questionPlan.getMinValue()
-                    ),
-                    maxMultiplierValue(questionPlan)
-            );
-
-            case DIVISION_FACTOR -> randomValue(
-                    Math.max(
-                            QuestionRules.MIN_DIVISION_FACTOR_VALUE,
-                            questionPlan.getMinValue()
-                    ),
-                    questionPlan.getMaxValue()
-            );
-        };
-    }
-
-    private int maxMultiplierValue(QuestionPlan questionPlan) {
-        int minMultiplierValue = Math.max(
-                QuestionRules.MIN_COMPLEX_EXPRESSION_MULTIPLIER_VALUE,
-                questionPlan.getMinValue()
-        );
-
-        int maxMultiplierValue = Math.min(
-                questionPlan.getMaxValue(),
-                MathPatternRules.maxMultiplicationFactor(
-                        questionPlan.getDifficulty(),
-                        questionPlan.getGenerationPattern()
-                )
-        );
-
-        if (minMultiplierValue > maxMultiplierValue) {
-            throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
-        }
-
-        return maxMultiplierValue;
-    }
-
-    private int randomValue(Integer minValue, Integer maxValue) {
-        if (minValue == null || maxValue == null || minValue > maxValue) {
-            throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
-        }
-
-        return random.nextInt(maxValue - minValue + 1) + minValue;
-    }
-
     private int first(List<Integer> operands) {
         return operands.get(QuestionRules.FIRST_OPERAND_INDEX);
     }
 
     private int second(List<Integer> operands) {
         return operands.get(QuestionRules.SECOND_OPERAND_INDEX);
-    }
-
-    private int third(List<Integer> operands) {
-        return operands.get(QuestionRules.THIRD_OPERAND_INDEX);
-    }
-
-    private void validateQuestionPlan(QuestionPlan questionPlan) {
-        if (questionPlan == null
-                || questionPlan.getQuestionType() == null
-                || questionPlan.getDifficulty() == null
-                || questionPlan.getMinValue() == null
-                || questionPlan.getMaxValue() == null
-                || questionPlan.getGenerationPattern() == null) {
-            throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
-        }
-
-        if (questionPlan.getMinValue() > questionPlan.getMaxValue()) {
-            throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
-        }
-
-        if (questionPlan.getMinValue() < QuestionRules.MIN_DISTRACTOR_VALUE) {
-            throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
-        }
-
-        if (questionPlan.getGenerationPattern() == QuestionGenerationPattern.BINARY_OPERATION) {
-            validateBinaryQuestionPlan(questionPlan);
-            return;
-        }
-
-        validateExpressionQuestionPlan(questionPlan);
-    }
-
-    private void validateBinaryQuestionPlan(QuestionPlan questionPlan) {
-        if (!QuestionRules.isSupportedMathQuestionType(questionPlan.getQuestionType())) {
-            throw new ApiException(ErrorCode.QUESTION_TYPE_NOT_SUPPORTED);
-        }
-    }
-
-    private void validateExpressionQuestionPlan(QuestionPlan questionPlan) {
-        if (!MathPatternRules.isPatternAllowedForDifficulty(
-                questionPlan.getDifficulty(),
-                questionPlan.getGenerationPattern()
-        )) {
-            throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
-        }
-
-        if (!MathPatternRules.isQuestionTypeAllowedForPattern(
-                questionPlan.getQuestionType(),
-                questionPlan.getGenerationPattern()
-        )) {
-            throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
-        }
-
-        if (!EXPRESSION_PATTERNS_BY_GENERATION_PATTERN.containsKey(
-                questionPlan.getGenerationPattern()
-        )) {
-            throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
-        }
-    }
-
-    private void validateDivisionRange(QuestionPlan questionPlan) {
-        if (questionPlan.getMaxValue() < QuestionRules.MIN_DIVISION_FACTOR_VALUE) {
-            throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
-        }
     }
 }

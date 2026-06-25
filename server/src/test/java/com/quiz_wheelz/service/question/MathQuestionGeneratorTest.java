@@ -28,11 +28,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MathQuestionGeneratorTest {
 
+    private MathQuestionPlanValidator mathQuestionPlanValidator;
+    private MathOperandGenerator mathOperandGenerator;
     private MathQuestionGenerator mathQuestionGenerator;
 
     @BeforeEach
     void setUp() {
-        mathQuestionGenerator = new MathQuestionGenerator(new Random(1));
+        mathQuestionPlanValidator = new MathQuestionPlanValidator();
+        mathOperandGenerator = new MathOperandGenerator(
+                new Random(1),
+                mathQuestionPlanValidator
+        );
+        mathQuestionGenerator = new MathQuestionGenerator(
+                mathQuestionPlanValidator,
+                mathOperandGenerator
+        );
     }
 
     @Test
