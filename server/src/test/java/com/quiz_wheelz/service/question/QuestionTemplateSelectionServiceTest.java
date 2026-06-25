@@ -22,6 +22,8 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,7 +36,7 @@ class QuestionTemplateSelectionServiceTest {
     private QuestionTemplateSelectionService questionTemplateSelectionService;
 
     @Test
-    void shouldSelectActiveTemplateBySubjectTypeAndDifficulty() {
+    void shouldSelectTemplateByGenerationPattern() {
         Subject subject = createMathSubject();
         QuestionTemplate template = createTemplate(
                 subject,
@@ -46,11 +48,13 @@ class QuestionTemplateSelectionServiceTest {
                 4
         );
 
-        when(questionTemplateRepository.findBySubjectAndTypeAndDifficultyAndActiveTrueOrderByIdAsc(
-                subject,
-                QuestionType.ADDITION,
-                Difficulty.EASY
-        )).thenReturn(List.of(template));
+        when(questionTemplateRepository
+                .findBySubjectAndTypeAndDifficultyAndGenerationPatternAndActiveTrueOrderByIdAsc(
+                        subject,
+                        QuestionType.ADDITION,
+                        Difficulty.EASY,
+                        QuestionGenerationPattern.BINARY_OPERATION
+                )).thenReturn(List.of(template));
 
         QuestionTemplate result = questionTemplateSelectionService.selectTemplate(
                 subject,
@@ -59,6 +63,93 @@ class QuestionTemplateSelectionServiceTest {
         );
 
         assertSame(template, result);
+    }
+
+    @Test
+    void shouldSelectAddThenMultiplyTemplateWhenPatternMatches() {
+        Subject subject = createMathSubject();
+        QuestionTemplate template = createTemplate(
+                subject,
+                QuestionType.ORDER_OF_OPERATIONS,
+                Difficulty.MEDIUM,
+                1,
+                20,
+                30,
+                4,
+                QuestionGenerationPattern.ADD_THEN_MULTIPLY
+        );
+
+        when(questionTemplateRepository
+                .findBySubjectAndTypeAndDifficultyAndGenerationPatternAndActiveTrueOrderByIdAsc(
+                        subject,
+                        QuestionType.ORDER_OF_OPERATIONS,
+                        Difficulty.MEDIUM,
+                        QuestionGenerationPattern.ADD_THEN_MULTIPLY
+                )).thenReturn(List.of(template));
+
+        QuestionTemplate result = questionTemplateSelectionService.selectTemplate(
+                subject,
+                QuestionType.ORDER_OF_OPERATIONS,
+                Difficulty.MEDIUM,
+                QuestionGenerationPattern.ADD_THEN_MULTIPLY
+        );
+
+        assertSame(template, result);
+    }
+
+    @Test
+    void shouldNotSelectBinaryTemplateWhenAddThenMultiplyWasRequested() {
+        Subject subject = createMathSubject();
+        QuestionTemplate binaryTemplate = createTemplate(
+                subject,
+                QuestionType.ADDITION,
+                Difficulty.MEDIUM,
+                1,
+                20,
+                30,
+                4
+        );
+        QuestionTemplate addThenMultiplyTemplate = createTemplate(
+                subject,
+                QuestionType.ORDER_OF_OPERATIONS,
+                Difficulty.MEDIUM,
+                1,
+                20,
+                30,
+                4,
+                QuestionGenerationPattern.ADD_THEN_MULTIPLY
+        );
+
+        when(questionTemplateRepository
+                .findBySubjectAndTypeAndDifficultyAndGenerationPatternAndActiveTrueOrderByIdAsc(
+                        subject,
+                        QuestionType.ORDER_OF_OPERATIONS,
+                        Difficulty.MEDIUM,
+                        QuestionGenerationPattern.ADD_THEN_MULTIPLY
+                )).thenReturn(List.of(addThenMultiplyTemplate));
+
+        QuestionTemplate result = questionTemplateSelectionService.selectTemplate(
+                subject,
+                QuestionType.ORDER_OF_OPERATIONS,
+                Difficulty.MEDIUM,
+                QuestionGenerationPattern.ADD_THEN_MULTIPLY
+        );
+
+        assertSame(addThenMultiplyTemplate, result);
+        verify(questionTemplateRepository)
+                .findBySubjectAndTypeAndDifficultyAndGenerationPatternAndActiveTrueOrderByIdAsc(
+                        subject,
+                        QuestionType.ORDER_OF_OPERATIONS,
+                        Difficulty.MEDIUM,
+                        QuestionGenerationPattern.ADD_THEN_MULTIPLY
+                );
+        verify(questionTemplateRepository, never())
+                .findBySubjectAndTypeAndDifficultyAndGenerationPatternAndActiveTrueOrderByIdAsc(
+                        subject,
+                        binaryTemplate.getType(),
+                        binaryTemplate.getDifficulty(),
+                        binaryTemplate.getGenerationPattern()
+                );
     }
 
     @Test
@@ -86,11 +177,13 @@ class QuestionTemplateSelectionServiceTest {
                 AssistanceLevel.NONE
         );
 
-        when(questionTemplateRepository.findBySubjectAndTypeAndDifficultyAndActiveTrueOrderByIdAsc(
-                subject,
-                QuestionType.SUBTRACTION,
-                Difficulty.EASY
-        )).thenReturn(List.of(template));
+        when(questionTemplateRepository
+                .findBySubjectAndTypeAndDifficultyAndGenerationPatternAndActiveTrueOrderByIdAsc(
+                        subject,
+                        QuestionType.SUBTRACTION,
+                        Difficulty.EASY,
+                        QuestionGenerationPattern.BINARY_OPERATION
+                )).thenReturn(List.of(template));
 
         QuestionTemplate result = questionTemplateSelectionService.selectTemplate(questionPlan);
 
@@ -101,11 +194,13 @@ class QuestionTemplateSelectionServiceTest {
     void shouldThrowWhenTemplateDoesNotExist() {
         Subject subject = createMathSubject();
 
-        when(questionTemplateRepository.findBySubjectAndTypeAndDifficultyAndActiveTrueOrderByIdAsc(
-                subject,
-                QuestionType.MULTIPLICATION,
-                Difficulty.MEDIUM
-        )).thenReturn(List.of());
+        when(questionTemplateRepository
+                .findBySubjectAndTypeAndDifficultyAndGenerationPatternAndActiveTrueOrderByIdAsc(
+                        subject,
+                        QuestionType.MULTIPLICATION,
+                        Difficulty.MEDIUM,
+                        QuestionGenerationPattern.BINARY_OPERATION
+                )).thenReturn(List.of());
 
         ApiException exception = assertThrows(
                 ApiException.class,
@@ -136,7 +231,7 @@ class QuestionTemplateSelectionServiceTest {
     }
 
     @Test
-    void shouldThrowWhenOrderOfOperationsTemplateIsRequestedInStageB() {
+    void shouldRejectAddThenMultiplyForEasyDifficulty() {
         Subject subject = createMathSubject();
 
         ApiException exception = assertThrows(
@@ -144,11 +239,29 @@ class QuestionTemplateSelectionServiceTest {
                 () -> questionTemplateSelectionService.selectTemplate(
                         subject,
                         QuestionType.ORDER_OF_OPERATIONS,
-                        Difficulty.EASY
+                        Difficulty.EASY,
+                        QuestionGenerationPattern.ADD_THEN_MULTIPLY
                 )
         );
 
-        assertEquals(ErrorCode.QUESTION_TYPE_NOT_SUPPORTED, exception.getErrorCode());
+        assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
+    }
+
+    @Test
+    void shouldRejectAddThenMultiplyWithWrongQuestionType() {
+        Subject subject = createMathSubject();
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> questionTemplateSelectionService.selectTemplate(
+                        subject,
+                        QuestionType.MULTIPLICATION,
+                        Difficulty.MEDIUM,
+                        QuestionGenerationPattern.ADD_THEN_MULTIPLY
+                )
+        );
+
+        assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
     }
 
     @Test
@@ -188,11 +301,46 @@ class QuestionTemplateSelectionServiceTest {
                 4
         );
 
-        when(questionTemplateRepository.findBySubjectAndTypeAndDifficultyAndActiveTrueOrderByIdAsc(
+        when(questionTemplateRepository
+                .findBySubjectAndTypeAndDifficultyAndGenerationPatternAndActiveTrueOrderByIdAsc(
+                        subject,
+                        QuestionType.ADDITION,
+                        Difficulty.EASY,
+                        QuestionGenerationPattern.BINARY_OPERATION
+                )).thenReturn(List.of(template));
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> questionTemplateSelectionService.selectTemplate(
+                        subject,
+                        QuestionType.ADDITION,
+                        Difficulty.EASY
+                )
+        );
+
+        assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
+    }
+
+    @Test
+    void shouldRejectTemplateWithNegativeMinValue() {
+        Subject subject = createMathSubject();
+        QuestionTemplate template = createTemplate(
                 subject,
                 QuestionType.ADDITION,
-                Difficulty.EASY
-        )).thenReturn(List.of(template));
+                Difficulty.EASY,
+                -1,
+                20,
+                30,
+                4
+        );
+
+        when(questionTemplateRepository
+                .findBySubjectAndTypeAndDifficultyAndGenerationPatternAndActiveTrueOrderByIdAsc(
+                        subject,
+                        QuestionType.ADDITION,
+                        Difficulty.EASY,
+                        QuestionGenerationPattern.BINARY_OPERATION
+                )).thenReturn(List.of(template));
 
         ApiException exception = assertThrows(
                 ApiException.class,
@@ -219,11 +367,13 @@ class QuestionTemplateSelectionServiceTest {
                 1
         );
 
-        when(questionTemplateRepository.findBySubjectAndTypeAndDifficultyAndActiveTrueOrderByIdAsc(
-                subject,
-                QuestionType.ADDITION,
-                Difficulty.EASY
-        )).thenReturn(List.of(template));
+        when(questionTemplateRepository
+                .findBySubjectAndTypeAndDifficultyAndGenerationPatternAndActiveTrueOrderByIdAsc(
+                        subject,
+                        QuestionType.ADDITION,
+                        Difficulty.EASY,
+                        QuestionGenerationPattern.BINARY_OPERATION
+                )).thenReturn(List.of(template));
 
         ApiException exception = assertThrows(
                 ApiException.class,
@@ -250,11 +400,13 @@ class QuestionTemplateSelectionServiceTest {
                 4
         );
 
-        when(questionTemplateRepository.findBySubjectAndTypeAndDifficultyAndActiveTrueOrderByIdAsc(
-                subject,
-                QuestionType.ADDITION,
-                Difficulty.EASY
-        )).thenReturn(List.of(template));
+        when(questionTemplateRepository
+                .findBySubjectAndTypeAndDifficultyAndGenerationPatternAndActiveTrueOrderByIdAsc(
+                        subject,
+                        QuestionType.ADDITION,
+                        Difficulty.EASY,
+                        QuestionGenerationPattern.BINARY_OPERATION
+                )).thenReturn(List.of(template));
 
         ApiException exception = assertThrows(
                 ApiException.class,
@@ -282,11 +434,13 @@ class QuestionTemplateSelectionServiceTest {
         );
         template.setGenerationPattern(null);
 
-        when(questionTemplateRepository.findBySubjectAndTypeAndDifficultyAndActiveTrueOrderByIdAsc(
-                subject,
-                QuestionType.ADDITION,
-                Difficulty.EASY
-        )).thenReturn(List.of(template));
+        when(questionTemplateRepository
+                .findBySubjectAndTypeAndDifficultyAndGenerationPatternAndActiveTrueOrderByIdAsc(
+                        subject,
+                        QuestionType.ADDITION,
+                        Difficulty.EASY,
+                        QuestionGenerationPattern.BINARY_OPERATION
+                )).thenReturn(List.of(template));
 
         ApiException exception = assertThrows(
                 ApiException.class,
@@ -317,11 +471,33 @@ class QuestionTemplateSelectionServiceTest {
             Integer timeLimitSeconds,
             Integer choicesCount
     ) {
+        return createTemplate(
+                subject,
+                questionType,
+                difficulty,
+                minValue,
+                maxValue,
+                timeLimitSeconds,
+                choicesCount,
+                QuestionGenerationPattern.BINARY_OPERATION
+        );
+    }
+
+    private QuestionTemplate createTemplate(
+            Subject subject,
+            QuestionType questionType,
+            Difficulty difficulty,
+            Integer minValue,
+            Integer maxValue,
+            Integer timeLimitSeconds,
+            Integer choicesCount,
+            QuestionGenerationPattern generationPattern
+    ) {
         QuestionTemplate template = new QuestionTemplate();
         template.setSubject(subject);
         template.setType(questionType);
         template.setDifficulty(difficulty);
-        template.setGenerationPattern(QuestionGenerationPattern.BINARY_OPERATION);
+        template.setGenerationPattern(generationPattern);
         template.setMinValue(minValue);
         template.setMaxValue(maxValue);
         template.setTimeLimitSeconds(timeLimitSeconds);

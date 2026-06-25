@@ -18,6 +18,9 @@ public final class MathQuestionTextRules {
     public static final String ANSWER_PLACEHOLDER = "?";
     public static final String TOKEN_SEPARATOR = " ";
 
+    private static final String INVALID_MATH_EXPRESSION_PARTS_ERROR_MESSAGE =
+            "Invalid math expression parts";
+
     private MathQuestionTextRules() {
     }
 
@@ -139,7 +142,7 @@ public final class MathQuestionTextRules {
                 || operators == null
                 || operands.size() < QuestionRules.SIMPLE_BINARY_OPERANDS_COUNT
                 || operators.size() != operands.size() - 1) {
-            throw new IllegalArgumentException("Invalid math expression parts");
+            throw new IllegalArgumentException(INVALID_MATH_EXPRESSION_PARTS_ERROR_MESSAGE);
         }
     }
 }

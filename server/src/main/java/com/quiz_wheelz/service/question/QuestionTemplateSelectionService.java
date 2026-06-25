@@ -1,5 +1,6 @@
 package com.quiz_wheelz.service.question;
 
+import com.quiz_wheelz.common.MathPatternRules;
 import com.quiz_wheelz.common.QuestionRules;
 import com.quiz_wheelz.dto.question.QuestionPlan;
 import com.quiz_wheelz.entitys.QuestionTemplate;
@@ -33,7 +34,8 @@ public class QuestionTemplateSelectionService {
         return selectTemplate(
                 questionPlan.getSubject(),
                 questionPlan.getQuestionType(),
-                questionPlan.getDifficulty()
+                questionPlan.getDifficulty(),
+                questionPlan.getGenerationPattern()
         );
     }
 
@@ -43,14 +45,31 @@ public class QuestionTemplateSelectionService {
             QuestionType questionType,
             Difficulty difficulty
     ) {
-        validateSelectionInput(subject, questionType, difficulty);
+        return selectTemplate(
+                subject,
+                questionType,
+                difficulty,
+                QuestionGenerationPattern.BINARY_OPERATION
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public QuestionTemplate selectTemplate(
+            Subject subject,
+            QuestionType questionType,
+            Difficulty difficulty,
+            QuestionGenerationPattern generationPattern
+    ) {
+        validateSelectionInput(subject, questionType, difficulty, generationPattern);
 
         List<QuestionTemplate> templates =
-                questionTemplateRepository.findBySubjectAndTypeAndDifficultyAndActiveTrueOrderByIdAsc(
-                        subject,
-                        questionType,
-                        difficulty
-                );
+                questionTemplateRepository
+                        .findBySubjectAndTypeAndDifficultyAndGenerationPatternAndActiveTrueOrderByIdAsc(
+                                subject,
+                                questionType,
+                                difficulty,
+                                generationPattern
+                        );
 
         if (templates.isEmpty()) {
             throw new ApiException(ErrorCode.QUESTION_TEMPLATE_NOT_FOUND);
@@ -65,14 +84,38 @@ public class QuestionTemplateSelectionService {
     private void validateSelectionInput(
             Subject subject,
             QuestionType questionType,
-            Difficulty difficulty
+            Difficulty difficulty,
+            QuestionGenerationPattern generationPattern
     ) {
-        if (subject == null || questionType == null || difficulty == null) {
+        if (subject == null
+                || questionType == null
+                || difficulty == null
+                || generationPattern == null) {
             throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
         }
 
-        if (!QuestionRules.isSupportedMathQuestionType(questionType)) {
-            throw new ApiException(ErrorCode.QUESTION_TYPE_NOT_SUPPORTED);
+        validatePatternCompatibility(questionType, difficulty, generationPattern);
+    }
+
+    private void validatePatternCompatibility(
+            QuestionType questionType,
+            Difficulty difficulty,
+            QuestionGenerationPattern generationPattern
+    ) {
+        if (generationPattern == QuestionGenerationPattern.BINARY_OPERATION) {
+            if (!QuestionRules.isSupportedMathQuestionType(questionType)) {
+                throw new ApiException(ErrorCode.QUESTION_TYPE_NOT_SUPPORTED);
+            }
+
+            return;
+        }
+
+        if (!MathPatternRules.isPatternAllowedForDifficulty(difficulty, generationPattern)
+                || !MathPatternRules.isQuestionTypeAllowedForPattern(
+                        questionType,
+                        generationPattern
+                )) {
+            throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
         }
     }
 
@@ -86,11 +129,11 @@ public class QuestionTemplateSelectionService {
             throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
         }
 
-        if (template.getGenerationPattern() != QuestionGenerationPattern.BINARY_OPERATION) {
+        if (template.getMinValue() > template.getMaxValue()) {
             throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
         }
 
-        if (template.getMinValue() > template.getMaxValue()) {
+        if (template.getMinValue() < QuestionRules.MIN_DISTRACTOR_VALUE) {
             throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
         }
 
@@ -104,8 +147,10 @@ public class QuestionTemplateSelectionService {
             throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
         }
 
-        if (!QuestionRules.isSupportedMathQuestionType(template.getType())) {
-            throw new ApiException(ErrorCode.QUESTION_TYPE_NOT_SUPPORTED);
-        }
+        validatePatternCompatibility(
+                template.getType(),
+                template.getDifficulty(),
+                template.getGenerationPattern()
+        );
     }
 }

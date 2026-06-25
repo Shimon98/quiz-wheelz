@@ -108,6 +108,9 @@ public enum MathExpressionPattern {
         }
     };
 
+    private static final String UNSUPPORTED_EXPRESSION_CALCULATION_ERROR_MESSAGE =
+            "Pattern does not support expression answer calculation: ";
+
     private final QuestionType questionType;
     private final List<MathOperator> operators;
     private final List<MathOperandRole> operandRoles;
@@ -143,7 +146,7 @@ public enum MathExpressionPattern {
 
     public int calculateCorrectAnswer(List<Integer> operands) {
         throw new UnsupportedOperationException(
-                "Pattern does not support expression answer calculation: " + this
+                UNSUPPORTED_EXPRESSION_CALCULATION_ERROR_MESSAGE + this
         );
     }
 

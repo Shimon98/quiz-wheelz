@@ -262,13 +262,24 @@ public class MathQuestionGenerator {
     }
 
     private int maxMultiplierValue(QuestionPlan questionPlan) {
-        return Math.min(
+        int minMultiplierValue = Math.max(
+                QuestionRules.MIN_COMPLEX_EXPRESSION_MULTIPLIER_VALUE,
+                questionPlan.getMinValue()
+        );
+
+        int maxMultiplierValue = Math.min(
                 questionPlan.getMaxValue(),
                 MathPatternRules.maxMultiplicationFactor(
                         questionPlan.getDifficulty(),
                         questionPlan.getGenerationPattern()
                 )
         );
+
+        if (minMultiplierValue > maxMultiplierValue) {
+            throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
+        }
+
+        return maxMultiplierValue;
     }
 
     private int randomValue(Integer minValue, Integer maxValue) {

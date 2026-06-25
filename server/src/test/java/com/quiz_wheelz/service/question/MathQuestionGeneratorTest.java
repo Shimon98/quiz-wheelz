@@ -209,6 +209,24 @@ class MathQuestionGeneratorTest {
     }
 
     @Test
+    void shouldRejectComplexQuestionWhenMultiplierRangeIsInvalid() {
+        QuestionPlan questionPlan = createQuestionPlan(
+                QuestionType.ORDER_OF_OPERATIONS,
+                Difficulty.MEDIUM,
+                1,
+                1,
+                QuestionGenerationPattern.ADD_THEN_MULTIPLY
+        );
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> mathQuestionGenerator.generate(questionPlan)
+        );
+
+        assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
+    }
+
+    @Test
     void shouldRejectParenthesesPatternUntilGeneratorSupportsIt() {
         QuestionPlan questionPlan = createQuestionPlan(
                 QuestionType.PARENTHESES,

@@ -30,6 +30,13 @@ public interface QuestionTemplateRepository extends JpaRepository<QuestionTempla
             Difficulty difficulty
     );
 
+    List<QuestionTemplate> findBySubjectAndTypeAndDifficultyAndGenerationPatternAndActiveTrueOrderByIdAsc(
+            Subject subject,
+            QuestionType type,
+            Difficulty difficulty,
+            QuestionGenerationPattern generationPattern
+    );
+
     boolean existsBySubjectAndTypeAndDifficultyAndGenerationPattern(
             Subject subject,
             QuestionType type,
