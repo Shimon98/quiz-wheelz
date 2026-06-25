@@ -1,7 +1,7 @@
 package com.quiz_wheelz.service.question;
 
 import com.quiz_wheelz.common.QuestionRules;
-import com.quiz_wheelz.dto.question.GeneratedQuestionChoice;
+import com.quiz_wheelz.dto.question.internal.InternalGeneratedQuestionChoice;
 import com.quiz_wheelz.dto.question.MathQuestionData;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
@@ -27,7 +27,7 @@ public class AnswerChoiceGenerator {
         this.random = random;
     }
 
-    public List<GeneratedQuestionChoice> generateChoices(
+    public List<InternalGeneratedQuestionChoice> generateChoices(
             MathQuestionData questionData,
             Integer choicesCount
     ) {
@@ -184,19 +184,19 @@ public class AnswerChoiceGenerator {
                 && !answerValues.contains(candidate);
     }
 
-    private List<GeneratedQuestionChoice> buildShuffledChoices(
+    private List<InternalGeneratedQuestionChoice> buildShuffledChoices(
             Set<Integer> answerValues,
             Integer correctAnswer
     ) {
         List<Integer> shuffledAnswerValues = new ArrayList<>(answerValues);
         Collections.shuffle(shuffledAnswerValues, random);
 
-        List<GeneratedQuestionChoice> choices = new ArrayList<>();
+        List<InternalGeneratedQuestionChoice> choices = new ArrayList<>();
 
         for (int index = 0; index < shuffledAnswerValues.size(); index++) {
             Integer answerValue = shuffledAnswerValues.get(index);
 
-            choices.add(new GeneratedQuestionChoice(
+            choices.add(new InternalGeneratedQuestionChoice(
                     String.valueOf(answerValue),
                     answerValue,
                     answerValue.equals(correctAnswer),

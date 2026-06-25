@@ -1,8 +1,8 @@
 package com.quiz_wheelz.service.question;
 
 import com.quiz_wheelz.common.QuestionRules;
-import com.quiz_wheelz.dto.question.GeneratedQuestion;
-import com.quiz_wheelz.dto.question.GeneratedQuestionChoice;
+import com.quiz_wheelz.dto.question.internal.InternalGeneratedQuestion;
+import com.quiz_wheelz.dto.question.internal.InternalGeneratedQuestionChoice;
 import com.quiz_wheelz.dto.question.MathQuestionData;
 import com.quiz_wheelz.dto.question.QuestionPlan;
 import com.quiz_wheelz.entitys.QuestionTemplate;
@@ -59,11 +59,11 @@ class QuestionGenerationServiceTest {
                 QuestionType.ADDITION
         );
 
-        List<GeneratedQuestionChoice> choices = List.of(
-                new GeneratedQuestionChoice("12", 12, true, 1),
-                new GeneratedQuestionChoice("10", 10, false, 2),
-                new GeneratedQuestionChoice("14", 14, false, 3),
-                new GeneratedQuestionChoice("15", 15, false, 4)
+        List<InternalGeneratedQuestionChoice> choices = List.of(
+                new InternalGeneratedQuestionChoice("12", 12, true, 1),
+                new InternalGeneratedQuestionChoice("10", 10, false, 2),
+                new InternalGeneratedQuestionChoice("14", 14, false, 3),
+                new InternalGeneratedQuestionChoice("15", 15, false, 4)
         );
 
         when(questionTemplateSelectionService.selectTemplate(requestPlan))
@@ -75,7 +75,7 @@ class QuestionGenerationServiceTest {
                 QuestionRules.DEFAULT_CHOICES_COUNT
         )).thenReturn(choices);
 
-        GeneratedQuestion result = questionGenerationService.generate(requestPlan);
+        InternalGeneratedQuestion result = questionGenerationService.generate(requestPlan);
 
         assertSame(subject, result.getSubject());
         assertSame(selectedTemplate, result.getQuestionTemplate());
@@ -107,10 +107,10 @@ class QuestionGenerationServiceTest {
                 .thenReturn(mathQuestionData);
         when(answerChoiceGenerator.generateChoices(any(MathQuestionData.class), any()))
                 .thenReturn(List.of(
-                        new GeneratedQuestionChoice("12", 12, true, 1),
-                        new GeneratedQuestionChoice("10", 10, false, 2),
-                        new GeneratedQuestionChoice("14", 14, false, 3),
-                        new GeneratedQuestionChoice("15", 15, false, 4)
+                        new InternalGeneratedQuestionChoice("12", 12, true, 1),
+                        new InternalGeneratedQuestionChoice("10", 10, false, 2),
+                        new InternalGeneratedQuestionChoice("14", 14, false, 3),
+                        new InternalGeneratedQuestionChoice("15", 15, false, 4)
                 ));
 
         questionGenerationService.generate(requestPlan);

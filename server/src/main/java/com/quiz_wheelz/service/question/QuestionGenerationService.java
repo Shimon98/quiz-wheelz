@@ -1,7 +1,7 @@
 package com.quiz_wheelz.service.question;
 
-import com.quiz_wheelz.dto.question.GeneratedQuestion;
-import com.quiz_wheelz.dto.question.GeneratedQuestionChoice;
+import com.quiz_wheelz.dto.question.internal.InternalGeneratedQuestion;
+import com.quiz_wheelz.dto.question.internal.InternalGeneratedQuestionChoice;
 import com.quiz_wheelz.dto.question.MathQuestionData;
 import com.quiz_wheelz.dto.question.QuestionPlan;
 import com.quiz_wheelz.entitys.QuestionTemplate;
@@ -32,7 +32,7 @@ public class QuestionGenerationService {
     }
 
     @Transactional(readOnly = true)
-    public GeneratedQuestion generate(QuestionPlan questionPlan) {
+    public InternalGeneratedQuestion generate(QuestionPlan questionPlan) {
         if (questionPlan == null) {
             throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
         }
@@ -49,7 +49,7 @@ public class QuestionGenerationService {
         MathQuestionData mathQuestionData =
                 mathQuestionGenerator.generate(templateBackedQuestionPlan);
 
-        List<GeneratedQuestionChoice> choices =
+        List<InternalGeneratedQuestionChoice> choices =
                 answerChoiceGenerator.generateChoices(
                         mathQuestionData,
                         templateBackedQuestionPlan.getChoicesCount()
@@ -84,13 +84,13 @@ public class QuestionGenerationService {
         );
     }
 
-    private GeneratedQuestion buildGeneratedQuestion(
+    private InternalGeneratedQuestion buildGeneratedQuestion(
             QuestionTemplate questionTemplate,
             QuestionPlan questionPlan,
             MathQuestionData mathQuestionData,
-            List<GeneratedQuestionChoice> choices
+            List<InternalGeneratedQuestionChoice> choices
     ) {
-        return new GeneratedQuestion(
+        return new InternalGeneratedQuestion(
                 questionTemplate.getSubject(),
                 questionTemplate,
                 questionPlan.getQuestionType(),

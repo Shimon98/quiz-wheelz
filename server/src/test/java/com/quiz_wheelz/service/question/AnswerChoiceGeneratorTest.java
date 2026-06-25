@@ -1,7 +1,7 @@
 package com.quiz_wheelz.service.question;
 
 import com.quiz_wheelz.common.QuestionRules;
-import com.quiz_wheelz.dto.question.GeneratedQuestionChoice;
+import com.quiz_wheelz.dto.question.internal.InternalGeneratedQuestionChoice;
 import com.quiz_wheelz.dto.question.MathQuestionData;
 import com.quiz_wheelz.enums.QuestionType;
 import com.quiz_wheelz.exception.ApiException;
@@ -31,7 +31,7 @@ class AnswerChoiceGeneratorTest {
     void shouldGenerateRequestedNumberOfChoices() {
         MathQuestionData questionData = createQuestionData(12);
 
-        List<GeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
+        List<InternalGeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
                 questionData,
                 QuestionRules.DEFAULT_CHOICES_COUNT
         );
@@ -44,13 +44,13 @@ class AnswerChoiceGeneratorTest {
     void shouldIncludeExactlyOneCorrectChoice() {
         MathQuestionData questionData = createQuestionData(12);
 
-        List<GeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
+        List<InternalGeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
                 questionData,
                 QuestionRules.DEFAULT_CHOICES_COUNT
         );
 
         long correctChoicesCount = choices.stream()
-                .filter(GeneratedQuestionChoice::isCorrect)
+                .filter(InternalGeneratedQuestionChoice::isCorrect)
                 .count();
 
         assertEquals(1, correctChoicesCount);
@@ -63,13 +63,13 @@ class AnswerChoiceGeneratorTest {
     void shouldGenerateUniqueAnswerValues() {
         MathQuestionData questionData = createQuestionData(12);
 
-        List<GeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
+        List<InternalGeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
                 questionData,
                 QuestionRules.DEFAULT_CHOICES_COUNT
         );
 
         long uniqueAnswerValuesCount = choices.stream()
-                .map(GeneratedQuestionChoice::getAnswerValue)
+                .map(InternalGeneratedQuestionChoice::getAnswerValue)
                 .distinct()
                 .count();
 
@@ -80,7 +80,7 @@ class AnswerChoiceGeneratorTest {
     void shouldAssignDisplayOrderStartingAtOne() {
         MathQuestionData questionData = createQuestionData(12);
 
-        List<GeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
+        List<InternalGeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
                 questionData,
                 QuestionRules.DEFAULT_CHOICES_COUNT
         );
@@ -100,13 +100,13 @@ class AnswerChoiceGeneratorTest {
                 List.of(10, 14, 15)
         );
 
-        List<GeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
+        List<InternalGeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
                 questionData,
                 QuestionRules.DEFAULT_CHOICES_COUNT
         );
 
         List<Integer> answerValues = choices.stream()
-                .map(GeneratedQuestionChoice::getAnswerValue)
+                .map(InternalGeneratedQuestionChoice::getAnswerValue)
                 .toList();
 
         assertTrue(answerValues.contains(12));
@@ -122,13 +122,13 @@ class AnswerChoiceGeneratorTest {
                 Arrays.asList(12, -1, 10, 10, null)
         );
 
-        List<GeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
+        List<InternalGeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
                 questionData,
                 QuestionRules.DEFAULT_CHOICES_COUNT
         );
 
         List<Integer> answerValues = choices.stream()
-                .map(GeneratedQuestionChoice::getAnswerValue)
+                .map(InternalGeneratedQuestionChoice::getAnswerValue)
                 .toList();
 
         assertEquals(QuestionRules.DEFAULT_CHOICES_COUNT, choices.size());
@@ -148,7 +148,7 @@ class AnswerChoiceGeneratorTest {
     void shouldGenerateFallbackDistractorsForZeroCorrectAnswer() {
         MathQuestionData questionData = createQuestionData(0);
 
-        List<GeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
+        List<InternalGeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
                 questionData,
                 QuestionRules.DEFAULT_CHOICES_COUNT
         );
@@ -158,7 +158,7 @@ class AnswerChoiceGeneratorTest {
                 choice.isCorrect() && choice.getAnswerValue().equals(0)
         ));
         assertTrue(choices.stream()
-                .map(GeneratedQuestionChoice::getAnswerValue)
+                .map(InternalGeneratedQuestionChoice::getAnswerValue)
                 .allMatch(value -> value >= QuestionRules.MIN_DISTRACTOR_VALUE));
     }
 
@@ -166,14 +166,14 @@ class AnswerChoiceGeneratorTest {
     void shouldKeepRandomDistractorsWithinConfiguredWindowForLargeCorrectAnswer() {
         MathQuestionData questionData = createQuestionData(100);
 
-        List<GeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
+        List<InternalGeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
                 questionData,
                 QuestionRules.DEFAULT_CHOICES_COUNT
         );
 
         choices.stream()
                 .filter(choice -> !choice.isCorrect())
-                .map(GeneratedQuestionChoice::getAnswerValue)
+                .map(InternalGeneratedQuestionChoice::getAnswerValue)
                 .forEach(answerValue -> assertTrue(
                         Math.abs(answerValue - 100)
                                 <= QuestionRules.MAX_DISTRACTOR_WINDOW + QuestionRules.MAX_CHOICES_COUNT
@@ -184,7 +184,7 @@ class AnswerChoiceGeneratorTest {
     void shouldSupportMinimumChoicesCount() {
         MathQuestionData questionData = createQuestionData(8);
 
-        List<GeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
+        List<InternalGeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
                 questionData,
                 QuestionRules.MIN_CHOICES_COUNT
         );
@@ -192,7 +192,7 @@ class AnswerChoiceGeneratorTest {
         assertEquals(QuestionRules.MIN_CHOICES_COUNT, choices.size());
 
         long correctChoicesCount = choices.stream()
-                .filter(GeneratedQuestionChoice::isCorrect)
+                .filter(InternalGeneratedQuestionChoice::isCorrect)
                 .count();
 
         assertEquals(1, correctChoicesCount);
@@ -202,7 +202,7 @@ class AnswerChoiceGeneratorTest {
     void shouldSupportMaximumChoicesCount() {
         MathQuestionData questionData = createQuestionData(8);
 
-        List<GeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
+        List<InternalGeneratedQuestionChoice> choices = answerChoiceGenerator.generateChoices(
                 questionData,
                 QuestionRules.MAX_CHOICES_COUNT
         );
@@ -210,7 +210,7 @@ class AnswerChoiceGeneratorTest {
         assertEquals(QuestionRules.MAX_CHOICES_COUNT, choices.size());
 
         long uniqueAnswerValuesCount = choices.stream()
-                .map(GeneratedQuestionChoice::getAnswerValue)
+                .map(InternalGeneratedQuestionChoice::getAnswerValue)
                 .distinct()
                 .count();
 
