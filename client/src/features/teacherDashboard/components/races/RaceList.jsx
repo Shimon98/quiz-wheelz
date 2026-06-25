@@ -10,6 +10,7 @@ export default function RaceList({
                                      onOpenRace,
                                      onEditRace,
                                      onCancelRace,
+                                     actionPresentation = "icon",
                                      className = "",
                                  }) {
     return (
@@ -27,6 +28,7 @@ export default function RaceList({
                         onOpenRace={onOpenRace}
                         onEditRace={onEditRace}
                         onCancelRace={onCancelRace}
+                        actionPresentation={actionPresentation}
                     />
                 </div>
             ))}

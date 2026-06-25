@@ -12,7 +12,6 @@ export default function TeacherDashboardPanels({
     return (
         <div className={TEACHER_DASHBOARD_PANEL_STYLES.wrapper}>
             <TeacherRacesPanel
-                className="h-full"
                 races={races}
                 isLoading={isRacesLoading}
                 error={racesError}

@@ -19,10 +19,13 @@ export default function RaceCardActions({
                                             onOpenRace,
                                             onEditRace,
                                             onCancelRace,
+                                            actionPresentation = "icon",
                                         }) {
     const canOpenRace = race.status !== RACE_STATUSES.CANCELLED && Boolean(onOpenRace);
     const canEdit = isRaceEditable(race.status) && Boolean(onEditRace);
     const canCancel = isRaceCancellable(race.status) && Boolean(onCancelRace);
+    const actionLabel = getRaceActionLabel(race.status, content);
+    const isExpandedAction = actionPresentation === "expanded";
 
     function handleOpenRace() {
         if (canOpenRace) {
@@ -34,15 +37,21 @@ export default function RaceCardActions({
         <>
             <RaceStatusBadge status={race.status} labels={statusLabels} />
 
-            <div className={RACE_CARD_COMPACT_STYLES.actions}>
+            <div
+                className={cx(
+                    RACE_CARD_COMPACT_STYLES.actions,
+                    isExpandedAction && RACE_CARD_COMPACT_STYLES.actionsExpanded,
+                )}
+            >
                 <Button
                     variant="plain"
                     size="icon"
                     onClick={handleOpenRace}
                     disabled={!canOpenRace}
-                    aria-label={getRaceActionLabel(race.status, content)}
+                    aria-label={actionLabel}
                     className={cx(
                         RACE_CARD_COMPACT_STYLES.openButton,
+                        isExpandedAction && RACE_CARD_COMPACT_STYLES.openButtonExpanded,
                         toneStyles.actionButton,
                     )}
                 >
@@ -54,6 +63,11 @@ export default function RaceCardActions({
                             toneStyles.actionIcon,
                         )}
                     />
+                    {isExpandedAction && (
+                        <span className={RACE_CARD_COMPACT_STYLES.openButtonLabel}>
+                            {actionLabel}
+                        </span>
+                    )}
                 </Button>
 
                 <RaceMoreMenu

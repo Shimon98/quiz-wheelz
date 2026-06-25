@@ -49,6 +49,7 @@ export default function CreateRaceModal({
             direction="rtl"
             closeOnEscape={!isSubmitting}
             closeOnOverlayClick={!isSubmitting}
+            overlayClassName={DASHBOARD_MODAL_STYLES.overlay}
             panelClassName={DASHBOARD_MODAL_STYLES.panel}
         >
             <ModalCloseButton
@@ -94,14 +95,16 @@ export default function CreateRaceModal({
                 </div>
             )}
 
-            <CreateRaceForm
-                subjects={subjects}
-                isSubmitting={isSubmitting}
-                isLoadingSubjects={isLoadingSubjects}
-                content={content}
-                onCancel={onClose}
-                onSubmit={onSubmit}
-            />
+            <div className={DASHBOARD_MODAL_STYLES.formWrapper}>
+                <CreateRaceForm
+                    subjects={subjects}
+                    isSubmitting={isSubmitting}
+                    isLoadingSubjects={isLoadingSubjects}
+                    content={content}
+                    onCancel={onClose}
+                    onSubmit={onSubmit}
+                />
+            </div>
         </Modal>
     );
 }

@@ -25,54 +25,56 @@ export default function CreateRaceForm({
 
     return (
         <form onSubmit={handleSubmit} className={CREATE_RACE_FORM_STYLES.form}>
-            <div className={CREATE_RACE_FORM_STYLES.fieldGrid}>
-                <div>
-                    <label
-                        htmlFor="create-race-title"
-                        className={DASHBOARD_TEXT_STYLES.fieldLabel}
-                    >
-                        {content.fields.title}
-                    </label>
+            <div className={CREATE_RACE_FORM_STYLES.fieldsScroll}>
+                <div className={CREATE_RACE_FORM_STYLES.fieldGrid}>
+                    <div>
+                        <label
+                            htmlFor="create-race-title"
+                            className={DASHBOARD_TEXT_STYLES.fieldLabel}
+                        >
+                            {content.fields.title}
+                        </label>
 
-                    <input
-                        id="create-race-title"
-                        name="title"
-                        value={values.title}
+                        <input
+                            id="create-race-title"
+                            name="title"
+                            value={values.title}
+                            onChange={handleChange}
+                            placeholder={content.fields.titlePlaceholder}
+                            className={DASHBOARD_FIELD_STYLES.input}
+                        />
+
+                        <p className={DASHBOARD_TEXT_STYLES.helperError}>
+                            {errors.title || "\u00A0"}
+                        </p>
+                    </div>
+
+                    <SubjectSelect
+                        id="create-race-subject"
+                        name="subjectId"
+                        value={values.subjectId}
+                        subjects={subjects}
+                        isLoading={isLoadingSubjects}
+                        error={errors.subjectId}
+                        content={content}
                         onChange={handleChange}
-                        placeholder={content.fields.titlePlaceholder}
-                        className={DASHBOARD_FIELD_STYLES.input}
                     />
-
-                    <p className={DASHBOARD_TEXT_STYLES.helperError}>
-                        {errors.title || "\u00A0"}
-                    </p>
                 </div>
 
-                <SubjectSelect
-                    id="create-race-subject"
-                    name="subjectId"
-                    value={values.subjectId}
-                    subjects={subjects}
-                    isLoading={isLoadingSubjects}
-                    error={errors.subjectId}
+                <MaxPlayersSelector
+                    value={values.maxPlayers}
+                    error={errors.maxPlayers}
+                    content={content}
+                    onChange={handleChange}
+                />
+
+                <RaceLengthSelector
+                    value={values.totalDistance}
+                    error={errors.totalDistance}
                     content={content}
                     onChange={handleChange}
                 />
             </div>
-
-            <MaxPlayersSelector
-                value={values.maxPlayers}
-                error={errors.maxPlayers}
-                content={content}
-                onChange={handleChange}
-            />
-
-            <RaceLengthSelector
-                value={values.totalDistance}
-                error={errors.totalDistance}
-                content={content}
-                onChange={handleChange}
-            />
 
             <div className={CREATE_RACE_FORM_STYLES.actions}>
                 <Button

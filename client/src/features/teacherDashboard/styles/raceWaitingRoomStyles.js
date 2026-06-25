@@ -1,9 +1,9 @@
 export const WAITING_ROOM_LAYOUT_STYLES = Object.freeze({
     panel:
-        "flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl bg-white/82 p-4 text-start shadow-md xl:p-5",
+        "flex min-h-0 flex-1 flex-col overflow-visible rounded-3xl bg-white/82 p-4 text-start shadow-md lg:overflow-hidden xl:p-5",
 
     body:
-        "min-h-0 flex-1 overflow-y-auto pe-1 pt-4",
+        "min-h-0 pt-4 lg:flex-1 lg:overflow-y-auto lg:pe-1",
 
     contentGrid:
         "grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]",
@@ -131,7 +131,7 @@ export const WAITING_ROOM_PARTICIPANT_STYLES = Object.freeze({
         "grid gap-4 border-t border-slate-100 pt-5",
 
     grid:
-        "grid grid-cols-4 gap-3",
+        "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4",
 
     slot:
         "relative flex h-28 flex-col items-center justify-end overflow-hidden rounded-2xl border p-2.5 text-center shadow-[0_8px_18px_rgba(15,23,42,0.07)] transition-shadow duration-200 hover:shadow-[0_14px_28px_rgba(15,23,42,0.14)]",

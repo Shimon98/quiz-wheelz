@@ -2,7 +2,6 @@ import { memo } from "react";
 import { useLocaleContent } from "../../../../constants/localeConstants.js";
 import { TEACHER_DASHBOARD_CONTENT } from "../../content/teacherDashboardContent.js";
 import { getTeacherDashboardAsset } from "../../constants/teacherDashboardAssets.js";
-import TeacherTopBar from "./TeacherTopBar.jsx";
 
 const HEIGHT_CLASSES_BY_SIZE = Object.freeze({
     default: "h-[140px] sm:h-[150px] lg:h-[155px]",
@@ -20,10 +19,7 @@ const TEACHER_HERO_BANNER_STYLES = Object.freeze({
         "absolute inset-0 bg-gradient-to-l from-sky-950/80 via-sky-900/45 to-transparent",
 
     content:
-        "relative z-10 flex h-full flex-col justify-between p-4",
-
-    topBarPosition:
-        "ml-auto",
+        "relative z-10 flex h-full flex-col justify-end p-4",
 
     textBlock:
         "ml-auto max-w-md text-right",
@@ -35,12 +31,7 @@ const TEACHER_HERO_BANNER_STYLES = Object.freeze({
         "mt-1 text-sm font-semibold text-sky-50 md:text-base",
 });
 
-function TeacherHeroBanner({
-                               teacherName,
-                               isLoggingOut,
-                               onLogout,
-                               size = "default",
-                           }) {
+function TeacherHeroBanner({ size = "default" }) {
     const content = useLocaleContent(TEACHER_DASHBOARD_CONTENT).hero;
     const heroImage = getTeacherDashboardAsset("headerHero");
     const heightClasses = HEIGHT_CLASSES_BY_SIZE[size] ?? HEIGHT_CLASSES_BY_SIZE.default;
@@ -67,14 +58,6 @@ function TeacherHeroBanner({
             )}
 
             <div className={TEACHER_HERO_BANNER_STYLES.content}>
-                <div className={TEACHER_HERO_BANNER_STYLES.topBarPosition}>
-                    <TeacherTopBar
-                        teacherName={teacherName}
-                        isLoggingOut={isLoggingOut}
-                        onLogout={onLogout}
-                    />
-                </div>
-
                 <div className={TEACHER_HERO_BANNER_STYLES.textBlock}>
                     <h2 className={TEACHER_HERO_BANNER_STYLES.title}>
                         {content.title}
