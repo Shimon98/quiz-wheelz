@@ -6,8 +6,8 @@ import com.quiz_wheelz.dto.question.QuestionPlan;
 import com.quiz_wheelz.enums.MathOperandRole;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
-import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +36,8 @@ public class MathOperandGenerator {
             QuestionPlan questionPlan,
             MathOperandRole... operandRoles
     ) {
+        validateInput(questionPlan, operandRoles);
+
         List<Integer> operands = new ArrayList<>();
 
         for (MathOperandRole operandRole : operandRoles) {
@@ -59,14 +61,27 @@ public class MathOperandGenerator {
         );
     }
 
+    private void validateInput(
+            QuestionPlan questionPlan,
+            MathOperandRole... operandRoles
+    ) {
+        mathQuestionPlanValidator.validateOperandGenerationInput(questionPlan);
+
+        if (operandRoles == null || operandRoles.length == 0) {
+            throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
+        }
+
+        for (MathOperandRole operandRole : operandRoles) {
+            if (operandRole == null) {
+                throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
+            }
+        }
+    }
+
     private int randomOperand(
             QuestionPlan questionPlan,
             MathOperandRole operandRole
     ) {
-        if (operandRole == null) {
-            throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
-        }
-
         return switch (operandRole) {
             case ANY -> randomValue(
                     questionPlan.getMinValue(),

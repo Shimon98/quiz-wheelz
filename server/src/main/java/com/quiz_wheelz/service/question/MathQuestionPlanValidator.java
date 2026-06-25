@@ -12,8 +12,7 @@ import org.springframework.stereotype.Component;
 public class MathQuestionPlanValidator {
 
     public void validate(QuestionPlan questionPlan) {
-        validateRequiredFields(questionPlan);
-        validateValueRange(questionPlan);
+        validateOperandGenerationInput(questionPlan);
 
         if (questionPlan.getGenerationPattern() == QuestionGenerationPattern.BINARY_OPERATION) {
             validateBinaryQuestionPlan(questionPlan);
@@ -21,6 +20,11 @@ public class MathQuestionPlanValidator {
         }
 
         validateExpressionQuestionPlan(questionPlan);
+    }
+
+    public void validateOperandGenerationInput(QuestionPlan questionPlan) {
+        validateRequiredFields(questionPlan);
+        validateValueRange(questionPlan);
     }
 
     public void validateDivisionRange(QuestionPlan questionPlan) {

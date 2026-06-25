@@ -13,10 +13,14 @@ public enum MathExpressionPattern {
             MathQuestionTextLayout.STANDARD
     ),
 
-    MULTIPLICATION_CHAIN(
+    SMALL_MULTIPLICATION_CHAIN(
             QuestionType.MULTIPLICATION,
             List.of(MathOperator.MULTIPLICATION, MathOperator.MULTIPLICATION),
-            List.of(MathOperandRole.ANY, MathOperandRole.ANY, MathOperandRole.ANY),
+            List.of(
+                    MathOperandRole.MULTIPLIER,
+                    MathOperandRole.MULTIPLIER,
+                    MathOperandRole.MULTIPLIER
+            ),
             MathQuestionTextLayout.STANDARD
     ) {
         @Override
