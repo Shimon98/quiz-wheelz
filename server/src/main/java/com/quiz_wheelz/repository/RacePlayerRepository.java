@@ -21,6 +21,8 @@ public interface RacePlayerRepository extends JpaRepository<RacePlayer, Long> {
 
     Optional<RacePlayer> findByIdAndRace(Long playerId, Race race);
 
+    Optional<RacePlayer> findByIdAndRaceId(Long playerId, Long raceId);
+
     long countByRace(Race race);
 
     boolean existsByRaceAndLaneNumber(Race race, Integer laneNumber);

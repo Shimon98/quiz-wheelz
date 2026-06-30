@@ -21,6 +21,9 @@ public final class ApiMessages {
     public static final String RACE_STARTED_SUCCESSFULLY =
             "Race started successfully";
 
+    public static final String CURRENT_STUDENT_QUESTION_LOADED_SUCCESSFULLY =
+            "Current student question loaded successfully";
+
     private ApiMessages() {
     }
 }
