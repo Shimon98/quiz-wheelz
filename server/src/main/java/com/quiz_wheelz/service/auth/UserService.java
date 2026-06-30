@@ -1,4 +1,4 @@
-package com.quiz_wheelz.service;
+package com.quiz_wheelz.service.auth;
 
 import com.quiz_wheelz.entitys.User;
 import com.quiz_wheelz.exception.ApiException;

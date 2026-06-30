@@ -1,6 +1,6 @@
 package com.quiz_wheelz.controller;
 import com.quiz_wheelz.dto.teacher.StartRaceResponse;
-import com.quiz_wheelz.service.TeacherRaceStartService;
+import com.quiz_wheelz.service.teacher.TeacherRaceStartService;
 import com.quiz_wheelz.common.ApiMessages;
 import com.quiz_wheelz.common.ApiPaths;
 import com.quiz_wheelz.common.ApiResponse;
@@ -8,8 +8,8 @@ import com.quiz_wheelz.dto.race.CreateRaceRequest;
 import com.quiz_wheelz.dto.race.RaceSummaryResponse;
 import com.quiz_wheelz.dto.teacher.TeacherRaceRoomResponse;
 import com.quiz_wheelz.security.SecurityExpressions;
-import com.quiz_wheelz.service.RaceService;
-import com.quiz_wheelz.service.TeacherRaceRoomService;
+import com.quiz_wheelz.service.race.RaceService;
+import com.quiz_wheelz.service.teacher.TeacherRaceRoomService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

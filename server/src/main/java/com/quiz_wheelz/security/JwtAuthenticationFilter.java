@@ -1,8 +1,8 @@
 package com.quiz_wheelz.security;
 
 import com.quiz_wheelz.entitys.User;
-import com.quiz_wheelz.service.JwtService;
-import com.quiz_wheelz.service.UserService;
+import com.quiz_wheelz.service.auth.JwtService;
+import com.quiz_wheelz.service.auth.UserService;
 import com.quiz_wheelz.utils.CookieUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

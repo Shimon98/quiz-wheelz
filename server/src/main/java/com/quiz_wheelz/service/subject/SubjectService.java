@@ -1,4 +1,4 @@
-package com.quiz_wheelz.service;
+package com.quiz_wheelz.service.subject;
 
 import com.quiz_wheelz.dto.subject.SubjectResponse;
 import com.quiz_wheelz.entitys.Subject;

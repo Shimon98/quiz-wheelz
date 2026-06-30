@@ -1,4 +1,4 @@
-package com.quiz_wheelz.service;
+package com.quiz_wheelz.service.raceplayer;
 
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;

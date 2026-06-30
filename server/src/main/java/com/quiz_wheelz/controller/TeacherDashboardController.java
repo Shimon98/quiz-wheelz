@@ -5,7 +5,7 @@ import com.quiz_wheelz.common.ApiPaths;
 import com.quiz_wheelz.common.ApiResponse;
 import com.quiz_wheelz.dto.teacher.TeacherDashboardResponse;
 import com.quiz_wheelz.security.SecurityExpressions;
-import com.quiz_wheelz.service.TeacherDashboardService;
+import com.quiz_wheelz.service.teacher.TeacherDashboardService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
