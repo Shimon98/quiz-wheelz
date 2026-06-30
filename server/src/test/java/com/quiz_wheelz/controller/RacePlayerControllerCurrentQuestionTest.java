@@ -16,6 +16,7 @@ import com.quiz_wheelz.enums.QuestionType;
 import com.quiz_wheelz.service.CurrentRacePlayerService;
 import com.quiz_wheelz.service.RacePlayerJoinService;
 import com.quiz_wheelz.service.question.RacePlayerQuestionPlanService;
+import com.quiz_wheelz.service.question.StudentAnswerSubmissionService;
 import com.quiz_wheelz.service.question.StudentQuestionDeliveryService;
 import com.quiz_wheelz.utils.CookieUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,6 +52,9 @@ class RacePlayerControllerCurrentQuestionTest {
 
     @Mock
     private StudentQuestionDeliveryService studentQuestionDeliveryService;
+
+    @Mock
+    private StudentAnswerSubmissionService studentAnswerSubmissionService;
 
     @Mock
     private HttpServletRequest request;
@@ -93,7 +97,8 @@ class RacePlayerControllerCurrentQuestionTest {
                 cookieUtils,
                 currentRacePlayerService,
                 racePlayerQuestionPlanService,
-                studentQuestionDeliveryService
+                studentQuestionDeliveryService,
+                studentAnswerSubmissionService
         );
     }
 

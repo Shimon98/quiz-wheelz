@@ -24,6 +24,9 @@ public final class ApiMessages {
     public static final String CURRENT_STUDENT_QUESTION_LOADED_SUCCESSFULLY =
             "Current student question loaded successfully";
 
+    public static final String STUDENT_ANSWER_SUBMITTED_SUCCESSFULLY =
+            "Student answer submitted successfully";
+
     private ApiMessages() {
     }
 }
