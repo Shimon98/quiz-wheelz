@@ -40,6 +40,21 @@ public final class ErrorMessages {
     public static final String QUESTION_TEMPLATE_NOT_AVAILABLE_FOR_PLAYER =
             "No active question template is available for the current player state";
 
+    public static final String QUESTION_NOT_FOUND_FOR_PLAYER =
+            "Question was not found for the current player";
+
+    public static final String QUESTION_NOT_ACTIVE =
+            "Question is not active";
+
+    public static final String QUESTION_EXPIRED =
+            "Question has expired";
+
+    public static final String QUESTION_CHOICE_NOT_FOUND =
+            "Question choice was not found for the submitted question";
+
+    public static final String INVALID_ANSWER_SUBMISSION =
+            "Invalid answer submission";
+
     private ErrorMessages() {
     }
 }
