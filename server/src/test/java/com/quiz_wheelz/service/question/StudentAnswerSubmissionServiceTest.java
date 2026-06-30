@@ -15,11 +15,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -278,6 +280,20 @@ class StudentAnswerSubmissionServiceTest {
 
         assertEquals(ErrorCode.QUESTION_CHOICE_NOT_FOUND, exception.getErrorCode());
         verify(playerQuestionRepository, never()).save(question);
+    }
+
+    @Test
+    void shouldNotRollbackApiExceptionSoExpiredQuestionStatusCanPersist()
+            throws NoSuchMethodException {
+        Transactional transactional = StudentAnswerSubmissionService.class
+                .getMethod(
+                        "submitAnswer",
+                        RacePlayer.class,
+                        SubmitAnswerRequest.class
+                )
+                .getAnnotation(Transactional.class);
+
+        assertTrue(Arrays.asList(transactional.noRollbackFor()).contains(ApiException.class));
     }
 
     private SubmitAnswerRequest createRequest(Long questionId, Long choiceId) {

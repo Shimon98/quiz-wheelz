@@ -48,7 +48,7 @@ public class StudentAnswerSubmissionService {
         this.clock = Objects.requireNonNull(clock);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = ApiException.class)
     public SubmitAnswerResponse submitAnswer(
             RacePlayer racePlayer,
             SubmitAnswerRequest request
