@@ -14,7 +14,9 @@
 }
 
 html {
-  direction: rtl;
+  /* Direction is driven by the html `dir` attribute (set in index.html and
+     kept in sync by LanguageProvider). Do not hardcode `direction` here — an
+     author rule would override the attribute and block English LTR. */
   font-family: "Fredoka", "Varela Round", system-ui, Arial, sans-serif;
 }
 
