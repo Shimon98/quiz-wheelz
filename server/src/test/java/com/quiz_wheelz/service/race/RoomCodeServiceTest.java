@@ -1,4 +1,4 @@
-package com.quiz_wheelz.service;
+package com.quiz_wheelz.service.race;
 
 import com.quiz_wheelz.repository.RaceRepository;
 import org.junit.jupiter.api.Test;

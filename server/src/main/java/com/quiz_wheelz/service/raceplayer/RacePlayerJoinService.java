@@ -1,4 +1,4 @@
-package com.quiz_wheelz.service;
+package com.quiz_wheelz.service.raceplayer;
 
 import com.quiz_wheelz.common.RacePlayerRules;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerJoinRequest;
@@ -13,6 +13,7 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.repository.RaceRepository;
+import com.quiz_wheelz.service.auth.JwtService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

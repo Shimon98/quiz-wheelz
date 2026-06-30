@@ -1,4 +1,4 @@
-package com.quiz_wheelz.service;
+package com.quiz_wheelz.service.race;
 
 import com.quiz_wheelz.dto.race.CreateRaceRequest;
 import com.quiz_wheelz.dto.race.RaceSummaryResponse;
@@ -7,6 +7,9 @@ import com.quiz_wheelz.entitys.Subject;
 import com.quiz_wheelz.entitys.User;
 import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.repository.RaceRepository;
+import com.quiz_wheelz.service.auth.CurrentUserService;
+import com.quiz_wheelz.service.auth.UserService;
+import com.quiz_wheelz.service.subject.SubjectService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
