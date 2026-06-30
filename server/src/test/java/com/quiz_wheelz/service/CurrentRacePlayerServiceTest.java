@@ -1,7 +1,9 @@
 package com.quiz_wheelz.service;
 
+import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.RacePlayerStatus;
+import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
@@ -44,13 +46,7 @@ class CurrentRacePlayerServiceTest {
         CurrentRacePlayerService service = createService();
         RacePlayer racePlayer = createRacePlayer(RacePlayerStatus.RACING);
 
-        when(cookieUtils.getRacePlayerCookieValue(request)).thenReturn(Optional.of(TOKEN));
-        when(jwtService.isTokenValid(TOKEN)).thenReturn(true);
-        when(jwtService.extractTokenType(TOKEN)).thenReturn(JwtTokenTypes.RACE_PLAYER);
-        when(jwtService.extractRaceId(TOKEN)).thenReturn(RACE_ID);
-        when(jwtService.extractRacePlayerId(TOKEN)).thenReturn(RACE_PLAYER_ID);
-        when(racePlayerRepository.findByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.of(racePlayer));
+        mockValidTokenResolvingTo(racePlayer);
 
         RacePlayer result = service.resolveCurrentRacePlayer(request);
 
@@ -140,13 +136,7 @@ class CurrentRacePlayerServiceTest {
     void shouldRejectRacePlayerThatIsNotRacing() {
         RacePlayer racePlayer = createRacePlayer(RacePlayerStatus.WAITING);
 
-        when(cookieUtils.getRacePlayerCookieValue(request)).thenReturn(Optional.of(TOKEN));
-        when(jwtService.isTokenValid(TOKEN)).thenReturn(true);
-        when(jwtService.extractTokenType(TOKEN)).thenReturn(JwtTokenTypes.RACE_PLAYER);
-        when(jwtService.extractRaceId(TOKEN)).thenReturn(RACE_ID);
-        when(jwtService.extractRacePlayerId(TOKEN)).thenReturn(RACE_PLAYER_ID);
-        when(racePlayerRepository.findByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.of(racePlayer));
+        mockValidTokenResolvingTo(racePlayer);
 
         ApiException exception = assertThrows(
                 ApiException.class,
@@ -154,6 +144,52 @@ class CurrentRacePlayerServiceTest {
         );
 
         assertEquals(ErrorCode.RACE_PLAYER_NOT_RACING, exception.getErrorCode());
+    }
+
+    @Test
+    void shouldRejectRacePlayerWithoutRace() {
+        RacePlayer racePlayer = new RacePlayer();
+        racePlayer.setStatus(RacePlayerStatus.RACING);
+
+        mockValidTokenResolvingTo(racePlayer);
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> createService().resolveCurrentRacePlayer(request)
+        );
+
+        assertEquals(ErrorCode.RACE_NOT_IN_PROGRESS, exception.getErrorCode());
+    }
+
+    @Test
+    void shouldRejectRaceWhenRaceIsNotInProgress() {
+        RacePlayer racePlayer = createRacePlayer(
+                RacePlayerStatus.RACING,
+                RaceStatus.WAITING_FOR_PLAYERS
+        );
+
+        mockValidTokenResolvingTo(racePlayer);
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> createService().resolveCurrentRacePlayer(request)
+        );
+
+        assertEquals(ErrorCode.RACE_NOT_IN_PROGRESS, exception.getErrorCode());
+    }
+
+    @Test
+    void shouldResolveRacePlayerOnlyWhenPlayerIsRacingAndRaceIsInProgress() {
+        RacePlayer racePlayer = createRacePlayer(
+                RacePlayerStatus.RACING,
+                RaceStatus.IN_PROGRESS
+        );
+
+        mockValidTokenResolvingTo(racePlayer);
+
+        RacePlayer result = createService().resolveCurrentRacePlayer(request);
+
+        assertSame(racePlayer, result);
     }
 
     private CurrentRacePlayerService createService() {
@@ -164,9 +200,30 @@ class CurrentRacePlayerServiceTest {
         );
     }
 
-    private RacePlayer createRacePlayer(RacePlayerStatus status) {
+    private void mockValidTokenResolvingTo(RacePlayer racePlayer) {
+        when(cookieUtils.getRacePlayerCookieValue(request)).thenReturn(Optional.of(TOKEN));
+        when(jwtService.isTokenValid(TOKEN)).thenReturn(true);
+        when(jwtService.extractTokenType(TOKEN)).thenReturn(JwtTokenTypes.RACE_PLAYER);
+        when(jwtService.extractRaceId(TOKEN)).thenReturn(RACE_ID);
+        when(jwtService.extractRacePlayerId(TOKEN)).thenReturn(RACE_PLAYER_ID);
+        when(racePlayerRepository.findByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
+                .thenReturn(Optional.of(racePlayer));
+    }
+
+    private RacePlayer createRacePlayer(RacePlayerStatus playerStatus) {
+        return createRacePlayer(playerStatus, RaceStatus.IN_PROGRESS);
+    }
+
+    private RacePlayer createRacePlayer(
+            RacePlayerStatus playerStatus,
+            RaceStatus raceStatus
+    ) {
+        Race race = new Race();
+        race.setStatus(raceStatus);
+
         RacePlayer racePlayer = new RacePlayer();
-        racePlayer.setStatus(status);
+        racePlayer.setStatus(playerStatus);
+        racePlayer.setRace(race);
 
         return racePlayer;
     }

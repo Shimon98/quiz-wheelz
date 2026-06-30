@@ -1,7 +1,9 @@
 package com.quiz_wheelz.service;
 
+import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.RacePlayerStatus;
+import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
@@ -34,7 +36,7 @@ public class CurrentRacePlayerService {
         validateRacePlayerToken(token);
 
         RacePlayer racePlayer = findRacePlayerFromToken(token);
-        validateRacePlayerIsRacing(racePlayer);
+        validateRacePlayerCanReceiveQuestion(racePlayer);
 
         return racePlayer;
     }
@@ -81,9 +83,22 @@ public class CurrentRacePlayerService {
         }
     }
 
+    private void validateRacePlayerCanReceiveQuestion(RacePlayer racePlayer) {
+        validateRacePlayerIsRacing(racePlayer);
+        validateRaceIsInProgress(racePlayer);
+    }
+
     private void validateRacePlayerIsRacing(RacePlayer racePlayer) {
         if (racePlayer.getStatus() != RacePlayerStatus.RACING) {
             throw new ApiException(ErrorCode.RACE_PLAYER_NOT_RACING);
+        }
+    }
+
+    private void validateRaceIsInProgress(RacePlayer racePlayer) {
+        Race race = racePlayer.getRace();
+
+        if (race == null || race.getStatus() != RaceStatus.IN_PROGRESS) {
+            throw new ApiException(ErrorCode.RACE_NOT_IN_PROGRESS);
         }
     }
 }

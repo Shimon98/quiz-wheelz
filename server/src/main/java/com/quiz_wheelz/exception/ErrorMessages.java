@@ -10,6 +10,8 @@ public final class ErrorMessages {
     public static final String INVALID_PATH_PARAMETER = "Invalid path parameter";
     public static final String RACE_CANNOT_START_WITHOUT_PLAYERS = "Race cannot start without players";
     public static final String RACE_CANNOT_START_IN_CURRENT_STATUS = "Race cannot start in its current status";
+    public static final String RACE_NOT_IN_PROGRESS =
+            "Race is not currently in progress";
 
     public static final String QUESTION_TEMPLATE_NOT_FOUND =
             "Active question template not found";
