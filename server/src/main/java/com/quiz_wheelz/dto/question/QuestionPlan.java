@@ -42,7 +42,7 @@ public class QuestionPlan {
                 maxValue,
                 timeLimitSeconds,
                 choicesCount,
-                QuestionGenerationPattern.BINARY_OPERATION,
+                QuestionRules.DEFAULT_GENERATION_PATTERN,
                 adaptiveMode,
                 assistanceLevel
         );
@@ -72,9 +72,13 @@ public class QuestionPlan {
                 ? QuestionRules.DEFAULT_CHOICES_COUNT
                 : choicesCount;
         this.generationPattern = generationPattern == null
-                ? QuestionGenerationPattern.BINARY_OPERATION
+                ? QuestionRules.DEFAULT_GENERATION_PATTERN
                 : generationPattern;
-        this.adaptiveMode = adaptiveMode == null ? AdaptiveMode.BASIC : adaptiveMode;
-        this.assistanceLevel = assistanceLevel == null ? AssistanceLevel.NONE : assistanceLevel;
+        this.adaptiveMode = adaptiveMode == null
+                ? QuestionRules.DEFAULT_ADAPTIVE_MODE
+                : adaptiveMode;
+        this.assistanceLevel = assistanceLevel == null
+                ? QuestionRules.DEFAULT_ASSISTANCE_LEVEL
+                : assistanceLevel;
     }
 }

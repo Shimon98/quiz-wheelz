@@ -24,6 +24,8 @@ public interface PlayerQuestionRepository extends JpaRepository<PlayerQuestion, 
             RacePlayer racePlayer
     );
 
+    long countByRacePlayer(RacePlayer racePlayer);
+
     boolean existsByRacePlayerAndStatus(
             RacePlayer racePlayer,
             PlayerQuestionStatus status

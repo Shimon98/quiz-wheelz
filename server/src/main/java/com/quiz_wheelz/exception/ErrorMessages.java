@@ -23,6 +23,21 @@ public final class ErrorMessages {
     public static final String INVALID_QUESTION_TEMPLATE_CONFIG =
             "Invalid question template configuration";
 
+    public static final String RACE_PLAYER_TOKEN_MISSING =
+            "Race player token is missing";
+
+    public static final String INVALID_RACE_PLAYER_TOKEN =
+            "Invalid race player token";
+
+    public static final String RACE_PLAYER_NOT_FOUND =
+            "Race player not found";
+
+    public static final String RACE_PLAYER_NOT_RACING =
+            "Race player is not currently racing";
+
+    public static final String QUESTION_TEMPLATE_NOT_AVAILABLE_FOR_PLAYER =
+            "No active question template is available for the current player state";
+
     private ErrorMessages() {
     }
 }

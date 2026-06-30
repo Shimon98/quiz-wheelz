@@ -1,5 +1,8 @@
 package com.quiz_wheelz.common;
 
+import com.quiz_wheelz.enums.AdaptiveMode;
+import com.quiz_wheelz.enums.AssistanceLevel;
+import com.quiz_wheelz.enums.QuestionGenerationPattern;
 import com.quiz_wheelz.enums.QuestionType;
 
 import java.util.Set;
@@ -11,6 +14,13 @@ public final class QuestionRules {
     public static final int DEFAULT_CHOICES_COUNT = 4;
     public static final int MIN_CHOICES_COUNT = 2;
     public static final int MAX_CHOICES_COUNT = 6;
+
+    public static final QuestionGenerationPattern DEFAULT_GENERATION_PATTERN =
+            QuestionGenerationPattern.BINARY_OPERATION;
+
+    public static final AdaptiveMode DEFAULT_ADAPTIVE_MODE = AdaptiveMode.BASIC;
+
+    public static final AssistanceLevel DEFAULT_ASSISTANCE_LEVEL = AssistanceLevel.NONE;
 
     public static final int DEFAULT_TIME_LIMIT_SECONDS = 30;
     public static final int MIN_TIME_LIMIT_SECONDS = 5;
