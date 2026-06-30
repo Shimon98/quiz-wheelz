@@ -5,6 +5,8 @@ public enum QuestionType {
     SUBTRACTION,
     MULTIPLICATION,
     DIVISION,
+    ORDER_OF_OPERATIONS,
+    PARENTHESES,
     TEXT,
     CUSTOM
 }

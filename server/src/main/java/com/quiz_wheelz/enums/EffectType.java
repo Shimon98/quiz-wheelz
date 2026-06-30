@@ -1,0 +1,14 @@
+package com.quiz_wheelz.enums;
+
+public enum EffectType {
+    SPEED_BOOST,
+    SPEED_SLOW,
+    PROGRESS_BONUS,
+    PROGRESS_PENALTY,
+    SCORE_BONUS,
+    EXTRA_TIME,
+    EASIER_NEXT_QUESTION,
+    HARDER_NEXT_QUESTION,
+    OPERATOR_ASSIST,
+    QUESTION_HINT
+}
