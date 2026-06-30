@@ -55,7 +55,7 @@ export const PUBLIC_ENTRY_LAYOUT_STYLES = Object.freeze({
 /*
  * Per-variant placement.
  *
- * teacher (desktop split): explicit ordering, NOT relying on grid/RTL auto
+ * split (desktop two-column): explicit ordering, NOT relying on grid/RTL auto
  * placement. content -> order-1 (right in RTL), visual -> order-2 (left in RTL).
  */
 export const PUBLIC_ENTRY_VARIANT_STYLES = Object.freeze({
@@ -69,11 +69,18 @@ export const PUBLIC_ENTRY_VARIANT_STYLES = Object.freeze({
     content: "w-full",
     visual: "w-full max-w-md",
   },
-  [PUBLIC_ENTRY_VARIANTS.TEACHER]: {
+  [PUBLIC_ENTRY_VARIANTS.SPLIT]: {
     shell:
       "max-w-md md:max-w-5xl md:flex-row md:items-stretch md:justify-center md:gap-10",
     content: "w-full md:order-1 md:max-w-md md:self-center",
     visual:
       "hidden md:order-2 md:flex md:flex-1 md:items-center md:justify-center",
+  },
+  // Wide single column; the screen builds its own hero/content grid inside
+  // `children`. No built-in visual slot here (visual stays hidden).
+  [PUBLIC_ENTRY_VARIANTS.SHOWCASE]: {
+    shell: "max-w-md lg:max-w-5xl",
+    content: "w-full",
+    visual: "hidden",
   },
 });

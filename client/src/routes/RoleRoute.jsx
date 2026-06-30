@@ -6,7 +6,7 @@ export default function RoleRoute({ children, allowedRoles }) {
   const user = useAuthStore((state) => state.user);
 
   if (!user) {
-    return <Navigate to={ROUTES.LOGIN} replace />;
+    return <Navigate to={ROUTES.LANDING} replace />;
   }
 
   if (!allowedRoles.includes(user.role)) {

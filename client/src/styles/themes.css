@@ -28,6 +28,10 @@ html[data-theme="light"] {
   --qw-accent: var(--qw-gold);
   --qw-accent-contrast: var(--qw-ink);
 
+  /* Role tones — soft media-circle backgrounds (student green / teacher blue) */
+  --qw-role-student-soft: var(--qw-green-soft);
+  --qw-role-teacher-soft: #e7f1fb;
+
   /* Status */
   --qw-success: #1fa24c;
   --qw-warning: #e8920c;
@@ -61,6 +65,10 @@ html[data-theme="dark"] {
   --qw-secondary-contrast: #06192b;
   --qw-accent: var(--qw-banana);
   --qw-accent-contrast: var(--qw-ink);
+
+  /* Role tones — soft media-circle backgrounds (student green / teacher blue) */
+  --qw-role-student-soft: #173a2a;
+  --qw-role-teacher-soft: #173a55;
 
   /* Status */
   --qw-success: #36c063;

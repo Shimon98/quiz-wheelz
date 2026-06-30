@@ -1,4 +1,5 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import PublicLandingPage from "../features/publicLanding/pages/PublicLandingPage";
 import LoginPage from "../features/auth/pages/LoginPage";
 import NotFoundPage from "../features/commonPages/NotFoundPage";
 import UnauthorizedPage from "../features/commonPages/UnauthorizedPage";
@@ -14,7 +15,7 @@ export default function AppRouter() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<Navigate to={ROUTES.LOGIN} replace />} />
+                <Route path={ROUTES.LANDING} element={<PublicLandingPage />} />
 
                 <Route path={ROUTES.LOGIN} element={<LoginPage />} />
 

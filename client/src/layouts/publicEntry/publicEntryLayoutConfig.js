@@ -7,8 +7,14 @@
 
 export const PUBLIC_ENTRY_VARIANTS = Object.freeze({
   STUDENT: "student",
-  TEACHER: "teacher",
+  // SPLIT = desktop two-column layout shape (content + visual side by side).
+  // Not role-specific; named for the shape so any screen can use it.
+  SPLIT: "split",
   CENTERED: "centered",
+  // SHOWCASE = wide single-column shell for hero + content compositions where
+  // the screen lays out its own internal grid (e.g. the landing page). Not
+  // role-specific, not landing-only.
+  SHOWCASE: "showcase",
 });
 
 export const DEFAULT_PUBLIC_ENTRY_VARIANT = PUBLIC_ENTRY_VARIANTS.CENTERED;

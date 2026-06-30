@@ -1,19 +1,24 @@
 /*
  * English strings for public entry screens (publicEntry namespace).
  *
- * Prepared now for the upcoming Landing phase (C-07). The Landing page itself
- * is NOT built in C-06 — these keys only seed the namespace.
+ * Used by the public Landing page (C-07). Brand name "QuizWheelz" is a proper
+ * noun and lives as a constant in the feature config, not here.
  */
 export default {
   welcome: {
     title: "Welcome to QuizWheelz",
     subtitle: "A classroom quiz race — join or run a race.",
   },
+  landing: {
+    tagline: "A classroom quiz race",
+    rolePrompt: "Choose how to continue",
+  },
   role: {
     student: {
       title: "I'm a student",
       description: "Join a race with a room code.",
       action: "Join a race",
+      comingSoon: "Coming soon",
     },
     teacher: {
       title: "I'm a teacher",
