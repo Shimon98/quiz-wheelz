@@ -1,5 +1,6 @@
 package com.quiz_wheelz.config;
 
+import com.quiz_wheelz.common.QuestionTemplateSeedRules;
 import com.quiz_wheelz.entitys.QuestionTemplate;
 import com.quiz_wheelz.entitys.Subject;
 import com.quiz_wheelz.entitys.User;
@@ -10,9 +11,12 @@ import com.quiz_wheelz.enums.UserRole;
 import com.quiz_wheelz.repository.QuestionTemplateRepository;
 import com.quiz_wheelz.repository.SubjectRepository;
 import com.quiz_wheelz.repository.UserRepository;
+import lombok.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -23,11 +27,6 @@ public class DataInitializer implements CommandLineRunner {
 
     private static final String DEFAULT_SUBJECT_CODE = "MATH";
     private static final String DEFAULT_SUBJECT_NAME = "Math";
-
-    private static final int DEFAULT_MIN_VALUE = 1;
-    private static final int DEFAULT_MAX_VALUE = 10;
-    private static final int DEFAULT_TIME_LIMIT_SECONDS = 30;
-    private static final int DEFAULT_CHOICES_COUNT = 4;
 
     private final UserRepository userRepository;
     private final SubjectRepository subjectRepository;
@@ -78,22 +77,18 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void createDefaultMathQuestionTemplatesIfMissing(Subject mathSubject) {
-        createTemplateIfMissing(mathSubject, QuestionType.ADDITION, Difficulty.EASY);
-        createTemplateIfMissing(mathSubject, QuestionType.SUBTRACTION, Difficulty.EASY);
-        createTemplateIfMissing(mathSubject, QuestionType.MULTIPLICATION, Difficulty.EASY);
-        createTemplateIfMissing(mathSubject, QuestionType.DIVISION, Difficulty.EASY);
+        mathTemplateSeeds().forEach(seed -> createTemplateIfMissing(mathSubject, seed));
     }
 
     private void createTemplateIfMissing(
             Subject subject,
-            QuestionType questionType,
-            Difficulty difficulty
+            MathTemplateSeed seed
     ) {
         boolean exists = questionTemplateRepository.existsBySubjectAndTypeAndDifficultyAndGenerationPattern(
                 subject,
-                questionType,
-                difficulty,
-                QuestionGenerationPattern.BINARY_OPERATION
+                seed.getQuestionType(),
+                seed.getDifficulty(),
+                seed.getGenerationPattern()
         );
 
         if (exists) {
@@ -102,15 +97,94 @@ public class DataInitializer implements CommandLineRunner {
 
         QuestionTemplate template = new QuestionTemplate();
         template.setSubject(subject);
-        template.setType(questionType);
-        template.setDifficulty(difficulty);
-        template.setGenerationPattern(QuestionGenerationPattern.BINARY_OPERATION);
-        template.setMinValue(DEFAULT_MIN_VALUE);
-        template.setMaxValue(DEFAULT_MAX_VALUE);
-        template.setTimeLimitSeconds(DEFAULT_TIME_LIMIT_SECONDS);
-        template.setChoicesCount(DEFAULT_CHOICES_COUNT);
+        template.setType(seed.getQuestionType());
+        template.setDifficulty(seed.getDifficulty());
+        template.setGenerationPattern(seed.getGenerationPattern());
+        template.setMinValue(seed.getMinValue());
+        template.setMaxValue(seed.getMaxValue());
+        template.setTimeLimitSeconds(seed.getTimeLimitSeconds());
+        template.setChoicesCount(seed.getChoicesCount());
         template.setActive(true);
 
         questionTemplateRepository.save(template);
+    }
+
+    private List<MathTemplateSeed> mathTemplateSeeds() {
+        return List.of(
+                seed(QuestionType.ADDITION, Difficulty.EASY, QuestionGenerationPattern.BINARY_OPERATION),
+                seed(QuestionType.SUBTRACTION, Difficulty.EASY, QuestionGenerationPattern.BINARY_OPERATION),
+                seed(QuestionType.MULTIPLICATION, Difficulty.EASY, QuestionGenerationPattern.BINARY_OPERATION),
+                seed(QuestionType.DIVISION, Difficulty.EASY, QuestionGenerationPattern.BINARY_OPERATION),
+
+                seed(QuestionType.ADDITION, Difficulty.MEDIUM, QuestionGenerationPattern.BINARY_OPERATION),
+                seed(QuestionType.SUBTRACTION, Difficulty.MEDIUM, QuestionGenerationPattern.BINARY_OPERATION),
+                seed(QuestionType.MULTIPLICATION, Difficulty.MEDIUM, QuestionGenerationPattern.BINARY_OPERATION),
+                seed(QuestionType.DIVISION, Difficulty.MEDIUM, QuestionGenerationPattern.BINARY_OPERATION),
+                seed(QuestionType.ORDER_OF_OPERATIONS, Difficulty.MEDIUM, QuestionGenerationPattern.ADD_THEN_MULTIPLY),
+                seed(QuestionType.PARENTHESES, Difficulty.MEDIUM, QuestionGenerationPattern.PARENTHESES_SUM_THEN_MULTIPLY),
+                seed(QuestionType.PARENTHESES, Difficulty.MEDIUM, QuestionGenerationPattern.MULTIPLY_BY_PARENTHESES_SUM),
+
+                seed(QuestionType.ADDITION, Difficulty.HARD, QuestionGenerationPattern.BINARY_OPERATION),
+                seed(QuestionType.SUBTRACTION, Difficulty.HARD, QuestionGenerationPattern.BINARY_OPERATION),
+                seed(QuestionType.MULTIPLICATION, Difficulty.HARD, QuestionGenerationPattern.BINARY_OPERATION),
+                seed(QuestionType.DIVISION, Difficulty.HARD, QuestionGenerationPattern.BINARY_OPERATION),
+                seed(QuestionType.ORDER_OF_OPERATIONS, Difficulty.HARD, QuestionGenerationPattern.ADD_THEN_MULTIPLY),
+                seed(QuestionType.ORDER_OF_OPERATIONS, Difficulty.HARD, QuestionGenerationPattern.ADD_MULTIPLY_SUBTRACT),
+                seed(QuestionType.PARENTHESES, Difficulty.HARD, QuestionGenerationPattern.PARENTHESES_SUM_THEN_MULTIPLY),
+                seed(QuestionType.PARENTHESES, Difficulty.HARD, QuestionGenerationPattern.MULTIPLY_BY_PARENTHESES_SUM),
+                seed(QuestionType.MULTIPLICATION, Difficulty.HARD, QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN)
+        );
+    }
+
+    private MathTemplateSeed seed(
+            QuestionType questionType,
+            Difficulty difficulty,
+            QuestionGenerationPattern generationPattern
+    ) {
+        return MathTemplateSeed.of(
+                questionType,
+                difficulty,
+                generationPattern,
+                minValueForDifficulty(difficulty),
+                maxValueForDifficulty(difficulty),
+                timeLimitSecondsForDifficulty(difficulty),
+                QuestionTemplateSeedRules.DEFAULT_CHOICES_COUNT
+        );
+    }
+
+    private int minValueForDifficulty(Difficulty difficulty) {
+        return switch (difficulty) {
+            case EASY -> QuestionTemplateSeedRules.EASY_MIN_VALUE;
+            case MEDIUM -> QuestionTemplateSeedRules.MEDIUM_MIN_VALUE;
+            case HARD -> QuestionTemplateSeedRules.HARD_MIN_VALUE;
+        };
+    }
+
+    private int maxValueForDifficulty(Difficulty difficulty) {
+        return switch (difficulty) {
+            case EASY -> QuestionTemplateSeedRules.EASY_MAX_VALUE;
+            case MEDIUM -> QuestionTemplateSeedRules.MEDIUM_MAX_VALUE;
+            case HARD -> QuestionTemplateSeedRules.HARD_MAX_VALUE;
+        };
+    }
+
+    private int timeLimitSecondsForDifficulty(Difficulty difficulty) {
+        return switch (difficulty) {
+            case EASY -> QuestionTemplateSeedRules.EASY_TIME_LIMIT_SECONDS;
+            case MEDIUM -> QuestionTemplateSeedRules.MEDIUM_TIME_LIMIT_SECONDS;
+            case HARD -> QuestionTemplateSeedRules.HARD_TIME_LIMIT_SECONDS;
+        };
+    }
+
+    @Value(staticConstructor = "of")
+    private static class MathTemplateSeed {
+
+        QuestionType questionType;
+        Difficulty difficulty;
+        QuestionGenerationPattern generationPattern;
+        int minValue;
+        int maxValue;
+        int timeLimitSeconds;
+        int choicesCount;
     }
 }

@@ -22,7 +22,19 @@ public class MathQuestionGenerator {
     private static final Map<QuestionGenerationPattern, MathExpressionPattern>
             EXPRESSION_PATTERNS_BY_GENERATION_PATTERN = Map.of(
             QuestionGenerationPattern.ADD_THEN_MULTIPLY,
-            MathExpressionPattern.ADD_THEN_MULTIPLY
+            MathExpressionPattern.ADD_THEN_MULTIPLY,
+
+            QuestionGenerationPattern.PARENTHESES_SUM_THEN_MULTIPLY,
+            MathExpressionPattern.PARENTHESES_SUM_THEN_MULTIPLY,
+
+            QuestionGenerationPattern.MULTIPLY_BY_PARENTHESES_SUM,
+            MathExpressionPattern.MULTIPLY_BY_PARENTHESES_SUM,
+
+            QuestionGenerationPattern.ADD_MULTIPLY_SUBTRACT,
+            MathExpressionPattern.ADD_MULTIPLY_SUBTRACT,
+
+            QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN,
+            MathExpressionPattern.SMALL_MULTIPLICATION_CHAIN
     );
 
     private final MathQuestionPlanValidator mathQuestionPlanValidator;

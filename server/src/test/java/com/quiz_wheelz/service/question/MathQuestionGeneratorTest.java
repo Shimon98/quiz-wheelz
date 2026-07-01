@@ -17,6 +17,8 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.List;
 import java.util.Random;
@@ -183,6 +185,37 @@ class MathQuestionGeneratorTest {
     }
 
     @Test
+    void shouldThrowWhenOrderOfOperationsIsNotSupportedInStageB() {
+        QuestionPlan questionPlan = createQuestionPlan(QuestionType.ORDER_OF_OPERATIONS, 1, 10);
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> mathQuestionGenerator.generate(questionPlan)
+        );
+
+        assertEquals(ErrorCode.QUESTION_TYPE_NOT_SUPPORTED, exception.getErrorCode());
+    }
+
+    @ParameterizedTest
+    @EnumSource(
+            value = QuestionGenerationPattern.class,
+            names = {"BINARY_OPERATION"},
+            mode = EnumSource.Mode.EXCLUDE
+    )
+    void shouldGenerateQuestionForEveryExpressionPattern(
+            QuestionGenerationPattern generationPattern
+    ) {
+        QuestionPlan questionPlan = buildQuestionPlanFor(generationPattern);
+
+        MathQuestionData result = mathQuestionGenerator.generate(questionPlan);
+
+        assertNotNull(result);
+        assertNotNull(result.getQuestionText());
+        assertNotNull(result.getCorrectAnswerValue());
+        assertEquals(questionTypeForPattern(generationPattern), result.getQuestionType());
+    }
+
+    @Test
     void shouldRejectAddThenMultiplyForEasyDifficulty() {
         QuestionPlan questionPlan = createQuestionPlan(
                 QuestionType.ORDER_OF_OPERATIONS,
@@ -234,36 +267,6 @@ class MathQuestionGeneratorTest {
         );
 
         assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
-    }
-
-    @Test
-    void shouldRejectParenthesesPatternUntilGeneratorSupportsIt() {
-        QuestionPlan questionPlan = createQuestionPlan(
-                QuestionType.PARENTHESES,
-                Difficulty.MEDIUM,
-                1,
-                10,
-                QuestionGenerationPattern.PARENTHESES_SUM_THEN_MULTIPLY
-        );
-
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> mathQuestionGenerator.generate(questionPlan)
-        );
-
-        assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
-    }
-
-    @Test
-    void shouldThrowWhenOrderOfOperationsIsNotSupportedInStageB() {
-        QuestionPlan questionPlan = createQuestionPlan(QuestionType.ORDER_OF_OPERATIONS, 1, 10);
-
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> mathQuestionGenerator.generate(questionPlan)
-        );
-
-        assertEquals(ErrorCode.QUESTION_TYPE_NOT_SUPPORTED, exception.getErrorCode());
     }
 
     @Test
@@ -357,6 +360,49 @@ class MathQuestionGeneratorTest {
                 AdaptiveMode.BASIC,
                 AssistanceLevel.NONE
         );
+    }
+
+    private QuestionPlan buildQuestionPlanFor(
+            QuestionGenerationPattern generationPattern
+    ) {
+        return createQuestionPlan(
+                questionTypeForPattern(generationPattern),
+                difficultyForPattern(generationPattern),
+                2,
+                10,
+                generationPattern
+        );
+    }
+
+    private QuestionType questionTypeForPattern(
+            QuestionGenerationPattern generationPattern
+    ) {
+        return switch (generationPattern) {
+            case ADD_THEN_MULTIPLY,
+                 ADD_MULTIPLY_SUBTRACT -> QuestionType.ORDER_OF_OPERATIONS;
+
+            case PARENTHESES_SUM_THEN_MULTIPLY,
+                 MULTIPLY_BY_PARENTHESES_SUM -> QuestionType.PARENTHESES;
+
+            case SMALL_MULTIPLICATION_CHAIN -> QuestionType.MULTIPLICATION;
+
+            case BINARY_OPERATION -> QuestionType.ADDITION;
+        };
+    }
+
+    private Difficulty difficultyForPattern(
+            QuestionGenerationPattern generationPattern
+    ) {
+        return switch (generationPattern) {
+            case ADD_MULTIPLY_SUBTRACT,
+                 SMALL_MULTIPLICATION_CHAIN -> Difficulty.HARD;
+
+            case ADD_THEN_MULTIPLY,
+                 PARENTHESES_SUM_THEN_MULTIPLY,
+                 MULTIPLY_BY_PARENTHESES_SUM -> Difficulty.MEDIUM;
+
+            case BINARY_OPERATION -> Difficulty.EASY;
+        };
     }
 
     private Subject createMathSubject() {
