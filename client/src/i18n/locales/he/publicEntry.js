@@ -7,10 +7,10 @@
 export default {
   welcome: {
     title: "ברוכים הבאים ל-QuizWheelz",
-    subtitle: "מרוץ חידונים לכיתה — הצטרפו או נהלו מרוץ.",
+    subtitle: "מרוץ בג'ונגל לכיתה — הצטרפו או נהלו מרוץ.",
   },
   landing: {
-    tagline: "מרוץ חידונים לכיתה",
+    tagline: "מרוץ בג'ונגל",
     rolePrompt: "בחרו כיצד להמשיך",
   },
   role: {

@@ -34,7 +34,7 @@ export const BRAND_WORDMARK_VARIANT_STYLES = Object.freeze({
   },
   // Logo beside text, aligned to the reading start edge.
   [BRAND_WORDMARK_VARIANTS.INLINE]: {
-    root: "flex-row items-center gap-3 text-start",
+    root: "flex-row items-center justify-center gap-3 text-start",
     textGroup: "items-start text-start",
   },
 });
@@ -46,7 +46,7 @@ export const BRAND_WORDMARK_SIZE_STYLES = Object.freeze({
     subtitle: "text-xs",
   },
   [PUBLIC_ENTRY_COMPONENT_SIZES.MD]: {
-    logo: "h-16",
+    logo: "h-12",
     title: "text-2xl",
     subtitle: "text-sm",
   },

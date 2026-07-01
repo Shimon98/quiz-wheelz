@@ -7,10 +7,10 @@
 export default {
   welcome: {
     title: "Welcome to QuizWheelz",
-    subtitle: "A classroom quiz race — join or run a race.",
+    subtitle: "A classroom jungle race — join or run a race.",
   },
   landing: {
-    tagline: "A classroom quiz race",
+    tagline: "A jungle race",
     rolePrompt: "Choose how to continue",
   },
   role: {
