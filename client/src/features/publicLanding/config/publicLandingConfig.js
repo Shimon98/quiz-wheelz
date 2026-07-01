@@ -5,16 +5,15 @@
 
 import { GraduationCap, Smile } from "lucide-react";
 import { ROUTES } from "../../../constants/routeConstants";
-
-// Proper noun — identical in every language, so a constant, not an i18n key.
-export const BRAND_NAME = "QuizWheelz";
+import studentMedia from "../../../assets/landing/landing-role-student-monkey.png";
+import teacherMedia from "../../../assets/landing/landing-role-teacher-cap.png";
 
 /*
  * Role options shown on the landing card.
  *  - i18nKey:      node under the publicEntry `role.<i18nKey>.*` translations.
  *  - tone:         "student" | "teacher" → maps to LandingRoleCard tone styles.
- *  - FallbackIcon: lucide component shown in the media circle until a real
- *                  image asset is passed (decorative, aria-hidden at render).
+ *  - media:        decorative image filling the circular media area.
+ *  - FallbackIcon: lucide component used if the image is missing (decorative).
  *  - to:           navigation target for an active role.
  *  - disabled:     true => no navigation, shows the "coming soon" label.
  *
@@ -26,6 +25,7 @@ export const LANDING_ROLES = Object.freeze([
     id: "student",
     i18nKey: "student",
     tone: "student",
+    media: studentMedia,
     FallbackIcon: Smile,
     to: null,
     disabled: true,
@@ -34,6 +34,7 @@ export const LANDING_ROLES = Object.freeze([
     id: "teacher",
     i18nKey: "teacher",
     tone: "teacher",
+    media: teacherMedia,
     FallbackIcon: GraduationCap,
     to: ROUTES.LOGIN,
     disabled: false,

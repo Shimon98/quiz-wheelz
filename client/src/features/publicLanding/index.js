@@ -1,1 +1,1 @@
-export { default as PublicLandingPage } from "./pages/PublicLandingPage";
+export { default as LandingContent } from "./components/LandingContent";

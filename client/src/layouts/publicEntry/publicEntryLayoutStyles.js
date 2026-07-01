@@ -79,7 +79,9 @@ export const PUBLIC_ENTRY_VARIANT_STYLES = Object.freeze({
   // Wide single column; the screen builds its own hero/content grid inside
   // `children`. No built-in visual slot here (visual stays hidden).
   [PUBLIC_ENTRY_VARIANTS.SHOWCASE]: {
-    shell: "max-w-md lg:max-w-5xl",
+    // mx-auto centers the capped-width stage; without it a flex-column item
+    // hugs the cross-start edge (the right in RTL) and looks pushed to the side.
+    shell: "mx-auto max-w-md lg:max-w-6xl xl:max-w-7xl",
     content: "w-full",
     visual: "hidden",
   },
