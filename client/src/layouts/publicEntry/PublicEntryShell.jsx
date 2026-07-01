@@ -9,6 +9,7 @@ import {
   PublicSettingsDialog,
 } from "../../shared/components/publicSettings";
 import heroImage from "../../assets/landing/landing-hero-jungle-monkey-kart.png";
+import PublicEntryLeaves from "./PublicEntryLeaves";
 import { PUBLIC_ENTRY_SHELL_STYLES as S } from "./publicEntryShellStyles";
 
 // Proper noun — identical in every language, so a constant, not an i18n key.
@@ -44,19 +45,17 @@ export default function PublicEntryShell() {
       <div aria-hidden="true" className={S.decorLayer}>
         <span className={S.decorBlobPrimary} />
         <span className={S.decorBlobSecondary} />
-        <span className={S.decorLeafStart} />
-        <span className={S.decorLeafEnd} />
-      </div>
-
-      <div className={S.topAction}>
-        <PublicSettingsButton
-          className="ms-auto"
-          onClick={() => setSettingsOpen(true)}
-        />
       </div>
 
       <div className={S.stage}>
         <div className={S.frame}>
+          <div className={S.settingsOverlay}>
+            <PublicSettingsButton
+              className="shadow-[var(--qw-shadow-card)]"
+              onClick={() => setSettingsOpen(true)}
+            />
+          </div>
+
           <div aria-hidden="true" className={S.heroSide}>
             <img src={heroImage} alt="" className={S.heroImage} />
           </div>
@@ -77,9 +76,16 @@ export default function PublicEntryShell() {
                   <Outlet />
                 </main>
               </div>
+              <div aria-hidden="true" className={S.cardLeafLayer}>
+                <PublicEntryLeaves variant="card" />
+              </div>
             </div>
           </div>
         </div>
+      </div>
+
+      <div aria-hidden="true" className={S.shellLeafLayer}>
+        <PublicEntryLeaves variant="shell" />
       </div>
 
       {/* footerSlot — reserved for rights / privacy / terms (added later). */}
