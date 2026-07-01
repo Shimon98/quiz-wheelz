@@ -1,23 +1,30 @@
+import {
+  Avatar,
+  Badge,
+  Flex,
+  Paper,
+  Text,
+  ThemeIcon,
+  VisuallyHidden,
+} from "@mantine/core";
 import { ChevronRight } from "lucide-react";
 import { cx } from "../../../utils/classNameUtils";
 import {
-  LANDING_ROLE_CARD_STYLES as S,
-  LANDING_ROLE_TONE_STYLES,
+  LANDING_ROLE_TONES,
+  PUBLIC_LANDING_STYLES as S,
 } from "../styles/publicLandingPageStyles";
 
 const DEFAULT_TONE = "student";
 
 /**
- * LandingRoleCard — one responsive role-choice card, rendered twice (student /
- * teacher) from config. Same JSX adapts by breakpoint: a compact row on mobile
- * (media → text → arrow) and a larger centered card on sm+ (media on top, text
- * centered, arrow below).
- *
- * The active card is the real <button>; the arrow is decorative. The circular
- * media area takes `media` (a future <img>) or falls back to a lucide icon, so
- * an asset can be dropped in later without changing the structure. All text
- * arrives via props (i18n) — nothing hardcoded. Tone drives the green/blue
- * accents from C-03 tokens; direction is inherited (logical utilities + rtl:).
+ * LandingRoleCard — one tappable role-choice card (student / teacher), rendered
+ * from config. Mantine-native: Paper-as-button owns the surface; a responsive
+ * Flex matches the vision (docs/vision/landing-entry.png):
+ *   phone/tablet: compact ROW — media circle → text → arrow / "coming soon".
+ *   desktop (lg = 75em = 1200, the shell split): large centered COLUMN card —
+ *   big media circle on top, centered text, arrow circle at the bottom.
+ * Tone drives the jungle green/blue accents via C-03 tokens; all text arrives
+ * via props (i18n). Direction is inherited — only the chevron needs an rtl flip.
  */
 export default function LandingRoleCard({
   title,
@@ -31,39 +38,99 @@ export default function LandingRoleCard({
   ariaLabel,
   className = "",
 }) {
-  const toneStyles =
-    LANDING_ROLE_TONE_STYLES[tone] ?? LANDING_ROLE_TONE_STYLES[DEFAULT_TONE];
+  const toneVars = LANDING_ROLE_TONES[tone] ?? LANDING_ROLE_TONES[DEFAULT_TONE];
 
   return (
-    <button
+    <Paper
+      component="button"
       type="button"
       onClick={disabled ? undefined : onSelect}
       disabled={disabled}
       aria-label={ariaLabel || undefined}
-      className={cx(S.card, toneStyles.card, className)}
+      withBorder
+      radius="xl"
+      p={{ base: "md", lg: "lg" }}
+      className={cx(S.roleCard, className)}
+      style={{ borderColor: toneVars.accent, "--qw-tone": toneVars.accent }}
     >
-      <span aria-hidden="true" className={cx(S.mediaCircle, toneStyles.circle)}>
-        {media ??
-          (FallbackIcon ? (
-            <FallbackIcon className={cx(S.mediaIcon, toneStyles.icon)} />
-          ) : null)}
-      </span>
+      <Flex
+        direction={{ base: "row", lg: "column" }}
+        align="center"
+        gap={{ base: "sm", lg: "md" }}
+        w="100%"
+        h="100%"
+      >
+        <Avatar
+          src={media}
+          alt=""
+          size={56}
+          w={{ base: 56, lg: 112 }}
+          h={{ base: 56, lg: 112 }}
+          style={{
+            backgroundColor: toneVars.soft,
+            boxShadow: `0 0 0 1px ${toneVars.accent}`,
+            flexShrink: 0,
+          }}
+        >
+          {FallbackIcon ? (
+            <FallbackIcon aria-hidden="true" color={toneVars.accent} />
+          ) : null}
+        </Avatar>
 
-      <span className={S.body}>
-        {title && <span className={S.title}>{title}</span>}
-        {description && <span className={S.description}>{description}</span>}
-      </span>
+        <Flex
+          direction="column"
+          align={{ base: "flex-start", lg: "center" }}
+          gap={2}
+          style={{ flex: 1, minWidth: 0 }}
+        >
+          {title && (
+            <Text
+              fw={800}
+              fz={{ base: "md", lg: "xl" }}
+              ta={{ base: "start", lg: "center" }}
+              lh={1.2}
+            >
+              {title}
+            </Text>
+          )}
+          {description && (
+            <Text
+              c="dimmed"
+              fz="sm"
+              ta={{ base: "start", lg: "center" }}
+              lh={1.35}
+            >
+              {description}
+            </Text>
+          )}
+        </Flex>
 
-      {disabled ? (
-        actionLabel && <span className={S.comingSoon}>{actionLabel}</span>
-      ) : (
-        <>
-          {actionLabel && <span className="sr-only">{actionLabel}</span>}
-          <span aria-hidden="true" className={cx(S.arrow, toneStyles.arrow)}>
-            <ChevronRight className={S.arrowIcon} />
-          </span>
-        </>
-      )}
-    </button>
+        {disabled ? (
+          actionLabel && (
+            <Badge variant="light" color="gray" radius="xl" style={{ flexShrink: 0 }}>
+              {actionLabel}
+            </Badge>
+          )
+        ) : (
+          <>
+            {actionLabel && <VisuallyHidden>{actionLabel}</VisuallyHidden>}
+            <ThemeIcon
+              aria-hidden="true"
+              radius="xl"
+              size={36}
+              w={{ base: 36, lg: 44 }}
+              h={{ base: 36, lg: 44 }}
+              style={{
+                backgroundColor: toneVars.accent,
+                color: toneVars.accentContrast,
+                flexShrink: 0,
+              }}
+            >
+              <ChevronRight size={20} className={S.arrowIcon} />
+            </ThemeIcon>
+          </>
+        )}
+      </Flex>
+    </Paper>
   );
 }

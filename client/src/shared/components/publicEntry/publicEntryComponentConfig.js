@@ -21,12 +21,3 @@ export const PUBLIC_ENTRY_COMPONENT_SIZES = Object.freeze({
 
 export const DEFAULT_PUBLIC_ENTRY_COMPONENT_SIZE =
   PUBLIC_ENTRY_COMPONENT_SIZES.MD;
-
-export const PUBLIC_ENTRY_CARD_VARIANTS = Object.freeze({
-  DEFAULT: "default",
-  COMPACT: "compact",
-  WIDE: "wide",
-});
-
-export const DEFAULT_PUBLIC_ENTRY_CARD_VARIANT =
-  PUBLIC_ENTRY_CARD_VARIANTS.DEFAULT;

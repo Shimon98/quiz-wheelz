@@ -1,7 +1,7 @@
 /*
- * Options for the public settings selectors. No Tailwind classes here (those
- * live in publicSettingsStyles.js) and no translatable UI text — labels resolve
- * through i18n at render time, except language endonyms (see below).
+ * Options for the public settings selectors (rendered with Mantine
+ * SegmentedControl). No translatable UI text — labels resolve through i18n at
+ * render time, except language endonyms (see below).
  */
 
 import { Monitor, Sun, Moon } from "lucide-react";
