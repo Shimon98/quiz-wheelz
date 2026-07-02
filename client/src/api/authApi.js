@@ -8,11 +8,9 @@ import { unwrapApiResponse } from "./apiResponseUtils.js";
  * (email OR username) is sent in the `username` field. When the server moves
  * to email auth, only this mapping changes; forms and hooks stay as they are.
  */
-export async function loginUser({ identifier, username, password }) {
-  // `username` fallback keeps the legacy LoginPage working until it is
-  // disconnected — delete the fallback together with features/auth/.
+export async function loginUser({ identifier, password }) {
   const response = await httpClient.post(API_ENDPOINTS.AUTH.LOGIN, {
-    username: identifier ?? username,
+    username: identifier,
     password,
   });
 

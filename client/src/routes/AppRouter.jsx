@@ -1,10 +1,9 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import PublicEntryShell from "../layouts/publicEntry/PublicEntryShell";
 import LandingContent from "../features/publicLanding/components/LandingContent";
 import TeacherLoginContent from "../features/teacherAuth/components/TeacherLoginContent";
 import TeacherRegisterContent from "../features/teacherAuth/components/TeacherRegisterContent";
 import ForgotPasswordContent from "../features/teacherAuth/components/ForgotPasswordContent";
-import LoginPage from "../features/auth/pages/LoginPage";
 import NotFoundPage from "../features/commonPages/NotFoundPage";
 import UnauthorizedPage from "../features/commonPages/UnauthorizedPage";
 import TeacherDashboardPage from "../features/teacherDashboard/pages/TeacherDashboardPage";
@@ -14,12 +13,19 @@ import { ROUTES } from "../constants/routeConstants";
 import { USER_ROLES } from "../constants/roleConstants";
 import ProtectedRoute from "./ProtectedRoute";
 import RoleRoute from "./RoleRoute";
+import GuestRoute from "./GuestRoute";
 
 export default function AppRouter() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route element={<PublicEntryShell />}>
+                <Route
+                    element={
+                        <GuestRoute>
+                            <PublicEntryShell />
+                        </GuestRoute>
+                    }
+                >
                     <Route path={ROUTES.LANDING} element={<LandingContent />} />
                     <Route
                         path={ROUTES.TEACHER_LOGIN}
@@ -35,9 +41,10 @@ export default function AppRouter() {
                     />
                 </Route>
 
-                {/* Legacy login — stays alive until the new flow is verified,
-                    then becomes a redirect and features/auth/ is deleted. */}
-                <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+                <Route
+                    path={ROUTES.LOGIN}
+                    element={<Navigate to={ROUTES.TEACHER_LOGIN} replace />}
+                />
 
                 <Route
                     path={ROUTES.TEACHER_DASHBOARD}
