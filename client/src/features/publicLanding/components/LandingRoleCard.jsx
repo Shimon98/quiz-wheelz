@@ -9,6 +9,7 @@ import {
 } from "@mantine/core";
 import { ChevronRight } from "lucide-react";
 import { cx } from "../../../utils/classNameUtils";
+import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
 import {
   LANDING_ROLE_TONES,
   PUBLIC_LANDING_STYLES as S,
@@ -107,7 +108,7 @@ export default function LandingRoleCard({
 
         {disabled ? (
           actionLabel && (
-            <Badge variant="light" color="gray" radius="xl" style={{ flexShrink: 0 }}>
+            <Badge variant="light" color={UI_TONES.NEUTRAL} radius="xl" style={{ flexShrink: 0 }}>
               {actionLabel}
             </Badge>
           )

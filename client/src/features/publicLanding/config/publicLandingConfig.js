@@ -36,7 +36,7 @@ export const LANDING_ROLES = Object.freeze([
     tone: "teacher",
     media: teacherMedia,
     FallbackIcon: GraduationCap,
-    to: ROUTES.LOGIN,
+    to: ROUTES.TEACHER_LOGIN,
     disabled: false,
   },
 ]);

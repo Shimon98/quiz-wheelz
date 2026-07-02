@@ -67,17 +67,20 @@ export const PUBLIC_ENTRY_SHELL_STYLES = Object.freeze({
   heroImage: "absolute inset-0 h-full w-full object-cover object-[30%_55%] ltr:-scale-x-100",
 
   // Content side — holds the card (start side; mirrors with dir). Phone/tablet:
-  // grows (flex-1) so the card fills the screen. Desktop: natural 48% side panel.
+  // grows (flex-1) so the card fills the screen. Desktop: the panel region;
+  // the card inside is capped + pushed toward the hero (see floatingCard).
   contentSide:
-    "relative z-10 flex w-full flex-1 flex-col min-[75rem]:w-[48%] min-[75rem]:flex-none min-[75rem]:ps-10",
+    "relative z-10 flex w-full flex-1 flex-col min-[75rem]:w-[50%] min-[75rem]:flex-none",
 
   // The card — OPAQUE on every screen (no jungle showing through it).
   //   phone/tablet: full-width sheet that rises over the hero (-mt) and FILLS the
   //                 screen (flex-1).
-  //   desktop: fully-rounded floating side panel that overlaps the hero edge.
+  //   desktop: a compact floating panel (max-w) pulled toward the hero (self-end)
+  //            so it overlaps the hero curve and the open space sits on the outer
+  //            side — instead of stretching edge to edge.
   // BASE card — only its inner <Outlet/> changes between screens.
   floatingCard:
-    "relative -mt-10 w-full flex-1 overflow-hidden rounded-t-[2.5rem] bg-[var(--qw-surface)] p-6 pt-9 text-center shadow-[var(--qw-shadow-card)] sm:p-7 sm:pt-10 min-[75rem]:mt-0 min-[75rem]:flex-none min-[75rem]:rounded-[var(--qw-radius-2xl)] min-[75rem]:border min-[75rem]:border-[var(--qw-border)] min-[75rem]:p-9",
+    "relative -mt-10 w-full flex-1 overflow-hidden rounded-t-[2.5rem] bg-[var(--qw-surface)] p-6 pt-9 text-center shadow-[var(--qw-shadow-card)] sm:p-7 sm:pt-10 min-[75rem]:mt-0 min-[75rem]:w-[36rem] min-[75rem]:flex-none min-[75rem]:self-end min-[75rem]:rounded-[var(--qw-radius-2xl)] min-[75rem]:border min-[75rem]:border-[var(--qw-border)] min-[75rem]:p-9",
   // Card content — width-capped and centered on tablet so a full-width sheet
   // stays readable; fills the panel on desktop.
   cardInner:

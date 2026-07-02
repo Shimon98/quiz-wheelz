@@ -16,6 +16,7 @@ export { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE };
 export const I18N_NAMESPACES = Object.freeze({
   PUBLIC_SETTINGS: "publicSettings",
   PUBLIC_ENTRY: "publicEntry",
+  TEACHER_AUTH: "teacherAuth",
 });
 
 export const I18N_NAMESPACE_LIST = Object.freeze(
