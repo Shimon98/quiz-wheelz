@@ -1,0 +1,88 @@
+/*
+ * QuizWheelz semantic theme tokens — light & dark.
+ *
+ * Maps the theme-independent primitives from tokens.css onto role-based
+ * variables that components consume via Tailwind, e.g. bg-[var(--qw-bg)].
+ *
+ * data-theme is set on <html> by ThemeProvider. With no attribute present
+ * (before the provider runs) the :root block applies the light theme.
+ *
+ * Do NOT add component-level classes here.
+ */
+
+:root,
+html[data-theme="light"] {
+  /* Surfaces & text */
+  --qw-bg: var(--qw-cloud);
+  --qw-surface: var(--qw-white);
+  --qw-surface-alt: var(--qw-mist);
+  --qw-text: var(--qw-ink);
+  --qw-text-muted: var(--qw-slate);
+  --qw-border: var(--qw-line);
+
+  /* Brand roles */
+  --qw-primary: var(--qw-green);
+  --qw-primary-contrast: #ffffff;
+  --qw-secondary: var(--qw-sky-deep);
+  --qw-secondary-contrast: #ffffff;
+  --qw-accent: var(--qw-gold);
+  --qw-accent-contrast: var(--qw-ink);
+
+  /* Role tones — soft media-circle backgrounds (student green / teacher blue) */
+  --qw-role-student-soft: var(--qw-green-soft);
+  --qw-role-teacher-soft: #e7f1fb;
+
+  /* Status */
+  --qw-success: #1fa24c;
+  --qw-warning: #e8920c;
+  --qw-error: var(--qw-red);
+  --qw-info: var(--qw-sky);
+
+  /* Answer options */
+  --qw-answer-blue: var(--qw-blue);
+  --qw-answer-green: var(--qw-green);
+  --qw-answer-amber: var(--qw-amber);
+  --qw-answer-violet: var(--qw-violet);
+  --qw-answer-blue-contrast: #ffffff;
+  --qw-answer-green-contrast: #ffffff;
+  --qw-answer-amber-contrast: var(--qw-ink);
+  --qw-answer-violet-contrast: #ffffff;
+}
+
+html[data-theme="dark"] {
+  /* Surfaces & text — deep jungle / navy, readable (not black-neon) */
+  --qw-bg: var(--qw-navy-deep);
+  --qw-surface: #112b3d;
+  --qw-surface-alt: #16344a;
+  --qw-text: #eaf2f8;
+  --qw-text-muted: #9db2c2;
+  --qw-border: #24455c;
+
+  /* Brand roles */
+  --qw-primary: #36c063;
+  --qw-primary-contrast: #06210f;
+  --qw-secondary: #4fa6e8;
+  --qw-secondary-contrast: #06192b;
+  --qw-accent: var(--qw-banana);
+  --qw-accent-contrast: var(--qw-ink);
+
+  /* Role tones — soft media-circle backgrounds (student green / teacher blue) */
+  --qw-role-student-soft: #173a2a;
+  --qw-role-teacher-soft: #173a55;
+
+  /* Status */
+  --qw-success: #36c063;
+  --qw-warning: #f5b945;
+  --qw-error: #f2686c;
+  --qw-info: #4fa6e8;
+
+  /* Answer options — lifted for contrast on dark surfaces */
+  --qw-answer-blue: #4d86ff;
+  --qw-answer-green: #36c063;
+  --qw-answer-amber: #f5b945;
+  --qw-answer-violet: #9b7bff;
+  --qw-answer-blue-contrast: #06192b;
+  --qw-answer-green-contrast: #06192b;
+  --qw-answer-amber-contrast: #06192b;
+  --qw-answer-violet-contrast: #06192b;
+}

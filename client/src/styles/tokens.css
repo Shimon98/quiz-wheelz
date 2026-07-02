@@ -1,0 +1,70 @@
+/*
+ * QuizWheelz design tokens — theme-INDEPENDENT primitives.
+ *
+ * Raw brand palette + scales consumed by themes.css to build the semantic
+ * light/dark tokens. These values never change between light and dark.
+ *
+ * Do NOT add semantic light/dark values here (see themes.css).
+ * Do NOT add component-level classes here. Tailwind utilities + var(--qw-*)
+ * are the consumption pattern in components.
+ */
+
+:root {
+  /* Brand palette — Jungle Monkey Kart direction */
+  --qw-green: #2fa84f; /* primary jungle green */
+  --qw-green-deep: #1d7a39; /* deep green */
+  --qw-green-soft: #e6f6ec; /* pale green tint */
+  --qw-sky: #3ba9f4; /* sky blue */
+  --qw-sky-deep: #1e6fb8; /* deep sky / ocean */
+  --qw-banana: #ffd43b; /* banana yellow */
+  --qw-gold: #f5a623; /* trophy / gold */
+  --qw-red: #e5484d; /* race red */
+  --qw-navy: #0f2a43; /* deep navy */
+  --qw-navy-deep: #0a1d2e; /* darkest navy (dark surface base) */
+
+  /* Answer option palette (answer "green" reuses --qw-green) */
+  --qw-blue: #2f6bf0;
+  --qw-violet: #7c4dff;
+  --qw-amber: #f5a623;
+
+  /* Neutrals */
+  --qw-white: #ffffff;
+  --qw-cloud: #f4faf5; /* off-white app background */
+  --qw-mist: #eef4f0; /* soft alternate surface */
+  --qw-ink: #14202e; /* strong text */
+  --qw-slate: #5b6b7b; /* muted text */
+  --qw-line: #e3e8ef; /* hairline border */
+
+  /* Radius scale */
+  --qw-radius-sm: 0.5rem;
+  --qw-radius-md: 0.875rem;
+  --qw-radius-lg: 1.25rem;
+  --qw-radius-xl: 1.75rem;
+  --qw-radius-2xl: 2rem;
+  --qw-radius-pill: 9999px;
+
+  /* Shadows — navy-tinted recipe */
+  --qw-shadow-sm: 0 2px 8px rgba(15, 42, 67, 0.08);
+  --qw-shadow-card: 0 10px 30px rgba(15, 42, 67, 0.1);
+  --qw-shadow-lg: 0 18px 40px rgba(15, 42, 67, 0.16);
+
+  /* Focus ring */
+  --qw-focus-ring-width: 4px;
+  --qw-focus-ring-color: rgba(47, 168, 79, 0.4);
+  --qw-focus-ring: 0 0 0 var(--qw-focus-ring-width) var(--qw-focus-ring-color);
+
+  /* Z-index layers */
+  --qw-z-base: 0;
+  --qw-z-dropdown: 1000;
+  --qw-z-sticky: 1100;
+  --qw-z-overlay: 1200;
+  --qw-z-modal: 1300;
+  --qw-z-popover: 1400;
+  --qw-z-toast: 1500;
+
+  /* Motion */
+  --qw-duration-fast: 120ms;
+  --qw-duration-base: 160ms;
+  --qw-duration-slow: 240ms;
+  --qw-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+}

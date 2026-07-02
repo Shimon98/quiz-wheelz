@@ -1,5 +1,9 @@
 export const ROUTES = {
+  LANDING: "/",
   LOGIN: "/login",
+  TEACHER_LOGIN: "/teacher/login",
+  TEACHER_REGISTER: "/teacher/register",
+  TEACHER_FORGOT_PASSWORD: "/teacher/forgot-password",
   ADMIN_DASHBOARD: "/admin",
   TEACHER_DASHBOARD: "/teacher",
   TEACHER_RACE_ROOM: "/teacher/races/:raceId",

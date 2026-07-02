@@ -1,4 +1,9 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import PublicEntryShell from "../layouts/publicEntry/PublicEntryShell";
+import LandingContent from "../features/publicLanding/components/LandingContent";
+import TeacherLoginContent from "../features/teacherAuth/components/TeacherLoginContent";
+import TeacherRegisterContent from "../features/teacherAuth/components/TeacherRegisterContent";
+import ForgotPasswordContent from "../features/teacherAuth/components/ForgotPasswordContent";
 import LoginPage from "../features/auth/pages/LoginPage";
 import NotFoundPage from "../features/commonPages/NotFoundPage";
 import UnauthorizedPage from "../features/commonPages/UnauthorizedPage";
@@ -14,8 +19,24 @@ export default function AppRouter() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<Navigate to={ROUTES.LOGIN} replace />} />
+                <Route element={<PublicEntryShell />}>
+                    <Route path={ROUTES.LANDING} element={<LandingContent />} />
+                    <Route
+                        path={ROUTES.TEACHER_LOGIN}
+                        element={<TeacherLoginContent />}
+                    />
+                    <Route
+                        path={ROUTES.TEACHER_REGISTER}
+                        element={<TeacherRegisterContent />}
+                    />
+                    <Route
+                        path={ROUTES.TEACHER_FORGOT_PASSWORD}
+                        element={<ForgotPasswordContent />}
+                    />
+                </Route>
 
+                {/* Legacy login — stays alive until the new flow is verified,
+                    then becomes a redirect and features/auth/ is deleted. */}
                 <Route path={ROUTES.LOGIN} element={<LoginPage />} />
 
                 <Route

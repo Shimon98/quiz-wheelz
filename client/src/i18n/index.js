@@ -1,0 +1,9 @@
+export { default } from "./i18n";
+export {
+  SUPPORTED_LANGUAGES,
+  DEFAULT_LANGUAGE,
+  FALLBACK_LANGUAGE,
+  I18N_NAMESPACES,
+  I18N_NAMESPACE_LIST,
+  DEFAULT_NAMESPACE,
+} from "./i18nConstants";
