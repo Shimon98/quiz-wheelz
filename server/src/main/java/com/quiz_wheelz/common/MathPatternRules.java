@@ -1,6 +1,7 @@
 package com.quiz_wheelz.common;
 
 import com.quiz_wheelz.enums.Difficulty;
+import com.quiz_wheelz.enums.MathOperator;
 import com.quiz_wheelz.enums.QuestionGenerationPattern;
 import com.quiz_wheelz.enums.QuestionType;
 
@@ -20,6 +21,7 @@ public final class MathPatternRules {
 
     public static final int NO_OPERATOR_COUNT = 0;
     public static final int SINGLE_OPERATOR_COUNT = 1;
+    public static final int DIVISION_CHAIN_OPERATOR_COUNT = 2;
     public static final int SMALL_CHAIN_MULTIPLICATION_OPERATOR_COUNT = 2;
 
     public static final int BINARY_MAX_MULTIPLICATION_FACTOR = 10;
@@ -167,25 +169,81 @@ public final class MathPatternRules {
         return rule != null && rule.isUsesParentheses();
     }
 
+    public static Set<MathOperator> operatorsUsedByTemplate(
+            QuestionType questionType,
+            QuestionGenerationPattern generationPattern
+    ) {
+        if (questionType == null || generationPattern == null) {
+            return Set.of();
+        }
+
+        if (generationPattern == QuestionGenerationPattern.BINARY_OPERATION) {
+            return operatorsForBinaryQuestionType(questionType);
+        }
+
+        MathPatternRule rule = findRule(generationPattern);
+
+        if (rule == null) {
+            return Set.of();
+        }
+
+        return operatorsForPattern(generationPattern);
+    }
+
     private static Map<QuestionGenerationPattern, MathPatternRule> createPatternRules() {
-        return Map.of(
-                QuestionGenerationPattern.BINARY_OPERATION,
-                createBinaryOperationRule(),
-
-                QuestionGenerationPattern.ADD_THEN_MULTIPLY,
-                createAddThenMultiplyRule(),
-
-                QuestionGenerationPattern.PARENTHESES_SUM_THEN_MULTIPLY,
-                createParenthesesRule(),
-
-                QuestionGenerationPattern.MULTIPLY_BY_PARENTHESES_SUM,
-                createParenthesesRule(),
-
-                QuestionGenerationPattern.ADD_MULTIPLY_SUBTRACT,
-                createAddMultiplySubtractRule(),
-
-                QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN,
-                createSmallMultiplicationChainRule()
+        return Map.ofEntries(
+                Map.entry(
+                        QuestionGenerationPattern.BINARY_OPERATION,
+                        createBinaryOperationRule()
+                ),
+                Map.entry(
+                        QuestionGenerationPattern.ADDITION_CHAIN,
+                        createAdditionChainRule()
+                ),
+                Map.entry(
+                        QuestionGenerationPattern.LONG_ADDITION_CHAIN,
+                        createLongAdditionChainRule()
+                ),
+                Map.entry(
+                        QuestionGenerationPattern.SUBTRACTION_CHAIN,
+                        createSubtractionChainRule()
+                ),
+                Map.entry(
+                        QuestionGenerationPattern.LONG_SUBTRACTION_CHAIN,
+                        createLongSubtractionChainRule()
+                ),
+                Map.entry(
+                        QuestionGenerationPattern.ADD_SUBTRACT_CHAIN,
+                        createAddSubtractChainRule()
+                ),
+                Map.entry(
+                        QuestionGenerationPattern.LONG_ADD_SUBTRACT_CHAIN,
+                        createLongAddSubtractChainRule()
+                ),
+                Map.entry(
+                        QuestionGenerationPattern.ADD_THEN_MULTIPLY,
+                        createAddThenMultiplyRule()
+                ),
+                Map.entry(
+                        QuestionGenerationPattern.PARENTHESES_SUM_THEN_MULTIPLY,
+                        createParenthesesRule()
+                ),
+                Map.entry(
+                        QuestionGenerationPattern.MULTIPLY_BY_PARENTHESES_SUM,
+                        createParenthesesRule()
+                ),
+                Map.entry(
+                        QuestionGenerationPattern.ADD_MULTIPLY_SUBTRACT,
+                        createAddMultiplySubtractRule()
+                ),
+                Map.entry(
+                        QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN,
+                        createSmallMultiplicationChainRule()
+                ),
+                Map.entry(
+                        QuestionGenerationPattern.DIVISION_CHAIN,
+                        createDivisionChainRule()
+                )
         );
     }
 
@@ -204,6 +262,102 @@ public final class MathPatternRules {
                 .maxMultiplicationFactor(BINARY_MAX_MULTIPLICATION_FACTOR)
                 .maxDivisionFactor(MAX_DIVISION_FACTOR)
                 .maxCorrectAnswerValuesByDifficulty(maxAnswerValuesForAllDifficulties())
+                .repeatedMultiplicationAllowed(false)
+                .repeatedDivisionAllowed(false)
+                .usesOrderOfOperations(false)
+                .usesParentheses(false)
+                .build();
+    }
+
+    private static MathPatternRule createAdditionChainRule() {
+        return MathPatternRule.builder()
+                .allowedDifficulties(mediumAndHardDifficulties())
+                .allowedQuestionTypes(additionQuestionTypes())
+                .maxMultiplicationOperatorCounts(emptyOperatorCounts())
+                .maxDivisionOperatorCounts(emptyOperatorCounts())
+                .maxMultiplicationFactor(COMPLEX_MAX_MULTIPLICATION_FACTOR)
+                .maxDivisionFactor(MAX_DIVISION_FACTOR)
+                .maxCorrectAnswerValuesByDifficulty(maxAnswerValuesForMediumAndHard())
+                .repeatedMultiplicationAllowed(false)
+                .repeatedDivisionAllowed(false)
+                .usesOrderOfOperations(false)
+                .usesParentheses(false)
+                .build();
+    }
+
+    private static MathPatternRule createLongAdditionChainRule() {
+        return MathPatternRule.builder()
+                .allowedDifficulties(hardDifficultyOnly())
+                .allowedQuestionTypes(additionQuestionTypes())
+                .maxMultiplicationOperatorCounts(emptyOperatorCounts())
+                .maxDivisionOperatorCounts(emptyOperatorCounts())
+                .maxMultiplicationFactor(COMPLEX_MAX_MULTIPLICATION_FACTOR)
+                .maxDivisionFactor(MAX_DIVISION_FACTOR)
+                .maxCorrectAnswerValuesByDifficulty(maxAnswerValuesForHard())
+                .repeatedMultiplicationAllowed(false)
+                .repeatedDivisionAllowed(false)
+                .usesOrderOfOperations(false)
+                .usesParentheses(false)
+                .build();
+    }
+
+    private static MathPatternRule createSubtractionChainRule() {
+        return MathPatternRule.builder()
+                .allowedDifficulties(mediumAndHardDifficulties())
+                .allowedQuestionTypes(subtractionQuestionTypes())
+                .maxMultiplicationOperatorCounts(emptyOperatorCounts())
+                .maxDivisionOperatorCounts(emptyOperatorCounts())
+                .maxMultiplicationFactor(COMPLEX_MAX_MULTIPLICATION_FACTOR)
+                .maxDivisionFactor(MAX_DIVISION_FACTOR)
+                .maxCorrectAnswerValuesByDifficulty(maxAnswerValuesForMediumAndHard())
+                .repeatedMultiplicationAllowed(false)
+                .repeatedDivisionAllowed(false)
+                .usesOrderOfOperations(false)
+                .usesParentheses(false)
+                .build();
+    }
+
+    private static MathPatternRule createLongSubtractionChainRule() {
+        return MathPatternRule.builder()
+                .allowedDifficulties(hardDifficultyOnly())
+                .allowedQuestionTypes(subtractionQuestionTypes())
+                .maxMultiplicationOperatorCounts(emptyOperatorCounts())
+                .maxDivisionOperatorCounts(emptyOperatorCounts())
+                .maxMultiplicationFactor(COMPLEX_MAX_MULTIPLICATION_FACTOR)
+                .maxDivisionFactor(MAX_DIVISION_FACTOR)
+                .maxCorrectAnswerValuesByDifficulty(maxAnswerValuesForHard())
+                .repeatedMultiplicationAllowed(false)
+                .repeatedDivisionAllowed(false)
+                .usesOrderOfOperations(false)
+                .usesParentheses(false)
+                .build();
+    }
+
+    private static MathPatternRule createAddSubtractChainRule() {
+        return MathPatternRule.builder()
+                .allowedDifficulties(mediumAndHardDifficulties())
+                .allowedQuestionTypes(subtractionQuestionTypes())
+                .maxMultiplicationOperatorCounts(emptyOperatorCounts())
+                .maxDivisionOperatorCounts(emptyOperatorCounts())
+                .maxMultiplicationFactor(COMPLEX_MAX_MULTIPLICATION_FACTOR)
+                .maxDivisionFactor(MAX_DIVISION_FACTOR)
+                .maxCorrectAnswerValuesByDifficulty(maxAnswerValuesForMediumAndHard())
+                .repeatedMultiplicationAllowed(false)
+                .repeatedDivisionAllowed(false)
+                .usesOrderOfOperations(false)
+                .usesParentheses(false)
+                .build();
+    }
+
+    private static MathPatternRule createLongAddSubtractChainRule() {
+        return MathPatternRule.builder()
+                .allowedDifficulties(hardDifficultyOnly())
+                .allowedQuestionTypes(subtractionQuestionTypes())
+                .maxMultiplicationOperatorCounts(emptyOperatorCounts())
+                .maxDivisionOperatorCounts(emptyOperatorCounts())
+                .maxMultiplicationFactor(COMPLEX_MAX_MULTIPLICATION_FACTOR)
+                .maxDivisionFactor(MAX_DIVISION_FACTOR)
+                .maxCorrectAnswerValuesByDifficulty(maxAnswerValuesForHard())
                 .repeatedMultiplicationAllowed(false)
                 .repeatedDivisionAllowed(false)
                 .usesOrderOfOperations(false)
@@ -270,7 +424,7 @@ public final class MathPatternRules {
 
     private static MathPatternRule createSmallMultiplicationChainRule() {
         return MathPatternRule.builder()
-                .allowedDifficulties(hardDifficultyOnly())
+                .allowedDifficulties(mediumAndHardDifficulties())
                 .allowedQuestionTypes(multiplicationQuestionTypes())
                 .maxMultiplicationOperatorCounts(operatorCountMap(
                         QuestionType.MULTIPLICATION,
@@ -279,9 +433,28 @@ public final class MathPatternRules {
                 .maxDivisionOperatorCounts(emptyOperatorCounts())
                 .maxMultiplicationFactor(SMALL_CHAIN_MAX_MULTIPLICATION_FACTOR)
                 .maxDivisionFactor(MAX_DIVISION_FACTOR)
-                .maxCorrectAnswerValuesByDifficulty(maxAnswerValuesForSmallChain())
+                .maxCorrectAnswerValuesByDifficulty(maxAnswerValuesForSmallChainMediumAndHard())
                 .repeatedMultiplicationAllowed(true)
                 .repeatedDivisionAllowed(false)
+                .usesOrderOfOperations(false)
+                .usesParentheses(false)
+                .build();
+    }
+
+    private static MathPatternRule createDivisionChainRule() {
+        return MathPatternRule.builder()
+                .allowedDifficulties(hardDifficultyOnly())
+                .allowedQuestionTypes(divisionQuestionTypes())
+                .maxMultiplicationOperatorCounts(emptyOperatorCounts())
+                .maxDivisionOperatorCounts(operatorCountMap(
+                        QuestionType.DIVISION,
+                        DIVISION_CHAIN_OPERATOR_COUNT
+                ))
+                .maxMultiplicationFactor(COMPLEX_MAX_MULTIPLICATION_FACTOR)
+                .maxDivisionFactor(MAX_DIVISION_FACTOR)
+                .maxCorrectAnswerValuesByDifficulty(maxAnswerValuesForHard())
+                .repeatedMultiplicationAllowed(false)
+                .repeatedDivisionAllowed(true)
                 .usesOrderOfOperations(false)
                 .usesParentheses(false)
                 .build();
@@ -331,6 +504,14 @@ public final class MathPatternRules {
         return Set.of(Difficulty.HARD);
     }
 
+    private static Set<QuestionType> additionQuestionTypes() {
+        return Set.of(QuestionType.ADDITION);
+    }
+
+    private static Set<QuestionType> subtractionQuestionTypes() {
+        return Set.of(QuestionType.SUBTRACTION);
+    }
+
     private static Set<QuestionType> orderOfOperationsQuestionTypes() {
         return Set.of(QuestionType.ORDER_OF_OPERATIONS);
     }
@@ -341,6 +522,10 @@ public final class MathPatternRules {
 
     private static Set<QuestionType> multiplicationQuestionTypes() {
         return Set.of(QuestionType.MULTIPLICATION);
+    }
+
+    private static Set<QuestionType> divisionQuestionTypes() {
+        return Set.of(QuestionType.DIVISION);
     }
 
     private static Map<QuestionType, Integer> operatorCountMap(
@@ -381,10 +566,61 @@ public final class MathPatternRules {
         );
     }
 
-    private static Map<Difficulty, Integer> maxAnswerValuesForSmallChain() {
+    private static Map<Difficulty, Integer> maxAnswerValuesForSmallChainMediumAndHard() {
         return Map.of(
+                Difficulty.MEDIUM,
+                MEDIUM_MAX_CORRECT_ANSWER_VALUE,
                 Difficulty.HARD,
                 SMALL_CHAIN_MAX_CORRECT_ANSWER_VALUE
         );
+    }
+
+    private static Set<MathOperator> operatorsForBinaryQuestionType(
+            QuestionType questionType
+    ) {
+        return switch (questionType) {
+            case ADDITION -> Set.of(MathOperator.ADDITION);
+            case SUBTRACTION -> Set.of(MathOperator.SUBTRACTION);
+            case MULTIPLICATION -> Set.of(MathOperator.MULTIPLICATION);
+            case DIVISION -> Set.of(MathOperator.DIVISION);
+            default -> Set.of();
+        };
+    }
+
+    private static Set<MathOperator> operatorsForPattern(
+            QuestionGenerationPattern generationPattern
+    ) {
+        return switch (generationPattern) {
+            case ADDITION_CHAIN,
+                 LONG_ADDITION_CHAIN -> Set.of(MathOperator.ADDITION);
+
+            case SUBTRACTION_CHAIN,
+                 LONG_SUBTRACTION_CHAIN -> Set.of(MathOperator.SUBTRACTION);
+
+            case ADD_SUBTRACT_CHAIN,
+                 LONG_ADD_SUBTRACT_CHAIN -> Set.of(
+                    MathOperator.ADDITION,
+                    MathOperator.SUBTRACTION
+            );
+
+            case ADD_THEN_MULTIPLY,
+                 PARENTHESES_SUM_THEN_MULTIPLY,
+                 MULTIPLY_BY_PARENTHESES_SUM -> Set.of(
+                    MathOperator.ADDITION,
+                    MathOperator.MULTIPLICATION
+            );
+
+            case ADD_MULTIPLY_SUBTRACT -> Set.of(
+                    MathOperator.ADDITION,
+                    MathOperator.MULTIPLICATION,
+                    MathOperator.SUBTRACTION
+            );
+
+            case SMALL_MULTIPLICATION_CHAIN -> Set.of(MathOperator.MULTIPLICATION);
+
+            case DIVISION_CHAIN -> Set.of(MathOperator.DIVISION);
+
+            case BINARY_OPERATION -> Set.of();
+        };
     }
 }

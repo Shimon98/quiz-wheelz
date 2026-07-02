@@ -1,9 +1,12 @@
 package com.quiz_wheelz.common;
 
 import com.quiz_wheelz.enums.Difficulty;
+import com.quiz_wheelz.enums.MathOperator;
 import com.quiz_wheelz.enums.QuestionGenerationPattern;
 import com.quiz_wheelz.enums.QuestionType;
 import org.junit.jupiter.api.Test;
+
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,6 +29,16 @@ class MathPatternRulesTest {
 
         assertFalse(MathPatternRules.isPatternAllowedForDifficulty(
                 Difficulty.EASY,
+                QuestionGenerationPattern.ADDITION_CHAIN
+        ));
+
+        assertFalse(MathPatternRules.isPatternAllowedForDifficulty(
+                Difficulty.EASY,
+                QuestionGenerationPattern.SUBTRACTION_CHAIN
+        ));
+
+        assertFalse(MathPatternRules.isPatternAllowedForDifficulty(
+                Difficulty.EASY,
                 QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN
         ));
     }
@@ -35,6 +48,36 @@ class MathPatternRulesTest {
         assertTrue(MathPatternRules.isPatternAllowedForDifficulty(
                 Difficulty.MEDIUM,
                 QuestionGenerationPattern.BINARY_OPERATION
+        ));
+
+        assertTrue(MathPatternRules.isPatternAllowedForDifficulty(
+                Difficulty.MEDIUM,
+                QuestionGenerationPattern.ADDITION_CHAIN
+        ));
+
+        assertTrue(MathPatternRules.isPatternAllowedForDifficulty(
+                Difficulty.MEDIUM,
+                QuestionGenerationPattern.ADD_SUBTRACT_CHAIN
+        ));
+
+        assertTrue(MathPatternRules.isPatternAllowedForDifficulty(
+                Difficulty.MEDIUM,
+                QuestionGenerationPattern.SUBTRACTION_CHAIN
+        ));
+
+        assertFalse(MathPatternRules.isPatternAllowedForDifficulty(
+                Difficulty.MEDIUM,
+                QuestionGenerationPattern.LONG_ADDITION_CHAIN
+        ));
+
+        assertFalse(MathPatternRules.isPatternAllowedForDifficulty(
+                Difficulty.MEDIUM,
+                QuestionGenerationPattern.LONG_SUBTRACTION_CHAIN
+        ));
+
+        assertFalse(MathPatternRules.isPatternAllowedForDifficulty(
+                Difficulty.MEDIUM,
+                QuestionGenerationPattern.LONG_ADD_SUBTRACT_CHAIN
         ));
 
         assertTrue(MathPatternRules.isPatternAllowedForDifficulty(
@@ -57,9 +100,14 @@ class MathPatternRulesTest {
                 QuestionGenerationPattern.ADD_MULTIPLY_SUBTRACT
         ));
 
-        assertFalse(MathPatternRules.isPatternAllowedForDifficulty(
+        assertTrue(MathPatternRules.isPatternAllowedForDifficulty(
                 Difficulty.MEDIUM,
                 QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN
+        ));
+
+        assertFalse(MathPatternRules.isPatternAllowedForDifficulty(
+                Difficulty.MEDIUM,
+                QuestionGenerationPattern.DIVISION_CHAIN
         ));
     }
 
@@ -104,6 +152,51 @@ class MathPatternRulesTest {
         ));
 
         assertTrue(MathPatternRules.isQuestionTypeAllowedForPattern(
+                QuestionType.ADDITION,
+                QuestionGenerationPattern.ADDITION_CHAIN
+        ));
+
+        assertTrue(MathPatternRules.isQuestionTypeAllowedForPattern(
+                QuestionType.ADDITION,
+                QuestionGenerationPattern.LONG_ADDITION_CHAIN
+        ));
+
+        assertFalse(MathPatternRules.isQuestionTypeAllowedForPattern(
+                QuestionType.SUBTRACTION,
+                QuestionGenerationPattern.ADDITION_CHAIN
+        ));
+
+        assertTrue(MathPatternRules.isQuestionTypeAllowedForPattern(
+                QuestionType.SUBTRACTION,
+                QuestionGenerationPattern.SUBTRACTION_CHAIN
+        ));
+
+        assertTrue(MathPatternRules.isQuestionTypeAllowedForPattern(
+                QuestionType.SUBTRACTION,
+                QuestionGenerationPattern.LONG_SUBTRACTION_CHAIN
+        ));
+
+        assertFalse(MathPatternRules.isQuestionTypeAllowedForPattern(
+                QuestionType.ADDITION,
+                QuestionGenerationPattern.SUBTRACTION_CHAIN
+        ));
+
+        assertTrue(MathPatternRules.isQuestionTypeAllowedForPattern(
+                QuestionType.SUBTRACTION,
+                QuestionGenerationPattern.ADD_SUBTRACT_CHAIN
+        ));
+
+        assertTrue(MathPatternRules.isQuestionTypeAllowedForPattern(
+                QuestionType.SUBTRACTION,
+                QuestionGenerationPattern.LONG_ADD_SUBTRACT_CHAIN
+        ));
+
+        assertFalse(MathPatternRules.isQuestionTypeAllowedForPattern(
+                QuestionType.ADDITION,
+                QuestionGenerationPattern.ADD_SUBTRACT_CHAIN
+        ));
+
+        assertTrue(MathPatternRules.isQuestionTypeAllowedForPattern(
                 QuestionType.ORDER_OF_OPERATIONS,
                 QuestionGenerationPattern.ADD_THEN_MULTIPLY
         ));
@@ -121,6 +214,16 @@ class MathPatternRulesTest {
         assertTrue(MathPatternRules.isQuestionTypeAllowedForPattern(
                 QuestionType.MULTIPLICATION,
                 QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN
+        ));
+
+        assertTrue(MathPatternRules.isQuestionTypeAllowedForPattern(
+                QuestionType.DIVISION,
+                QuestionGenerationPattern.DIVISION_CHAIN
+        ));
+
+        assertFalse(MathPatternRules.isQuestionTypeAllowedForPattern(
+                QuestionType.MULTIPLICATION,
+                QuestionGenerationPattern.DIVISION_CHAIN
         ));
     }
 
@@ -203,11 +306,19 @@ class MathPatternRulesTest {
                         QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN
                 )
         );
+
+        assertEquals(
+                MathPatternRules.DIVISION_CHAIN_OPERATOR_COUNT,
+                MathPatternRules.maxDivisionOperatorCount(
+                        QuestionType.DIVISION,
+                        QuestionGenerationPattern.DIVISION_CHAIN
+                )
+        );
     }
 
     @Test
-    void shouldAllowRepeatedMultiplicationOnlyForHardSmallChain() {
-        assertFalse(MathPatternRules.allowsRepeatedMultiplication(
+    void shouldAllowRepeatedMultiplicationForMediumAndHardSmallChain() {
+        assertTrue(MathPatternRules.allowsRepeatedMultiplication(
                 Difficulty.MEDIUM,
                 QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN
         ));
@@ -224,7 +335,7 @@ class MathPatternRulesTest {
     }
 
     @Test
-    void shouldNeverAllowRepeatedDivisionAtThisStage() {
+    void shouldAllowRepeatedDivisionOnlyForDivisionChain() {
         assertFalse(MathPatternRules.allowsRepeatedDivision(
                 Difficulty.EASY,
                 QuestionGenerationPattern.BINARY_OPERATION
@@ -238,6 +349,11 @@ class MathPatternRulesTest {
         assertFalse(MathPatternRules.allowsRepeatedDivision(
                 Difficulty.HARD,
                 QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN
+        ));
+
+        assertTrue(MathPatternRules.allowsRepeatedDivision(
+                Difficulty.HARD,
+                QuestionGenerationPattern.DIVISION_CHAIN
         ));
     }
 
@@ -320,6 +436,14 @@ class MathPatternRulesTest {
                         QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN
                 )
         );
+
+        assertEquals(
+                MathPatternRules.MEDIUM_MAX_CORRECT_ANSWER_VALUE,
+                MathPatternRules.maxCorrectAnswerValue(
+                        Difficulty.MEDIUM,
+                        QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN
+                )
+        );
     }
 
     @Test
@@ -365,6 +489,125 @@ class MathPatternRulesTest {
         assertFalse(MathPatternRules.usesParentheses(
                 QuestionGenerationPattern.ADD_THEN_MULTIPLY
         ));
+    }
+
+    @Test
+    void shouldReturnOperatorsUsedByTemplate() {
+        assertEquals(
+                Set.of(MathOperator.ADDITION),
+                MathPatternRules.operatorsUsedByTemplate(
+                        QuestionType.ADDITION,
+                        QuestionGenerationPattern.BINARY_OPERATION
+                )
+        );
+
+        assertEquals(
+                Set.of(MathOperator.SUBTRACTION),
+                MathPatternRules.operatorsUsedByTemplate(
+                        QuestionType.SUBTRACTION,
+                        QuestionGenerationPattern.BINARY_OPERATION
+                )
+        );
+
+        assertEquals(
+                Set.of(MathOperator.MULTIPLICATION),
+                MathPatternRules.operatorsUsedByTemplate(
+                        QuestionType.MULTIPLICATION,
+                        QuestionGenerationPattern.BINARY_OPERATION
+                )
+        );
+
+        assertEquals(
+                Set.of(MathOperator.DIVISION),
+                MathPatternRules.operatorsUsedByTemplate(
+                        QuestionType.DIVISION,
+                        QuestionGenerationPattern.BINARY_OPERATION
+                )
+        );
+
+        assertEquals(
+                Set.of(MathOperator.ADDITION),
+                MathPatternRules.operatorsUsedByTemplate(
+                        QuestionType.ADDITION,
+                        QuestionGenerationPattern.ADDITION_CHAIN
+                )
+        );
+
+        assertEquals(
+                Set.of(MathOperator.ADDITION),
+                MathPatternRules.operatorsUsedByTemplate(
+                        QuestionType.ADDITION,
+                        QuestionGenerationPattern.LONG_ADDITION_CHAIN
+                )
+        );
+
+        assertEquals(
+                Set.of(MathOperator.SUBTRACTION),
+                MathPatternRules.operatorsUsedByTemplate(
+                        QuestionType.SUBTRACTION,
+                        QuestionGenerationPattern.SUBTRACTION_CHAIN
+                )
+        );
+
+        assertEquals(
+                Set.of(MathOperator.SUBTRACTION),
+                MathPatternRules.operatorsUsedByTemplate(
+                        QuestionType.SUBTRACTION,
+                        QuestionGenerationPattern.LONG_SUBTRACTION_CHAIN
+                )
+        );
+
+        assertEquals(
+                Set.of(MathOperator.ADDITION, MathOperator.SUBTRACTION),
+                MathPatternRules.operatorsUsedByTemplate(
+                        QuestionType.SUBTRACTION,
+                        QuestionGenerationPattern.ADD_SUBTRACT_CHAIN
+                )
+        );
+
+        assertEquals(
+                Set.of(MathOperator.ADDITION, MathOperator.SUBTRACTION),
+                MathPatternRules.operatorsUsedByTemplate(
+                        QuestionType.SUBTRACTION,
+                        QuestionGenerationPattern.LONG_ADD_SUBTRACT_CHAIN
+                )
+        );
+
+        assertEquals(
+                Set.of(MathOperator.ADDITION, MathOperator.MULTIPLICATION),
+                MathPatternRules.operatorsUsedByTemplate(
+                        QuestionType.ORDER_OF_OPERATIONS,
+                        QuestionGenerationPattern.ADD_THEN_MULTIPLY
+                )
+        );
+
+        assertEquals(
+                Set.of(
+                        MathOperator.ADDITION,
+                        MathOperator.MULTIPLICATION,
+                        MathOperator.SUBTRACTION
+                ),
+                MathPatternRules.operatorsUsedByTemplate(
+                        QuestionType.ORDER_OF_OPERATIONS,
+                        QuestionGenerationPattern.ADD_MULTIPLY_SUBTRACT
+                )
+        );
+
+        assertEquals(
+                Set.of(MathOperator.MULTIPLICATION),
+                MathPatternRules.operatorsUsedByTemplate(
+                        QuestionType.MULTIPLICATION,
+                        QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN
+                )
+        );
+
+        assertEquals(
+                Set.of(MathOperator.DIVISION),
+                MathPatternRules.operatorsUsedByTemplate(
+                        QuestionType.DIVISION,
+                        QuestionGenerationPattern.DIVISION_CHAIN
+                )
+        );
     }
 
     @Test

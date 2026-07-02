@@ -13,6 +13,8 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -20,21 +22,55 @@ import java.util.Map;
 public class MathQuestionGenerator {
 
     private static final Map<QuestionGenerationPattern, MathExpressionPattern>
-            EXPRESSION_PATTERNS_BY_GENERATION_PATTERN = Map.of(
-            QuestionGenerationPattern.ADD_THEN_MULTIPLY,
-            MathExpressionPattern.ADD_THEN_MULTIPLY,
-
-            QuestionGenerationPattern.PARENTHESES_SUM_THEN_MULTIPLY,
-            MathExpressionPattern.PARENTHESES_SUM_THEN_MULTIPLY,
-
-            QuestionGenerationPattern.MULTIPLY_BY_PARENTHESES_SUM,
-            MathExpressionPattern.MULTIPLY_BY_PARENTHESES_SUM,
-
-            QuestionGenerationPattern.ADD_MULTIPLY_SUBTRACT,
-            MathExpressionPattern.ADD_MULTIPLY_SUBTRACT,
-
-            QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN,
-            MathExpressionPattern.SMALL_MULTIPLICATION_CHAIN
+            EXPRESSION_PATTERNS_BY_GENERATION_PATTERN = Map.ofEntries(
+            Map.entry(
+                    QuestionGenerationPattern.ADDITION_CHAIN,
+                    MathExpressionPattern.ADDITION_CHAIN
+            ),
+            Map.entry(
+                    QuestionGenerationPattern.LONG_ADDITION_CHAIN,
+                    MathExpressionPattern.LONG_ADDITION_CHAIN
+            ),
+            Map.entry(
+                    QuestionGenerationPattern.SUBTRACTION_CHAIN,
+                    MathExpressionPattern.SUBTRACTION_CHAIN
+            ),
+            Map.entry(
+                    QuestionGenerationPattern.LONG_SUBTRACTION_CHAIN,
+                    MathExpressionPattern.LONG_SUBTRACTION_CHAIN
+            ),
+            Map.entry(
+                    QuestionGenerationPattern.ADD_SUBTRACT_CHAIN,
+                    MathExpressionPattern.ADD_SUBTRACT_CHAIN
+            ),
+            Map.entry(
+                    QuestionGenerationPattern.LONG_ADD_SUBTRACT_CHAIN,
+                    MathExpressionPattern.LONG_ADD_SUBTRACT_CHAIN
+            ),
+            Map.entry(
+                    QuestionGenerationPattern.ADD_THEN_MULTIPLY,
+                    MathExpressionPattern.ADD_THEN_MULTIPLY
+            ),
+            Map.entry(
+                    QuestionGenerationPattern.PARENTHESES_SUM_THEN_MULTIPLY,
+                    MathExpressionPattern.PARENTHESES_SUM_THEN_MULTIPLY
+            ),
+            Map.entry(
+                    QuestionGenerationPattern.MULTIPLY_BY_PARENTHESES_SUM,
+                    MathExpressionPattern.MULTIPLY_BY_PARENTHESES_SUM
+            ),
+            Map.entry(
+                    QuestionGenerationPattern.ADD_MULTIPLY_SUBTRACT,
+                    MathExpressionPattern.ADD_MULTIPLY_SUBTRACT
+            ),
+            Map.entry(
+                    QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN,
+                    MathExpressionPattern.SMALL_MULTIPLICATION_CHAIN
+            ),
+            Map.entry(
+                    QuestionGenerationPattern.DIVISION_CHAIN,
+                    MathExpressionPattern.DIVISION_CHAIN
+            )
     );
 
     private final MathQuestionPlanValidator mathQuestionPlanValidator;
@@ -167,6 +203,29 @@ public class MathQuestionGenerator {
             QuestionPlan questionPlan,
             MathExpressionPattern expressionPattern
     ) {
+        if (expressionPattern == MathExpressionPattern.SUBTRACTION_CHAIN) {
+            return generateSafeSubtractionChainQuestion(
+                    questionPlan,
+                    expressionPattern,
+                    3
+            );
+        }
+
+        if (expressionPattern == MathExpressionPattern.LONG_SUBTRACTION_CHAIN) {
+            return generateSafeSubtractionChainQuestion(
+                    questionPlan,
+                    expressionPattern,
+                    4
+            );
+        }
+
+        if (expressionPattern == MathExpressionPattern.DIVISION_CHAIN) {
+            return generateSafeDivisionChainQuestion(
+                    questionPlan,
+                    expressionPattern
+            );
+        }
+
         for (int attempt = 0;
              attempt < QuestionRules.MAX_QUESTION_GENERATION_ATTEMPTS;
              attempt++) {
@@ -188,6 +247,98 @@ public class MathQuestionGenerator {
         }
 
         throw new ApiException(ErrorCode.QUESTION_GENERATION_FAILED);
+    }
+
+    private MathQuestionData generateSafeSubtractionChainQuestion(
+            QuestionPlan questionPlan,
+            MathExpressionPattern expressionPattern,
+            int operandsCount
+    ) {
+        for (int attempt = 0;
+             attempt < QuestionRules.MAX_QUESTION_GENERATION_ATTEMPTS;
+             attempt++) {
+            List<Integer> generatedValues = mathOperandGenerator.createOperands(
+                    questionPlan,
+                    subtractionChainRoles(operandsCount)
+            );
+
+            int targetAnswer = first(generatedValues);
+            List<Integer> subtrahends = generatedValues.subList(
+                    1,
+                    generatedValues.size()
+            );
+
+            int leftOperand = targetAnswer + subtrahends.stream()
+                    .mapToInt(Integer::intValue)
+                    .sum();
+
+            List<Integer> operands = new ArrayList<>();
+            operands.add(leftOperand);
+            operands.addAll(subtrahends);
+
+            int correctAnswer = expressionPattern.calculateCorrectAnswer(operands);
+
+            if (isCorrectAnswerAllowed(questionPlan, correctAnswer)) {
+                return buildExpressionQuestion(
+                        questionPlan,
+                        expressionPattern,
+                        operands,
+                        correctAnswer
+                );
+            }
+        }
+
+        throw new ApiException(ErrorCode.QUESTION_GENERATION_FAILED);
+    }
+
+    private MathQuestionData generateSafeDivisionChainQuestion(
+            QuestionPlan questionPlan,
+            MathExpressionPattern expressionPattern
+    ) {
+        mathQuestionPlanValidator.validateDivisionRange(questionPlan);
+
+        for (int attempt = 0;
+             attempt < QuestionRules.MAX_QUESTION_GENERATION_ATTEMPTS;
+             attempt++) {
+            List<Integer> generatedValues = mathOperandGenerator.createOperands(
+                    questionPlan,
+                    MathOperandRole.DIVISION_FACTOR,
+                    MathOperandRole.DIVISION_FACTOR,
+                    MathOperandRole.DIVISION_FACTOR
+            );
+
+            int quotient = first(generatedValues);
+            int firstDivisor = second(generatedValues);
+            int secondDivisor = third(generatedValues);
+
+            int dividend = quotient * firstDivisor * secondDivisor;
+
+            List<Integer> operands = List.of(
+                    dividend,
+                    firstDivisor,
+                    secondDivisor
+            );
+
+            int correctAnswer = expressionPattern.calculateCorrectAnswer(operands);
+
+            if (isCorrectAnswerAllowed(questionPlan, correctAnswer)) {
+                return buildExpressionQuestion(
+                        questionPlan,
+                        expressionPattern,
+                        operands,
+                        correctAnswer
+                );
+            }
+        }
+
+        throw new ApiException(ErrorCode.QUESTION_GENERATION_FAILED);
+    }
+
+    private List<MathOperandRole> subtractionChainRoles(int operandsCount) {
+        return Collections.nCopies(
+                operandsCount,
+                MathOperandRole.ANY
+        );
     }
 
     private MathQuestionData buildExpressionQuestion(
@@ -244,5 +395,9 @@ public class MathQuestionGenerator {
 
     private int second(List<Integer> operands) {
         return operands.get(QuestionRules.SECOND_OPERAND_INDEX);
+    }
+
+    private int third(List<Integer> operands) {
+        return operands.get(QuestionRules.THIRD_OPERAND_INDEX);
     }
 }

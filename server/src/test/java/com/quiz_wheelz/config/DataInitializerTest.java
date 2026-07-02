@@ -1,5 +1,6 @@
 package com.quiz_wheelz.config;
 
+import com.quiz_wheelz.common.QuestionTemplateSeedRules;
 import com.quiz_wheelz.entitys.QuestionTemplate;
 import com.quiz_wheelz.entitys.Subject;
 import com.quiz_wheelz.enums.Difficulty;
@@ -55,7 +56,7 @@ class DataInitializerTest {
 
         ArgumentCaptor<QuestionTemplate> templateCaptor =
                 ArgumentCaptor.forClass(QuestionTemplate.class);
-        verify(questionTemplateRepository, times(20)).save(templateCaptor.capture());
+        verify(questionTemplateRepository, times(31)).save(templateCaptor.capture());
 
         List<QuestionTemplate> savedTemplates = templateCaptor.getAllValues();
 
@@ -70,6 +71,42 @@ class DataInitializerTest {
                 QuestionType.MULTIPLICATION,
                 Difficulty.MEDIUM,
                 QuestionGenerationPattern.BINARY_OPERATION
+        );
+        assertContainsTemplate(
+                savedTemplates,
+                QuestionType.ADDITION,
+                Difficulty.MEDIUM,
+                QuestionGenerationPattern.ADDITION_CHAIN,
+                QuestionTemplateSeedRules.MEDIUM_ADDITIVE_MIN_VALUE,
+                QuestionTemplateSeedRules.MEDIUM_ADDITIVE_MAX_VALUE,
+                QuestionTemplateSeedRules.MEDIUM_ADDITIVE_CHAIN_TIME_LIMIT_SECONDS
+        );
+        assertContainsTemplate(
+                savedTemplates,
+                QuestionType.SUBTRACTION,
+                Difficulty.MEDIUM,
+                QuestionGenerationPattern.SUBTRACTION_CHAIN,
+                QuestionTemplateSeedRules.MEDIUM_SUBTRACTION_CHAIN_MIN_VALUE,
+                QuestionTemplateSeedRules.MEDIUM_SUBTRACTION_CHAIN_MAX_VALUE,
+                QuestionTemplateSeedRules.MEDIUM_OPERATOR_CHAIN_TIME_LIMIT_SECONDS
+        );
+        assertContainsTemplate(
+                savedTemplates,
+                QuestionType.SUBTRACTION,
+                Difficulty.MEDIUM,
+                QuestionGenerationPattern.ADD_SUBTRACT_CHAIN,
+                QuestionTemplateSeedRules.MEDIUM_ADDITIVE_MIN_VALUE,
+                QuestionTemplateSeedRules.MEDIUM_ADDITIVE_MAX_VALUE,
+                QuestionTemplateSeedRules.MEDIUM_ADDITIVE_CHAIN_TIME_LIMIT_SECONDS
+        );
+        assertContainsTemplate(
+                savedTemplates,
+                QuestionType.MULTIPLICATION,
+                Difficulty.MEDIUM,
+                QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN,
+                QuestionTemplateSeedRules.MEDIUM_MULTIPLICATION_CHAIN_MIN_VALUE,
+                QuestionTemplateSeedRules.MEDIUM_MULTIPLICATION_CHAIN_MAX_VALUE,
+                QuestionTemplateSeedRules.MEDIUM_OPERATOR_CHAIN_TIME_LIMIT_SECONDS
         );
         assertContainsTemplate(
                 savedTemplates,
@@ -97,9 +134,75 @@ class DataInitializerTest {
         );
         assertContainsTemplate(
                 savedTemplates,
+                QuestionType.ADDITION,
+                Difficulty.HARD,
+                QuestionGenerationPattern.ADDITION_CHAIN,
+                QuestionTemplateSeedRules.HARD_ADDITIVE_MIN_VALUE,
+                QuestionTemplateSeedRules.HARD_ADDITIVE_MAX_VALUE,
+                QuestionTemplateSeedRules.HARD_ADDITIVE_CHAIN_TIME_LIMIT_SECONDS
+        );
+        assertContainsTemplate(
+                savedTemplates,
+                QuestionType.ADDITION,
+                Difficulty.HARD,
+                QuestionGenerationPattern.LONG_ADDITION_CHAIN,
+                QuestionTemplateSeedRules.HARD_ADDITIVE_MIN_VALUE,
+                QuestionTemplateSeedRules.HARD_ADDITIVE_MAX_VALUE,
+                QuestionTemplateSeedRules.HARD_ADDITIVE_CHAIN_TIME_LIMIT_SECONDS
+        );
+        assertContainsTemplate(
+                savedTemplates,
+                QuestionType.SUBTRACTION,
+                Difficulty.HARD,
+                QuestionGenerationPattern.SUBTRACTION_CHAIN,
+                QuestionTemplateSeedRules.HARD_SUBTRACTION_CHAIN_MIN_VALUE,
+                QuestionTemplateSeedRules.HARD_SUBTRACTION_CHAIN_MAX_VALUE,
+                QuestionTemplateSeedRules.HARD_OPERATOR_CHAIN_TIME_LIMIT_SECONDS
+        );
+        assertContainsTemplate(
+                savedTemplates,
+                QuestionType.SUBTRACTION,
+                Difficulty.HARD,
+                QuestionGenerationPattern.LONG_SUBTRACTION_CHAIN,
+                QuestionTemplateSeedRules.HARD_SUBTRACTION_CHAIN_MIN_VALUE,
+                QuestionTemplateSeedRules.HARD_SUBTRACTION_CHAIN_MAX_VALUE,
+                QuestionTemplateSeedRules.HARD_OPERATOR_CHAIN_TIME_LIMIT_SECONDS
+        );
+        assertContainsTemplate(
+                savedTemplates,
+                QuestionType.SUBTRACTION,
+                Difficulty.HARD,
+                QuestionGenerationPattern.ADD_SUBTRACT_CHAIN,
+                QuestionTemplateSeedRules.HARD_ADDITIVE_MIN_VALUE,
+                QuestionTemplateSeedRules.HARD_ADDITIVE_MAX_VALUE,
+                QuestionTemplateSeedRules.HARD_ADDITIVE_CHAIN_TIME_LIMIT_SECONDS
+        );
+        assertContainsTemplate(
+                savedTemplates,
+                QuestionType.SUBTRACTION,
+                Difficulty.HARD,
+                QuestionGenerationPattern.LONG_ADD_SUBTRACT_CHAIN,
+                QuestionTemplateSeedRules.HARD_ADDITIVE_MIN_VALUE,
+                QuestionTemplateSeedRules.HARD_ADDITIVE_MAX_VALUE,
+                QuestionTemplateSeedRules.HARD_ADDITIVE_CHAIN_TIME_LIMIT_SECONDS
+        );
+        assertContainsTemplate(
+                savedTemplates,
                 QuestionType.MULTIPLICATION,
                 Difficulty.HARD,
-                QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN
+                QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN,
+                QuestionTemplateSeedRules.HARD_MULTIPLICATION_CHAIN_MIN_VALUE,
+                QuestionTemplateSeedRules.HARD_MULTIPLICATION_CHAIN_MAX_VALUE,
+                QuestionTemplateSeedRules.HARD_OPERATOR_CHAIN_TIME_LIMIT_SECONDS
+        );
+        assertContainsTemplate(
+                savedTemplates,
+                QuestionType.DIVISION,
+                Difficulty.HARD,
+                QuestionGenerationPattern.DIVISION_CHAIN,
+                QuestionTemplateSeedRules.HARD_DIVISION_CHAIN_MIN_VALUE,
+                QuestionTemplateSeedRules.HARD_DIVISION_CHAIN_MAX_VALUE,
+                QuestionTemplateSeedRules.HARD_OPERATOR_CHAIN_TIME_LIMIT_SECONDS
         );
 
         verifyExistsChecked(
@@ -110,9 +213,55 @@ class DataInitializerTest {
         );
         verifyExistsChecked(
                 mathSubject,
+                QuestionType.ADDITION,
+                Difficulty.HARD,
+                QuestionGenerationPattern.LONG_ADDITION_CHAIN
+        );
+        verifyExistsChecked(
+                mathSubject,
+                QuestionType.SUBTRACTION,
+                Difficulty.HARD,
+                QuestionGenerationPattern.LONG_SUBTRACTION_CHAIN
+        );
+        verifyExistsChecked(
+                mathSubject,
+                QuestionType.SUBTRACTION,
+                Difficulty.HARD,
+                QuestionGenerationPattern.LONG_ADD_SUBTRACT_CHAIN
+        );
+        verifyExistsChecked(
+                mathSubject,
                 QuestionType.MULTIPLICATION,
                 Difficulty.HARD,
                 QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN
+        );
+        verifyExistsChecked(
+                mathSubject,
+                QuestionType.DIVISION,
+                Difficulty.HARD,
+                QuestionGenerationPattern.DIVISION_CHAIN
+        );
+    }
+
+    private void assertContainsTemplate(
+            List<QuestionTemplate> templates,
+            QuestionType questionType,
+            Difficulty difficulty,
+            QuestionGenerationPattern generationPattern,
+            int minValue,
+            int maxValue,
+            int timeLimitSeconds
+    ) {
+        assertTrue(
+                templates.stream().anyMatch(template ->
+                        template.getType() == questionType
+                                && template.getDifficulty() == difficulty
+                                && template.getGenerationPattern() == generationPattern
+                                && template.getMinValue() == minValue
+                                && template.getMaxValue() == maxValue
+                                && template.getTimeLimitSeconds() == timeLimitSeconds
+                                && template.isActive()
+                )
         );
     }
 

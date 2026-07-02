@@ -13,6 +13,126 @@ public enum MathExpressionPattern {
             MathQuestionTextLayout.STANDARD
     ),
 
+    ADDITION_CHAIN(
+            QuestionType.ADDITION,
+            List.of(MathOperator.ADDITION, MathOperator.ADDITION),
+            List.of(
+                    MathOperandRole.ADDEND,
+                    MathOperandRole.ADDEND,
+                    MathOperandRole.ADDEND
+            ),
+            MathQuestionTextLayout.STANDARD
+    ) {
+        @Override
+        public int calculateCorrectAnswer(List<Integer> operands) {
+            return first(operands) + second(operands) + third(operands);
+        }
+    },
+
+    LONG_ADDITION_CHAIN(
+            QuestionType.ADDITION,
+            List.of(
+                    MathOperator.ADDITION,
+                    MathOperator.ADDITION,
+                    MathOperator.ADDITION
+            ),
+            List.of(
+                    MathOperandRole.ADDEND,
+                    MathOperandRole.ADDEND,
+                    MathOperandRole.ADDEND,
+                    MathOperandRole.ADDEND
+            ),
+            MathQuestionTextLayout.STANDARD
+    ) {
+        @Override
+        public int calculateCorrectAnswer(List<Integer> operands) {
+            return first(operands)
+                    + second(operands)
+                    + third(operands)
+                    + fourth(operands);
+        }
+    },
+
+    SUBTRACTION_CHAIN(
+            QuestionType.SUBTRACTION,
+            List.of(MathOperator.SUBTRACTION, MathOperator.SUBTRACTION),
+            List.of(
+                    MathOperandRole.ANY,
+                    MathOperandRole.ANY,
+                    MathOperandRole.ANY
+            ),
+            MathQuestionTextLayout.STANDARD
+    ) {
+        @Override
+        public int calculateCorrectAnswer(List<Integer> operands) {
+            return first(operands) - second(operands) - third(operands);
+        }
+    },
+
+    LONG_SUBTRACTION_CHAIN(
+            QuestionType.SUBTRACTION,
+            List.of(
+                    MathOperator.SUBTRACTION,
+                    MathOperator.SUBTRACTION,
+                    MathOperator.SUBTRACTION
+            ),
+            List.of(
+                    MathOperandRole.ANY,
+                    MathOperandRole.ANY,
+                    MathOperandRole.ANY,
+                    MathOperandRole.ANY
+            ),
+            MathQuestionTextLayout.STANDARD
+    ) {
+        @Override
+        public int calculateCorrectAnswer(List<Integer> operands) {
+            return first(operands)
+                    - second(operands)
+                    - third(operands)
+                    - fourth(operands);
+        }
+    },
+
+    ADD_SUBTRACT_CHAIN(
+            QuestionType.SUBTRACTION,
+            List.of(MathOperator.ADDITION, MathOperator.SUBTRACTION),
+            List.of(
+                    MathOperandRole.ADDEND,
+                    MathOperandRole.ADDEND,
+                    MathOperandRole.ANY
+            ),
+            MathQuestionTextLayout.STANDARD
+    ) {
+        @Override
+        public int calculateCorrectAnswer(List<Integer> operands) {
+            return first(operands) + second(operands) - third(operands);
+        }
+    },
+
+    LONG_ADD_SUBTRACT_CHAIN(
+            QuestionType.SUBTRACTION,
+            List.of(
+                    MathOperator.ADDITION,
+                    MathOperator.ADDITION,
+                    MathOperator.SUBTRACTION
+            ),
+            List.of(
+                    MathOperandRole.ADDEND,
+                    MathOperandRole.ADDEND,
+                    MathOperandRole.ADDEND,
+                    MathOperandRole.ANY
+            ),
+            MathQuestionTextLayout.STANDARD
+    ) {
+        @Override
+        public int calculateCorrectAnswer(List<Integer> operands) {
+            return first(operands)
+                    + second(operands)
+                    + third(operands)
+                    - fourth(operands);
+        }
+    },
+
     SMALL_MULTIPLICATION_CHAIN(
             QuestionType.MULTIPLICATION,
             List.of(MathOperator.MULTIPLICATION, MathOperator.MULTIPLICATION),
@@ -26,6 +146,22 @@ public enum MathExpressionPattern {
         @Override
         public int calculateCorrectAnswer(List<Integer> operands) {
             return first(operands) * second(operands) * third(operands);
+        }
+    },
+
+    DIVISION_CHAIN(
+            QuestionType.DIVISION,
+            List.of(MathOperator.DIVISION, MathOperator.DIVISION),
+            List.of(
+                    MathOperandRole.DIVISION_FACTOR,
+                    MathOperandRole.DIVISION_FACTOR,
+                    MathOperandRole.DIVISION_FACTOR
+            ),
+            MathQuestionTextLayout.STANDARD
+    ) {
+        @Override
+        public int calculateCorrectAnswer(List<Integer> operands) {
+            return first(operands) / second(operands) / third(operands);
         }
     },
 
