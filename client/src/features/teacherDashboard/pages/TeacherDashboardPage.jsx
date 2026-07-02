@@ -29,7 +29,7 @@ function TeacherDashboardContent() {
 
     const handleLogout = useCallback(async () => {
         await logout();
-        navigate(ROUTES.LOGIN, { replace: true });
+        navigate(ROUTES.LANDING, { replace: true });
     }, [logout, navigate]);
 
     return (
