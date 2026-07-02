@@ -6,6 +6,7 @@ import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.Difficulty;
 import com.quiz_wheelz.enums.RacePlayerStatus;
+import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import org.springframework.stereotype.Service;
@@ -96,11 +97,6 @@ public class RaceEngineService {
             throw new ApiException(ErrorCode.INVALID_ANSWER_SUBMISSION);
         }
 
-        if (racePlayer.getStatus() == RacePlayerStatus.FINISHED
-                || racePlayer.getStatus() == RacePlayerStatus.DISCONNECTED) {
-            throw new ApiException(ErrorCode.RACE_PLAYER_NOT_RACING);
-        }
-
         Race race = racePlayer.getRace();
 
         if (race == null) {
@@ -109,6 +105,14 @@ public class RaceEngineService {
 
         if (race.getTotalDistance() == null) {
             throw new ApiException(ErrorCode.RACE_TOTAL_DISTANCE_MISSING);
+        }
+
+        if (race.getStatus() != RaceStatus.IN_PROGRESS) {
+            throw new ApiException(ErrorCode.RACE_NOT_IN_PROGRESS);
+        }
+
+        if (racePlayer.getStatus() != RacePlayerStatus.RACING) {
+            throw new ApiException(ErrorCode.RACE_PLAYER_NOT_RACING);
         }
     }
 

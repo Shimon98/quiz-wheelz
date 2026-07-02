@@ -196,6 +196,33 @@ class RaceEngineServiceTest {
     }
 
     @Test
+    void shouldRejectWaitingPlayer() {
+        Race race = race(100, RaceStatus.IN_PROGRESS);
+        RacePlayer player = player(10L, race, Difficulty.EASY, 0.0, 0.0);
+        player.setStatus(RacePlayerStatus.WAITING);
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> raceEngineService.applyAnswerResult(player, true)
+        );
+
+        assertEquals(ErrorCode.RACE_PLAYER_NOT_RACING, exception.getErrorCode());
+    }
+
+    @Test
+    void shouldRejectRaceWhenRaceIsNotInProgress() {
+        Race race = race(100, RaceStatus.READY);
+        RacePlayer player = player(10L, race, Difficulty.EASY, 0.0, 0.0);
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> raceEngineService.applyAnswerResult(player, true)
+        );
+
+        assertEquals(ErrorCode.RACE_NOT_IN_PROGRESS, exception.getErrorCode());
+    }
+
+    @Test
     void shouldRejectRacePlayerWhenRaceTotalDistanceIsMissing() {
         Race race = race(null, RaceStatus.IN_PROGRESS);
         RacePlayer player = player(10L, race, Difficulty.EASY, 0.0, 0.0);
