@@ -6,7 +6,7 @@ import TeacherRegisterContent from "../features/teacherAuth/components/TeacherRe
 import ForgotPasswordContent from "../features/teacherAuth/components/ForgotPasswordContent";
 import NotFoundPage from "../features/commonPages/NotFoundPage";
 import UnauthorizedPage from "../features/commonPages/UnauthorizedPage";
-import TeacherDashboardPage from "../features/teacherDashboard/pages/TeacherDashboardPage";
+import TeacherDashboardHomePage from "../features/teacherWorkspace/pages/TeacherDashboardHomePage";
 import TeacherRaceRoomPage from "../features/teacherDashboard/pages/TeacherRaceRoomPage";
 import AdminDashboardPage from "../features/admin/pages/AdminDashboardPage";
 import { ROUTES } from "../constants/routeConstants";
@@ -51,7 +51,7 @@ export default function AppRouter() {
                     element={
                         <ProtectedRoute>
                             <RoleRoute allowedRoles={[USER_ROLES.TEACHER]}>
-                                <TeacherDashboardPage />
+                                <TeacherDashboardHomePage />
                             </RoleRoute>
                         </ProtectedRoute>
                     }
