@@ -40,4 +40,6 @@ export const UI_TONES = Object.freeze({
   SUCCESS: "green",
   DANGER: "red",
   NEUTRAL: "gray",
+  WARNING: "yellow",
+  INFO: "blue",
 });

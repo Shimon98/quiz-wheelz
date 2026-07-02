@@ -6,7 +6,8 @@ export const ROUTES = {
   TEACHER_FORGOT_PASSWORD: "/teacher/forgot-password",
   ADMIN_DASHBOARD: "/admin",
   TEACHER_DASHBOARD: "/teacher",
-  TEACHER_RACE_ROOM: "/teacher/races/:raceId",
+  TEACHER_RACES: "/teacher/races",
+  TEACHER_RACE_ROOM: "/teacher/races/:raceId/room",
   TEACHER_RACE_LIVE: "/teacher/races/:raceId/live",
   TEACHER_RACE_RESULTS: "/teacher/races/:raceId/results",
   STUDENT_JOIN: "/join",
@@ -15,7 +16,7 @@ export const ROUTES = {
 };
 
 export function buildTeacherRaceRoomPath(raceId) {
-  return `/teacher/races/${raceId}`;
+  return `/teacher/races/${raceId}/room`;
 }
 
 export function buildTeacherRaceLivePath(raceId) {

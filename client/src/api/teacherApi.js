@@ -19,3 +19,13 @@ export async function getTeacherRaceRoom(raceId) {
 
   return unwrapApiResponse(response);
 }
+
+// Start is a short server-owned command (no body) — the server decides
+// whether the race may start; the client only asks.
+export async function startTeacherRace(raceId) {
+  const response = await httpClient.post(
+    API_ENDPOINTS.TEACHER.RACE_START(raceId),
+  );
+
+  return unwrapApiResponse(response);
+}
