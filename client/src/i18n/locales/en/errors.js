@@ -20,6 +20,7 @@ export default {
   teacher: {
     createRaceFailed: "We could not create the race. Please try again.",
     subjectsLoadFailed: "We could not load the subjects list.",
+    startRaceFailed: "We could not start the race. Please try again.",
   },
   race: {
     full: "This race is already full.",

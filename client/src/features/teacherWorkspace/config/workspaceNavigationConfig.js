@@ -26,7 +26,7 @@ export const WORKSPACE_NAV_ITEMS = Object.freeze([
     id: "races",
     labelKey: "nav.races",
     icon: Flag,
-    disabled: true,
+    route: ROUTES.TEACHER_RACES,
   },
   {
     id: "settings",

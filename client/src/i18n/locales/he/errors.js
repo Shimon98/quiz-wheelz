@@ -21,6 +21,7 @@ export default {
   teacher: {
     createRaceFailed: "לא הצלחנו ליצור את המרוץ. נסו שוב.",
     subjectsLoadFailed: "לא הצלחנו לטעון את רשימת הנושאים.",
+    startRaceFailed: "לא הצלחנו להתחיל את המרוץ. נסו שוב.",
   },
   race: {
     full: "המרוץ כבר מלא.",

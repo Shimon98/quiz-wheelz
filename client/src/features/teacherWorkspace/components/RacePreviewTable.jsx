@@ -11,11 +11,12 @@ import RaceSubjectLabel from "./RaceSubjectLabel";
 const EMPTY_CELL = "—";
 
 /**
- * RacePreviewTable — desktop rendering of the race preview list. Receives
- * ready-made view models from raceDisplayUtils (same data as the mobile
- * cards — only the layout differs). Whole row opens the race.
+ * RacePreviewTable — desktop rendering of a race list. Receives ready-made
+ * view models from raceDisplayUtils (same data as the mobile cards — only
+ * the layout differs). Whole row opens the race; `renderRowAction` lets the
+ * all-races page swap the chevron for a status-driven action button.
  */
-export default function RacePreviewTable({ items, onOpenRace }) {
+export default function RacePreviewTable({ items, onOpenRace, renderRowAction }) {
   const { t } = useTranslation(I18N_NAMESPACES.TEACHER_WORKSPACE);
   const { dir } = useDirection();
   const ChevronIcon = dir === "rtl" ? ChevronLeft : ChevronRight;
@@ -62,18 +63,19 @@ export default function RacePreviewTable({ items, onOpenRace }) {
                 {item.createdAtLabel ?? EMPTY_CELL}
               </Text>
             </Table.Td>
-            <Table.Td>
-              <ActionIcon
-                variant="subtle"
-                color={UI_TONES.NEUTRAL}
-                aria-label={t("races.open")}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onOpenRace(item.race);
-                }}
-              >
-                <ChevronIcon size={18} aria-hidden="true" />
-              </ActionIcon>
+            <Table.Td onClick={(event) => event.stopPropagation()}>
+              {renderRowAction ? (
+                renderRowAction(item)
+              ) : (
+                <ActionIcon
+                  variant="subtle"
+                  color={UI_TONES.NEUTRAL}
+                  aria-label={t("races.open")}
+                  onClick={() => onOpenRace(item.race)}
+                >
+                  <ChevronIcon size={18} aria-hidden="true" />
+                </ActionIcon>
+              )}
             </Table.Td>
           </Table.Tr>
         ))}

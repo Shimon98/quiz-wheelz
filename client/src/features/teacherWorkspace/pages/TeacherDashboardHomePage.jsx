@@ -22,25 +22,22 @@ export default function TeacherDashboardHomePage() {
     useTeacherDashboardHome();
 
   const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
-  const isLoggingOut = useAuthStore((state) => state.isLoading);
 
   const [
     isCreateRaceOpen,
     { open: openCreateRace, close: closeCreateRace },
   ] = useDisclosure(false);
 
-  const handleLogout = useCallback(async () => {
-    await logout();
-    navigate(ROUTES.LANDING, { replace: true });
-  }, [logout, navigate]);
-
   const handleOpenRace = useCallback(
     (race) => {
-      navigate(buildTeacherRaceRoomPath(race.id));
+      navigate(buildTeacherRaceRoomPath(race.raceId ?? race.id));
     },
     [navigate],
   );
+
+  const handleViewAllRaces = useCallback(() => {
+    navigate(ROUTES.TEACHER_RACES);
+  }, [navigate]);
 
   // After a successful creation the teacher heads straight to the race's
   // waiting room (Shimon's call in the UI-07 plan); the dashboard refresh
@@ -50,8 +47,9 @@ export default function TeacherDashboardHomePage() {
       closeCreateRace();
       refetch();
 
-      if (createdRace?.id != null) {
-        navigate(buildTeacherRaceRoomPath(createdRace.id));
+      const createdRaceId = createdRace?.raceId ?? createdRace?.id;
+      if (createdRaceId != null) {
+        navigate(buildTeacherRaceRoomPath(createdRaceId));
       }
     },
     [closeCreateRace, refetch, navigate],
@@ -68,8 +66,7 @@ export default function TeacherDashboardHomePage() {
         onRetry={refetch}
         onCreateRace={openCreateRace}
         onOpenRace={handleOpenRace}
-        onLogout={handleLogout}
-        isLoggingOut={isLoggingOut}
+        onViewAllRaces={handleViewAllRaces}
       />
 
       <CreateRaceModal

@@ -17,5 +17,6 @@ export const API_ENDPOINTS = {
     DASHBOARD: "/teacher/dashboard",
     RACES: "/teacher/races",
     RACE_ROOM: (raceId) => `/teacher/races/${raceId}/room`,
+    RACE_START: (raceId) => `/teacher/races/${raceId}/start`,
   },
 };

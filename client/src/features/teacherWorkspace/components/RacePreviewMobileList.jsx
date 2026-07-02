@@ -8,10 +8,15 @@ import RaceRoomCode from "./RaceRoomCode";
 import RaceSubjectLabel from "./RaceSubjectLabel";
 
 /**
- * RacePreviewMobileList — mobile rendering of the race preview list: cards,
- * not a squeezed table. Same view models as RacePreviewTable.
+ * RacePreviewMobileList — mobile rendering of a race list: cards, not a
+ * squeezed table. Same view models as RacePreviewTable; `renderRowAction`
+ * swaps the default open button for a status-driven action.
  */
-export default function RacePreviewMobileList({ items, onOpenRace }) {
+export default function RacePreviewMobileList({
+  items,
+  onOpenRace,
+  renderRowAction,
+}) {
   const { t } = useTranslation(I18N_NAMESPACES.TEACHER_WORKSPACE);
 
   return (
@@ -42,13 +47,17 @@ export default function RacePreviewMobileList({ items, onOpenRace }) {
               {item.roomCode && <RaceRoomCode code={item.roomCode} />}
             </Group>
 
-            <Button
-              variant="light"
-              fullWidth
-              onClick={() => onOpenRace(item.race)}
-            >
-              {t("races.open")}
-            </Button>
+            {renderRowAction ? (
+              renderRowAction(item)
+            ) : (
+              <Button
+                variant="light"
+                fullWidth
+                onClick={() => onOpenRace(item.race)}
+              >
+                {t("races.open")}
+              </Button>
+            )}
           </Stack>
         </Paper>
       ))}

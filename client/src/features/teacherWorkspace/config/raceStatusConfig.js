@@ -49,3 +49,37 @@ export function getRaceStatusConfig(status) {
     RACE_STATUS_CONFIG[status] ?? RACE_STATUS_CONFIG[RACE_STATUSES.UNKNOWN]
   );
 }
+
+// RacePlayer statuses (server domain terms), same single-source treatment.
+export const RACE_PLAYER_STATUSES = Object.freeze({
+  WAITING: "WAITING",
+  RACING: "RACING",
+  FINISHED: "FINISHED",
+  DISCONNECTED: "DISCONNECTED",
+});
+
+export const RACE_PLAYER_STATUS_CONFIG = Object.freeze({
+  [RACE_PLAYER_STATUSES.WAITING]: {
+    tone: UI_TONES.WARNING,
+    labelKey: "racePlayerStatus.waiting",
+  },
+  [RACE_PLAYER_STATUSES.RACING]: {
+    tone: UI_TONES.SUCCESS,
+    labelKey: "racePlayerStatus.racing",
+  },
+  [RACE_PLAYER_STATUSES.FINISHED]: {
+    tone: UI_TONES.INFO,
+    labelKey: "racePlayerStatus.finished",
+  },
+  [RACE_PLAYER_STATUSES.DISCONNECTED]: {
+    tone: UI_TONES.NEUTRAL,
+    labelKey: "racePlayerStatus.disconnected",
+  },
+});
+
+export function getRacePlayerStatusConfig(status) {
+  return (
+    RACE_PLAYER_STATUS_CONFIG[status] ??
+    RACE_PLAYER_STATUS_CONFIG[RACE_PLAYER_STATUSES.WAITING]
+  );
+}
