@@ -103,6 +103,11 @@ public class RacePlayer extends BaseEntity {
 
     @NotNull
     @PositiveOrZero
+    @Column(name = "highest_streak", nullable = false)
+    private Integer highestStreak = RacePlayerRules.DEFAULT_HIGHEST_STREAK;
+
+    @NotNull
+    @PositiveOrZero
     @Column(name = "correct_answers", nullable = false)
     private Integer correctAnswers = RacePlayerRules.DEFAULT_CORRECT_ANSWERS;
 
@@ -115,6 +120,18 @@ public class RacePlayer extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "current_difficulty", nullable = false, length = 20)
     private Difficulty currentDifficulty = Difficulty.EASY;
+
+    @NotNull
+    @PositiveOrZero
+    @Column(name = "difficulty_correct_streak", nullable = false)
+    private Integer difficultyCorrectStreak =
+            RacePlayerRules.DEFAULT_DIFFICULTY_CORRECT_STREAK;
+
+    @NotNull
+    @PositiveOrZero
+    @Column(name = "difficulty_wrong_streak", nullable = false)
+    private Integer difficultyWrongStreak =
+            RacePlayerRules.DEFAULT_DIFFICULTY_WRONG_STREAK;
 
     @Column(name = "joined_at", nullable = false)
     private LocalDateTime joinedAt;

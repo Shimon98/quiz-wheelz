@@ -16,8 +16,11 @@ public final class RacePlayerRules {
 
     public static final int DEFAULT_SCORE = 0;
     public static final int DEFAULT_STREAK = 0;
+    public static final int DEFAULT_HIGHEST_STREAK = 0;
     public static final int DEFAULT_CORRECT_ANSWERS = 0;
     public static final int DEFAULT_WRONG_ANSWERS = 0;
+    public static final int DEFAULT_DIFFICULTY_CORRECT_STREAK = 0;
+    public static final int DEFAULT_DIFFICULTY_WRONG_STREAK = 0;
 
     public static final String DEFAULT_VEHICLE_TYPE_KEY = "TOY_CAR";
     public static final String DEFAULT_VEHICLE_COLOR_KEY = "PURPLE";
