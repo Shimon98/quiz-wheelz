@@ -15,15 +15,24 @@ import com.quiz_wheelz.enums.QuestionGenerationPattern;
 import com.quiz_wheelz.enums.QuestionType;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
+import com.quiz_wheelz.service.question.generator.BinaryMathQuestionGenerator;
+import com.quiz_wheelz.service.question.generator.ExpressionMathQuestionGenerator;
+import com.quiz_wheelz.service.question.generator.MathExpressionPatternResolver;
+import com.quiz_wheelz.service.question.generator.SafeDivisionChainQuestionGenerator;
+import com.quiz_wheelz.service.question.generator.SafeSubtractionChainQuestionGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -41,9 +50,25 @@ class MathQuestionGeneratorTest {
                 new Random(1),
                 mathQuestionPlanValidator
         );
+        SafeSubtractionChainQuestionGenerator safeSubtractionChainQuestionGenerator =
+                new SafeSubtractionChainQuestionGenerator(mathOperandGenerator);
+        SafeDivisionChainQuestionGenerator safeDivisionChainQuestionGenerator =
+                new SafeDivisionChainQuestionGenerator(
+                        mathQuestionPlanValidator,
+                        mathOperandGenerator
+                );
         mathQuestionGenerator = new MathQuestionGenerator(
                 mathQuestionPlanValidator,
-                mathOperandGenerator
+                new BinaryMathQuestionGenerator(
+                        mathQuestionPlanValidator,
+                        mathOperandGenerator
+                ),
+                new ExpressionMathQuestionGenerator(
+                        mathOperandGenerator,
+                        safeSubtractionChainQuestionGenerator,
+                        safeDivisionChainQuestionGenerator
+                ),
+                new MathExpressionPatternResolver()
         );
     }
 
@@ -182,6 +207,141 @@ class MathQuestionGeneratorTest {
         int leftToRightMistake = (firstOperand + secondOperand) * thirdOperand;
 
         assertTrue(result.getPreferredDistractorValues().contains(leftToRightMistake));
+    }
+
+    @ParameterizedTest
+    @MethodSource("additiveExpressionPatternCases")
+    void shouldGenerateAdditiveExpressionQuestion(
+            QuestionGenerationPattern generationPattern,
+            QuestionType questionType,
+            Difficulty difficulty,
+            MathExpressionPattern expressionPattern,
+            List<MathOperator> expectedOperators,
+            int expectedOperandsCount
+    ) {
+        QuestionPlan questionPlan = createQuestionPlan(
+                questionType,
+                difficulty,
+                5,
+                30,
+                generationPattern
+        );
+
+        MathQuestionData result = mathQuestionGenerator.generate(questionPlan);
+
+        assertNotNull(result);
+        assertEquals(questionType, result.getQuestionType());
+        assertEquals(expressionPattern, result.getExpressionPattern());
+        assertEquals(expectedOperators, result.getOperators());
+        assertEquals(expectedOperandsCount, result.getOperands().size());
+        assertEquals(
+                expressionPattern.calculateCorrectAnswer(result.getOperands()),
+                result.getCorrectAnswerValue()
+        );
+        assertTrue(result.getQuestionText().contains(MathQuestionTextRules.ADDITION_OPERATOR));
+        assertFalse(result.getQuestionText().contains(MathQuestionTextRules.MULTIPLICATION_OPERATOR));
+        assertFalse(result.getQuestionText().contains(MathQuestionTextRules.DIVISION_OPERATOR));
+
+        if (expectedOperators.contains(MathOperator.SUBTRACTION)) {
+            assertTrue(result.getQuestionText().contains(MathQuestionTextRules.SUBTRACTION_OPERATOR));
+        } else {
+            assertFalse(result.getQuestionText().contains(MathQuestionTextRules.SUBTRACTION_OPERATOR));
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("subtractionExpressionPatternCases")
+    void shouldGenerateSafeSubtractionChainQuestion(
+            QuestionGenerationPattern generationPattern,
+            Difficulty difficulty,
+            MathExpressionPattern expressionPattern,
+            int expectedOperandsCount
+    ) {
+        QuestionPlan questionPlan = createQuestionPlan(
+                QuestionType.SUBTRACTION,
+                difficulty,
+                5,
+                30,
+                generationPattern
+        );
+
+        MathQuestionData result = mathQuestionGenerator.generate(questionPlan);
+
+        assertNotNull(result);
+        assertEquals(QuestionType.SUBTRACTION, result.getQuestionType());
+        assertEquals(expressionPattern, result.getExpressionPattern());
+        assertEquals(expectedOperandsCount, result.getOperands().size());
+        assertEquals(
+                expressionPattern.calculateCorrectAnswer(result.getOperands()),
+                result.getCorrectAnswerValue()
+        );
+        assertTrue(result.getCorrectAnswerValue() >= 0);
+        assertTrue(result.getQuestionText().contains(MathQuestionTextRules.SUBTRACTION_OPERATOR));
+        assertFalse(result.getQuestionText().contains(MathQuestionTextRules.ADDITION_OPERATOR));
+        assertFalse(result.getQuestionText().contains(MathQuestionTextRules.MULTIPLICATION_OPERATOR));
+        assertFalse(result.getQuestionText().contains(MathQuestionTextRules.DIVISION_OPERATOR));
+    }
+
+    @Test
+    void shouldGenerateWholeNumberDivisionChainQuestion() {
+        QuestionPlan questionPlan = createQuestionPlan(
+                QuestionType.DIVISION,
+                Difficulty.HARD,
+                2,
+                8,
+                QuestionGenerationPattern.DIVISION_CHAIN
+        );
+
+        MathQuestionData result = mathQuestionGenerator.generate(questionPlan);
+
+        assertNotNull(result);
+        assertEquals(QuestionType.DIVISION, result.getQuestionType());
+        assertEquals(MathExpressionPattern.DIVISION_CHAIN, result.getExpressionPattern());
+        assertEquals(List.of(MathOperator.DIVISION, MathOperator.DIVISION), result.getOperators());
+        assertEquals(3, result.getOperands().size());
+        assertEquals(
+                result.getOperands().get(QuestionRules.FIRST_OPERAND_INDEX)
+                        / result.getOperands().get(QuestionRules.SECOND_OPERAND_INDEX)
+                        / result.getOperands().get(QuestionRules.THIRD_OPERAND_INDEX),
+                result.getCorrectAnswerValue()
+        );
+        assertEquals(
+                0,
+                result.getOperands().get(QuestionRules.FIRST_OPERAND_INDEX)
+                        % result.getOperands().get(QuestionRules.SECOND_OPERAND_INDEX)
+        );
+        assertTrue(result.getQuestionText().contains(MathQuestionTextRules.DIVISION_OPERATOR));
+        assertFalse(result.getQuestionText().contains(MathQuestionTextRules.ADDITION_OPERATOR));
+        assertFalse(result.getQuestionText().contains(MathQuestionTextRules.SUBTRACTION_OPERATOR));
+        assertFalse(result.getQuestionText().contains(MathQuestionTextRules.MULTIPLICATION_OPERATOR));
+    }
+
+    @Test
+    void shouldGenerateSmallMultiplicationChainForMediumDifficulty() {
+        QuestionPlan questionPlan = createQuestionPlan(
+                QuestionType.MULTIPLICATION,
+                Difficulty.MEDIUM,
+                2,
+                5,
+                QuestionGenerationPattern.SMALL_MULTIPLICATION_CHAIN
+        );
+
+        MathQuestionData result = mathQuestionGenerator.generate(questionPlan);
+
+        assertNotNull(result);
+        assertEquals(QuestionType.MULTIPLICATION, result.getQuestionType());
+        assertEquals(MathExpressionPattern.SMALL_MULTIPLICATION_CHAIN, result.getExpressionPattern());
+        assertEquals(
+                List.of(MathOperator.MULTIPLICATION, MathOperator.MULTIPLICATION),
+                result.getOperators()
+        );
+        assertEquals(3, result.getOperands().size());
+        assertEquals(
+                MathExpressionPattern.SMALL_MULTIPLICATION_CHAIN.calculateCorrectAnswer(
+                        result.getOperands()
+                ),
+                result.getCorrectAnswerValue()
+        );
     }
 
     @Test
@@ -378,6 +538,16 @@ class MathQuestionGeneratorTest {
             QuestionGenerationPattern generationPattern
     ) {
         return switch (generationPattern) {
+            case ADDITION_CHAIN,
+                 LONG_ADDITION_CHAIN -> QuestionType.ADDITION;
+
+            case SUBTRACTION_CHAIN,
+                 LONG_SUBTRACTION_CHAIN,
+                 ADD_SUBTRACT_CHAIN,
+                 LONG_ADD_SUBTRACT_CHAIN -> QuestionType.SUBTRACTION;
+
+            case DIVISION_CHAIN -> QuestionType.DIVISION;
+
             case ADD_THEN_MULTIPLY,
                  ADD_MULTIPLY_SUBTRACT -> QuestionType.ORDER_OF_OPERATIONS;
 
@@ -394,15 +564,84 @@ class MathQuestionGeneratorTest {
             QuestionGenerationPattern generationPattern
     ) {
         return switch (generationPattern) {
-            case ADD_MULTIPLY_SUBTRACT,
-                 SMALL_MULTIPLICATION_CHAIN -> Difficulty.HARD;
+            case LONG_ADDITION_CHAIN,
+                 LONG_SUBTRACTION_CHAIN,
+                 LONG_ADD_SUBTRACT_CHAIN,
+                 ADD_MULTIPLY_SUBTRACT,
+                 DIVISION_CHAIN -> Difficulty.HARD;
 
-            case ADD_THEN_MULTIPLY,
+            case ADDITION_CHAIN,
+                 SUBTRACTION_CHAIN,
+                 ADD_SUBTRACT_CHAIN,
+                 SMALL_MULTIPLICATION_CHAIN,
+                 ADD_THEN_MULTIPLY,
                  PARENTHESES_SUM_THEN_MULTIPLY,
                  MULTIPLY_BY_PARENTHESES_SUM -> Difficulty.MEDIUM;
 
             case BINARY_OPERATION -> Difficulty.EASY;
         };
+    }
+
+    private static Stream<Arguments> subtractionExpressionPatternCases() {
+        return Stream.of(
+                Arguments.of(
+                        QuestionGenerationPattern.SUBTRACTION_CHAIN,
+                        Difficulty.MEDIUM,
+                        MathExpressionPattern.SUBTRACTION_CHAIN,
+                        3
+                ),
+                Arguments.of(
+                        QuestionGenerationPattern.LONG_SUBTRACTION_CHAIN,
+                        Difficulty.HARD,
+                        MathExpressionPattern.LONG_SUBTRACTION_CHAIN,
+                        4
+                )
+        );
+    }
+
+    private static Stream<Arguments> additiveExpressionPatternCases() {
+        return Stream.of(
+                Arguments.of(
+                        QuestionGenerationPattern.ADDITION_CHAIN,
+                        QuestionType.ADDITION,
+                        Difficulty.MEDIUM,
+                        MathExpressionPattern.ADDITION_CHAIN,
+                        List.of(MathOperator.ADDITION, MathOperator.ADDITION),
+                        3
+                ),
+                Arguments.of(
+                        QuestionGenerationPattern.LONG_ADDITION_CHAIN,
+                        QuestionType.ADDITION,
+                        Difficulty.HARD,
+                        MathExpressionPattern.LONG_ADDITION_CHAIN,
+                        List.of(
+                                MathOperator.ADDITION,
+                                MathOperator.ADDITION,
+                                MathOperator.ADDITION
+                        ),
+                        4
+                ),
+                Arguments.of(
+                        QuestionGenerationPattern.ADD_SUBTRACT_CHAIN,
+                        QuestionType.SUBTRACTION,
+                        Difficulty.MEDIUM,
+                        MathExpressionPattern.ADD_SUBTRACT_CHAIN,
+                        List.of(MathOperator.ADDITION, MathOperator.SUBTRACTION),
+                        3
+                ),
+                Arguments.of(
+                        QuestionGenerationPattern.LONG_ADD_SUBTRACT_CHAIN,
+                        QuestionType.SUBTRACTION,
+                        Difficulty.HARD,
+                        MathExpressionPattern.LONG_ADD_SUBTRACT_CHAIN,
+                        List.of(
+                                MathOperator.ADDITION,
+                                MathOperator.ADDITION,
+                                MathOperator.SUBTRACTION
+                        ),
+                        4
+                )
+        );
     }
 
     private Subject createMathSubject() {

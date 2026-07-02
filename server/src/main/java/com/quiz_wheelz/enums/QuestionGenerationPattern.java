@@ -3,6 +3,15 @@ package com.quiz_wheelz.enums;
 public enum QuestionGenerationPattern {
     BINARY_OPERATION,
 
+    ADDITION_CHAIN,
+    LONG_ADDITION_CHAIN,
+
+    SUBTRACTION_CHAIN,
+    LONG_SUBTRACTION_CHAIN,
+
+    ADD_SUBTRACT_CHAIN,
+    LONG_ADD_SUBTRACT_CHAIN,
+
     ADD_THEN_MULTIPLY,
 
     PARENTHESES_SUM_THEN_MULTIPLY,
@@ -10,5 +19,7 @@ public enum QuestionGenerationPattern {
 
     ADD_MULTIPLY_SUBTRACT,
 
-    SMALL_MULTIPLICATION_CHAIN
+    SMALL_MULTIPLICATION_CHAIN,
+
+    DIVISION_CHAIN
 }
