@@ -1,4 +1,4 @@
-import { Container, Stack } from "@mantine/core";
+import { Box, Container, Stack } from "@mantine/core";
 
 import TeacherWorkspaceShell from "../layout/TeacherWorkspaceShell";
 import TeacherGreetingSection from "../components/TeacherGreetingSection";
@@ -40,10 +40,19 @@ export default function TeacherDashboardHomeView({
     >
       <Container size="xl">
         <Stack gap="xl">
-          <TeacherGreetingSection name={teacherName} />
+          <TeacherGreetingSection
+            name={teacherName}
+            action={
+              !isLoading && !error && hasRaces ? (
+                <DashboardPrimaryAction onClick={onCreateRace} />
+              ) : null
+            }
+          />
 
           {!isLoading && !error && hasRaces && (
-            <DashboardPrimaryAction onClick={onCreateRace} />
+            <Box hiddenFrom="sm">
+              <DashboardPrimaryAction onClick={onCreateRace} />
+            </Box>
           )}
 
           {isLoading ? (

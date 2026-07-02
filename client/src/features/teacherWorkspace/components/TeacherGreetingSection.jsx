@@ -23,7 +23,7 @@ function GreetingArt({ src, height }) {
   );
 }
 
-export default function TeacherGreetingSection({ name }) {
+export default function TeacherGreetingSection({ name, action }) {
   const { t } = useTranslation(I18N_NAMESPACES.TEACHER_WORKSPACE);
 
   const title = name
@@ -37,6 +37,13 @@ export default function TeacherGreetingSection({ name }) {
           {title}
         </Title>
         <Text c="dimmed">{t("greeting.subtitle")}</Text>
+        {/* On desktop the primary action lives inside the hero row, using the
+            art's height instead of pushing the whole page down. */}
+        {action && (
+          <Box visibleFrom="sm" mt="md">
+            {action}
+          </Box>
+        )}
       </Stack>
 
       {/* flexShrink 0 so the art keeps its aspect ratio — otherwise the flex
