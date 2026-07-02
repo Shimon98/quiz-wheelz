@@ -1,5 +1,6 @@
 package com.quiz_wheelz.service.question.generator;
 
+import com.quiz_wheelz.common.MathPatternRules;
 import com.quiz_wheelz.common.QuestionRules;
 import com.quiz_wheelz.dto.question.QuestionPlan;
 import com.quiz_wheelz.enums.MathExpressionPattern;
@@ -51,13 +52,27 @@ public class SafeSubtractionChainQuestionGenerator {
 
             int correctAnswer = expressionPattern.calculateCorrectAnswer(operands);
 
-            return new ExpressionQuestionGenerationResult(
-                    operands,
-                    correctAnswer
-            );
+            if (isCorrectAnswerAllowed(questionPlan, correctAnswer)) {
+                return new ExpressionQuestionGenerationResult(
+                        operands,
+                        correctAnswer
+                );
+            }
         }
 
         throw new ApiException(ErrorCode.QUESTION_GENERATION_FAILED);
+    }
+
+    private boolean isCorrectAnswerAllowed(
+            QuestionPlan questionPlan,
+            Integer correctAnswer
+    ) {
+        return correctAnswer != null
+                && correctAnswer >= QuestionRules.MIN_DISTRACTOR_VALUE
+                && correctAnswer <= MathPatternRules.maxCorrectAnswerValue(
+                        questionPlan.getDifficulty(),
+                        questionPlan.getGenerationPattern()
+                );
     }
 
     private List<MathOperandRole> subtractionChainRoles(int operandsCount) {

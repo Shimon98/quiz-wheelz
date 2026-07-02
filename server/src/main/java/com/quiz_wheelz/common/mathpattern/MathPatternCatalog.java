@@ -1,6 +1,5 @@
 package com.quiz_wheelz.common.mathpattern;
 
-import com.quiz_wheelz.common.MathPatternRules;
 import com.quiz_wheelz.common.QuestionRules;
 import com.quiz_wheelz.enums.Difficulty;
 import com.quiz_wheelz.enums.MathOperator;
@@ -9,6 +8,8 @@ import com.quiz_wheelz.enums.QuestionType;
 
 import java.util.Map;
 import java.util.Set;
+
+import static com.quiz_wheelz.common.mathpattern.MathPatternRuleConstants.*;
 
 public final class MathPatternCatalog {
 
@@ -117,14 +118,14 @@ public final class MathPatternCatalog {
                 .usedOperators(Set.of())
                 .maxMultiplicationOperatorCounts(operatorCountMap(
                         QuestionType.MULTIPLICATION,
-                        MathPatternRules.SINGLE_OPERATOR_COUNT
+                        SINGLE_OPERATOR_COUNT
                 ))
                 .maxDivisionOperatorCounts(operatorCountMap(
                         QuestionType.DIVISION,
-                        MathPatternRules.SINGLE_OPERATOR_COUNT
+                        SINGLE_OPERATOR_COUNT
                 ))
-                .maxMultiplicationFactor(MathPatternRules.BINARY_MAX_MULTIPLICATION_FACTOR)
-                .maxDivisionFactor(MathPatternRules.MAX_DIVISION_FACTOR)
+                .maxMultiplicationFactor(BINARY_MAX_MULTIPLICATION_FACTOR)
+                .maxDivisionFactor(MAX_DIVISION_FACTOR)
                 .maxCorrectAnswerValuesByDifficulty(maxAnswerValuesForAllDifficulties())
                 .build();
     }
@@ -190,11 +191,11 @@ public final class MathPatternCatalog {
                 .usedOperators(Set.of(MathOperator.ADDITION, MathOperator.MULTIPLICATION))
                 .maxMultiplicationOperatorCounts(operatorCountMap(
                         QuestionType.ORDER_OF_OPERATIONS,
-                        MathPatternRules.SINGLE_OPERATOR_COUNT
+                        SINGLE_OPERATOR_COUNT
                 ))
                 .maxDivisionOperatorCounts(emptyOperatorCounts())
-                .maxMultiplicationFactor(MathPatternRules.COMPLEX_MAX_MULTIPLICATION_FACTOR)
-                .maxDivisionFactor(MathPatternRules.MAX_DIVISION_FACTOR)
+                .maxMultiplicationFactor(COMPLEX_MAX_MULTIPLICATION_FACTOR)
+                .maxDivisionFactor(MAX_DIVISION_FACTOR)
                 .maxCorrectAnswerValuesByDifficulty(maxAnswerValuesForMediumAndHard())
                 .usesOrderOfOperations(true)
                 .build();
@@ -209,11 +210,11 @@ public final class MathPatternCatalog {
                 .usedOperators(Set.of(MathOperator.ADDITION, MathOperator.MULTIPLICATION))
                 .maxMultiplicationOperatorCounts(operatorCountMap(
                         QuestionType.PARENTHESES,
-                        MathPatternRules.SINGLE_OPERATOR_COUNT
+                        SINGLE_OPERATOR_COUNT
                 ))
                 .maxDivisionOperatorCounts(emptyOperatorCounts())
-                .maxMultiplicationFactor(MathPatternRules.COMPLEX_MAX_MULTIPLICATION_FACTOR)
-                .maxDivisionFactor(MathPatternRules.MAX_DIVISION_FACTOR)
+                .maxMultiplicationFactor(COMPLEX_MAX_MULTIPLICATION_FACTOR)
+                .maxDivisionFactor(MAX_DIVISION_FACTOR)
                 .maxCorrectAnswerValuesByDifficulty(maxAnswerValuesForMediumAndHard())
                 .usesParentheses(true)
                 .build();
@@ -230,11 +231,11 @@ public final class MathPatternCatalog {
                 ))
                 .maxMultiplicationOperatorCounts(operatorCountMap(
                         QuestionType.ORDER_OF_OPERATIONS,
-                        MathPatternRules.SINGLE_OPERATOR_COUNT
+                        SINGLE_OPERATOR_COUNT
                 ))
                 .maxDivisionOperatorCounts(emptyOperatorCounts())
-                .maxMultiplicationFactor(MathPatternRules.COMPLEX_MAX_MULTIPLICATION_FACTOR)
-                .maxDivisionFactor(MathPatternRules.MAX_DIVISION_FACTOR)
+                .maxMultiplicationFactor(COMPLEX_MAX_MULTIPLICATION_FACTOR)
+                .maxDivisionFactor(MAX_DIVISION_FACTOR)
                 .maxCorrectAnswerValuesByDifficulty(maxAnswerValuesForHard())
                 .usesOrderOfOperations(true)
                 .build();
@@ -247,11 +248,11 @@ public final class MathPatternCatalog {
                 .usedOperators(Set.of(MathOperator.MULTIPLICATION))
                 .maxMultiplicationOperatorCounts(operatorCountMap(
                         QuestionType.MULTIPLICATION,
-                        MathPatternRules.SMALL_CHAIN_MULTIPLICATION_OPERATOR_COUNT
+                        SMALL_CHAIN_MULTIPLICATION_OPERATOR_COUNT
                 ))
                 .maxDivisionOperatorCounts(emptyOperatorCounts())
-                .maxMultiplicationFactor(MathPatternRules.SMALL_CHAIN_MAX_MULTIPLICATION_FACTOR)
-                .maxDivisionFactor(MathPatternRules.MAX_DIVISION_FACTOR)
+                .maxMultiplicationFactor(SMALL_CHAIN_MAX_MULTIPLICATION_FACTOR)
+                .maxDivisionFactor(MAX_DIVISION_FACTOR)
                 .maxCorrectAnswerValuesByDifficulty(maxAnswerValuesForSmallChainMediumAndHard())
                 .repeatedMultiplicationAllowed(true)
                 .build();
@@ -265,10 +266,10 @@ public final class MathPatternCatalog {
                 .maxMultiplicationOperatorCounts(emptyOperatorCounts())
                 .maxDivisionOperatorCounts(operatorCountMap(
                         QuestionType.DIVISION,
-                        MathPatternRules.DIVISION_CHAIN_OPERATOR_COUNT
+                        DIVISION_CHAIN_OPERATOR_COUNT
                 ))
-                .maxMultiplicationFactor(MathPatternRules.COMPLEX_MAX_MULTIPLICATION_FACTOR)
-                .maxDivisionFactor(MathPatternRules.MAX_DIVISION_FACTOR)
+                .maxMultiplicationFactor(COMPLEX_MAX_MULTIPLICATION_FACTOR)
+                .maxDivisionFactor(MAX_DIVISION_FACTOR)
                 .maxCorrectAnswerValuesByDifficulty(maxAnswerValuesForHard())
                 .repeatedDivisionAllowed(true)
                 .build();
@@ -280,8 +281,8 @@ public final class MathPatternCatalog {
         return baseBuilder(generationPattern)
                 .maxMultiplicationOperatorCounts(emptyOperatorCounts())
                 .maxDivisionOperatorCounts(emptyOperatorCounts())
-                .maxMultiplicationFactor(MathPatternRules.COMPLEX_MAX_MULTIPLICATION_FACTOR)
-                .maxDivisionFactor(MathPatternRules.MAX_DIVISION_FACTOR);
+                .maxMultiplicationFactor(COMPLEX_MAX_MULTIPLICATION_FACTOR)
+                .maxDivisionFactor(MAX_DIVISION_FACTOR);
     }
 
     private static MathPatternDefinition.MathPatternDefinitionBuilder baseBuilder(
@@ -354,36 +355,36 @@ public final class MathPatternCatalog {
     private static Map<Difficulty, Integer> maxAnswerValuesForAllDifficulties() {
         return Map.of(
                 Difficulty.EASY,
-                MathPatternRules.EASY_MAX_CORRECT_ANSWER_VALUE,
+                EASY_MAX_CORRECT_ANSWER_VALUE,
                 Difficulty.MEDIUM,
-                MathPatternRules.MEDIUM_MAX_CORRECT_ANSWER_VALUE,
+                MEDIUM_MAX_CORRECT_ANSWER_VALUE,
                 Difficulty.HARD,
-                MathPatternRules.HARD_MAX_CORRECT_ANSWER_VALUE
+                HARD_MAX_CORRECT_ANSWER_VALUE
         );
     }
 
     private static Map<Difficulty, Integer> maxAnswerValuesForMediumAndHard() {
         return Map.of(
                 Difficulty.MEDIUM,
-                MathPatternRules.MEDIUM_MAX_CORRECT_ANSWER_VALUE,
+                MEDIUM_MAX_CORRECT_ANSWER_VALUE,
                 Difficulty.HARD,
-                MathPatternRules.HARD_MAX_CORRECT_ANSWER_VALUE
+                HARD_MAX_CORRECT_ANSWER_VALUE
         );
     }
 
     private static Map<Difficulty, Integer> maxAnswerValuesForHard() {
         return Map.of(
                 Difficulty.HARD,
-                MathPatternRules.HARD_MAX_CORRECT_ANSWER_VALUE
+                HARD_MAX_CORRECT_ANSWER_VALUE
         );
     }
 
     private static Map<Difficulty, Integer> maxAnswerValuesForSmallChainMediumAndHard() {
         return Map.of(
                 Difficulty.MEDIUM,
-                MathPatternRules.MEDIUM_MAX_CORRECT_ANSWER_VALUE,
+                MEDIUM_MAX_CORRECT_ANSWER_VALUE,
                 Difficulty.HARD,
-                MathPatternRules.SMALL_CHAIN_MAX_CORRECT_ANSWER_VALUE
+                SMALL_CHAIN_MAX_CORRECT_ANSWER_VALUE
         );
     }
 }

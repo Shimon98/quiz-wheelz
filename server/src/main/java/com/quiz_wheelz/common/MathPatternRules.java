@@ -3,6 +3,7 @@ package com.quiz_wheelz.common;
 import com.quiz_wheelz.common.mathpattern.MathPatternCatalog;
 import com.quiz_wheelz.common.mathpattern.MathPatternDefinition;
 import com.quiz_wheelz.common.mathpattern.MathPatternOperatorResolver;
+import com.quiz_wheelz.common.mathpattern.MathPatternRuleConstants;
 import com.quiz_wheelz.enums.Difficulty;
 import com.quiz_wheelz.enums.MathOperator;
 import com.quiz_wheelz.enums.QuestionGenerationPattern;
@@ -15,26 +16,36 @@ public final class MathPatternRules {
     private static final String MISSING_MAX_ANSWER_VALUE_ERROR_MESSAGE =
             "Max correct answer value is not configured for the requested difficulty and pattern";
 
-    public static final int NO_OPERATOR_COUNT = 0;
-    public static final int SINGLE_OPERATOR_COUNT = 1;
-    public static final int DIVISION_CHAIN_OPERATOR_COUNT = 2;
-    public static final int SMALL_CHAIN_MULTIPLICATION_OPERATOR_COUNT = 2;
+    public static final int NO_OPERATOR_COUNT =
+            MathPatternRuleConstants.NO_OPERATOR_COUNT;
+    public static final int SINGLE_OPERATOR_COUNT =
+            MathPatternRuleConstants.SINGLE_OPERATOR_COUNT;
+    public static final int DIVISION_CHAIN_OPERATOR_COUNT =
+            MathPatternRuleConstants.DIVISION_CHAIN_OPERATOR_COUNT;
+    public static final int SMALL_CHAIN_MULTIPLICATION_OPERATOR_COUNT =
+            MathPatternRuleConstants.SMALL_CHAIN_MULTIPLICATION_OPERATOR_COUNT;
 
-    public static final int BINARY_MAX_MULTIPLICATION_FACTOR = 10;
-    public static final int COMPLEX_MAX_MULTIPLICATION_FACTOR = 5;
-    public static final int SMALL_CHAIN_MAX_MULTIPLICATION_FACTOR = 5;
+    public static final int BINARY_MAX_MULTIPLICATION_FACTOR =
+            MathPatternRuleConstants.BINARY_MAX_MULTIPLICATION_FACTOR;
+    public static final int COMPLEX_MAX_MULTIPLICATION_FACTOR =
+            MathPatternRuleConstants.COMPLEX_MAX_MULTIPLICATION_FACTOR;
+    public static final int SMALL_CHAIN_MAX_MULTIPLICATION_FACTOR =
+            MathPatternRuleConstants.SMALL_CHAIN_MAX_MULTIPLICATION_FACTOR;
 
-    public static final int MAX_DIVISION_FACTOR = 10;
+    public static final int MAX_DIVISION_FACTOR =
+            MathPatternRuleConstants.MAX_DIVISION_FACTOR;
 
-    public static final int EASY_MAX_CORRECT_ANSWER_VALUE = 100;
-    public static final int MEDIUM_MAX_CORRECT_ANSWER_VALUE = 120;
-    public static final int HARD_MAX_CORRECT_ANSWER_VALUE = 150;
+    public static final int EASY_MAX_CORRECT_ANSWER_VALUE =
+            MathPatternRuleConstants.EASY_MAX_CORRECT_ANSWER_VALUE;
+    public static final int MEDIUM_MAX_CORRECT_ANSWER_VALUE =
+            MathPatternRuleConstants.MEDIUM_MAX_CORRECT_ANSWER_VALUE;
+    public static final int HARD_MAX_CORRECT_ANSWER_VALUE =
+            MathPatternRuleConstants.HARD_MAX_CORRECT_ANSWER_VALUE;
 
-    public static final int SMALL_CHAIN_OPERANDS_COUNT = 3;
+    public static final int SMALL_CHAIN_OPERANDS_COUNT =
+            MathPatternRuleConstants.SMALL_CHAIN_OPERANDS_COUNT;
     public static final int SMALL_CHAIN_MAX_CORRECT_ANSWER_VALUE =
-            SMALL_CHAIN_MAX_MULTIPLICATION_FACTOR
-                    * SMALL_CHAIN_MAX_MULTIPLICATION_FACTOR
-                    * SMALL_CHAIN_MAX_MULTIPLICATION_FACTOR;
+            MathPatternRuleConstants.SMALL_CHAIN_MAX_CORRECT_ANSWER_VALUE;
 
     private MathPatternRules() {
     }
