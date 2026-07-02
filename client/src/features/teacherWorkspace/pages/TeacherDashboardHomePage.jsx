@@ -1,16 +1,14 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { notifications } from "@mantine/notifications";
+import { useDisclosure } from "@mantine/hooks";
 
-import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
-import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
 import {
   ROUTES,
   buildTeacherRaceRoomPath,
 } from "../../../constants/routeConstants";
 import { useAuthStore } from "../../../stores/authStore";
 import useTeacherDashboardHome from "../hooks/useTeacherDashboardHome";
+import CreateRaceModal from "../components/createRace/CreateRaceModal";
 import TeacherDashboardHomeView from "./TeacherDashboardHomeView";
 
 /**
@@ -19,7 +17,6 @@ import TeacherDashboardHomeView from "./TeacherDashboardHomeView";
  */
 export default function TeacherDashboardHomePage() {
   const navigate = useNavigate();
-  const { t } = useTranslation(I18N_NAMESPACES.TEACHER_WORKSPACE);
 
   const { teacherName, races, stats, isLoading, error, refetch } =
     useTeacherDashboardHome();
@@ -27,6 +24,11 @@ export default function TeacherDashboardHomePage() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const isLoggingOut = useAuthStore((state) => state.isLoading);
+
+  const [
+    isCreateRaceOpen,
+    { open: openCreateRace, close: closeCreateRace },
+  ] = useDisclosure(false);
 
   const handleLogout = useCallback(async () => {
     await logout();
@@ -40,28 +42,41 @@ export default function TeacherDashboardHomePage() {
     [navigate],
   );
 
-  // ponytail: the real create-race flow ships in UI-07 — until then the
-  // primary action is an honest "coming soon" toast, not a fake modal.
-  const handleCreateRace = useCallback(() => {
-    notifications.show({
-      title: t("actions.createRaceSoonTitle"),
-      message: t("actions.createRaceSoonBody"),
-      color: UI_TONES.SUCCESS,
-    });
-  }, [t]);
+  // After a successful creation the teacher heads straight to the race's
+  // waiting room (Shimon's call in the UI-07 plan); the dashboard refresh
+  // still runs so Back shows fresh data.
+  const handleRaceCreated = useCallback(
+    (createdRace) => {
+      closeCreateRace();
+      refetch();
+
+      if (createdRace?.id != null) {
+        navigate(buildTeacherRaceRoomPath(createdRace.id));
+      }
+    },
+    [closeCreateRace, refetch, navigate],
+  );
 
   return (
-    <TeacherDashboardHomeView
-      teacherName={teacherName ?? user?.displayName ?? null}
-      stats={stats}
-      races={races}
-      isLoading={isLoading}
-      error={error}
-      onRetry={refetch}
-      onCreateRace={handleCreateRace}
-      onOpenRace={handleOpenRace}
-      onLogout={handleLogout}
-      isLoggingOut={isLoggingOut}
-    />
+    <>
+      <TeacherDashboardHomeView
+        teacherName={teacherName ?? user?.displayName ?? null}
+        stats={stats}
+        races={races}
+        isLoading={isLoading}
+        error={error}
+        onRetry={refetch}
+        onCreateRace={openCreateRace}
+        onOpenRace={handleOpenRace}
+        onLogout={handleLogout}
+        isLoggingOut={isLoggingOut}
+      />
+
+      <CreateRaceModal
+        opened={isCreateRaceOpen}
+        onClose={closeCreateRace}
+        onCreated={handleRaceCreated}
+      />
+    </>
   );
 }

@@ -22,8 +22,6 @@ export default {
   },
   actions: {
     createRace: "יצירת מרוץ חדש",
-    createRaceSoonTitle: "כבר מגיע!",
-    createRaceSoonBody: "יצירת מרוץ מהלוח החדש מתחברת ממש בקרוב.",
     viewAllRaces: "הצג את כל המרוצים",
   },
   stats: {
@@ -53,6 +51,39 @@ export default {
     finished: "הסתיים",
     cancelled: "בוטל",
     unknown: "לא ידוע",
+  },
+  createRace: {
+    title: "יצירת מרוץ חדש",
+    nameLabel: "שם המרוץ",
+    namePlaceholder: "לדוגמה: מרוץ כפל וחילוק",
+    subjectLabel: "קטגוריית שאלות",
+    subjectPlaceholder: "בחרו נושא",
+    subjectLoading: "טוען נושאים...",
+    subjectsLoadFailed: "לא הצלחנו לטעון את רשימת הנושאים.",
+    playersLabel: "מספר משתתפים",
+    lengthLabel: "אורך המרוץ",
+    lengths: {
+      short: "קצר",
+      regular: "רגיל",
+      long: "ארוך",
+    },
+    operatorsTitle: "סוגי תרגילים",
+    operatorsSoon: "בקרוב: בחירת פעולות חשבון לפי מרוץ",
+    operators: {
+      addition: "חיבור",
+      subtraction: "חיסור",
+      multiplication: "כפל",
+      division: "חילוק",
+    },
+    submit: "יצירת מרוץ",
+    cancel: "ביטול",
+    successTitle: "המרוץ נוצר!",
+    successBody: "קוד החדר: {{roomCode}}",
+    validation: {
+      titleMinLength: "שם המרוץ חייב להכיל לפחות {{min}} תווים",
+      titleMaxLength: "שם המרוץ יכול להכיל עד {{max}} תווים",
+      subjectRequired: "בחרו קטגוריית שאלות",
+    },
   },
   states: {
     loading: "טוען את הלוח...",

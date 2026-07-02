@@ -21,8 +21,6 @@ export default {
   },
   actions: {
     createRace: "Create a new race",
-    createRaceSoonTitle: "Almost there!",
-    createRaceSoonBody: "Creating races from the new dashboard is coming very soon.",
     viewAllRaces: "View all races",
   },
   stats: {
@@ -52,6 +50,39 @@ export default {
     finished: "Finished",
     cancelled: "Cancelled",
     unknown: "Unknown",
+  },
+  createRace: {
+    title: "Create a new race",
+    nameLabel: "Race name",
+    namePlaceholder: "e.g. Multiplication Grand Prix",
+    subjectLabel: "Question category",
+    subjectPlaceholder: "Pick a subject",
+    subjectLoading: "Loading subjects...",
+    subjectsLoadFailed: "We could not load the subjects list.",
+    playersLabel: "Players",
+    lengthLabel: "Race length",
+    lengths: {
+      short: "Short",
+      regular: "Regular",
+      long: "Long",
+    },
+    operatorsTitle: "Exercise types",
+    operatorsSoon: "Coming soon: pick math operations per race",
+    operators: {
+      addition: "Addition",
+      subtraction: "Subtraction",
+      multiplication: "Multiplication",
+      division: "Division",
+    },
+    submit: "Create race",
+    cancel: "Cancel",
+    successTitle: "Race created!",
+    successBody: "Room code: {{roomCode}}",
+    validation: {
+      titleMinLength: "Race name must be at least {{min}} characters",
+      titleMaxLength: "Race name can be up to {{max}} characters",
+      subjectRequired: "Pick a question category",
+    },
   },
   states: {
     loading: "Loading your dashboard...",

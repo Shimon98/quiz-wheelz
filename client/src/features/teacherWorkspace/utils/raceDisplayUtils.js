@@ -57,6 +57,20 @@ export function formatRaceDate(value, language) {
   }).format(date);
 }
 
+// Server subjects -> Mantine Select options, localized like the race rows.
+export function buildSubjectOptions(subjects, language) {
+  return (Array.isArray(subjects) ? subjects : []).map((subject) => ({
+    value: String(subject.id),
+    label: getSubjectDisplayName(
+      {
+        subjectName: subject.name ?? subject.subjectName,
+        subjectCode: subject.code ?? subject.subjectCode,
+      },
+      language,
+    ),
+  }));
+}
+
 // Normalized subject identifier for icon lookup (RaceSubjectLabel).
 export function getSubjectKey(race) {
   const raw =

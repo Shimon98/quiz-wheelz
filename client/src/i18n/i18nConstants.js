@@ -18,6 +18,7 @@ export const I18N_NAMESPACES = Object.freeze({
   PUBLIC_ENTRY: "publicEntry",
   TEACHER_AUTH: "teacherAuth",
   TEACHER_WORKSPACE: "teacherWorkspace",
+  ERRORS: "errors",
 });
 
 export const I18N_NAMESPACE_LIST = Object.freeze(
