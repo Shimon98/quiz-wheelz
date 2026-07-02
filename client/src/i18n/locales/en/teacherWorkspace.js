@@ -42,6 +42,8 @@ export default {
       createdAt: "Created at",
     },
     open: "Open race",
+    copyRoomCode: "Copy room code",
+    copied: "Copied!",
   },
   raceStatus: {
     waiting: "Waiting",

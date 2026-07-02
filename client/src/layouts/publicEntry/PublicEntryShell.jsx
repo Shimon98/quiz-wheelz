@@ -4,8 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { I18N_NAMESPACES } from "../../i18n/i18nConstants";
 import { BrandWordmark } from "../../shared/components/publicEntry";
-import ShuffleText from "../../shared/components/publicEntry/ShuffleText";
-import bananaMark from "../../assets/brand/quizwheelz-mark.png";
+import BrandLockup from "../../shared/components/brand/BrandLockup";
 import {
   PublicSettingsButton,
   PublicSettingsDialog,
@@ -15,31 +14,10 @@ import PublicEntryLeaves from "./PublicEntryLeaves";
 import { PUBLIC_ENTRY_SHELL_STYLES as S } from "./publicEntryShellStyles";
 
 // Proper noun — identical in every language, so a constant, not an i18n key.
-// A SMALL banana mark sits just before the "Q", sized to the text itself
-// (h-[1.1em], so it scales with the title font-size); "Wheelz" stays
-// brand-green. dir="ltr" keeps the Latin lockup left-to-right (banana →
-// QuizWheelz) in both languages. The span's aria-label carries the real word
-// for screen readers (the banana + shuffle spans below it are hidden).
-const BRAND_TITLE = (
-  <span
-    dir="ltr"
-    className="inline-flex items-center whitespace-nowrap"
-    aria-label="QuizWheelz"
-  >
-    <img
-      src={bananaMark}
-      alt=""
-      aria-hidden="true"
-      className="me-1 inline-block h-[1.1em] w-auto shrink-0"
-    />
-    <ShuffleText
-      segments={[
-        { text: "Quiz" },
-        { text: "Wheelz", className: "text-[var(--qw-primary)]" },
-      ]}
-    />
-  </span>
-);
+// The shared BrandLockup (banana + ShuffleText) inherits the title font-size
+// from BrandWordmark, so the lockup looks exactly as before — now with the
+// same banana hover easter egg as the teacher workspace.
+const BRAND_TITLE = <BrandLockup />;
 
 /**
  * PublicEntryShell — the shared outer shell for public / auth entry screens,

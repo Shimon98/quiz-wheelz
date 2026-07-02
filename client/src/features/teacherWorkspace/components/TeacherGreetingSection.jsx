@@ -1,51 +1,52 @@
 import { useTranslation } from "react-i18next";
-import { Group, Stack, Text, Title } from "@mantine/core";
-import { motion, useReducedMotion } from "framer-motion";
+import { Box, Group, Stack, Text, Title } from "@mantine/core";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
-import monkeyImage from "../../../assets/landing/landing-hero-monkey.png";
+import heroDesktopImage from "../../../assets/workspace/greeting-hero-desktop.png";
+import heroMobileImage from "../../../assets/workspace/greeting-hero-mobile.png";
 
 /*
- * Idle animation for the greeting monkey: a gentle float most of the loop,
- * with a quick mischievous wiggle near the end — the "sometimes it moves"
- * surprise. Hovering it makes it lean in. Decorative only (aria-hidden) and
- * fully disabled under reduced motion.
+ * Greeting text beside the monkey-kart art, holding the corner of the
+ * dashboard. Two art variants, CSS-switched: desktop/tablet (>=sm) and the
+ * compact phone one. STATIC by design — Shimon: idle motion here looked
+ * forced; the art should just sit pretty in its corner.
  */
-const MONKEY_IDLE = {
-  y: [0, -6, 0, 0, 0, 0],
-  rotate: [0, 0, 0, -7, 7, 0],
-};
-
-const MONKEY_IDLE_TRANSITION = {
-  duration: 9,
-  times: [0, 0.25, 0.5, 0.82, 0.91, 1],
-  repeat: Infinity,
-  ease: "easeInOut",
-};
+function GreetingArt({ src, height }) {
+  return (
+    <img
+      src={src}
+      alt=""
+      aria-hidden="true"
+      draggable="false"
+      style={{ height, width: "auto", display: "block" }}
+    />
+  );
+}
 
 export default function TeacherGreetingSection({ name }) {
   const { t } = useTranslation(I18N_NAMESPACES.TEACHER_WORKSPACE);
-  const reduce = useReducedMotion();
+
+  const title = name
+    ? t("greeting.title", { name })
+    : t("greeting.titleNoName");
 
   return (
     <Group justify="space-between" align="center" wrap="nowrap">
       <Stack gap={4}>
         <Title order={1} fz={{ base: 26, sm: 34 }}>
-          {name ? t("greeting.title", { name }) : t("greeting.titleNoName")}
+          {title}
         </Title>
         <Text c="dimmed">{t("greeting.subtitle")}</Text>
       </Stack>
 
-      <motion.img
-        src={monkeyImage}
-        alt=""
-        aria-hidden="true"
-        draggable="false"
-        style={{ height: 96, width: "auto", flexShrink: 0 }}
-        animate={reduce ? undefined : MONKEY_IDLE}
-        transition={reduce ? undefined : MONKEY_IDLE_TRANSITION}
-        whileHover={reduce ? undefined : { scale: 1.1, rotate: -5 }}
-      />
+      {/* flexShrink 0 so the art keeps its aspect ratio — otherwise the flex
+          squeeze + Mantine's img max-width:100% squish the monkey. */}
+      <Box visibleFrom="sm" style={{ flexShrink: 0 }}>
+        <GreetingArt src={heroDesktopImage} height={224} />
+      </Box>
+      <Box hiddenFrom="sm" style={{ flexShrink: 0 }}>
+        <GreetingArt src={heroMobileImage} height={100} />
+      </Box>
     </Group>
   );
 }

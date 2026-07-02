@@ -43,6 +43,8 @@ export default {
       createdAt: "נוצר בתאריך",
     },
     open: "פתיחת מרוץ",
+    copyRoomCode: "העתקת קוד חדר",
+    copied: "הועתק!",
   },
   raceStatus: {
     waiting: "ממתין",

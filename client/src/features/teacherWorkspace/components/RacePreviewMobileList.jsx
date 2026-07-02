@@ -1,9 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { Badge, Button, Group, Paper, Stack, Text } from "@mantine/core";
+import { Button, Group, Paper, Stack, Text } from "@mantine/core";
 import { UsersRound } from "lucide-react";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import RaceStatusBadge from "./RaceStatusBadge";
+import RaceRoomCode from "./RaceRoomCode";
+import RaceSubjectLabel from "./RaceSubjectLabel";
 
 /**
  * RacePreviewMobileList — mobile rendering of the race preview list: cards,
@@ -24,17 +26,20 @@ export default function RacePreviewMobileList({ items, onOpenRace }) {
               <RaceStatusBadge status={item.status} size="sm" />
             </Group>
 
-            <Group gap="md" c="dimmed" fz="sm">
-              {item.subjectName && <Text span>{item.subjectName}</Text>}
-              <Group gap={4} wrap="nowrap">
-                <UsersRound size={16} aria-hidden="true" />
-                <Text span>{item.playersLabel}</Text>
+            <Group gap="md" c="dimmed" fz="sm" justify="space-between">
+              <Group gap="md" wrap="nowrap">
+                {item.subjectName && (
+                  <RaceSubjectLabel
+                    subjectKey={item.subjectKey}
+                    label={item.subjectName}
+                  />
+                )}
+                <Group gap={4} wrap="nowrap">
+                  <UsersRound size={16} aria-hidden="true" />
+                  <Text span>{item.playersLabel}</Text>
+                </Group>
               </Group>
-              {item.roomCode && (
-                <Badge variant="default" radius="md" size="sm">
-                  {item.roomCode}
-                </Badge>
-              )}
+              {item.roomCode && <RaceRoomCode code={item.roomCode} />}
             </Group>
 
             <Button

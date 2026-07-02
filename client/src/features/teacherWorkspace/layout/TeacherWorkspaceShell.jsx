@@ -6,8 +6,8 @@ import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { PublicSettingsDialog } from "../../../shared/components/publicSettings";
+import BrandLockup from "../../../shared/components/brand/BrandLockup";
 import TeacherWorkspaceNavbar from "./TeacherWorkspaceNavbar";
-import WorkspaceBrand from "./WorkspaceBrand";
 import {
   WORKSPACE_MOBILE_BREAKPOINT,
   WORKSPACE_MOBILE_HEADER_HEIGHT,
@@ -65,8 +65,9 @@ export default function TeacherWorkspaceShell({
       }}
     >
       <AppShell.Header>
+        {/* Burger sits on the side the navbar slides in from (inline-start),
+            brand on the opposite side. */}
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
-          <WorkspaceBrand size="sm" />
           <Burger
             opened={navOpened}
             onClick={toggleNav}
@@ -74,6 +75,7 @@ export default function TeacherWorkspaceShell({
             size="sm"
             aria-label={t("nav.menu")}
           />
+          <BrandLockup className="text-lg font-extrabold" />
         </Group>
       </AppShell.Header>
 

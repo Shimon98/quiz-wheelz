@@ -3,7 +3,6 @@ import {
   AppShell,
   Avatar,
   Badge,
-  Button,
   Divider,
   Group,
   NavLink,
@@ -11,12 +10,12 @@ import {
   Stack,
   Text,
 } from "@mantine/core";
-import { LogOut } from "lucide-react";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
 import { WORKSPACE_NAV_ITEMS } from "../config/workspaceNavigationConfig";
-import WorkspaceBrand from "./WorkspaceBrand";
+import BrandLockup from "../../../shared/components/brand/BrandLockup";
+import WorkspaceNavbarFooter from "./WorkspaceNavbarFooter";
 
 /**
  * TeacherWorkspaceNavbar — the navbar CONTENT (brand, profile, nav items,
@@ -37,7 +36,7 @@ export default function TeacherWorkspaceNavbar({
   return (
     <>
       <AppShell.Section p="md" visibleFrom="sm">
-        <WorkspaceBrand />
+        <BrandLockup className="text-2xl font-extrabold" />
       </AppShell.Section>
 
       <Divider visibleFrom="sm" />
@@ -72,7 +71,15 @@ export default function TeacherWorkspaceNavbar({
                 active={item.id === activeId}
                 disabled={item.disabled}
                 label={t(item.labelKey)}
-                leftSection={<ItemIcon size={18} aria-hidden="true" />}
+                py={14}
+                px="md"
+                styles={{
+                  label: {
+                    fontSize: "var(--mantine-font-size-md)",
+                    fontWeight: 600,
+                  },
+                }}
+                leftSection={<ItemIcon size={22} aria-hidden="true" />}
                 rightSection={
                   item.disabled ? (
                     <Badge
@@ -92,20 +99,11 @@ export default function TeacherWorkspaceNavbar({
         </Stack>
       </AppShell.Section>
 
-      <AppShell.Section p="sm">
-        {/* Slot for the jungle footer decoration — lands here once Shimon
-            provides the asset; the navbar layout is already reserved for it. */}
-        <Button
-          variant="subtle"
-          color={UI_TONES.DANGER}
-          fullWidth
-          justify="flex-start"
-          leftSection={<LogOut size={18} aria-hidden="true" />}
-          loading={isLoggingOut}
-          onClick={onLogout}
-        >
-          {t("nav.logout")}
-        </Button>
+      <AppShell.Section>
+        <WorkspaceNavbarFooter
+          onLogout={onLogout}
+          isLoggingOut={isLoggingOut}
+        />
       </AppShell.Section>
     </>
   );

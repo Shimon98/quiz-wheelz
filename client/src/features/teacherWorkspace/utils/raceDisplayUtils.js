@@ -57,12 +57,25 @@ export function formatRaceDate(value, language) {
   }).format(date);
 }
 
+// Normalized subject identifier for icon lookup (RaceSubjectLabel).
+export function getSubjectKey(race) {
+  const raw =
+    race?.subjectCode ??
+    race?.subject?.code ??
+    race?.subjectName ??
+    race?.subject?.name ??
+    "";
+
+  return String(raw).trim().toUpperCase();
+}
+
 export function buildRaceViewModel(race, language) {
   return {
     id: race?.id,
     title: race?.title ?? "",
     roomCode: race?.roomCode ?? null,
     subjectName: getSubjectDisplayName(race, language),
+    subjectKey: getSubjectKey(race),
     playersLabel: formatPlayers(race),
     createdAtLabel: formatRaceDate(race?.createdAt, language),
     status: race?.status,
