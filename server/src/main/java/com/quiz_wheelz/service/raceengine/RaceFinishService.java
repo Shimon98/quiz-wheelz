@@ -33,7 +33,7 @@ public class RaceFinishService {
         Integer totalDistance = racePlayer.getRace().getTotalDistance();
 
         if (totalDistance == null) {
-            throw new ApiException(ErrorCode.INTERNAL_ERROR, "Race total distance is missing");
+            throw new ApiException(ErrorCode.RACE_TOTAL_DISTANCE_MISSING);
         }
 
         double position = racePlayer.getPosition() == null ? 0.0 : racePlayer.getPosition();

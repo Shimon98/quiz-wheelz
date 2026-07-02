@@ -196,6 +196,19 @@ class RaceEngineServiceTest {
     }
 
     @Test
+    void shouldRejectRacePlayerWhenRaceTotalDistanceIsMissing() {
+        Race race = race(null, RaceStatus.IN_PROGRESS);
+        RacePlayer player = player(10L, race, Difficulty.EASY, 0.0, 0.0);
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> raceEngineService.applyAnswerResult(player, true)
+        );
+
+        assertEquals(ErrorCode.RACE_TOTAL_DISTANCE_MISSING, exception.getErrorCode());
+    }
+
+    @Test
     void shouldRecoverFromHardToMediumLevelDownAfterTwoCorrectMediumAnswers() {
         Race race = race(1000, RaceStatus.IN_PROGRESS);
         RacePlayer player = player(10L, race, Difficulty.HARD, 0.0, 1.0);

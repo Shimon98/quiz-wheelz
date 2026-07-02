@@ -108,7 +108,7 @@ public class RaceEngineService {
         }
 
         if (race.getTotalDistance() == null) {
-            throw new ApiException(ErrorCode.INTERNAL_ERROR, "Race total distance is missing");
+            throw new ApiException(ErrorCode.RACE_TOTAL_DISTANCE_MISSING);
         }
     }
 

@@ -4,6 +4,8 @@ import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
+import com.quiz_wheelz.exception.ApiException;
+import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -47,6 +50,19 @@ class RaceFinishServiceTest {
 
         assertFalse(raceFinishService.finishPlayerIfNeeded(player));
         assertEquals(RacePlayerStatus.RACING, player.getStatus());
+    }
+
+    @Test
+    void shouldThrowWhenFinishingPlayerAndRaceTotalDistanceIsMissing() {
+        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository);
+        RacePlayer player = player(RacePlayerStatus.RACING, 120.0, 2.0, race(null));
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> raceFinishService.finishPlayerIfNeeded(player)
+        );
+
+        assertEquals(ErrorCode.RACE_TOTAL_DISTANCE_MISSING, exception.getErrorCode());
     }
 
     @Test

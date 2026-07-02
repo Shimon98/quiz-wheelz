@@ -13,6 +13,9 @@ public final class ErrorMessages {
     public static final String RACE_NOT_IN_PROGRESS =
             "Race is not currently in progress";
 
+    public static final String RACE_TOTAL_DISTANCE_MISSING =
+            "Race total distance is missing";
+
     public static final String QUESTION_TEMPLATE_NOT_FOUND =
             "Active question template not found";
 

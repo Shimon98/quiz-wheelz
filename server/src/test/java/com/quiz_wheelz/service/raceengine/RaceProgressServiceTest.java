@@ -4,9 +4,12 @@ import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.Difficulty;
 import com.quiz_wheelz.enums.RacePlayerStatus;
+import com.quiz_wheelz.exception.ApiException;
+import com.quiz_wheelz.exception.ErrorCode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RaceProgressServiceTest {
 
@@ -73,6 +76,18 @@ class RaceProgressServiceTest {
         RacePlayer player = racePlayer(null, 0.0, 100);
 
         assertEquals(15.0, raceProgressService.calculateNewPosition(player, 15.0));
+    }
+
+    @Test
+    void shouldThrowWhenRaceTotalDistanceIsMissing() {
+        RacePlayer player = racePlayer(10.0, 1.0, null);
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> raceProgressService.calculateNewPosition(player, 10.0)
+        );
+
+        assertEquals(ErrorCode.RACE_TOTAL_DISTANCE_MISSING, exception.getErrorCode());
     }
 
     private RacePlayer racePlayer(

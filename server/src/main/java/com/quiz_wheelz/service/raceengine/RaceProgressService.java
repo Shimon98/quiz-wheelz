@@ -5,6 +5,8 @@ import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.Difficulty;
 import com.quiz_wheelz.enums.RacePlayerStatus;
+import com.quiz_wheelz.exception.ApiException;
+import com.quiz_wheelz.exception.ErrorCode;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -34,11 +36,7 @@ public class RaceProgressService {
                 : racePlayer.getPosition();
 
         double newPosition = currentPosition + progressDelta;
-        Integer totalDistance = totalDistance(racePlayer);
-
-        if (totalDistance == null) {
-            return newPosition;
-        }
+        Integer totalDistance = totalDistanceRequired(racePlayer);
 
         return Math.min(newPosition, totalDistance.doubleValue());
     }
@@ -74,14 +72,18 @@ public class RaceProgressService {
         return difficulty == null ? Difficulty.EASY : difficulty;
     }
 
-    private Integer totalDistance(RacePlayer racePlayer) {
-        if (racePlayer == null) {
-            return null;
+    private Integer totalDistanceRequired(RacePlayer racePlayer) {
+        if (racePlayer == null || racePlayer.getRace() == null) {
+            throw new ApiException(ErrorCode.RACE_TOTAL_DISTANCE_MISSING);
         }
 
         Race race = racePlayer.getRace();
 
-        return race == null ? null : race.getTotalDistance();
+        if (race.getTotalDistance() == null) {
+            throw new ApiException(ErrorCode.RACE_TOTAL_DISTANCE_MISSING);
+        }
+
+        return race.getTotalDistance();
     }
 
     private boolean isFinished(RacePlayer racePlayer) {
