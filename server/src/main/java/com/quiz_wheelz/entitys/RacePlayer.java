@@ -4,7 +4,16 @@ import com.quiz_wheelz.common.BaseEntity;
 import com.quiz_wheelz.common.RacePlayerRules;
 import com.quiz_wheelz.enums.Difficulty;
 import com.quiz_wheelz.enums.RacePlayerStatus;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -103,6 +112,11 @@ public class RacePlayer extends BaseEntity {
 
     @NotNull
     @PositiveOrZero
+    @Column(name = "highest_streak", nullable = false)
+    private Integer highestStreak = RacePlayerRules.DEFAULT_HIGHEST_STREAK;
+
+    @NotNull
+    @PositiveOrZero
     @Column(name = "correct_answers", nullable = false)
     private Integer correctAnswers = RacePlayerRules.DEFAULT_CORRECT_ANSWERS;
 
@@ -116,6 +130,18 @@ public class RacePlayer extends BaseEntity {
     @Column(name = "current_difficulty", nullable = false, length = 20)
     private Difficulty currentDifficulty = Difficulty.EASY;
 
+    @NotNull
+    @PositiveOrZero
+    @Column(name = "difficulty_correct_streak", nullable = false)
+    private Integer difficultyCorrectStreak =
+            RacePlayerRules.DEFAULT_DIFFICULTY_CORRECT_STREAK;
+
+    @NotNull
+    @PositiveOrZero
+    @Column(name = "difficulty_wrong_streak", nullable = false)
+    private Integer difficultyWrongStreak =
+            RacePlayerRules.DEFAULT_DIFFICULTY_WRONG_STREAK;
+
     @Column(name = "joined_at", nullable = false)
     private LocalDateTime joinedAt;
 
@@ -128,10 +154,8 @@ public class RacePlayer extends BaseEntity {
     @Column(name = "last_seen_at")
     private LocalDateTime lastSeenAt;
 
-    @PrePersist
-    public void prePersistRacePlayer() {
-        LocalDateTime now = LocalDateTime.now();
-
+    @Override
+    protected void onPrePersist(LocalDateTime now) {
         if (joinedAt == null) {
             joinedAt = now;
         }
