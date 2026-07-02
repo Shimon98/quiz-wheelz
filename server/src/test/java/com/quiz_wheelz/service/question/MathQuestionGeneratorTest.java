@@ -15,6 +15,11 @@ import com.quiz_wheelz.enums.QuestionGenerationPattern;
 import com.quiz_wheelz.enums.QuestionType;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
+import com.quiz_wheelz.service.question.generator.BinaryMathQuestionGenerator;
+import com.quiz_wheelz.service.question.generator.ExpressionMathQuestionGenerator;
+import com.quiz_wheelz.service.question.generator.MathExpressionPatternResolver;
+import com.quiz_wheelz.service.question.generator.SafeDivisionChainQuestionGenerator;
+import com.quiz_wheelz.service.question.generator.SafeSubtractionChainQuestionGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -45,9 +50,25 @@ class MathQuestionGeneratorTest {
                 new Random(1),
                 mathQuestionPlanValidator
         );
+        SafeSubtractionChainQuestionGenerator safeSubtractionChainQuestionGenerator =
+                new SafeSubtractionChainQuestionGenerator(mathOperandGenerator);
+        SafeDivisionChainQuestionGenerator safeDivisionChainQuestionGenerator =
+                new SafeDivisionChainQuestionGenerator(
+                        mathQuestionPlanValidator,
+                        mathOperandGenerator
+                );
         mathQuestionGenerator = new MathQuestionGenerator(
                 mathQuestionPlanValidator,
-                mathOperandGenerator
+                new BinaryMathQuestionGenerator(
+                        mathQuestionPlanValidator,
+                        mathOperandGenerator
+                ),
+                new ExpressionMathQuestionGenerator(
+                        mathOperandGenerator,
+                        safeSubtractionChainQuestionGenerator,
+                        safeDivisionChainQuestionGenerator
+                ),
+                new MathExpressionPatternResolver()
         );
     }
 
