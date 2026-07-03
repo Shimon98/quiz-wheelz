@@ -11,12 +11,18 @@ export const ROUTES = {
   TEACHER_RACE_LIVE: "/teacher/races/:raceId/live",
   TEACHER_RACE_RESULTS: "/teacher/races/:raceId/results",
   STUDENT_JOIN: "/join",
+  STUDENT_JOIN_WITH_CODE: "/join/:roomCode",
+  STUDENT_WAITING: "/student/waiting",
   UNAUTHORIZED: "/unauthorized",
   NOT_FOUND: "*",
 };
 
 export function buildTeacherRaceRoomPath(raceId) {
   return `/teacher/races/${raceId}/room`;
+}
+
+export function buildStudentJoinPath(roomCode) {
+  return `/join/${roomCode}`;
 }
 
 export function buildTeacherRaceLivePath(raceId) {

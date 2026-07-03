@@ -17,8 +17,8 @@ import teacherMedia from "../../../assets/landing/landing-role-teacher-cap.png";
  *  - to:           navigation target for an active role.
  *  - disabled:     true => no navigation, shows the "coming soon" label.
  *
- * Student is first (primary audience) but disabled until the join flow (/join)
- * exists; teacher is the only active path for now and routes to login.
+ * Student is first (primary audience) and routes to the join flow; teacher
+ * routes to login.
  */
 export const LANDING_ROLES = Object.freeze([
   {
@@ -27,8 +27,8 @@ export const LANDING_ROLES = Object.freeze([
     tone: "student",
     media: studentMedia,
     FallbackIcon: Smile,
-    to: null,
-    disabled: true,
+    to: ROUTES.STUDENT_JOIN,
+    disabled: false,
   },
   {
     id: "teacher",

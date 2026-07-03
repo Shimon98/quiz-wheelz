@@ -13,6 +13,9 @@ export const API_ENDPOINTS = {
   SUBJECTS: {
     LIST: "/subjects",
   },
+  RACE_PLAYERS: {
+    JOIN: "/race-players/join",
+  },
   TEACHER: {
     DASHBOARD: "/teacher/dashboard",
     RACES: "/teacher/races",

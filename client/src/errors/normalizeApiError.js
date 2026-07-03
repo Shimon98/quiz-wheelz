@@ -18,6 +18,10 @@ const CODE_MESSAGE_KEYS = Object.freeze({
   [ERROR_CODES.INVALID_TOKEN]: "auth.sessionExpired",
   [ERROR_CODES.UNAUTHORIZED]: "auth.sessionExpired",
   [ERROR_CODES.FORBIDDEN]: "auth.forbidden",
+  [ERROR_CODES.RACE_NOT_FOUND]: "race.notFound",
+  [ERROR_CODES.RACE_NOT_JOINABLE]: "race.notJoinable",
+  [ERROR_CODES.RACE_FULL]: "race.full",
+  [ERROR_CODES.RACE_PLAYER_NAME_TAKEN]: "race.nameTaken",
 });
 
 const STATUS_MESSAGE_KEYS = Object.freeze({
