@@ -21,7 +21,6 @@ export default {
   waiting: {
     joined: "הצטרפתם בהצלחה!",
     hello: "שלום, {{name}}!",
-    raceLabel: "המרוץ",
     roomCodeLabel: "קוד חדר",
     laneLabel: "הנתיב שלכם",
     playersLabel: "משתתפים מחוברים",

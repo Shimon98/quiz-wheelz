@@ -4,18 +4,19 @@ import {
   Alert,
   Button,
   Group,
-  PinInput,
   Stack,
   Text,
   TextInput,
   Title,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { CircleAlert, UserRound } from "lucide-react";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { ROUTES } from "../../../constants/routeConstants";
 import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
 import useJoinRace from "../hooks/useJoinRace";
+import RoomCodePinInput from "../components/RoomCodePinInput";
 import {
   DISPLAY_NAME_MAX_LENGTH,
   DISPLAY_NAME_MIN_LENGTH,
@@ -88,61 +89,64 @@ export default function StudentJoinPage() {
 
   return (
     <form onSubmit={form.onSubmit(handleSubmit)}>
-      <Stack gap="md">
+      <Stack gap="lg">
         <Stack gap={4} ta="center">
-          <Title order={1} fz={26}>
+          {/* --font-sans = the Fredoka brand stack from index.css — Mantine
+              Title otherwise applies its own Segoe headings default; 700 is
+              Fredoka's real max weight (higher renders synthetic). */}
+          <Title order={1} fz={{ base: 26, sm: 30 }} fw={700} ff="var(--font-sans)">
             {t("join.title")}
           </Title>
-          <Text c="dimmed" size="sm">
+          <Text c="dimmed" size="sm" fw={500}>
             {prefilledCode ? t("join.codeFromLink") : t("join.subtitle")}
           </Text>
         </Stack>
 
-        <Stack gap={6} align="center">
-          <Text component="label" size="sm" fw={600}>
-            {t("join.roomCodeLabel")}
-          </Text>
-          <PinInput
-            length={ROOM_CODE_LENGTH}
-            type={ROOM_CODE_ALLOWED_CHARS}
-            size="md"
-            dir="ltr"
-            value={form.values.roomCode}
-            onChange={(value) =>
-              form.setFieldValue("roomCode", value.toUpperCase())
-            }
-            error={Boolean(form.errors.roomCode)}
-            aria-label={t("join.roomCodeLabel")}
-          />
-          {form.errors.roomCode && (
-            <Text size="xs" c={UI_TONES.DANGER}>
-              {form.errors.roomCode}
-            </Text>
-          )}
-        </Stack>
+        <RoomCodePinInput
+          label={t("join.roomCodeLabel")}
+          value={form.values.roomCode}
+          onChange={(value) =>
+            form.setFieldValue("roomCode", value.toUpperCase())
+          }
+          error={form.errors.roomCode}
+        />
 
         <TextInput
           label={t("join.nameLabel")}
           placeholder={t("join.namePlaceholder")}
-          size="md"
+          size="lg"
+          radius="md"
+          leftSection={<UserRound size={20} aria-hidden="true" />}
           maxLength={DISPLAY_NAME_MAX_LENGTH}
           {...form.getInputProps("displayName")}
         />
 
         {joinErrorKey && (
-          <Alert color={UI_TONES.DANGER} radius="md">
+          <Alert
+            color={UI_TONES.DANGER}
+            variant="light"
+            radius="lg"
+            icon={<CircleAlert aria-hidden="true" />}
+          >
             {tErrors(joinErrorKey)}
           </Alert>
         )}
 
         <Stack gap="xs">
-          <Button type="submit" size="lg" radius="xl" loading={isJoining}>
+          <Button
+            type="submit"
+            size="lg"
+            radius="xl"
+            fw={800}
+            loading={isJoining}
+          >
             {t("join.submit")}
           </Button>
           <Group justify="center">
             <Button
               variant="subtle"
               size="sm"
+              radius="xl"
               onClick={() => navigate(ROUTES.LANDING)}
             >
               {t("join.back")}

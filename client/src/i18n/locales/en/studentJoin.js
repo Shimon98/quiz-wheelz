@@ -21,7 +21,6 @@ export default {
   waiting: {
     joined: "You're in!",
     hello: "Hi, {{name}}!",
-    raceLabel: "Race",
     roomCodeLabel: "Room code",
     laneLabel: "Your lane",
     playersLabel: "Players connected",
