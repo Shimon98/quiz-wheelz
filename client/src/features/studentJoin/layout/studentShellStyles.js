@@ -44,11 +44,13 @@ export const STUDENT_SHELL_STYLES = Object.freeze({
 
   brandBar: "flex w-full justify-center",
 
-  // Composition — mascot + card. Phone/tablet: centered column (logo → hero →
-  // card). Desktop: a row; flex row direction follows dir, so RTL/LTR mirror
-  // the WHOLE layout, not just one piece.
+  // Composition — mascot + card. Phone/tablet: a top-anchored column (logo →
+  // hero → card): justify-START so the card growing (an error line appearing)
+  // pushes content DOWN only, instead of re-centering and shifting the whole
+  // screen on every keystroke. Desktop: a centered row; flex row direction
+  // follows dir, so RTL/LTR mirror the WHOLE layout, not just one piece.
   composition:
-    "flex w-full max-w-md flex-1 flex-col items-center justify-center gap-4 py-4 min-[75rem]:max-w-5xl min-[75rem]:flex-row min-[75rem]:gap-16",
+    "flex w-full max-w-md flex-1 flex-col items-center justify-start gap-4 py-4 min-[75rem]:max-w-5xl min-[75rem]:flex-row min-[75rem]:justify-center min-[75rem]:gap-16",
 
   // Hero — the mascot inside a soft round halo (the same soft-green circle
   // recipe as the landing role card, dark-mode mapped by the token).

@@ -17,6 +17,7 @@ export default {
   auth: {
     sessionExpired: "החיבור שלכם הסתיים. התחברו שוב.",
     forbidden: "אין לכם הרשאה לבצע את הפעולה הזו.",
+    invalidCredentials: "פרטי ההתחברות לא נכונים. בדקו ונסו שוב.",
   },
   teacher: {
     createRaceFailed: "לא הצלחנו ליצור את המרוץ. נסו שוב.",

@@ -5,7 +5,6 @@ import {
   verifyResetCode,
   resetPassword,
 } from "../../../api/authApi";
-import { useLanguageStore } from "../../../stores/languageStore";
 import useErrorMessage from "../../../hooks/useErrorMessage";
 import {
   FORGOT_PASSWORD_STEPS,
@@ -30,9 +29,8 @@ function formatSecondsAsClock(totalSeconds) {
  * Client-ready end-to-end; goes live when the server ships the endpoints.
  */
 export default function useForgotPasswordFlow() {
-  const language = useLanguageStore((state) => state.language);
   const { errorMessage, clearErrorMessage, setErrorMessageFromApiError } =
-    useErrorMessage(language);
+    useErrorMessage();
 
   const [step, setStep] = useState(FORGOT_PASSWORD_STEPS.REQUEST);
   const [email, setEmail] = useState("");

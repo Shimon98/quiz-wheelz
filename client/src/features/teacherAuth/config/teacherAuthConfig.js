@@ -4,7 +4,7 @@
  *
  * Validation constants are CLIENT-SIDE pre-checks for fast feedback; the server
  * remains the source of truth and its errorCode responses map through
- * errors/errorUtils.js regardless of these values.
+ * errors/normalizeApiError.js regardless of these values.
  */
 
 // Minimum password length enforced in forms (register / reset).

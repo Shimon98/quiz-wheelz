@@ -1,17 +1,15 @@
 /*
- * i18n constants for QuizWheelz.
- *
- * Language codes are NOT redefined here — they are re-exported from the
- * existing single source of truth (constants/messageConstants.js) so the app
- * never has two competing language-code lists.
+ * i18n constants for QuizWheelz — the single source of truth for language
+ * codes and namespaces. (The legacy constants/messageConstants.js home was
+ * retired together with the old hardcoded-text error tables.)
  */
 
-import {
-  SUPPORTED_LANGUAGES,
-  DEFAULT_LANGUAGE,
-} from "../constants/messageConstants";
+export const SUPPORTED_LANGUAGES = Object.freeze({
+  HEBREW: "he",
+  ENGLISH: "en",
+});
 
-export { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE };
+export const DEFAULT_LANGUAGE = SUPPORTED_LANGUAGES.HEBREW;
 
 export const I18N_NAMESPACES = Object.freeze({
   PUBLIC_SETTINGS: "publicSettings",

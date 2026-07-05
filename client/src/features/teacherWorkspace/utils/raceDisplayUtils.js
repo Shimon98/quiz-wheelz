@@ -1,4 +1,4 @@
-import { SUPPORTED_LANGUAGES } from "../../../constants/messageConstants";
+import { SUPPORTED_LANGUAGES } from "../../../i18n/i18nConstants";
 
 /*
  * Turns a raw race object from the dashboard API into the display values both

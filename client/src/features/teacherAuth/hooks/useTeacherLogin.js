@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser } from "../../../api/authApi";
 import { useAuthStore } from "../../../stores/authStore";
-import { useLanguageStore } from "../../../stores/languageStore";
 import useErrorMessage from "../../../hooks/useErrorMessage";
 import { getRouteByRole } from "../../../utils/authRouteUtils";
 
@@ -11,7 +10,7 @@ import { getRouteByRole } from "../../../utils/authRouteUtils";
  * display-only:
  *   - submit({ identifier, password }) → authApi → authStore → role redirect.
  *   - loading / submitting / server-error state (errorCode → localized text
- *     via the existing errors/errorUtils mapping).
+ *     via normalizeApiError + the errors i18n namespace).
  *
  * The "already signed in?" session check lives in GuestRoute, which wraps
  * the whole PublicEntryShell. The form's value state itself lives in the
@@ -19,9 +18,8 @@ import { getRouteByRole } from "../../../utils/authRouteUtils";
  */
 export default function useTeacherLogin() {
   const navigate = useNavigate();
-  const language = useLanguageStore((state) => state.language);
   const { errorMessage, clearErrorMessage, setErrorMessageFromApiError } =
-    useErrorMessage(language);
+    useErrorMessage();
 
   const isLoading = useAuthStore((state) => state.isLoading);
   const setUser = useAuthStore((state) => state.setUser);

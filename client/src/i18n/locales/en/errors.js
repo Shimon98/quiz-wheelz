@@ -16,6 +16,7 @@ export default {
   auth: {
     sessionExpired: "Your session has ended. Please sign in again.",
     forbidden: "You do not have permission to do this.",
+    invalidCredentials: "Wrong sign-in details. Please check and try again.",
   },
   teacher: {
     createRaceFailed: "We could not create the race. Please try again.",

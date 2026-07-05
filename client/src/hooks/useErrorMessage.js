@@ -1,30 +1,24 @@
-import { useState } from 'react';
-import {
-    getErrorMessageByCode,
-    getMessageFromApiError,
-} from '../errors/errorUtils';
-import { DEFAULT_LANGUAGE } from '../constants/messageConstants';
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
-export default function useErrorMessage(language = DEFAULT_LANGUAGE) {
-    const [errorMessage, setErrorMessage] = useState('');
+import { I18N_NAMESPACES } from "../i18n/i18nConstants";
+import { normalizeApiError } from "../errors/normalizeApiError";
 
-    function clearErrorMessage() {
-        setErrorMessage('');
-    }
+/**
+ * useErrorMessage — inline API-error state for forms. Stores the i18n KEY
+ * (errors namespace) and translates at render time, so the message follows a
+ * live language switch. normalizeApiError is the single error→key mapping —
+ * the old hardcoded text tables (errorUtils/AUTH_TEXT/GENERAL_MESSAGES) are
+ * gone.
+ */
+export default function useErrorMessage() {
+  const { t } = useTranslation(I18N_NAMESPACES.ERRORS);
+  const [errorKey, setErrorKey] = useState(null);
 
-    function setErrorMessageByCode(errorCode) {
-        setErrorMessage(getErrorMessageByCode(errorCode, language));
-    }
-
-    function setErrorMessageFromApiError(error) {
-        setErrorMessage(getMessageFromApiError(error, language));
-    }
-
-    return {
-        errorMessage,
-        setErrorMessage,
-        clearErrorMessage,
-        setErrorMessageByCode,
-        setErrorMessageFromApiError,
-    };
+  return {
+    errorMessage: errorKey ? t(errorKey) : "",
+    clearErrorMessage: () => setErrorKey(null),
+    setErrorMessageFromApiError: (error) =>
+      setErrorKey(normalizeApiError(error).messageKey),
+  };
 }
