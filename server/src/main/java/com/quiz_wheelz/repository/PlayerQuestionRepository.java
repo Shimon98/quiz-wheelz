@@ -3,7 +3,9 @@ package com.quiz_wheelz.repository;
 import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -13,6 +15,12 @@ import java.util.Optional;
 public interface PlayerQuestionRepository extends JpaRepository<PlayerQuestion, Long> {
 
     Optional<PlayerQuestion> findByIdAndRacePlayer(
+            Long id,
+            RacePlayer racePlayer
+    );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<PlayerQuestion> findLockedByIdAndRacePlayer(
             Long id,
             RacePlayer racePlayer
     );
