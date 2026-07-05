@@ -1,19 +1,17 @@
 import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
+import {
+  RACE_STATUSES,
+  RACE_PLAYER_STATUSES,
+} from "../../../constants/raceStatusConstants";
 
 /*
- * Race status values as the server sends them (data names shared with the
- * backend — do not "prettify" these), mapped once to UI presentation.
- * Every status render in the workspace goes through this config — no
- * per-row status styling.
+ * Server status values -> workspace UI presentation. The raw status enums
+ * were hoisted to src/constants/raceStatusConstants.js (UI-10B) so student
+ * features share them; they are re-exported here so existing workspace
+ * imports keep working. Every status render in the workspace goes through
+ * this config — no per-row status styling.
  */
-export const RACE_STATUSES = Object.freeze({
-  WAITING_FOR_PLAYERS: "WAITING_FOR_PLAYERS",
-  READY: "READY",
-  IN_PROGRESS: "IN_PROGRESS",
-  FINISHED: "FINISHED",
-  CANCELLED: "CANCELLED",
-  UNKNOWN: "UNKNOWN",
-});
+export { RACE_STATUSES, RACE_PLAYER_STATUSES };
 
 // tone = Mantine palette name via UI_TONES; labelKey = teacherWorkspace i18n key.
 // READY sits in the "waiting" tone family — a ready race is still pre-launch.
@@ -50,14 +48,7 @@ export function getRaceStatusConfig(status) {
   );
 }
 
-// RacePlayer statuses (server domain terms), same single-source treatment.
-export const RACE_PLAYER_STATUSES = Object.freeze({
-  WAITING: "WAITING",
-  RACING: "RACING",
-  FINISHED: "FINISHED",
-  DISCONNECTED: "DISCONNECTED",
-});
-
+// RacePlayer statuses (server domain terms) -> workspace UI presentation.
 export const RACE_PLAYER_STATUS_CONFIG = Object.freeze({
   [RACE_PLAYER_STATUSES.WAITING]: {
     tone: UI_TONES.WARNING,
