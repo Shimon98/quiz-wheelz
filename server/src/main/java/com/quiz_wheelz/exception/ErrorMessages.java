@@ -58,6 +58,33 @@ public final class ErrorMessages {
     public static final String INVALID_ANSWER_SUBMISSION =
             "Invalid answer submission";
 
+    public static final String REDIS_REQUIRED_BUT_DISABLED =
+            "Redis cannot be required when Redis is disabled";
+
+    public static final String REDIS_KEY_PREFIX_MISSING =
+            "Redis key prefix must not be empty";
+
+    public static final String REDIS_KEY_PREFIX_INVALID =
+            "Redis key prefix contains invalid characters";
+
+    public static final String REDIS_PASSWORD_REQUIRED =
+            "Redis password must not be empty when Redis password is required";
+
+    public static final String REDIS_REQUIRED_BUT_UNAVAILABLE =
+            "Redis is required but did not respond to PING";
+
+    public static final String REDIS_KEY_PART_MISSING =
+            "Redis key part must not be empty";
+
+    public static final String REDIS_KEY_PART_INVALID =
+            "Redis key part contains invalid characters";
+
+    public static final String REDIS_KEY_ID_MUST_BE_POSITIVE =
+            "Redis key id must be positive";
+
+    public static final String REDIS_KEY_IDENTIFIER_MISSING =
+            "Redis key identifier must not be empty";
+
     private ErrorMessages() {
     }
 }
