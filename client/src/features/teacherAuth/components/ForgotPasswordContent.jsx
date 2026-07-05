@@ -13,7 +13,7 @@ import {
 import { useForm } from "@mantine/form";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Mail, CircleAlert, CircleCheck } from "lucide-react";
+import { Mail, CircleCheck } from "lucide-react";
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { ROUTES } from "../../../constants/routeConstants";
 import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
@@ -39,12 +39,8 @@ export default function ForgotPasswordContent() {
 
   return (
     <Stack gap="lg" w="100%" maw={{ lg: AUTH_FORM_MAX_WIDTH }} mx="auto">
-      {flow.errorMessage && (
-        <Alert color={UI_TONES.DANGER} radius="lg" icon={<CircleAlert size={18} />}>
-          {flow.errorMessage}
-        </Alert>
-      )}
-
+      {/* Server failures pop as notifications (useApiErrorNotifier) — no
+          inline alert, so the card never grows on error. */}
       {flow.step === FORGOT_PASSWORD_STEPS.REQUEST && (
         <RequestStep t={t} flow={flow} />
       )}

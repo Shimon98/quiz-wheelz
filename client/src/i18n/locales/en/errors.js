@@ -16,6 +16,7 @@ export default {
   auth: {
     sessionExpired: "Your session has ended. Please sign in again.",
     forbidden: "You do not have permission to do this.",
+    invalidCredentials: "Wrong sign-in details. Please check and try again.",
   },
   teacher: {
     createRaceFailed: "We could not create the race. Please try again.",
@@ -23,8 +24,13 @@ export default {
     startRaceFailed: "We could not start the race. Please try again.",
   },
   race: {
-    full: "This race is already full.",
+    full: "This race is already full. Ask your teacher to open a new one.",
     alreadyStarted: "This race has already started.",
-    notFound: "We could not find this race.",
+    notFound: "We could not find a room with this code. Check the code and try again.",
+    notJoinable: "This race is already on its way. Ask your teacher for a new code.",
+    nameTaken: "This name is already taken in the race. Pick another one.",
+  },
+  student: {
+    joinFailed: "We could not add you to the race. Please try again.",
   },
 };

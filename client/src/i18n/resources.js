@@ -9,11 +9,13 @@ import hePublicSettings from "./locales/he/publicSettings";
 import hePublicEntry from "./locales/he/publicEntry";
 import heTeacherAuth from "./locales/he/teacherAuth";
 import heTeacherWorkspace from "./locales/he/teacherWorkspace";
+import heStudentJoin from "./locales/he/studentJoin";
 import heErrors from "./locales/he/errors";
 import enPublicSettings from "./locales/en/publicSettings";
 import enPublicEntry from "./locales/en/publicEntry";
 import enTeacherAuth from "./locales/en/teacherAuth";
 import enTeacherWorkspace from "./locales/en/teacherWorkspace";
+import enStudentJoin from "./locales/en/studentJoin";
 import enErrors from "./locales/en/errors";
 
 export const i18nResources = {
@@ -22,6 +24,7 @@ export const i18nResources = {
     [I18N_NAMESPACES.PUBLIC_ENTRY]: hePublicEntry,
     [I18N_NAMESPACES.TEACHER_AUTH]: heTeacherAuth,
     [I18N_NAMESPACES.TEACHER_WORKSPACE]: heTeacherWorkspace,
+    [I18N_NAMESPACES.STUDENT_JOIN]: heStudentJoin,
     [I18N_NAMESPACES.ERRORS]: heErrors,
   },
   [SUPPORTED_LANGUAGES.ENGLISH]: {
@@ -29,6 +32,7 @@ export const i18nResources = {
     [I18N_NAMESPACES.PUBLIC_ENTRY]: enPublicEntry,
     [I18N_NAMESPACES.TEACHER_AUTH]: enTeacherAuth,
     [I18N_NAMESPACES.TEACHER_WORKSPACE]: enTeacherWorkspace,
+    [I18N_NAMESPACES.STUDENT_JOIN]: enStudentJoin,
     [I18N_NAMESPACES.ERRORS]: enErrors,
   },
 };

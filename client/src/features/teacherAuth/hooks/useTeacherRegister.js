@@ -4,28 +4,25 @@ import { notifications } from "@mantine/notifications";
 import { useTranslation } from "react-i18next";
 import { registerUser } from "../../../api/authApi";
 import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
-import { useLanguageStore } from "../../../stores/languageStore";
-import useErrorMessage from "../../../hooks/useErrorMessage";
+import useApiErrorNotifier from "../../../hooks/useApiErrorNotifier";
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { ROUTES } from "../../../constants/routeConstants";
 
 /**
  * useTeacherRegister — register screen logic: submit → authApi.registerUser →
- * success notification → login screen. Server errors map to localized text via
- * the existing errorUtils. Ready end-to-end on the client; goes live the moment
- * the server ships /auth/register.
+ * success notification → login screen. Server failures pop as error
+ * notifications (field validation stays inline in the form). Ready
+ * end-to-end on the client; goes live the moment the server ships
+ * /auth/register.
  */
 export default function useTeacherRegister() {
   const navigate = useNavigate();
   const { t } = useTranslation(I18N_NAMESPACES.TEACHER_AUTH);
-  const language = useLanguageStore((state) => state.language);
-  const { errorMessage, clearErrorMessage, setErrorMessageFromApiError } =
-    useErrorMessage(language);
+  const { notifyApiError } = useApiErrorNotifier();
 
   const [submitting, setSubmitting] = useState(false);
 
   async function submit({ fullName, email, password, acceptsEmails }) {
-    clearErrorMessage();
     setSubmitting(true);
 
     try {
@@ -37,11 +34,11 @@ export default function useTeacherRegister() {
       });
       navigate(ROUTES.TEACHER_LOGIN);
     } catch (error) {
-      setErrorMessageFromApiError(error);
+      notifyApiError(error);
     } finally {
       setSubmitting(false);
     }
   }
 
-  return { submit, submitting, errorMessage };
+  return { submit, submitting };
 }

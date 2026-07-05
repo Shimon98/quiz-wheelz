@@ -5,7 +5,7 @@
  */
 
 import { Monitor, Sun, Moon } from "lucide-react";
-import { SUPPORTED_LANGUAGES } from "../../../constants/messageConstants";
+import { SUPPORTED_LANGUAGES } from "../../../i18n/i18nConstants";
 import { THEME_MODES } from "../../../stores/themeStore";
 
 /*

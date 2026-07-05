@@ -2,7 +2,7 @@ import { create } from "zustand";
 import {
   DEFAULT_LANGUAGE,
   SUPPORTED_LANGUAGES,
-} from "../constants/messageConstants";
+} from "../i18n/i18nConstants";
 
 const LANGUAGE_STORAGE_KEY = "qw-language";
 const SUPPORTED_VALUES = Object.values(SUPPORTED_LANGUAGES);

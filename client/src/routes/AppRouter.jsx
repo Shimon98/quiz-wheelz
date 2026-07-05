@@ -7,6 +7,9 @@ import ForgotPasswordContent from "../features/teacherAuth/components/ForgotPass
 import NotFoundPage from "../features/commonPages/NotFoundPage";
 import UnauthorizedPage from "../features/commonPages/UnauthorizedPage";
 import TeacherWorkspaceShell from "../features/teacherWorkspace/layout/TeacherWorkspaceShell";
+import StudentShell from "../features/studentJoin/layout/StudentShell";
+import StudentJoinPage from "../features/studentJoin/pages/StudentJoinPage";
+import StudentWaitingPage from "../features/studentJoin/pages/StudentWaitingPage";
 import TeacherDashboardHomePage from "../features/teacherWorkspace/pages/TeacherDashboardHomePage";
 import TeacherRacesPage from "../features/teacherWorkspace/pages/TeacherRacesPage";
 import TeacherRaceRoomPage from "../features/teacherWorkspace/pages/TeacherRaceRoomPage";
@@ -83,6 +86,23 @@ export default function AppRouter() {
                         </ProtectedRoute>
                     }
                 />
+
+                {/* Student flow — public (a student never signs in) and
+                    mobile-first; the shell is a pathless layout route. */}
+                <Route element={<StudentShell />}>
+                    <Route
+                        path={ROUTES.STUDENT_JOIN}
+                        element={<StudentJoinPage />}
+                    />
+                    <Route
+                        path={ROUTES.STUDENT_JOIN_WITH_CODE}
+                        element={<StudentJoinPage />}
+                    />
+                    <Route
+                        path={ROUTES.STUDENT_WAITING}
+                        element={<StudentWaitingPage />}
+                    />
+                </Route>
 
                 <Route path={ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
                 <Route path={ROUTES.NOT_FOUND} element={<NotFoundPage />} />

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getTeacherDashboard } from "../../../api/teacherApi";
 import { buildDashboardStats } from "../utils/dashboardStatsUtils";
+import useRefetchOnWindowFocus from "./useRefetchOnWindowFocus";
 
 const EMPTY_RACES = Object.freeze([]);
 
@@ -25,6 +26,14 @@ export default function useTeacherDashboardHome() {
     setError(null);
     setReloadToken((token) => token + 1);
   }, []);
+
+  // Silent variant — same reload, no skeleton flash. Used when the teacher
+  // returns to the window, so player counts/statuses catch up on their own.
+  const refetchSilently = useCallback(() => {
+    setReloadToken((token) => token + 1);
+  }, []);
+
+  useRefetchOnWindowFocus(refetchSilently);
 
   useEffect(() => {
     let isActive = true;
