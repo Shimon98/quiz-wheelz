@@ -1,5 +1,6 @@
 package com.quiz_wheelz.common.redis;
 
+import com.quiz_wheelz.exception.ErrorMessages;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,6 +26,26 @@ class RedisKeyIdentifierTest {
     @Test
     void shouldNormalizeUsernameIdentifier() {
         assertEquals("username-diana_test", RedisKeyIdentifier.username("Diana.Test").value());
+    }
+
+    @Test
+    void shouldRejectUsernameWithInvalidKeyCharacters() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> RedisKeyIdentifier.username("bad user")
+        );
+
+        assertEquals(ErrorMessages.REDIS_KEY_PART_INVALID, exception.getMessage());
+    }
+
+    @Test
+    void shouldRejectIpAddressWithInvalidKeyCharacters() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> RedisKeyIdentifier.ipAddress("127.0.0.1/24")
+        );
+
+        assertEquals(ErrorMessages.REDIS_KEY_PART_INVALID, exception.getMessage());
     }
 
     @Test

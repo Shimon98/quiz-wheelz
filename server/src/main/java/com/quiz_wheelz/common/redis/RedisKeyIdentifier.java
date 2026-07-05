@@ -56,6 +56,10 @@ public record RedisKeyIdentifier(String value) {
             throw new IllegalArgumentException(ErrorMessages.REDIS_KEY_IDENTIFIER_MISSING);
         }
 
+        if (!normalized.matches(RedisKeyRules.KEY_PART_PATTERN)) {
+            throw new IllegalArgumentException(ErrorMessages.REDIS_KEY_PART_INVALID);
+        }
+
         return normalized;
     }
 }
