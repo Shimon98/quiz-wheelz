@@ -69,4 +69,15 @@ duplicated here.
   (`runtime/localStudentRaceRuntime.js`, 500ms snapshots, wraps at track end,
   never fakes finish/score/questions) + `mapLocalRuntimeSnapshotToState.js`
   (same mapper shape the future SSE mapper will have).
-- UI-10F…M: see the master plan §22.
+- UI-10F (world layers): done — pseudo-perspective over-the-shoulder camera
+  (the binding F decision: trapezoid road converging to the horizon, depth
+  flow toward the player — NOT a flat scrolling texture). Five layers under
+  `pixi/layers/` (jungle, road, finish line, player kart, effects/dust),
+  each with the uniform interface `resize/update(frameState)/destroy`;
+  perspective math lives ONCE in the renderer and reaches layers via
+  `frameState.perspective`. Placeholder drawing is colocated inside each
+  layer (dies with it when real art lands). Renderer gained a
+  `playerContainer`, lost the D debug marker, and snap-guards the local
+  runtime's wrap-around. Dev preview: `dev/StudentRaceVisualPreview.jsx`
+  (unrouted — wire a temp route to eyeball, remove before commit).
+- UI-10G…M: see the master plan §22.

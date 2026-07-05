@@ -20,10 +20,22 @@ import ProtectedRoute from "./ProtectedRoute";
 import RoleRoute from "./RoleRoute";
 import GuestRoute from "./GuestRoute";
 
+
+
+
+import StudentRaceVisualPreview from "../features/studentRace/dev/StudentRaceVisualPreview";
+
+
+
 export default function AppRouter() {
     return (
         <BrowserRouter>
             <Routes>
+
+
+                <Route path="/dev/race" element={<StudentRaceVisualPreview />} />
+
+
                 <Route
                     element={
                         <GuestRoute>

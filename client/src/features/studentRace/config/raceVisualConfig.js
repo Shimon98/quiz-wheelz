@@ -19,10 +19,28 @@ export const STUDENT_RACE_VISUAL_CONFIG = Object.freeze({
   }),
 
   // Parallax speed of each world layer relative to the road (road = 1).
+  // In the over-the-shoulder camera these scale DEPTH flow (toward the
+  // viewer), not sideways scrolling.
   layers: Object.freeze({
     jungleFarSpeedMultiplier: 0.15,
     jungleMidSpeedMultiplier: 0.35,
     foregroundLeavesSpeedMultiplier: 0.65,
     roadSpeedMultiplier: 1,
+  }),
+
+  // Pseudo-perspective camera (the binding F decision: over-the-shoulder
+  // view like the reference art, NOT a flat scrolling texture). Shared by
+  // every world layer — the horizon must be ONE value, so it lives here.
+  camera: Object.freeze({
+    horizonYRatio: 0.34, // vanishing-point height (matches the reference art)
+    vanishingPointXRatio: 0.5,
+    roadTopWidthRatio: 0.18, // road width where it meets the horizon
+    roadBottomWidthRatio: 0.95, // road width at the screen bottom
+  }),
+
+  // Placeholder road drawing density (visual detail, never game rules).
+  road: Object.freeze({
+    depthMarkerCount: 5,
+    curbSegmentCount: 14,
   }),
 });
