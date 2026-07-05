@@ -5,7 +5,7 @@
  */
 
 import { PLANT_PLACEMENTS } from "../../shared/components/decor/jungleCornerPlantsConfig";
-import heroImage from "../../assets/landing/landing-hero-jungle-monkey-kart.png";
+import heroImage from "../../assets/landing/landing-hero-jungle-monkey-kart.webp";
 
 export const PUBLIC_ENTRY_SHELL_CONFIG = Object.freeze({
   // On the landing page the brand IS the page heading.

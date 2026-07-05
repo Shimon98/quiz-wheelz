@@ -12,7 +12,7 @@ import { LogOut } from "lucide-react";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
-import logoutSceneImage from "../../../assets/workspace/logout-monkey.png";
+import logoutSceneImage from "../../../assets/workspace/logout-monkey.webp";
 
 /**
  * WorkspaceNavbarFooter — the logout scene at the bottom of the workspace

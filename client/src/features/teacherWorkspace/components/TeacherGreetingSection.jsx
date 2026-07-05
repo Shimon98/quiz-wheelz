@@ -2,8 +2,8 @@ import { useTranslation } from "react-i18next";
 import { Box, Group, Stack, Text, Title } from "@mantine/core";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
-import heroDesktopImage from "../../../assets/workspace/greeting-hero-desktop.png";
-import heroMobileImage from "../../../assets/workspace/greeting-hero-mobile.png";
+import heroDesktopImage from "../../../assets/workspace/greeting-hero-desktop.webp";
+import heroMobileImage from "../../../assets/workspace/greeting-hero-mobile.webp";
 
 /*
  * Greeting text beside the monkey-kart art, holding the corner of the

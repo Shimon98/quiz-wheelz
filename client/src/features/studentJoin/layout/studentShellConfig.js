@@ -6,8 +6,8 @@
 
 import { ROUTES } from "../../../constants/routeConstants";
 import { PLANT_PLACEMENTS } from "../../../shared/components/decor/jungleCornerPlantsConfig";
-import joinHero from "../../../assets/student/student-join-hero-wide.png";
-import waitingHero from "../../../assets/student/student-waiting-hero-wide.png";
+import joinHero from "../../../assets/student/student-join-hero-wide.webp";
+import waitingHero from "../../../assets/student/student-waiting-hero-wide.webp";
 
 export const STUDENT_ENTRY_SHELL_CONFIG = Object.freeze({
   // The student pages carry their own <h1> titles, so the brand title stays

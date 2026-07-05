@@ -1,7 +1,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { cx } from "../../../utils/classNameUtils";
 import ShuffleText from "../publicEntry/ShuffleText";
-import bananaMark from "../../../assets/brand/quizwheelz-mark.png";
+import bananaMark from "../../../assets/brand/quizwheelz-mark.webp";
 
 /**
  * BrandLockup — THE QuizWheelz brand lockup, used by the public entry shell

@@ -5,8 +5,8 @@
 
 import { GraduationCap, Smile } from "lucide-react";
 import { ROUTES } from "../../../constants/routeConstants";
-import studentMedia from "../../../assets/landing/landing-role-student-monkey.png";
-import teacherMedia from "../../../assets/landing/landing-role-teacher-cap.png";
+import studentMedia from "../../../assets/landing/landing-role-student-monkey.webp";
+import teacherMedia from "../../../assets/landing/landing-role-teacher-cap.webp";
 
 /*
  * Role options shown on the landing card.

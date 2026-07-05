@@ -1,11 +1,11 @@
 import { motion, useReducedMotion } from "framer-motion";
 
 import { PLANT_PLACEMENTS } from "./jungleCornerPlantsConfig";
-import plantTopLeft from "../../../assets/decor/plant-top-left.png";
-import plantTopRight from "../../../assets/decor/plant-top-right.png";
-import plantBottomLeft from "../../../assets/decor/plant-bottom-left.png";
-import plantBottomRight from "../../../assets/decor/plant-bottom-right.png";
-import plantsGroundStrip from "../../../assets/decor/plants-ground-strip.png";
+import plantTopLeft from "../../../assets/decor/plant-top-left.webp";
+import plantTopRight from "../../../assets/decor/plant-top-right.webp";
+import plantBottomLeft from "../../../assets/decor/plant-bottom-left.webp";
+import plantBottomRight from "../../../assets/decor/plant-bottom-right.webp";
+import plantsGroundStrip from "../../../assets/decor/plants-ground-strip.webp";
 
 /*
  * JungleCornerPlants — painted jungle foliage pinned to the corners of its
@@ -96,6 +96,7 @@ export default function JungleCornerPlants({
           src={cfg.src}
           alt=""
           draggable="false"
+          decoding="async"
           className="h-auto w-full"
           style={{ transformOrigin: cfg.origin }}
           animate={sways ? { rotate: cfg.sway } : undefined}

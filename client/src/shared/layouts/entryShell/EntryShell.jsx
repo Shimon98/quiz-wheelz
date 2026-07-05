@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -52,6 +52,21 @@ export default function EntryShell({ config, children }) {
 
   const hero = config.heroes?.[pathname] ?? config.defaultHero;
 
+  // Warm the browser cache for the flow's OTHER hero images once the shell
+  // is up, so a route swap inside the flow (e.g. join → waiting) shows its
+  // art instantly. The current hero needs no preload — its <img> below is
+  // already the fetch.
+  useEffect(() => {
+    const others = [config.defaultHero, ...Object.values(config.heroes ?? {})]
+      .map((h) => h.image)
+      .filter((image) => image !== hero.image);
+
+    [...new Set(others)].forEach((image) => {
+      const preloaded = new Image();
+      preloaded.src = image;
+    });
+  }, [config, hero.image]);
+
   return (
     <div className={S.page}>
       <div aria-hidden="true" className={S.decorLayer}>
@@ -69,11 +84,14 @@ export default function EntryShell({ config, children }) {
           </div>
 
           <div aria-hidden="true" className={S.heroSide}>
+            {/* The first thing the eye meets — fetch it ahead of the queue. */}
             <img
               src={hero.image}
               alt=""
               className={S.heroImage}
               style={{ objectPosition: hero.objectPosition }}
+              decoding="async"
+              fetchPriority="high"
             />
           </div>
 
