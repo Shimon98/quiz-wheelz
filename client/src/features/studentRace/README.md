@@ -53,4 +53,10 @@ duplicated here.
   `src/constants/raceStatusConstants.js`. The route, the guard and the
   race-state integration wait for the server's race-state endpoint
   (approved by Diana, ships after 24C-0).
-- UI-10C…M: see the master plan §22.
+- UI-10C (assets + configs): done — asset keys + manifest under
+  `pixi/assets/`, screen geometry in `config/raceVisualConfig.js`, unit
+  conversions + motion tuning in `config/raceAnimationConfig.js` (the ONLY
+  place that knows server-units → pixels), asset-folder rules in
+  `src/assets/game/studentRace/README.md`. `studentRaceConfig.js` slimmed to
+  flow timings only — every constant has exactly one owner.
+- UI-10D…M: see the master plan §22.
