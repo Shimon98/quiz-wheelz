@@ -59,4 +59,14 @@ duplicated here.
   place that knows server-units → pixels), asset-folder rules in
   `src/assets/game/studentRace/README.md`. `studentRaceConfig.js` slimmed to
   flow timings only — every constant has exactly one owner.
-- UI-10D…M: see the master plan §22.
+- UI-10D (Pixi shell): done — manual pixi.js v8 (`pixi/`): async-safe app
+  creation, `StudentRaceRenderer` (container skeleton, ticker, interpolation
+  from `raceAnimationConfig`, renderer-internal visualPosition), ONE resize
+  mechanism (ResizeObserver helper), safe teardown helper, thin React wrapper
+  with the imperative `updateRuntimeState` bridge. Debug marker only — the
+  world lands in UI-10F.
+- UI-10E (local runtime): done — dev-only movement source
+  (`runtime/localStudentRaceRuntime.js`, 500ms snapshots, wraps at track end,
+  never fakes finish/score/questions) + `mapLocalRuntimeSnapshotToState.js`
+  (same mapper shape the future SSE mapper will have).
+- UI-10F…M: see the master plan §22.
