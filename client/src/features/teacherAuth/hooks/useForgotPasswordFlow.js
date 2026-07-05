@@ -5,7 +5,7 @@ import {
   verifyResetCode,
   resetPassword,
 } from "../../../api/authApi";
-import useErrorMessage from "../../../hooks/useErrorMessage";
+import useApiErrorNotifier from "../../../hooks/useApiErrorNotifier";
 import {
   FORGOT_PASSWORD_STEPS,
   RESEND_COOLDOWN_SECONDS,
@@ -29,8 +29,7 @@ function formatSecondsAsClock(totalSeconds) {
  * Client-ready end-to-end; goes live when the server ships the endpoints.
  */
 export default function useForgotPasswordFlow() {
-  const { errorMessage, clearErrorMessage, setErrorMessageFromApiError } =
-    useErrorMessage();
+  const { notifyApiError } = useApiErrorNotifier();
 
   const [step, setStep] = useState(FORGOT_PASSWORD_STEPS.REQUEST);
   const [email, setEmail] = useState("");
@@ -54,13 +53,12 @@ export default function useForgotPasswordFlow() {
   }
 
   async function runStep(action, onSuccess) {
-    clearErrorMessage();
     setSubmitting(true);
     try {
       await action();
       onSuccess();
     } catch (error) {
-      setErrorMessageFromApiError(error);
+      notifyApiError(error);
     } finally {
       setSubmitting(false);
     }
@@ -108,7 +106,6 @@ export default function useForgotPasswordFlow() {
     step,
     email,
     submitting,
-    errorMessage,
     resendSecondsLeft,
     resendClock: formatSecondsAsClock(resendSecondsLeft),
     submitRequest,

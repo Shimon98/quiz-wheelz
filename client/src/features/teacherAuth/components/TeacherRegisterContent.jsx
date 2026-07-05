@@ -1,5 +1,4 @@
 import {
-  Alert,
   Anchor,
   Button,
   Checkbox,
@@ -13,10 +12,9 @@ import {
 import { useForm } from "@mantine/form";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Mail, CircleAlert } from "lucide-react";
+import { Mail } from "lucide-react";
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { ROUTES } from "../../../constants/routeConstants";
-import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
 import {
   AUTH_FORM_MAX_WIDTH,
   EMAIL_PATTERN,
@@ -32,7 +30,7 @@ import useTeacherRegister from "../hooks/useTeacherRegister";
  */
 export default function TeacherRegisterContent() {
   const { t } = useTranslation(I18N_NAMESPACES.TEACHER_AUTH);
-  const { submit, submitting, errorMessage } = useTeacherRegister();
+  const { submit, submitting } = useTeacherRegister();
 
   const form = useForm({
     initialValues: {
@@ -71,12 +69,8 @@ export default function TeacherRegisterContent() {
         </Text>
       </Stack>
 
-      {errorMessage && (
-        <Alert color={UI_TONES.DANGER} radius="lg" icon={<CircleAlert size={18} />}>
-          {errorMessage}
-        </Alert>
-      )}
-
+      {/* Server failures pop as notifications (useApiErrorNotifier) — no
+          inline alert, so the card never grows on error. */}
       <form onSubmit={form.onSubmit(submit)} noValidate>
         <Stack gap="sm">
           <TextInput

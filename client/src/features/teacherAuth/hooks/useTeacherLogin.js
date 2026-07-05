@@ -2,15 +2,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser } from "../../../api/authApi";
 import { useAuthStore } from "../../../stores/authStore";
-import useErrorMessage from "../../../hooks/useErrorMessage";
+import useApiErrorNotifier from "../../../hooks/useApiErrorNotifier";
 import { getRouteByRole } from "../../../utils/authRouteUtils";
 
 /**
  * useTeacherLogin — all login screen logic, so the content component stays
  * display-only:
  *   - submit({ identifier, password }) → authApi → authStore → role redirect.
- *   - loading / submitting / server-error state (errorCode → localized text
- *     via normalizeApiError + the errors i18n namespace).
+ *   - server failures pop as error notifications (field validation stays
+ *     inline in the form) — the card never grows to fit an error.
  *
  * The "already signed in?" session check lives in GuestRoute, which wraps
  * the whole PublicEntryShell. The form's value state itself lives in the
@@ -18,8 +18,7 @@ import { getRouteByRole } from "../../../utils/authRouteUtils";
  */
 export default function useTeacherLogin() {
   const navigate = useNavigate();
-  const { errorMessage, clearErrorMessage, setErrorMessageFromApiError } =
-    useErrorMessage();
+  const { notifyApiError } = useApiErrorNotifier();
 
   const isLoading = useAuthStore((state) => state.isLoading);
   const setUser = useAuthStore((state) => state.setUser);
@@ -27,7 +26,6 @@ export default function useTeacherLogin() {
   const [submitting, setSubmitting] = useState(false);
 
   async function submit({ identifier, password }) {
-    clearErrorMessage();
     setSubmitting(true);
 
     try {
@@ -35,7 +33,7 @@ export default function useTeacherLogin() {
       setUser(loggedInUser);
       navigate(getRouteByRole(loggedInUser.role), { replace: true });
     } catch (error) {
-      setErrorMessageFromApiError(error);
+      notifyApiError(error);
     } finally {
       setSubmitting(false);
     }
@@ -44,7 +42,6 @@ export default function useTeacherLogin() {
   return {
     submit,
     submitting,
-    errorMessage,
     checkingSession: isLoading,
   };
 }

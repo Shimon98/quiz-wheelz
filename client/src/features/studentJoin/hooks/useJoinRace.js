@@ -4,24 +4,25 @@ import { useNavigate } from "react-router-dom";
 import { joinRace } from "../../../api/racePlayerApi";
 import { ROUTES } from "../../../constants/routeConstants";
 import { normalizeApiError } from "../../../errors/normalizeApiError";
+import useApiErrorNotifier from "../../../hooks/useApiErrorNotifier";
 import { STUDENT_JOIN_STORAGE_KEY } from "../config/studentJoinConfig";
 
 /**
  * useJoinRace — submits the single smart join form. A failed join NEVER
- * navigates the child anywhere: the localized error key is exposed for an
- * inline message inside the same form (kids don't chase toasts). Success
- * stores the join response (the waiting page's only data source until the
- * server grows a student room-state endpoint) and moves to the waiting room.
+ * navigates the child anywhere: the localized error pops as a notification
+ * over the SAME form (field validation stays inline at the inputs, and the
+ * card never grows to fit an error). Success stores the join response (the
+ * waiting page's only data source until the server grows a student
+ * room-state endpoint) and moves to the waiting room.
  */
 export default function useJoinRace() {
   const navigate = useNavigate();
+  const { notifyErrorKey } = useApiErrorNotifier();
 
   const [isJoining, setIsJoining] = useState(false);
-  const [joinErrorKey, setJoinErrorKey] = useState(null);
 
   async function submitJoin({ roomCode, displayName }) {
     setIsJoining(true);
-    setJoinErrorKey(null);
 
     try {
       const joinResponse = await joinRace({ roomCode, displayName });
@@ -35,7 +36,9 @@ export default function useJoinRace() {
     } catch (requestError) {
       const { messageKey } = normalizeApiError(requestError);
 
-      setJoinErrorKey(
+      // A generic "unexpected" reads scary to kids — use the friendlier
+      // join-specific fallback instead.
+      notifyErrorKey(
         messageKey === "general.unexpected" ? "student.joinFailed" : messageKey,
       );
     } finally {
@@ -46,7 +49,5 @@ export default function useJoinRace() {
   return {
     submitJoin,
     isJoining,
-    joinErrorKey,
-    clearJoinError: () => setJoinErrorKey(null),
   };
 }

@@ -1,7 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  Alert,
   Button,
   Group,
   Stack,
@@ -10,11 +9,10 @@ import {
   Title,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { CircleAlert, UserRound } from "lucide-react";
+import { UserRound } from "lucide-react";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { ROUTES } from "../../../constants/routeConstants";
-import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
 import useJoinRace from "../hooks/useJoinRace";
 import RoomCodePinInput from "../components/RoomCodePinInput";
 import {
@@ -42,13 +40,12 @@ function normalizeCodeFromUrl(rawCode) {
  */
 export default function StudentJoinPage() {
   const { t } = useTranslation(I18N_NAMESPACES.STUDENT_JOIN);
-  const { t: tErrors } = useTranslation(I18N_NAMESPACES.ERRORS);
   const navigate = useNavigate();
   const { roomCode: roomCodeFromUrl } = useParams();
 
   const prefilledCode = normalizeCodeFromUrl(roomCodeFromUrl);
 
-  const { submitJoin, isJoining, joinErrorKey } = useJoinRace();
+  const { submitJoin, isJoining } = useJoinRace();
 
   const form = useForm({
     initialValues: {
@@ -121,17 +118,8 @@ export default function StudentJoinPage() {
           {...form.getInputProps("displayName")}
         />
 
-        {joinErrorKey && (
-          <Alert
-            color={UI_TONES.DANGER}
-            variant="light"
-            radius="lg"
-            icon={<CircleAlert aria-hidden="true" />}
-          >
-            {tErrors(joinErrorKey)}
-          </Alert>
-        )}
-
+        {/* Server failures pop as notifications (useApiErrorNotifier) — no
+            inline alert, so the card never grows on error. */}
         <Stack gap="xs">
           <Button
             type="submit"
