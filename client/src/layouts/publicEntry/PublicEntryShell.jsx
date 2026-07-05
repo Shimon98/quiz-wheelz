@@ -10,8 +10,19 @@ import {
   PublicSettingsDialog,
 } from "../../shared/components/publicSettings";
 import heroImage from "../../assets/landing/landing-hero-jungle-monkey-kart.png";
-import PublicEntryLeaves from "./PublicEntryLeaves";
+import JungleCornerPlants from "../../shared/components/decor/JungleCornerPlants";
+import { PLANT_PLACEMENTS } from "../../shared/components/decor/jungleCornerPlantsConfig";
 import { PUBLIC_ENTRY_SHELL_STYLES as S } from "./publicEntryShellStyles";
+
+/*
+ * Painted plants replace the old code-drawn SVG leaves — same layer
+ * containers, same rule (never over the hero art), heavily faded so they
+ * stay ambience. Desktop: the open (start) side around the floating card.
+ * Mobile: just the ground strip inside the card bottom.
+ */
+const SHELL_PLANTS = [PLANT_PLACEMENTS.TOP_START, PLANT_PLACEMENTS.BOTTOM_START];
+const SHELL_PLANTS_OPACITY = 0.45;
+const CARD_STRIP_OPACITY = 0.35;
 
 // Proper noun — identical in every language, so a constant, not an i18n key.
 // The shared BrandLockup (banana + ShuffleText) inherits the title font-size
@@ -76,7 +87,10 @@ export default function PublicEntryShell() {
                 </main>
               </div>
               <div aria-hidden="true" className={S.cardLeafLayer}>
-                <PublicEntryLeaves variant="card" />
+                <JungleCornerPlants
+                  placements={[PLANT_PLACEMENTS.GROUND_STRIP]}
+                  opacity={CARD_STRIP_OPACITY}
+                />
               </div>
             </div>
           </div>
@@ -84,7 +98,10 @@ export default function PublicEntryShell() {
       </div>
 
       <div aria-hidden="true" className={S.shellLeafLayer}>
-        <PublicEntryLeaves variant="shell" />
+        <JungleCornerPlants
+          placements={SHELL_PLANTS}
+          opacity={SHELL_PLANTS_OPACITY}
+        />
       </div>
 
       {/* footerSlot — reserved for rights / privacy / terms (added later). */}
