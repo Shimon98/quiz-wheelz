@@ -16,4 +16,5 @@ public class SubmitAnswerResponse {
     private String questionStatus;
     private LocalDateTime answeredAt;
     private LocalDateTime expiresAt;
+    private StudentAnswerRaceImpactResponse raceImpact;
 }

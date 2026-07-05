@@ -3,7 +3,9 @@ package com.quiz_wheelz.repository;
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.RacePlayerStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +24,12 @@ public interface RacePlayerRepository extends JpaRepository<RacePlayer, Long> {
     Optional<RacePlayer> findByIdAndRace(Long playerId, Race race);
 
     Optional<RacePlayer> findByIdAndRaceId(Long playerId, Long raceId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<RacePlayer> findLockedByIdAndRaceId(
+            Long playerId,
+            Long raceId
+    );
 
     long countByRace(Race race);
 

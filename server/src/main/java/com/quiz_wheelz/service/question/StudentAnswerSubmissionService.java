@@ -1,7 +1,9 @@
 package com.quiz_wheelz.service.question;
 
+import com.quiz_wheelz.dto.answer.StudentAnswerRaceImpactResponse;
 import com.quiz_wheelz.dto.answer.SubmitAnswerRequest;
 import com.quiz_wheelz.dto.answer.SubmitAnswerResponse;
+import com.quiz_wheelz.dto.raceengine.AnswerRaceImpact;
 import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.entitys.PlayerQuestionChoice;
 import com.quiz_wheelz.entitys.RacePlayer;
@@ -10,6 +12,8 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
+import com.quiz_wheelz.repository.RacePlayerRepository;
+import com.quiz_wheelz.service.raceengine.RaceEngineService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,16 +28,22 @@ public class StudentAnswerSubmissionService {
 
     private final PlayerQuestionRepository playerQuestionRepository;
     private final PlayerQuestionChoiceRepository playerQuestionChoiceRepository;
+    private final RacePlayerRepository racePlayerRepository;
+    private final RaceEngineService raceEngineService;
     private final Clock clock;
 
     @Autowired
     public StudentAnswerSubmissionService(
             PlayerQuestionRepository playerQuestionRepository,
-            PlayerQuestionChoiceRepository playerQuestionChoiceRepository
+            PlayerQuestionChoiceRepository playerQuestionChoiceRepository,
+            RacePlayerRepository racePlayerRepository,
+            RaceEngineService raceEngineService
     ) {
         this(
                 playerQuestionRepository,
                 playerQuestionChoiceRepository,
+                racePlayerRepository,
+                raceEngineService,
                 Clock.systemDefaultZone()
         );
     }
@@ -41,10 +51,14 @@ public class StudentAnswerSubmissionService {
     StudentAnswerSubmissionService(
             PlayerQuestionRepository playerQuestionRepository,
             PlayerQuestionChoiceRepository playerQuestionChoiceRepository,
+            RacePlayerRepository racePlayerRepository,
+            RaceEngineService raceEngineService,
             Clock clock
     ) {
         this.playerQuestionRepository = Objects.requireNonNull(playerQuestionRepository);
         this.playerQuestionChoiceRepository = Objects.requireNonNull(playerQuestionChoiceRepository);
+        this.racePlayerRepository = Objects.requireNonNull(racePlayerRepository);
+        this.raceEngineService = Objects.requireNonNull(raceEngineService);
         this.clock = Objects.requireNonNull(clock);
     }
 
@@ -55,11 +69,12 @@ public class StudentAnswerSubmissionService {
     ) {
         validateInput(racePlayer, request);
 
+        RacePlayer lockedRacePlayer = findLockedRacePlayer(racePlayer);
         LocalDateTime now = LocalDateTime.now(clock);
 
-        PlayerQuestion question = findPlayerQuestion(
+        PlayerQuestion question = findLockedPlayerQuestion(
                 request.getQuestionId(),
-                racePlayer
+                lockedRacePlayer
         );
 
         validateQuestionIsActive(question);
@@ -76,6 +91,9 @@ public class StudentAnswerSubmissionService {
                 ? null
                 : resolveCorrectAnswerChoiceId(question);
 
+        AnswerRaceImpact answerRaceImpact =
+                raceEngineService.applyAnswerResult(lockedRacePlayer, correct);
+
         question.setStatus(PlayerQuestionStatus.ANSWERED);
         question.setAnsweredAt(now);
 
@@ -88,7 +106,8 @@ public class StudentAnswerSubmissionService {
                 correctAnswerChoiceId,
                 savedQuestion.getStatus().name(),
                 savedQuestion.getAnsweredAt(),
-                savedQuestion.getExpiresAt()
+                savedQuestion.getExpiresAt(),
+                StudentAnswerRaceImpactResponse.from(answerRaceImpact)
         );
     }
 
@@ -104,11 +123,30 @@ public class StudentAnswerSubmissionService {
         }
     }
 
-    private PlayerQuestion findPlayerQuestion(
+    private RacePlayer findLockedRacePlayer(RacePlayer racePlayer) {
+        validateRacePlayerIdentity(racePlayer);
+
+        return racePlayerRepository
+                .findLockedByIdAndRaceId(
+                        racePlayer.getId(),
+                        racePlayer.getRace().getId()
+                )
+                .orElseThrow(() -> new ApiException(ErrorCode.RACE_PLAYER_NOT_FOUND));
+    }
+
+    private void validateRacePlayerIdentity(RacePlayer racePlayer) {
+        if (racePlayer.getId() == null
+                || racePlayer.getRace() == null
+                || racePlayer.getRace().getId() == null) {
+            throw new ApiException(ErrorCode.INVALID_ANSWER_SUBMISSION);
+        }
+    }
+
+    private PlayerQuestion findLockedPlayerQuestion(
             Long questionId,
             RacePlayer racePlayer
     ) {
-        return playerQuestionRepository.findByIdAndRacePlayer(questionId, racePlayer)
+        return playerQuestionRepository.findLockedByIdAndRacePlayer(questionId, racePlayer)
                 .orElseThrow(() -> new ApiException(ErrorCode.QUESTION_NOT_FOUND_FOR_PLAYER));
     }
 

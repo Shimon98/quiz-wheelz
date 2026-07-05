@@ -1,5 +1,6 @@
 package com.quiz_wheelz.dto.raceengine;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.quiz_wheelz.enums.Difficulty;
 import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
@@ -10,7 +11,10 @@ import lombok.Getter;
 @AllArgsConstructor
 public class AnswerRaceImpact {
 
+    @JsonIgnore
     private Long raceId;
+
+    @JsonIgnore
     private Long racePlayerId;
 
     private boolean correct;
@@ -25,14 +29,23 @@ public class AnswerRaceImpact {
     private Integer newStreak;
     private Integer highestStreak;
 
+    @JsonIgnore
     private Integer correctAnswers;
+
+    @JsonIgnore
     private Integer wrongAnswers;
 
+    @JsonIgnore
     private Difficulty answeredDifficulty;
+
     private Difficulty nextDifficulty;
 
+    @JsonIgnore
     private Integer difficultyCorrectStreak;
+
+    @JsonIgnore
     private Integer difficultyWrongStreak;
+
     private boolean difficultyChanged;
 
     private RacePlayerStatus playerStatus;

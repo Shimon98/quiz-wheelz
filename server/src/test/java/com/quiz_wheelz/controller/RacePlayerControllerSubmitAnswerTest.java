@@ -2,10 +2,14 @@ package com.quiz_wheelz.controller;
 
 import com.quiz_wheelz.common.ApiMessages;
 import com.quiz_wheelz.common.ApiResponse;
+import com.quiz_wheelz.dto.answer.StudentAnswerRaceImpactResponse;
 import com.quiz_wheelz.dto.answer.SubmitAnswerRequest;
 import com.quiz_wheelz.dto.answer.SubmitAnswerResponse;
 import com.quiz_wheelz.entitys.RacePlayer;
+import com.quiz_wheelz.enums.Difficulty;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
+import com.quiz_wheelz.enums.RacePlayerStatus;
+import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.service.raceplayer.CurrentRacePlayerService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerJoinService;
 import com.quiz_wheelz.service.question.RacePlayerQuestionPlanService;
@@ -56,6 +60,21 @@ class RacePlayerControllerSubmitAnswerTest {
     void shouldSubmitAnswerForCurrentRacePlayer() {
         RacePlayer racePlayer = new RacePlayer();
         SubmitAnswerRequest submitAnswerRequest = createSubmitAnswerRequest();
+        StudentAnswerRaceImpactResponse raceImpact = new StudentAnswerRaceImpactResponse(
+                0,
+                0.0,
+                0,
+                0.0,
+                0.8,
+                0,
+                0,
+                Difficulty.EASY.name(),
+                false,
+                RacePlayerStatus.RACING.name(),
+                RaceStatus.IN_PROGRESS.name(),
+                false,
+                false
+        );
         SubmitAnswerResponse answerResponse = new SubmitAnswerResponse(
                 10L,
                 101L,
@@ -63,7 +82,8 @@ class RacePlayerControllerSubmitAnswerTest {
                 102L,
                 PlayerQuestionStatus.ANSWERED.name(),
                 LocalDateTime.now(),
-                LocalDateTime.now().plusSeconds(30)
+                LocalDateTime.now().plusSeconds(30),
+                raceImpact
         );
 
         when(currentRacePlayerService.resolveCurrentRacePlayer(request)).thenReturn(racePlayer);
@@ -84,6 +104,11 @@ class RacePlayerControllerSubmitAnswerTest {
         assertSame(answerResponse, body.getData());
         assertFalse(body.getData().isCorrect());
         assertEquals(102L, body.getData().getCorrectAnswerChoiceId());
+        assertEquals(0, body.getData().getRaceImpact().getScoreDelta());
+        assertEquals(
+                RacePlayerStatus.RACING.name(),
+                body.getData().getRaceImpact().getPlayerStatus()
+        );
 
         verify(currentRacePlayerService).resolveCurrentRacePlayer(request);
         verify(studentAnswerSubmissionService).submitAnswer(
