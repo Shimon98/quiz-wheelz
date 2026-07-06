@@ -9,21 +9,35 @@ import java.util.Optional;
 @Service
 public class RacePlayerReconnectPolicy {
 
+    public boolean isLastHeartbeatInsideGrace(
+            LocalDateTime lastHeartbeatAt,
+            LocalDateTime now
+    ) {
+        if (lastHeartbeatAt == null || now == null) {
+            return false;
+        }
+
+        return !lastHeartbeatAt
+                .plus(RacePlayerRuntimeRules.RECONNECT_GRACE_PERIOD)
+                .isBefore(now);
+    }
+
     public boolean isReconnectWindowExpired(
             Optional<LocalDateTime> lastHeartbeatAt,
             LocalDateTime raceStartedAt,
             LocalDateTime now
     ) {
-        if (lastHeartbeatAt.isEmpty() || raceStartedAt == null || now == null) {
+        if (lastHeartbeatAt == null
+                || lastHeartbeatAt.isEmpty()
+                || raceStartedAt == null
+                || now == null) {
             return false;
         }
 
         LocalDateTime activityReferenceAt =
                 laterOf(lastHeartbeatAt.get(), raceStartedAt);
 
-        return activityReferenceAt
-                .plus(RacePlayerRuntimeRules.RECONNECT_GRACE_PERIOD)
-                .isBefore(now);
+        return !isLastHeartbeatInsideGrace(activityReferenceAt, now);
     }
 
     private LocalDateTime laterOf(

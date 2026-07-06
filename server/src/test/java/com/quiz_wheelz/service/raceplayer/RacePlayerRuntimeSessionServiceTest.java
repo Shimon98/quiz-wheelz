@@ -26,12 +26,10 @@ import java.time.ZoneId;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -118,6 +116,7 @@ class RacePlayerRuntimeSessionServiceTest {
         assertEquals(now(), racePlayer.getLastSeenAt());
 
         verify(redisPresenceService, never()).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService, times(1)).findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
         verify(redisPresenceService).markOffline(RACE_ID, RACE_PLAYER_ID);
         verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
         verify(racePlayerRepository).save(racePlayer);
@@ -146,6 +145,7 @@ class RacePlayerRuntimeSessionServiceTest {
         assertEquals(RacePlayerStatus.WAITING, racePlayer.getStatus());
 
         verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService, times(1)).findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
         verify(racePlayerRepository, never()).save(any());
     }
 
@@ -172,6 +172,7 @@ class RacePlayerRuntimeSessionServiceTest {
         assertEquals(RacePlayerStatus.RACING, racePlayer.getStatus());
 
         verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService, times(1)).findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
         verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
         verify(racePlayerRepository, never()).save(any());
     }

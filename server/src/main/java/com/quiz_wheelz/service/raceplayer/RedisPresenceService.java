@@ -41,7 +41,7 @@ public class RedisPresenceService {
         validateIds(raceId, racePlayerId);
 
         if (heartbeatAt == null) {
-            throw new IllegalArgumentException(ErrorMessages.RACE_PLAYER_SESSION_IDENTITY_MISSING);
+            throw new IllegalArgumentException(ErrorMessages.REDIS_HEARTBEAT_TIMESTAMP_MISSING);
         }
 
         redisTemplate.opsForValue().set(

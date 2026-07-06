@@ -13,6 +13,30 @@ class RacePlayerReconnectPolicyTest {
     private final RacePlayerReconnectPolicy policy = new RacePlayerReconnectPolicy();
 
     @Test
+    void lastHeartbeatInsideGraceShouldReturnTrueAtExactGraceBoundary() {
+        assertTrue(policy.isLastHeartbeatInsideGrace(
+                LocalDateTime.of(2026, 7, 6, 13, 0),
+                LocalDateTime.of(2026, 7, 6, 13, 3)
+        ));
+    }
+
+    @Test
+    void lastHeartbeatInsideGraceShouldReturnFalseAfterGraceBoundary() {
+        assertFalse(policy.isLastHeartbeatInsideGrace(
+                LocalDateTime.of(2026, 7, 6, 13, 0),
+                LocalDateTime.of(2026, 7, 6, 13, 3, 1)
+        ));
+    }
+
+    @Test
+    void lastHeartbeatInsideGraceShouldReturnFalseWhenTimestampIsMissing() {
+        assertFalse(policy.isLastHeartbeatInsideGrace(
+                null,
+                LocalDateTime.of(2026, 7, 6, 13, 3)
+        ));
+    }
+
+    @Test
     void shouldReturnFalseWhenLastHeartbeatIsEmpty() {
         assertFalse(policy.isReconnectWindowExpired(
                 Optional.empty(),

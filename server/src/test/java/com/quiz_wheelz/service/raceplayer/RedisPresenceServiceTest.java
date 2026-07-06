@@ -156,6 +156,23 @@ class RedisPresenceServiceTest {
     }
 
     @Test
+    void nullHeartbeatTimestampShouldThrowConstantErrorMessage() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> redisPresenceService.markOnline(
+                        RACE_ID,
+                        RACE_PLAYER_ID,
+                        null
+                )
+        );
+
+        assertEquals(
+                ErrorMessages.REDIS_HEARTBEAT_TIMESTAMP_MISSING,
+                exception.getMessage()
+        );
+    }
+
+    @Test
     void buildPresenceKeyShouldUseSharedRedisKeyBuilderConvention() {
         String key = redisPresenceService.buildPresenceKey(RACE_ID, RACE_PLAYER_ID);
 
