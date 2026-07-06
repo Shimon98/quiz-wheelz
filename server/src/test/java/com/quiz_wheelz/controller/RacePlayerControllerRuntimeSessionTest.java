@@ -2,11 +2,9 @@ package com.quiz_wheelz.controller;
 
 import com.quiz_wheelz.common.ApiMessages;
 import com.quiz_wheelz.common.ApiResponse;
-import com.quiz_wheelz.dto.raceplayer.StudentRaceRuntimeSnapshotResponse;
-import com.quiz_wheelz.dto.raceplayer.StudentRaceStateResponse;
-import com.quiz_wheelz.enums.Difficulty;
+import com.quiz_wheelz.dto.raceplayer.RacePlayerHeartbeatResponse;
+import com.quiz_wheelz.dto.raceplayer.RacePlayerLeaveResponse;
 import com.quiz_wheelz.enums.RacePlayerStatus;
-import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.service.raceplayer.CurrentRacePlayerService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerJoinService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerRuntimeSessionService;
@@ -31,7 +29,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class RacePlayerControllerRaceStateTest {
+class RacePlayerControllerRuntimeSessionTest {
 
     @Mock
     private RacePlayerJoinService racePlayerJoinService;
@@ -61,26 +59,57 @@ class RacePlayerControllerRaceStateTest {
     private HttpServletRequest request;
 
     @Test
-    void shouldReturnRaceStateForCurrentRacePlayerSession() {
-        StudentRaceStateResponse raceStateResponse = createRaceStateResponse();
+    void heartbeatShouldReturnApiResponseAndDelegateToRuntimeSessionService() {
+        RacePlayerHeartbeatResponse heartbeatResponse =
+                new RacePlayerHeartbeatResponse(
+                        1L,
+                        12L,
+                        LocalDateTime.of(2026, 7, 6, 13, 20)
+                );
+        when(racePlayerRuntimeSessionService.heartbeat(request))
+                .thenReturn(heartbeatResponse);
 
-        when(studentRaceStateService.getRaceState(request)).thenReturn(raceStateResponse);
+        ResponseEntity<ApiResponse<RacePlayerHeartbeatResponse>> response =
+                createController().heartbeat(request);
 
-        ResponseEntity<ApiResponse<StudentRaceStateResponse>> response =
-                createController().getRaceState(request);
-
-        ApiResponse<StudentRaceStateResponse> body = response.getBody();
+        ApiResponse<RacePlayerHeartbeatResponse> body = response.getBody();
 
         assertEquals(200, response.getStatusCode().value());
         assertTrue(body.isSuccess());
         assertEquals(
-                ApiMessages.STUDENT_RACE_STATE_LOADED_SUCCESSFULLY,
+                ApiMessages.RACE_PLAYER_HEARTBEAT_RECEIVED_SUCCESSFULLY,
                 body.getMessage()
         );
-        assertSame(raceStateResponse, body.getData());
-        assertEquals(RaceStatus.IN_PROGRESS, body.getData().getSnapshot().getRaceStatus());
+        assertSame(heartbeatResponse, body.getData());
 
-        verify(studentRaceStateService).getRaceState(request);
+        verify(racePlayerRuntimeSessionService).heartbeat(request);
+    }
+
+    @Test
+    void leaveShouldReturnApiResponseAndDelegateToRuntimeSessionService() {
+        RacePlayerLeaveResponse leaveResponse =
+                new RacePlayerLeaveResponse(
+                        12L,
+                        LocalDateTime.of(2026, 7, 6, 13, 25),
+                        RacePlayerStatus.DISCONNECTED
+                );
+        when(racePlayerRuntimeSessionService.leave(request))
+                .thenReturn(leaveResponse);
+
+        ResponseEntity<ApiResponse<RacePlayerLeaveResponse>> response =
+                createController().leave(request);
+
+        ApiResponse<RacePlayerLeaveResponse> body = response.getBody();
+
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue(body.isSuccess());
+        assertEquals(
+                ApiMessages.RACE_PLAYER_LEFT_SUCCESSFULLY,
+                body.getMessage()
+        );
+        assertSame(leaveResponse, body.getData());
+
+        verify(racePlayerRuntimeSessionService).leave(request);
     }
 
     private RacePlayerController createController() {
@@ -93,29 +122,6 @@ class RacePlayerControllerRaceStateTest {
                 studentAnswerSubmissionService,
                 studentRaceStateService,
                 racePlayerRuntimeSessionService
-        );
-    }
-
-    private StudentRaceStateResponse createRaceStateResponse() {
-        return new StudentRaceStateResponse(
-                1L,
-                "Easy multiplication",
-                "ABC123",
-                LocalDateTime.of(2026, 7, 5, 10, 0),
-                null,
-                new StudentRaceRuntimeSnapshotResponse(
-                        1000,
-                        50,
-                        120.0,
-                        1.2,
-                        3,
-                        5,
-                        Difficulty.EASY,
-                        RacePlayerStatus.RACING,
-                        RaceStatus.IN_PROGRESS,
-                        false,
-                        false
-                )
         );
     }
 }

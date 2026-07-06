@@ -51,6 +51,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, ApiPaths.AUTH_LOGOUT).permitAll()
                         .requestMatchers(HttpMethod.POST, ApiPaths.RACE_PLAYERS_JOIN).permitAll()
                         .requestMatchers(HttpMethod.POST, ApiPaths.RACE_PLAYERS_SUBMIT_ANSWER).permitAll()
+                        .requestMatchers(HttpMethod.POST, ApiPaths.RACE_PLAYERS_HEARTBEAT).permitAll()
+                        .requestMatchers(HttpMethod.POST, ApiPaths.RACE_PLAYERS_LEAVE).permitAll()
                         .requestMatchers(HttpMethod.GET, ApiPaths.RACE_PLAYERS_CURRENT_RACE_STATE).permitAll()
                         .requestMatchers(HttpMethod.GET, ApiPaths.RACE_PLAYERS_CURRENT_QUESTION).permitAll()
                         .requestMatchers(HttpMethod.GET, ApiPaths.ACTUATOR_HEALTH).permitAll()

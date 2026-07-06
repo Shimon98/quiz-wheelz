@@ -7,13 +7,16 @@ import com.quiz_wheelz.dto.answer.SubmitAnswerRequest;
 import com.quiz_wheelz.dto.answer.SubmitAnswerResponse;
 import com.quiz_wheelz.dto.question.QuestionPlan;
 import com.quiz_wheelz.dto.question.student.StudentQuestionResponse;
+import com.quiz_wheelz.dto.raceplayer.RacePlayerHeartbeatResponse;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerJoinRequest;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerJoinResponse;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerJoinResult;
+import com.quiz_wheelz.dto.raceplayer.RacePlayerLeaveResponse;
 import com.quiz_wheelz.dto.raceplayer.StudentRaceStateResponse;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.service.raceplayer.CurrentRacePlayerService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerJoinService;
+import com.quiz_wheelz.service.raceplayer.RacePlayerRuntimeSessionService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStateService;
 import com.quiz_wheelz.service.question.RacePlayerQuestionPlanService;
 import com.quiz_wheelz.service.question.StudentAnswerSubmissionService;
@@ -40,6 +43,7 @@ public class RacePlayerController {
     private final StudentQuestionDeliveryService studentQuestionDeliveryService;
     private final StudentAnswerSubmissionService studentAnswerSubmissionService;
     private final StudentRaceStateService studentRaceStateService;
+    private final RacePlayerRuntimeSessionService racePlayerRuntimeSessionService;
 
     public RacePlayerController(
             RacePlayerJoinService racePlayerJoinService,
@@ -48,7 +52,8 @@ public class RacePlayerController {
             RacePlayerQuestionPlanService racePlayerQuestionPlanService,
             StudentQuestionDeliveryService studentQuestionDeliveryService,
             StudentAnswerSubmissionService studentAnswerSubmissionService,
-            StudentRaceStateService studentRaceStateService
+            StudentRaceStateService studentRaceStateService,
+            RacePlayerRuntimeSessionService racePlayerRuntimeSessionService
     ) {
         this.racePlayerJoinService = racePlayerJoinService;
         this.cookieUtils = cookieUtils;
@@ -57,6 +62,7 @@ public class RacePlayerController {
         this.studentQuestionDeliveryService = studentQuestionDeliveryService;
         this.studentAnswerSubmissionService = studentAnswerSubmissionService;
         this.studentRaceStateService = studentRaceStateService;
+        this.racePlayerRuntimeSessionService = racePlayerRuntimeSessionService;
     }
 
     @PostMapping(ApiPaths.JOIN)
@@ -85,6 +91,36 @@ public class RacePlayerController {
         return ResponseEntity.ok(
                 ApiResponse.ok(
                         ApiMessages.STUDENT_RACE_STATE_LOADED_SUCCESSFULLY,
+                        response
+                )
+        );
+    }
+
+    @PostMapping(ApiPaths.CURRENT_HEARTBEAT)
+    public ResponseEntity<ApiResponse<RacePlayerHeartbeatResponse>> heartbeat(
+            HttpServletRequest request
+    ) {
+        RacePlayerHeartbeatResponse response =
+                racePlayerRuntimeSessionService.heartbeat(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        ApiMessages.RACE_PLAYER_HEARTBEAT_RECEIVED_SUCCESSFULLY,
+                        response
+                )
+        );
+    }
+
+    @PostMapping(ApiPaths.CURRENT_LEAVE)
+    public ResponseEntity<ApiResponse<RacePlayerLeaveResponse>> leave(
+            HttpServletRequest request
+    ) {
+        RacePlayerLeaveResponse response =
+                racePlayerRuntimeSessionService.leave(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        ApiMessages.RACE_PLAYER_LEFT_SUCCESSFULLY,
                         response
                 )
         );

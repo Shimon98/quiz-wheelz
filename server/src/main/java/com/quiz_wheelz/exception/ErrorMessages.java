@@ -85,6 +85,12 @@ public final class ErrorMessages {
     public static final String REDIS_KEY_IDENTIFIER_MISSING =
             "Redis key identifier must not be empty";
 
+    public static final String REDIS_PRESENCE_IDS_MISSING =
+            "Redis presence race id and race player id are required";
+
+    public static final String RACE_PLAYER_SESSION_IDENTITY_MISSING =
+            "Race player session identity is missing";
+
     private ErrorMessages() {
     }
 }

@@ -13,6 +13,7 @@ import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.service.raceplayer.CurrentRacePlayerService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerJoinService;
+import com.quiz_wheelz.service.raceplayer.RacePlayerRuntimeSessionService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStateService;
 import com.quiz_wheelz.service.question.RacePlayerQuestionPlanService;
 import com.quiz_wheelz.service.question.StudentAnswerSubmissionService;
@@ -57,6 +58,9 @@ class RacePlayerControllerSubmitAnswerTest {
 
     @Mock
     private StudentRaceStateService studentRaceStateService;
+
+    @Mock
+    private RacePlayerRuntimeSessionService racePlayerRuntimeSessionService;
 
     @Mock
     private HttpServletRequest request;
@@ -133,7 +137,8 @@ class RacePlayerControllerSubmitAnswerTest {
                 racePlayerQuestionPlanService,
                 studentQuestionDeliveryService,
                 studentAnswerSubmissionService,
-                studentRaceStateService
+                studentRaceStateService,
+                racePlayerRuntimeSessionService
         );
     }
 
