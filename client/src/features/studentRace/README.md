@@ -47,8 +47,12 @@ ones for code:
   forward or backward.
 - Visually ONE wide muddy track (no lane lines/numbers); the invisible slots
   are the server's `laneNumber` (unique per race by DB constraint — slot
-  conflicts are impossible). Opponent lateral offset = lane delta from MY
-  lane; opponent colors = server `vehicleColorKey`.
+  conflicts are impossible). **MY lane is normalized to the screen center on
+  every device** — the road is symmetric around me and never shifts for
+  edge lanes; laneNumber only places opponents via
+  `laneDelta = opponent.laneNumber - myLaneNumber` (x-axis only). Opponent
+  colors = server `vehicleColorKey`. Visibility is limited by depth AND by
+  lateral width per depth (near: few/close lanes; far: the full track).
 - The near road is wider than the screen (`camera.roadBottomWidthRatio > 1`).
 - Every on-track object projects through
   `perspective.projectTrackObject(relativeDistance)` — the finish line is the
