@@ -25,6 +25,17 @@ public class RedisKeyBuilder {
         );
     }
 
+    public String presenceLastHeartbeatKey(Long raceId, Long racePlayerId) {
+        return join(
+                RedisKeyNamespace.PRESENCE.getValue(),
+                RedisKeyPart.LAST_HEARTBEAT.getValue(),
+                RedisKeyPart.RACE.getValue(),
+                requirePositiveId(raceId),
+                RedisKeyPart.PLAYER.getValue(),
+                requirePositiveId(racePlayerId)
+        );
+    }
+
     public String rateLimitKey(
             RedisRateLimitScope scope,
             RedisKeyIdentifier identifier

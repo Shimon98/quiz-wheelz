@@ -12,6 +12,7 @@ import com.quiz_wheelz.dto.raceplayer.RacePlayerJoinRequest;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerJoinResponse;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerJoinResult;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerLeaveResponse;
+import com.quiz_wheelz.dto.raceplayer.RacePlayerReconnectResponse;
 import com.quiz_wheelz.dto.raceplayer.StudentRaceStateResponse;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.service.raceplayer.CurrentRacePlayerService;
@@ -121,6 +122,21 @@ public class RacePlayerController {
         return ResponseEntity.ok(
                 ApiResponse.ok(
                         ApiMessages.RACE_PLAYER_LEFT_SUCCESSFULLY,
+                        response
+                )
+        );
+    }
+
+    @PostMapping(ApiPaths.CURRENT_RECONNECT)
+    public ResponseEntity<ApiResponse<RacePlayerReconnectResponse>> reconnect(
+            HttpServletRequest request
+    ) {
+        RacePlayerReconnectResponse response =
+                racePlayerRuntimeSessionService.reconnect(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        ApiMessages.RACE_PLAYER_RECONNECT_RESOLVED_SUCCESSFULLY,
                         response
                 )
         );

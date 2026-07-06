@@ -11,11 +11,15 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.mock.env.MockEnvironment;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -25,6 +29,10 @@ class RedisPresenceServiceTest {
     private static final long RACE_PLAYER_ID = 12L;
     private static final String PRESENCE_KEY =
             "quizwheelz:test:presence:race:1:player:12";
+    private static final String LAST_HEARTBEAT_KEY =
+            "quizwheelz:test:presence:last-heartbeat:race:1:player:12";
+    private static final LocalDateTime HEARTBEAT_AT =
+            LocalDateTime.of(2026, 7, 6, 13, 20);
 
     private StringRedisTemplate redisTemplate;
     private ValueOperations<String, String> valueOperations;
@@ -45,7 +53,7 @@ class RedisPresenceServiceTest {
     void markOnlineShouldStorePresenceValueWithTtl() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
 
-        redisPresenceService.markOnline(RACE_ID, RACE_PLAYER_ID);
+        redisPresenceService.markOnline(RACE_ID, RACE_PLAYER_ID, HEARTBEAT_AT);
 
         verify(valueOperations).set(
                 PRESENCE_KEY,
@@ -55,10 +63,58 @@ class RedisPresenceServiceTest {
     }
 
     @Test
-    void markOfflineShouldDeletePresenceKey() {
+    void markOnlineShouldStoreLastHeartbeatKeyWithLongTtl() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+
+        redisPresenceService.markOnline(RACE_ID, RACE_PLAYER_ID, HEARTBEAT_AT);
+
+        verify(valueOperations).set(
+                LAST_HEARTBEAT_KEY,
+                "2026-07-06T13:20:00",
+                RacePlayerRuntimeRules.LAST_HEARTBEAT_TTL
+        );
+    }
+
+    @Test
+    void findLastHeartbeatAtShouldReturnParsedTimestamp() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(LAST_HEARTBEAT_KEY)).thenReturn("2026-07-06T13:20:00");
+
+        Optional<LocalDateTime> heartbeatAt =
+                redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
+
+        assertTrue(heartbeatAt.isPresent());
+        assertEquals(HEARTBEAT_AT, heartbeatAt.get());
+    }
+
+    @Test
+    void findLastHeartbeatAtShouldReturnEmptyWhenKeyIsMissing() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(LAST_HEARTBEAT_KEY)).thenReturn(null);
+
+        Optional<LocalDateTime> heartbeatAt =
+                redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
+
+        assertTrue(heartbeatAt.isEmpty());
+    }
+
+    @Test
+    void findLastHeartbeatAtShouldReturnEmptyWhenValueIsInvalid() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(LAST_HEARTBEAT_KEY)).thenReturn("not-a-date");
+
+        Optional<LocalDateTime> heartbeatAt =
+                redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
+
+        assertTrue(heartbeatAt.isEmpty());
+    }
+
+    @Test
+    void markOfflineShouldDeletePresenceKeyOnly() {
         redisPresenceService.markOffline(RACE_ID, RACE_PLAYER_ID);
 
         verify(redisTemplate).delete(PRESENCE_KEY);
+        verify(redisTemplate, never()).delete(LAST_HEARTBEAT_KEY);
     }
 
     @Test
@@ -100,10 +156,34 @@ class RedisPresenceServiceTest {
     }
 
     @Test
+    void nullHeartbeatTimestampShouldThrowConstantErrorMessage() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> redisPresenceService.markOnline(
+                        RACE_ID,
+                        RACE_PLAYER_ID,
+                        null
+                )
+        );
+
+        assertEquals(
+                ErrorMessages.REDIS_HEARTBEAT_TIMESTAMP_MISSING,
+                exception.getMessage()
+        );
+    }
+
+    @Test
     void buildPresenceKeyShouldUseSharedRedisKeyBuilderConvention() {
         String key = redisPresenceService.buildPresenceKey(RACE_ID, RACE_PLAYER_ID);
 
         assertEquals(PRESENCE_KEY, key);
+    }
+
+    @Test
+    void buildLastHeartbeatKeyShouldUseSharedRedisKeyBuilderConvention() {
+        String key = redisPresenceService.buildLastHeartbeatKey(RACE_ID, RACE_PLAYER_ID);
+
+        assertEquals(LAST_HEARTBEAT_KEY, key);
     }
 
     private RedisKeyBuilder createRedisKeyBuilder() {
