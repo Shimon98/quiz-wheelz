@@ -311,6 +311,7 @@ public class RacePlayerRuntimeSessionService {
             RacePlayer racePlayer
     ) {
         return race == null
+                || racePlayer == null
                 || race.getStatus() != RaceStatus.IN_PROGRESS
                 || racePlayer.getStatus() != RacePlayerStatus.RACING;
     }

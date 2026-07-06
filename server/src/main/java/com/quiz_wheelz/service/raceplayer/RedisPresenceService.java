@@ -66,9 +66,7 @@ public class RedisPresenceService {
     public boolean isOnline(Long raceId, Long racePlayerId) {
         validateIds(raceId, racePlayerId);
 
-        Boolean exists = redisTemplate.hasKey(buildPresenceKey(raceId, racePlayerId));
-
-        return Boolean.TRUE.equals(exists);
+        return redisTemplate.hasKey(buildPresenceKey(raceId, racePlayerId));
     }
 
     public Optional<LocalDateTime> findLastHeartbeatAt(
