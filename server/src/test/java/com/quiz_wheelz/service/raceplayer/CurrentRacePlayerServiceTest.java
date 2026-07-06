@@ -1,5 +1,6 @@
 package com.quiz_wheelz.service.raceplayer;
 
+import com.quiz_wheelz.dto.raceplayer.RacePlayerSessionIdentity;
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.RacePlayerStatus;
@@ -22,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class CurrentRacePlayerServiceTest {
@@ -173,6 +176,60 @@ class CurrentRacePlayerServiceTest {
     }
 
     @Test
+    void shouldResolveCurrentRacePlayerIdentityFromValidCookieTokenWithoutRepositoryQuery() {
+        mockValidTokenIdentity();
+
+        RacePlayerSessionIdentity identity =
+                createService().resolveCurrentRacePlayerIdentity(request);
+
+        assertEquals(RACE_ID, identity.raceId());
+        assertEquals(RACE_PLAYER_ID, identity.racePlayerId());
+        verify(racePlayerRepository, never()).findByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
+    }
+
+    @Test
+    void shouldRejectMissingTokenWhenResolvingIdentity() {
+        when(cookieUtils.getRacePlayerCookieValue(request)).thenReturn(Optional.empty());
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> createService().resolveCurrentRacePlayerIdentity(request)
+        );
+
+        assertEquals(ErrorCode.RACE_PLAYER_TOKEN_MISSING, exception.getErrorCode());
+        verify(racePlayerRepository, never()).findByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
+    }
+
+    @Test
+    void shouldRejectInvalidTokenWhenResolvingIdentity() {
+        when(cookieUtils.getRacePlayerCookieValue(request)).thenReturn(Optional.of(TOKEN));
+        when(jwtService.isTokenValid(TOKEN)).thenReturn(false);
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> createService().resolveCurrentRacePlayerIdentity(request)
+        );
+
+        assertEquals(ErrorCode.INVALID_RACE_PLAYER_TOKEN, exception.getErrorCode());
+        verify(racePlayerRepository, never()).findByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
+    }
+
+    @Test
+    void shouldRejectWrongTokenTypeWhenResolvingIdentity() {
+        when(cookieUtils.getRacePlayerCookieValue(request)).thenReturn(Optional.of(TOKEN));
+        when(jwtService.isTokenValid(TOKEN)).thenReturn(true);
+        when(jwtService.extractTokenType(TOKEN)).thenReturn(JwtTokenTypes.AUTH_USER);
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> createService().resolveCurrentRacePlayerIdentity(request)
+        );
+
+        assertEquals(ErrorCode.INVALID_RACE_PLAYER_TOKEN, exception.getErrorCode());
+        verify(racePlayerRepository, never()).findByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
+    }
+
+    @Test
     void shouldRejectRacePlayerWithoutRace() {
         RacePlayer racePlayer = new RacePlayer();
         racePlayer.setStatus(RacePlayerStatus.RACING);
@@ -227,13 +284,17 @@ class CurrentRacePlayerServiceTest {
     }
 
     private void mockValidTokenResolvingTo(RacePlayer racePlayer) {
+        mockValidTokenIdentity();
+        when(racePlayerRepository.findByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
+                .thenReturn(Optional.of(racePlayer));
+    }
+
+    private void mockValidTokenIdentity() {
         when(cookieUtils.getRacePlayerCookieValue(request)).thenReturn(Optional.of(TOKEN));
         when(jwtService.isTokenValid(TOKEN)).thenReturn(true);
         when(jwtService.extractTokenType(TOKEN)).thenReturn(JwtTokenTypes.RACE_PLAYER);
         when(jwtService.extractRaceId(TOKEN)).thenReturn(RACE_ID);
         when(jwtService.extractRacePlayerId(TOKEN)).thenReturn(RACE_PLAYER_ID);
-        when(racePlayerRepository.findByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.of(racePlayer));
     }
 
     private RacePlayer createRacePlayer(RacePlayerStatus playerStatus) {

@@ -27,6 +27,12 @@ public final class ApiMessages {
     public static final String STUDENT_RACE_STATE_LOADED_SUCCESSFULLY =
             "Student race state loaded successfully";
 
+    public static final String RACE_PLAYER_HEARTBEAT_RECEIVED_SUCCESSFULLY =
+            "Race player heartbeat received successfully";
+
+    public static final String RACE_PLAYER_LEFT_SUCCESSFULLY =
+            "Race player left successfully";
+
     public static final String STUDENT_ANSWER_SUBMITTED_SUCCESSFULLY =
             "Student answer submitted successfully";
 

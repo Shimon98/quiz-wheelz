@@ -15,6 +15,7 @@ import com.quiz_wheelz.enums.QuestionGenerationPattern;
 import com.quiz_wheelz.enums.QuestionType;
 import com.quiz_wheelz.service.raceplayer.CurrentRacePlayerService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerJoinService;
+import com.quiz_wheelz.service.raceplayer.RacePlayerRuntimeSessionService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStateService;
 import com.quiz_wheelz.service.question.RacePlayerQuestionPlanService;
 import com.quiz_wheelz.service.question.StudentAnswerSubmissionService;
@@ -61,6 +62,9 @@ class RacePlayerControllerCurrentQuestionTest {
     private StudentRaceStateService studentRaceStateService;
 
     @Mock
+    private RacePlayerRuntimeSessionService racePlayerRuntimeSessionService;
+
+    @Mock
     private HttpServletRequest request;
 
     @Test
@@ -103,7 +107,8 @@ class RacePlayerControllerCurrentQuestionTest {
                 racePlayerQuestionPlanService,
                 studentQuestionDeliveryService,
                 studentAnswerSubmissionService,
-                studentRaceStateService
+                studentRaceStateService,
+                racePlayerRuntimeSessionService
         );
     }
 

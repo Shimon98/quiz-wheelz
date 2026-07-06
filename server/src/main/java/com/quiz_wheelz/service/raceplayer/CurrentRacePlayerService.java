@@ -2,6 +2,7 @@ package com.quiz_wheelz.service.raceplayer;
 
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
+import com.quiz_wheelz.dto.raceplayer.RacePlayerSessionIdentity;
 import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.exception.ApiException;
@@ -41,10 +42,19 @@ public class CurrentRacePlayerService {
 
     @Transactional(readOnly = true)
     public RacePlayer resolveCurrentRacePlayerSession(HttpServletRequest request) {
+        RacePlayerSessionIdentity identity = resolveCurrentRacePlayerIdentity(request);
+
+        return findRacePlayerFromIdentity(identity);
+    }
+
+    @Transactional(readOnly = true)
+    public RacePlayerSessionIdentity resolveCurrentRacePlayerIdentity(
+            HttpServletRequest request
+    ) {
         String token = extractRacePlayerToken(request);
         validateRacePlayerToken(token);
 
-        return findRacePlayerFromToken(token);
+        return extractRacePlayerIdentity(token);
     }
 
     private String extractRacePlayerToken(HttpServletRequest request) {
@@ -75,18 +85,29 @@ public class CurrentRacePlayerService {
         }
     }
 
-    private RacePlayer findRacePlayerFromToken(String token) {
+    private RacePlayerSessionIdentity extractRacePlayerIdentity(String token) {
         try {
-            Long raceId = jwtService.extractRaceId(token);
-            Long racePlayerId = jwtService.extractRacePlayerId(token);
-
-            return racePlayerRepository.findByIdAndRaceId(racePlayerId, raceId)
-                    .orElseThrow(() -> new ApiException(ErrorCode.RACE_PLAYER_NOT_FOUND));
-        } catch (ApiException exception) {
-            throw exception;
+            return new RacePlayerSessionIdentity(
+                    jwtService.extractRaceId(token),
+                    jwtService.extractRacePlayerId(token)
+            );
         } catch (RuntimeException exception) {
             throw new ApiException(ErrorCode.INVALID_RACE_PLAYER_TOKEN);
         }
+    }
+
+    private RacePlayer findRacePlayerFromIdentity(RacePlayerSessionIdentity identity) {
+        if (identity == null
+                || identity.raceId() == null
+                || identity.racePlayerId() == null) {
+            throw new ApiException(ErrorCode.INVALID_RACE_PLAYER_TOKEN);
+        }
+
+        return racePlayerRepository.findByIdAndRaceId(
+                        identity.racePlayerId(),
+                        identity.raceId()
+                )
+                .orElseThrow(() -> new ApiException(ErrorCode.RACE_PLAYER_NOT_FOUND));
     }
 
     private void validateRacePlayerCanReceiveQuestion(RacePlayer racePlayer) {
