@@ -3,7 +3,7 @@
 The student's in-game screen: the kart sits fixed at the bottom, the world
 (road, jungle layers, effects) moves toward it; React renders the HUD and the
 question panel, PixiJS renders the world. Master plan (goals, stages, open
-decisions): `docs/vision/ui10BigPlan_UPDATED.md`.
+decisions): `docs/client-design/06_CLIENT_UI10_STUDENT_RACE_MASTER_PLAN.md`.
 
 ## Hard rules
 
@@ -69,7 +69,8 @@ ones for code:
 Initial race-state endpoint, student SSE snapshots, refresh/reconnect
 semantics, pre-start current-question behavior, timer-expiry behavior,
 nearbyPlayers. The single source of status is the open-decisions table in
-`docs/vision/ui10BigPlan_UPDATED.md` (§25 + §28) — intentionally not
+`docs/client-design/06_CLIENT_UI10_STUDENT_RACE_MASTER_PLAN.md` (§9) —
+intentionally not
 duplicated here.
 
 ## Stage status
@@ -117,6 +118,15 @@ duplicated here.
   mud details; curbs fade out inside the near zone), first LIVE consumer of
   `raceVisualConfig.viewDepthZones` — future opponent visibility caps join
   the same zones.
-- Next: UI-10G (layout contract) → H (race-state bootstrap; needs the server
-  endpoint on main) → I (question panel + first i18n namespace) → J (submit +
-  snapshot mapper) → K (basic HUD). See the master plan status board.
+- UI-10G (layout contract): done — full-screen canvas + React overlay
+  (`layout/StudentRaceScreen.jsx`, `StudentRaceOverlay.jsx`) with the
+  question-panel/HUD shells in `components/`. The WHOLE perspective is
+  composed against the visible world above the panel;
+  `utils/resolveStudentRaceLayoutMetrics.js` is the single geometry source
+  (renderer consumes it via `frameState.layout`; the DOM panel mirrors the
+  same clamp in CSS). `gameFrame.maxWidth` live on wide screens. Dev-only
+  inspection handle: `window.__studentRaceRenderer`.
+- Next: I (question panel content + first i18n namespace — no server dep) →
+  H (race-state bootstrap; needs the server endpoint on main) → J (submit +
+  snapshot mapper) → K (basic HUD). Asset passes possible any time from now.
+  See the master plan status board.

@@ -1,12 +1,11 @@
 import { Container, Graphics } from "pixi.js";
 
-import { STUDENT_RACE_VISUAL_CONFIG } from "../../config/raceVisualConfig";
-
 /*
- * The student's kart — SCREEN-FIXED at the position/size ratios from
- * raceVisualConfig.playerKart; the world moves, the kart doesn't. Only
- * cosmetic motion is allowed here (speed bob/tilt), never movement derived
- * from position — that is the world's job.
+ * The student's kart — SCREEN-FIXED at the anchors from
+ * frameState.layout.playerKart (layout contract, G): anchored inside the
+ * VISIBLE world area above the question panel, never a raw-screen ratio.
+ * The world moves, the kart doesn't. Only cosmetic motion is allowed here
+ * (speed bob/tilt), never movement derived from position.
  *
  * Placeholder drawing (a simple kart only, no monkey-from-shapes — the real
  * art replaces this wholesale). Drawn once at unit size, then scaled.
@@ -25,7 +24,6 @@ const BOB_MAX_PX = 2.5;
 
 export class PlayerKartLayer {
   constructor(container) {
-    this.kartConfig = STUDENT_RACE_VISUAL_CONFIG.playerKart;
     this.elapsedMs = 0;
 
     this.root = new Container();
@@ -77,15 +75,14 @@ export class PlayerKartLayer {
   }
 
   update(frameState) {
-    const { width, height, visualSpeed, deltaMs } = frameState;
+    const { visualSpeed, deltaMs, layout } = frameState;
     this.elapsedMs += deltaMs;
 
-    const kartWidth = width * this.kartConfig.maxWidthRatio;
+    const kartWidth = layout.playerKart.maxWidth;
     const scale = kartWidth / UNIT_WIDTH;
     this.root.scale.set(scale);
-    this.root.x = width * this.kartConfig.screenXRatio - kartWidth / 2;
-    this.root.y =
-      height * this.kartConfig.screenYRatio - (UNIT_HEIGHT * scale) / 2;
+    this.root.x = layout.playerKart.anchorX - kartWidth / 2;
+    this.root.y = layout.playerKart.anchorY - (UNIT_HEIGHT * scale) / 2;
 
     // Cosmetic speed bob — visual only, never real movement.
     const bobStrength = Math.min(1, Math.abs(visualSpeed) / 2);

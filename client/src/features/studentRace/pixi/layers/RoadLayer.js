@@ -56,13 +56,15 @@ export class RoadLayer {
   }
 
   update(frameState) {
-    const { perspective, worldOffset, height } = frameState;
+    const { perspective, worldOffset, height, layout } = frameState;
     const g = this.graphics;
     g.clear();
 
-    // Road surface — trapezoid from horizon to screen bottom. With
+    // Road surface — trapezoid from horizon to the visible world's bottom
+    // (the question panel's overlap line, layout contract G). With
     // roadBottomWidthRatio > 1 the near edges live OFF-screen, so up close
     // the road is mud from edge to edge, exactly per the track model.
+    const worldBottomY = layout.world.bottomY;
     const topHalf = perspective.roadHalfWidthAt(0);
     const bottomHalf = perspective.roadHalfWidthAt(1);
     g.poly([
@@ -71,10 +73,21 @@ export class RoadLayer {
       perspective.centerX + topHalf,
       perspective.horizonY,
       perspective.centerX + bottomHalf,
-      height,
+      worldBottomY,
       perspective.centerX - bottomHalf,
-      height,
+      worldBottomY,
     ]).fill(ROAD_COLOR);
+
+    // Continue the surface down behind the question panel, so the world
+    // never shows a seam where the panel's rounded corners reveal it.
+    if (height > worldBottomY) {
+      g.rect(
+        perspective.centerX - bottomHalf,
+        worldBottomY,
+        bottomHalf * 2,
+        height - worldBottomY,
+      ).fill(ROAD_COLOR);
+    }
 
     const phase = this.depthPhase(worldOffset);
     this.drawMudDetails(g, perspective, phase);

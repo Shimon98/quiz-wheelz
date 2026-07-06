@@ -2,6 +2,7 @@ import { Container } from "pixi.js";
 
 import { STUDENT_RACE_ANIMATION_CONFIG } from "../config/raceAnimationConfig";
 import { STUDENT_RACE_VISUAL_CONFIG } from "../config/raceVisualConfig";
+import { resolveStudentRaceLayoutMetrics } from "../utils/resolveStudentRaceLayoutMetrics";
 import { JungleLayer } from "./layers/JungleLayer";
 import { RoadLayer } from "./layers/RoadLayer";
 import { FinishLineLayer } from "./layers/FinishLineLayer";
@@ -51,6 +52,12 @@ export class StudentRaceRenderer {
 
     const { camera, road, viewDepthZones } = STUDENT_RACE_VISUAL_CONFIG;
     this.camera = camera;
+    // Layout contract (G): panel/visible-world/kart metrics — the whole
+    // perspective is composed against layout.world, not the raw screen.
+    this.layout = resolveStudentRaceLayoutMetrics({
+      width: this.width,
+      height: this.height,
+    });
     this.perspective = this.buildPerspective();
 
     this.jungleLayer = new JungleLayer(this.backgroundContainer);
@@ -81,11 +88,15 @@ export class StudentRaceRenderer {
    * easing compresses steps near the horizon like real perspective.
    */
   buildPerspective() {
-    const horizonY = this.height * this.camera.horizonYRatio;
+    // Composed against the VISIBLE world area above the question panel
+    // (layout contract, G): depth 1 lands at the panel's overlap line, so
+    // the near zone, curb fade and kart all stay in view.
+    const worldBottomY = this.layout.world.bottomY;
+    const horizonY = worldBottomY * this.camera.horizonYRatio;
     const centerX = this.width * this.camera.vanishingPointXRatio;
     const topHalf = (this.width * this.camera.roadTopWidthRatio) / 2;
     const bottomHalf = (this.width * this.camera.roadBottomWidthRatio) / 2;
-    const depthHeight = this.height - horizonY;
+    const depthHeight = worldBottomY - horizonY;
     const { viewDistanceAhead } = STUDENT_RACE_ANIMATION_CONFIG.projection;
 
     const depthToY = (t) => horizonY + depthHeight * t * t;
@@ -129,6 +140,7 @@ export class StudentRaceRenderer {
   resize(width, height) {
     this.width = width;
     this.height = height;
+    this.layout = resolveStudentRaceLayoutMetrics({ width, height });
     this.perspective = this.buildPerspective();
     this.layers.forEach((layer) => layer.resize(width, height));
   }
@@ -174,6 +186,7 @@ export class StudentRaceRenderer {
       cameraPosition: this.cameraPosition,
       worldOffset: this.cameraPosition * serverUnits.positionToPixelsRatio,
       perspective: this.perspective,
+      layout: this.layout,
       runtimeState: this.runtimeState,
     };
 

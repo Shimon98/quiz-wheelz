@@ -41,6 +41,12 @@ export default function PixiStudentRaceCanvas({
       app = createdApp;
       renderer = new StudentRaceRenderer(app);
       rendererRef.current = renderer;
+      // Dev-only inspection handle (verification in the hidden preview tab
+      // needs manual frames — rAF is paused there). Statically stripped
+      // from production builds.
+      if (import.meta.env.DEV) {
+        window.__studentRaceRenderer = renderer;
+      }
       stopResize = observeMountResize(mountElement, app, renderer);
 
       if (latestStateRef.current) {
@@ -51,6 +57,9 @@ export default function PixiStudentRaceCanvas({
     return () => {
       cancelled = true;
       rendererRef.current = null;
+      if (import.meta.env.DEV && window.__studentRaceRenderer === renderer) {
+        delete window.__studentRaceRenderer;
+      }
       destroyPixiStudentRace({ app, renderer, stopResize });
     };
   }, []);

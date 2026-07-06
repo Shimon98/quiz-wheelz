@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import PixiStudentRaceCanvas from "../pixi/PixiStudentRaceCanvas";
+import StudentRaceScreen from "../layout/StudentRaceScreen";
 import { createInitialRaceRuntimeState } from "../runtime/createInitialRaceRuntimeState";
 import { createLocalStudentRaceRuntime } from "../runtime/localStudentRaceRuntime";
 import { mapLocalRuntimeSnapshotToState } from "../runtime/mapLocalRuntimeSnapshotToState";
@@ -34,9 +34,5 @@ export default function StudentRaceVisualPreview() {
     };
   }, [runtime]);
 
-  return (
-    <div style={{ height: "100dvh", width: "100%" }}>
-      <PixiStudentRaceCanvas runtimeState={runtimeState} />
-    </div>
-  );
+  return <StudentRaceScreen runtimeState={runtimeState} />;
 }

@@ -12,9 +12,11 @@ export const STUDENT_RACE_VISUAL_CONFIG = Object.freeze({
   }),
 
   // The kart is (almost) fixed on screen; the world moves toward it.
+  // Vertical placement lives in layout.world.playerKartAnchorYRatio (G) —
+  // a ratio of the VISIBLE world area above the question panel, never of
+  // the raw screen.
   playerKart: Object.freeze({
     screenXRatio: 0.5, // horizontal center of the frame
-    screenYRatio: 0.76, // near the bottom, leaving room for the question panel
     maxWidthRatio: 0.34, // kart width relative to frame width
   }),
 
@@ -32,7 +34,9 @@ export const STUDENT_RACE_VISUAL_CONFIG = Object.freeze({
   // view like the reference art, NOT a flat scrolling texture). Shared by
   // every world layer — the horizon must be ONE value, so it lives here.
   camera: Object.freeze({
-    horizonYRatio: 0.34, // vanishing-point height (matches the reference art)
+    // Ratio of the VISIBLE world area above the question panel (G) — the
+    // whole composition (horizon, zones, kart) lives in the visible strip.
+    horizonYRatio: 0.34,
     vanishingPointXRatio: 0.5,
     roadTopWidthRatio: 0.18, // road width where it meets the horizon
     // Track-model decision (F-1): the near road is WIDER than the screen —
@@ -57,5 +61,32 @@ export const STUDENT_RACE_VISUAL_CONFIG = Object.freeze({
     far: Object.freeze({ minDepth: 0, maxDepth: 0.35 }),
     mid: Object.freeze({ minDepth: 0.35, maxDepth: 0.7 }),
     near: Object.freeze({ minDepth: 0.7, maxDepth: 1 }),
+  }),
+
+  // Screen layout contract (G): the Pixi canvas is FULL-SCREEN; the React
+  // question panel overlays its bottom; the whole world composition is
+  // computed against the VISIBLE area above the panel.
+  // resolveStudentRaceLayoutMetrics is the ONE numeric implementation the
+  // Pixi side consumes; the DOM panel mirrors the same clamp in CSS from
+  // these same values — one config, two renderers of it.
+  layout: Object.freeze({
+    questionPanel: Object.freeze({
+      heightRatio: 0.36, // of the screen height
+      minHeight: 300,
+      maxHeight: 380,
+      sideInset: 12,
+      // World pixels peeking behind the panel's rounded top corners.
+      topOverlap: 18,
+    }),
+    hud: Object.freeze({
+      topInset: 12,
+      sideInset: 12,
+      minHeight: 72, // reserved strip for the future UI-10K chips
+    }),
+    world: Object.freeze({
+      // Kart anchor as a ratio of the visible world height above the panel
+      // (lands inside the near zone, like the reference art).
+      playerKartAnchorYRatio: 0.82,
+    }),
   }),
 });

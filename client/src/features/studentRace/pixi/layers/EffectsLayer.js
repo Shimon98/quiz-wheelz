@@ -1,7 +1,5 @@
 import { Graphics } from "pixi.js";
 
-import { STUDENT_RACE_VISUAL_CONFIG } from "../../config/raceVisualConfig";
-
 /*
  * One-shot and ambient visual effects. F scope: dust puffs behind the kart,
  * intensity driven by visualSpeed. The playEffect(effectName) signature is
@@ -17,7 +15,6 @@ const SPAWN_RATE_PER_SPEED = 9;
 
 export class EffectsLayer {
   constructor(container) {
-    this.kartConfig = STUDENT_RACE_VISUAL_CONFIG.playerKart;
     this.puffs = [];
     this.spawnAccumulator = 0;
 
@@ -40,11 +37,12 @@ export class EffectsLayer {
   }
 
   update(frameState) {
-    const { width, height, visualSpeed, deltaMs } = frameState;
+    const { width, visualSpeed, deltaMs, layout } = frameState;
 
-    // Kart rear — dust origin, from the same config ratios the kart uses.
-    const originX = width * this.kartConfig.screenXRatio;
-    const originY = height * this.kartConfig.screenYRatio + height * 0.045;
+    // Kart rear — dust origin from the SAME layout anchors the kart uses
+    // (layout contract, G) — the two can never drift apart.
+    const originX = layout.playerKart.anchorX;
+    const originY = layout.playerKart.dustOriginY;
 
     this.spawnPuffs(originX, originY, visualSpeed, deltaMs, width);
     this.agePuffs(deltaMs);
