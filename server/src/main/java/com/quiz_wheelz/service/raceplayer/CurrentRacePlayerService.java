@@ -33,13 +33,18 @@ public class CurrentRacePlayerService {
 
     @Transactional(readOnly = true)
     public RacePlayer resolveCurrentRacePlayer(HttpServletRequest request) {
-        String token = extractRacePlayerToken(request);
-        validateRacePlayerToken(token);
-
-        RacePlayer racePlayer = findRacePlayerFromToken(token);
+        RacePlayer racePlayer = resolveCurrentRacePlayerSession(request);
         validateRacePlayerCanReceiveQuestion(racePlayer);
 
         return racePlayer;
+    }
+
+    @Transactional(readOnly = true)
+    public RacePlayer resolveCurrentRacePlayerSession(HttpServletRequest request) {
+        String token = extractRacePlayerToken(request);
+        validateRacePlayerToken(token);
+
+        return findRacePlayerFromToken(token);
     }
 
     private String extractRacePlayerToken(HttpServletRequest request) {

@@ -10,9 +10,11 @@ import com.quiz_wheelz.dto.question.student.StudentQuestionResponse;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerJoinRequest;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerJoinResponse;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerJoinResult;
+import com.quiz_wheelz.dto.raceplayer.StudentRaceStateResponse;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.service.raceplayer.CurrentRacePlayerService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerJoinService;
+import com.quiz_wheelz.service.raceplayer.StudentRaceStateService;
 import com.quiz_wheelz.service.question.RacePlayerQuestionPlanService;
 import com.quiz_wheelz.service.question.StudentAnswerSubmissionService;
 import com.quiz_wheelz.service.question.StudentQuestionDeliveryService;
@@ -37,6 +39,7 @@ public class RacePlayerController {
     private final RacePlayerQuestionPlanService racePlayerQuestionPlanService;
     private final StudentQuestionDeliveryService studentQuestionDeliveryService;
     private final StudentAnswerSubmissionService studentAnswerSubmissionService;
+    private final StudentRaceStateService studentRaceStateService;
 
     public RacePlayerController(
             RacePlayerJoinService racePlayerJoinService,
@@ -44,7 +47,8 @@ public class RacePlayerController {
             CurrentRacePlayerService currentRacePlayerService,
             RacePlayerQuestionPlanService racePlayerQuestionPlanService,
             StudentQuestionDeliveryService studentQuestionDeliveryService,
-            StudentAnswerSubmissionService studentAnswerSubmissionService
+            StudentAnswerSubmissionService studentAnswerSubmissionService,
+            StudentRaceStateService studentRaceStateService
     ) {
         this.racePlayerJoinService = racePlayerJoinService;
         this.cookieUtils = cookieUtils;
@@ -52,6 +56,7 @@ public class RacePlayerController {
         this.racePlayerQuestionPlanService = racePlayerQuestionPlanService;
         this.studentQuestionDeliveryService = studentQuestionDeliveryService;
         this.studentAnswerSubmissionService = studentAnswerSubmissionService;
+        this.studentRaceStateService = studentRaceStateService;
     }
 
     @PostMapping(ApiPaths.JOIN)
@@ -66,6 +71,21 @@ public class RacePlayerController {
                 ApiResponse.ok(
                         ApiMessages.RACE_PLAYER_JOINED_SUCCESSFULLY,
                         result.getResponse()
+                )
+        );
+    }
+
+    @GetMapping(ApiPaths.CURRENT_RACE_STATE)
+    public ResponseEntity<ApiResponse<StudentRaceStateResponse>> getRaceState(
+            HttpServletRequest request
+    ) {
+        StudentRaceStateResponse response =
+                studentRaceStateService.getRaceState(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        ApiMessages.STUDENT_RACE_STATE_LOADED_SUCCESSFULLY,
+                        response
                 )
         );
     }

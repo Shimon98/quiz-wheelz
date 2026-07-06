@@ -4,6 +4,7 @@ import com.quiz_wheelz.dto.answer.StudentAnswerRaceImpactResponse;
 import com.quiz_wheelz.dto.answer.SubmitAnswerRequest;
 import com.quiz_wheelz.dto.answer.SubmitAnswerResponse;
 import com.quiz_wheelz.dto.raceengine.AnswerRaceImpact;
+import com.quiz_wheelz.dto.raceplayer.StudentRaceRuntimeSnapshotResponse;
 import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.entitys.PlayerQuestionChoice;
 import com.quiz_wheelz.entitys.RacePlayer;
@@ -14,6 +15,7 @@ import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
+import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +32,7 @@ public class StudentAnswerSubmissionService {
     private final PlayerQuestionChoiceRepository playerQuestionChoiceRepository;
     private final RacePlayerRepository racePlayerRepository;
     private final RaceEngineService raceEngineService;
+    private final StudentRaceRuntimeSnapshotMapper snapshotMapper;
     private final Clock clock;
 
     @Autowired
@@ -37,13 +40,15 @@ public class StudentAnswerSubmissionService {
             PlayerQuestionRepository playerQuestionRepository,
             PlayerQuestionChoiceRepository playerQuestionChoiceRepository,
             RacePlayerRepository racePlayerRepository,
-            RaceEngineService raceEngineService
+            RaceEngineService raceEngineService,
+            StudentRaceRuntimeSnapshotMapper snapshotMapper
     ) {
         this(
                 playerQuestionRepository,
                 playerQuestionChoiceRepository,
                 racePlayerRepository,
                 raceEngineService,
+                snapshotMapper,
                 Clock.systemDefaultZone()
         );
     }
@@ -53,12 +58,14 @@ public class StudentAnswerSubmissionService {
             PlayerQuestionChoiceRepository playerQuestionChoiceRepository,
             RacePlayerRepository racePlayerRepository,
             RaceEngineService raceEngineService,
+            StudentRaceRuntimeSnapshotMapper snapshotMapper,
             Clock clock
     ) {
         this.playerQuestionRepository = Objects.requireNonNull(playerQuestionRepository);
         this.playerQuestionChoiceRepository = Objects.requireNonNull(playerQuestionChoiceRepository);
         this.racePlayerRepository = Objects.requireNonNull(racePlayerRepository);
         this.raceEngineService = Objects.requireNonNull(raceEngineService);
+        this.snapshotMapper = Objects.requireNonNull(snapshotMapper);
         this.clock = Objects.requireNonNull(clock);
     }
 
@@ -94,6 +101,12 @@ public class StudentAnswerSubmissionService {
         AnswerRaceImpact answerRaceImpact =
                 raceEngineService.applyAnswerResult(lockedRacePlayer, correct);
 
+        StudentRaceRuntimeSnapshotResponse snapshot =
+                snapshotMapper.fromAnswerRaceImpact(
+                        answerRaceImpact,
+                        lockedRacePlayer.getRace()
+                );
+
         question.setStatus(PlayerQuestionStatus.ANSWERED);
         question.setAnsweredAt(now);
 
@@ -107,7 +120,7 @@ public class StudentAnswerSubmissionService {
                 savedQuestion.getStatus().name(),
                 savedQuestion.getAnsweredAt(),
                 savedQuestion.getExpiresAt(),
-                StudentAnswerRaceImpactResponse.from(answerRaceImpact)
+                StudentAnswerRaceImpactResponse.from(answerRaceImpact, snapshot)
         );
     }
 

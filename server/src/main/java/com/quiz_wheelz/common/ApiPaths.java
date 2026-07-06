@@ -22,9 +22,13 @@ public final class ApiPaths {
     public static final String QUESTION = "/question";
     public static final String CURRENT = "/current";
     public static final String ANSWERS = "/answers";
+    public static final String RACE_STATE = "/race-state";
     public static final String CURRENT_QUESTION = ME + QUESTION + CURRENT;
+    public static final String CURRENT_RACE_STATE = ME + RACE_STATE;
     public static final String SUBMIT_ANSWER = ME + ANSWERS;
     public static final String RACE_PLAYERS_JOIN = RACE_PLAYERS + JOIN;
+    public static final String RACE_PLAYERS_CURRENT_RACE_STATE =
+            RACE_PLAYERS + CURRENT_RACE_STATE;
     public static final String RACE_PLAYERS_CURRENT_QUESTION =
             RACE_PLAYERS + CURRENT_QUESTION;
     public static final String RACE_PLAYERS_SUBMIT_ANSWER =

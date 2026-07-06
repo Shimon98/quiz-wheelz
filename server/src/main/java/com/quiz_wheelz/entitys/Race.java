@@ -30,7 +30,7 @@ public class Race extends BaseEntity {
     @NotBlank
     @Size(min = RaceRules.MIN_TITLE_LENGTH, max = RaceRules.MAX_TITLE_LENGTH)
     @Column(nullable = false, length = RaceRules.MAX_TITLE_LENGTH)
-    private String title;;
+    private String title;
 
     @NotNull
     @Enumerated(EnumType.STRING)
