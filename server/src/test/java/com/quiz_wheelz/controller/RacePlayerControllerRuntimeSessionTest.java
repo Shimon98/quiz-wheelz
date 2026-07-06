@@ -4,7 +4,10 @@ import com.quiz_wheelz.common.ApiMessages;
 import com.quiz_wheelz.common.ApiResponse;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerHeartbeatResponse;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerLeaveResponse;
+import com.quiz_wheelz.dto.raceplayer.RacePlayerReconnectResponse;
+import com.quiz_wheelz.enums.RacePlayerReconnectOutcome;
 import com.quiz_wheelz.enums.RacePlayerStatus;
+import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.service.raceplayer.CurrentRacePlayerService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerJoinService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerRuntimeSessionService;
@@ -110,6 +113,38 @@ class RacePlayerControllerRuntimeSessionTest {
         assertSame(leaveResponse, body.getData());
 
         verify(racePlayerRuntimeSessionService).leave(request);
+    }
+
+    @Test
+    void reconnectShouldReturnApiResponseAndDelegateToRuntimeSessionService() {
+        RacePlayerReconnectResponse reconnectResponse =
+                new RacePlayerReconnectResponse(
+                        1L,
+                        12L,
+                        RacePlayerReconnectOutcome.RECONNECTED,
+                        true,
+                        true,
+                        RacePlayerStatus.RACING,
+                        RaceStatus.IN_PROGRESS,
+                        LocalDateTime.of(2026, 7, 6, 13, 27)
+                );
+        when(racePlayerRuntimeSessionService.reconnect(request))
+                .thenReturn(reconnectResponse);
+
+        ResponseEntity<ApiResponse<RacePlayerReconnectResponse>> response =
+                createController().reconnect(request);
+
+        ApiResponse<RacePlayerReconnectResponse> body = response.getBody();
+
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue(body.isSuccess());
+        assertEquals(
+                ApiMessages.RACE_PLAYER_RECONNECT_RESOLVED_SUCCESSFULLY,
+                body.getMessage()
+        );
+        assertSame(reconnectResponse, body.getData());
+
+        verify(racePlayerRuntimeSessionService).reconnect(request);
     }
 
     private RacePlayerController createController() {

@@ -6,7 +6,8 @@ import lombok.Getter;
 public enum RedisKeyPart {
 
     RACE("race"),
-    PLAYER("player");
+    PLAYER("player"),
+    LAST_HEARTBEAT("last-heartbeat");
 
     private final String value;
 

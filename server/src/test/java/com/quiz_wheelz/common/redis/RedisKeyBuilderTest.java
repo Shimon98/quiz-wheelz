@@ -32,6 +32,13 @@ class RedisKeyBuilderTest {
     }
 
     @Test
+    void presenceLastHeartbeatKeyShouldUseSharedPrefixAndExpectedFormat() {
+        String key = redisKeyBuilder.presenceLastHeartbeatKey(14L, 8L);
+
+        assertEquals("quizwheelz:test:presence:last-heartbeat:race:14:player:8", key);
+    }
+
+    @Test
     void shouldBuildRateLimitKey() {
         String key = redisKeyBuilder.rateLimitKey(
                 RedisRateLimitScope.SUBMIT_ANSWER,

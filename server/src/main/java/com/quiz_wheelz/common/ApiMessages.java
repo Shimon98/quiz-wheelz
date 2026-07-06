@@ -33,6 +33,9 @@ public final class ApiMessages {
     public static final String RACE_PLAYER_LEFT_SUCCESSFULLY =
             "Race player left successfully";
 
+    public static final String RACE_PLAYER_RECONNECT_RESOLVED_SUCCESSFULLY =
+            "Race player reconnect resolved successfully";
+
     public static final String STUDENT_ANSWER_SUBMITTED_SUCCESSFULLY =
             "Student answer submitted successfully";
 
