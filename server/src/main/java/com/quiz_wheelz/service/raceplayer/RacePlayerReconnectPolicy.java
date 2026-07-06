@@ -9,15 +9,15 @@ import java.util.Optional;
 @Service
 public class RacePlayerReconnectPolicy {
 
-    public boolean isLastHeartbeatInsideGrace(
-            LocalDateTime lastHeartbeatAt,
+    public boolean isActivityReferenceInsideGrace(
+            LocalDateTime activityReferenceAt,
             LocalDateTime now
     ) {
-        if (lastHeartbeatAt == null || now == null) {
+        if (activityReferenceAt == null || now == null) {
             return false;
         }
 
-        return !lastHeartbeatAt
+        return !activityReferenceAt
                 .plus(RacePlayerRuntimeRules.RECONNECT_GRACE_PERIOD)
                 .isBefore(now);
     }
@@ -27,8 +27,7 @@ public class RacePlayerReconnectPolicy {
             LocalDateTime raceStartedAt,
             LocalDateTime now
     ) {
-        if (lastHeartbeatAt == null
-                || lastHeartbeatAt.isEmpty()
+        if (lastHeartbeatAt.isEmpty()
                 || raceStartedAt == null
                 || now == null) {
             return false;
@@ -37,7 +36,7 @@ public class RacePlayerReconnectPolicy {
         LocalDateTime activityReferenceAt =
                 laterOf(lastHeartbeatAt.get(), raceStartedAt);
 
-        return !isLastHeartbeatInsideGrace(activityReferenceAt, now);
+        return !isActivityReferenceInsideGrace(activityReferenceAt, now);
     }
 
     private LocalDateTime laterOf(

@@ -225,6 +225,41 @@ class RacePlayerRuntimeSessionServiceTest {
         );
 
         verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService, never()).findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
+        verify(racePlayerRepository, never()).save(any());
+    }
+
+    @Test
+    void reconnectReadyRaceShouldNotReadLastHeartbeatAndReturnWaitingForRace() {
+        RacePlayer sessionRacePlayer = createRacePlayer(
+                RaceStatus.READY,
+                RacePlayerStatus.WAITING,
+                null
+        );
+        RacePlayer lockedRacePlayer = createRacePlayer(
+                RaceStatus.READY,
+                RacePlayerStatus.WAITING,
+                null
+        );
+        when(currentRacePlayerService.resolveCurrentRacePlayerSession(request))
+                .thenReturn(sessionRacePlayer);
+        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
+                .thenReturn(Optional.of(lockedRacePlayer));
+
+        RacePlayerReconnectResponse response =
+                runtimeSessionService.reconnect(request);
+
+        assertReconnectResponse(
+                response,
+                RacePlayerReconnectOutcome.WAITING_FOR_RACE,
+                true,
+                false,
+                RacePlayerStatus.WAITING,
+                RaceStatus.READY
+        );
+
+        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService, never()).findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
         verify(racePlayerRepository, never()).save(any());
     }
 
