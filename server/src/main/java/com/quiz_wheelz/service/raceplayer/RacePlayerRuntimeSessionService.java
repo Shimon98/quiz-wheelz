@@ -62,7 +62,7 @@ public class RacePlayerRuntimeSessionService {
         this.clock = Objects.requireNonNull(clock);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = ApiException.class)
     public RacePlayerHeartbeatResponse heartbeat(HttpServletRequest request) {
         RacePlayerSessionIdentity identity =
                 currentRacePlayerService.resolveCurrentRacePlayerIdentity(request);
