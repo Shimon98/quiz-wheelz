@@ -1,0 +1,132 @@
+# studentRace — Student Race Screen (UI-10)
+
+The student's in-game screen: the kart sits fixed at the bottom, the world
+(road, jungle layers, effects) moves toward it; React renders the HUD and the
+question panel, PixiJS renders the world. Master plan (goals, stages, open
+decisions): `docs/client-design/06_CLIENT_UI10_STUDENT_RACE_MASTER_PLAN.md`.
+
+## Hard rules
+
+- **The server is the source of truth.** The client never computes
+  correctness, score, progress, speed, difficulty, finish, or winner — it
+  sends actions and renders the state the server returns. Visual-only
+  animation/interpolation is allowed; official values are not.
+- **React owns UI state; Pixi owns rendering only.** Frame-by-frame values
+  (visualPosition, camera, world offset) live inside the Pixi renderer —
+  never in React state. The contract carries targets only
+  (`visual.targetPosition` / `targetSpeed` / `activeEffect`).
+- **React → Pixi bridge is imperative.** The renderer is created once and
+  held in a ref; the controller pushes updates into it
+  (`renderer.updateRuntimeState(state)`). Runtime state is never passed as
+  props that re-render a Pixi tree, and React never renders because of an
+  animation frame.
+- **One state contract.** Every data source — REST responses, submit-answer
+  `raceImpact`, the temporary local runtime, future SSE snapshots — is mapped
+  in `runtime/` into the same `StudentRaceRuntimeState`
+  (`createInitialRaceRuntimeState.js`). The screen never knows the source.
+- **No duplicated server enums.** Race/player status names are the shared
+  constants (today in `features/teacherWorkspace/config/raceStatusConfig.js`;
+  hoisted to `src/constants/` when this feature first consumes them, UI-10B).
+  This folder only defines client-new vocabulary
+  (`studentRaceRuntimeConstants.js`: feedback phases, effect ids).
+- **No invented endpoints.** Only endpoints that exist on the server get
+  wired. Missing contracts (below) get a clean stub + TODO, never a made-up
+  URL.
+- **Texts via i18n.** A `studentRace` namespace under
+  `client/src/i18n/locales/{he,en}` — added in the first stage that renders
+  text. No hardcoded user-facing strings, no `content/` folder.
+
+## Track model (locked)
+
+**Player-Centered Wide Mud Track + Server Lanes as Invisible Slots +
+Depth-Aware Visibility.** Full rules live in the master plan; the load-bearing
+ones for code:
+
+- **Depth Lock:** screen depth (y + scale + draw order) is a pure function of
+  server position. De-cluttering may only hide/fade karts — never move them
+  forward or backward.
+- Visually ONE wide muddy track (no lane lines/numbers); the invisible slots
+  are the server's `laneNumber` (unique per race by DB constraint — slot
+  conflicts are impossible). **MY lane is normalized to the screen center on
+  every device** — the road is symmetric around me and never shifts for
+  edge lanes; laneNumber only places opponents via
+  `laneDelta = opponent.laneNumber - myLaneNumber` (x-axis only). Opponent
+  colors = server `vehicleColorKey`. Visibility is limited by depth AND by
+  lateral width per depth (near: few/close lanes; far: the full track).
+- The near road is wider than the screen (`camera.roadBottomWidthRatio > 1`).
+- Every on-track object projects through
+  `perspective.projectTrackObject(relativeDistance)` — the finish line is the
+  first consumer; opponents/props follow the same path.
+  `raceAnimationConfig.projection.viewDistanceAhead` is the visible track
+  window AND the finish-line reveal distance (one owner; replaced
+  `finishLine.revealDistanceFromFinish`).
+- Future opponents get a visual state machine (hidden/entering/visible/
+  exiting) with hysteresis + fades; depth-aware caps (near few, far many);
+  `laneNumber ≠ rank` — rank UI only with server rank.
+
+## Pending server decisions (Diana)
+
+Initial race-state endpoint, student SSE snapshots, refresh/reconnect
+semantics, pre-start current-question behavior, timer-expiry behavior,
+nearbyPlayers. The single source of status is the open-decisions table in
+`docs/client-design/06_CLIENT_UI10_STUDENT_RACE_MASTER_PLAN.md` (§9) —
+intentionally not
+duplicated here.
+
+## Stage status
+
+- UI-10A (contract + skeleton): done — this folder.
+- UI-10B (known parts): done — gameplay endpoint constants + wrappers live in
+  `src/api/racePlayerApi.js` (project convention: central api folder, no
+  per-feature api/), status enums hoisted to
+  `src/constants/raceStatusConstants.js`. The route, the guard and the
+  race-state integration wait for the server's race-state endpoint
+  (approved by Diana, ships after 24C-0).
+- UI-10C (assets + configs): done — asset keys + manifest under
+  `pixi/assets/`, screen geometry in `config/raceVisualConfig.js`, unit
+  conversions + motion tuning in `config/raceAnimationConfig.js` (the ONLY
+  place that knows server-units → pixels), asset-folder rules in
+  `src/assets/game/studentRace/README.md`. `studentRaceConfig.js` slimmed to
+  flow timings only — every constant has exactly one owner.
+- UI-10D (Pixi shell): done — manual pixi.js v8 (`pixi/`): async-safe app
+  creation, `StudentRaceRenderer` (container skeleton, ticker, interpolation
+  from `raceAnimationConfig`, renderer-internal visualPosition), ONE resize
+  mechanism (ResizeObserver helper), safe teardown helper, thin React wrapper
+  with the imperative `updateRuntimeState` bridge. Debug marker only — the
+  world lands in UI-10F.
+- UI-10E (local runtime): done — dev-only movement source
+  (`runtime/localStudentRaceRuntime.js`, 500ms snapshots, wraps at track end,
+  never fakes finish/score/questions) + `mapLocalRuntimeSnapshotToState.js`
+  (same mapper shape the future SSE mapper will have).
+- UI-10F (world layers): done — pseudo-perspective over-the-shoulder camera
+  (the binding F decision: trapezoid road converging to the horizon, depth
+  flow toward the player — NOT a flat scrolling texture). Five layers under
+  `pixi/layers/` (jungle, road, finish line, player kart, effects/dust),
+  each with the uniform interface `resize/update(frameState)/destroy`;
+  perspective math lives ONCE in the renderer and reaches layers via
+  `frameState.perspective`. Placeholder drawing is colocated inside each
+  layer (dies with it when real art lands). Renderer gained a
+  `playerContainer`, lost the D debug marker, and snap-guards the local
+  runtime's wrap-around. Dev preview: `dev/StudentRaceVisualPreview.jsx`
+  (unrouted — wire a temp route to eyeball, remove before commit).
+- UI-10F-1 (track model lock): done — unified `projectTrackObject` on the
+  perspective object with FinishLineLayer as first consumer, near-road
+  wider than screen, dev preview route hardened to DEV-only (lazy +
+  `import.meta.env.DEV`, verified absent from the production bundle).
+- UI-10F-2 (road alignment + live zones): done — RoadLayer redrawn as the
+  lane-less wide mud track (center markers removed; scattered deterministic
+  mud details; curbs fade out inside the near zone), first LIVE consumer of
+  `raceVisualConfig.viewDepthZones` — future opponent visibility caps join
+  the same zones.
+- UI-10G (layout contract): done — full-screen canvas + React overlay
+  (`layout/StudentRaceScreen.jsx`, `StudentRaceOverlay.jsx`) with the
+  question-panel/HUD shells in `components/`. The WHOLE perspective is
+  composed against the visible world above the panel;
+  `utils/resolveStudentRaceLayoutMetrics.js` is the single geometry source
+  (renderer consumes it via `frameState.layout`; the DOM panel mirrors the
+  same clamp in CSS). `gameFrame.maxWidth` live on wide screens. Dev-only
+  inspection handle: `window.__studentRaceRenderer`.
+- Next: I (question panel content + first i18n namespace — no server dep) →
+  H (race-state bootstrap; needs the server endpoint on main) → J (submit +
+  snapshot mapper) → K (basic HUD). Asset passes possible any time from now.
+  See the master plan status board.

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import PublicEntryShell from "../layouts/publicEntry/PublicEntryShell";
 import LandingContent from "../features/publicLanding/components/LandingContent";
@@ -20,10 +21,37 @@ import ProtectedRoute from "./ProtectedRoute";
 import RoleRoute from "./RoleRoute";
 import GuestRoute from "./GuestRoute";
 
+
+
+
+// Dev-only preview environment (standing rule: dev tools never reach
+// production). import.meta.env.DEV is statically false in a production
+// build, so this lazy chunk is never referenced there and the file is
+// excluded from the bundle entirely.
+const StudentRaceVisualPreview = import.meta.env.DEV
+    ? lazy(() => import("../features/studentRace/dev/StudentRaceVisualPreview"))
+    : null;
+
+
+
 export default function AppRouter() {
     return (
         <BrowserRouter>
             <Routes>
+
+
+                {import.meta.env.DEV && (
+                    <Route
+                        path="/dev/race"
+                        element={
+                            <Suspense fallback={null}>
+                                <StudentRaceVisualPreview />
+                            </Suspense>
+                        }
+                    />
+                )}
+
+
                 <Route
                     element={
                         <GuestRoute>

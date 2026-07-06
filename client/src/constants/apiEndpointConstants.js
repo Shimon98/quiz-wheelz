@@ -15,6 +15,14 @@ export const API_ENDPOINTS = {
   },
   RACE_PLAYERS: {
     JOIN: "/race-players/join",
+    // Gameplay endpoints (server: RacePlayerController via ApiPaths) — the
+    // student is resolved from the racePlayerToken cookie, no ids in the URL.
+    CURRENT_QUESTION: "/race-players/me/question/current",
+    SUBMIT_ANSWER: "/race-players/me/answers",
+    // Approved by Diana (UI-10 backend mini-issue) but not implemented on the
+    // server yet — becomes live the moment the endpoint ships. Do not call
+    // it before then.
+    RACE_STATE: "/race-players/me/race-state",
   },
   TEACHER: {
     DASHBOARD: "/teacher/dashboard",
