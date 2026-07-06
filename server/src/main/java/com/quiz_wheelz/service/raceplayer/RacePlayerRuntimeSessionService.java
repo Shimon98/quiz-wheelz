@@ -1,5 +1,6 @@
 package com.quiz_wheelz.service.raceplayer;
 
+import com.quiz_wheelz.common.RacePlayerRuntimeRules;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerHeartbeatResponse;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerLeaveResponse;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerReconnectResponse;
@@ -70,8 +71,17 @@ public class RacePlayerRuntimeSessionService {
 
         LocalDateTime now = LocalDateTime.now(clock);
 
-        if (shouldDisconnectAfterExpiredReconnectWindow(identity, now)) {
-            disconnectExpiredRacePlayer(identity, now);
+        Optional<RacePlayer> expiredRacePlayer =
+                findRacePlayerIfReconnectWindowExpired(identity, now);
+
+        if (expiredRacePlayer.isPresent()) {
+            disconnectRacePlayer(expiredRacePlayer.get(), now);
+
+            redisPresenceService.markOffline(
+                    identity.raceId(),
+                    identity.racePlayerId()
+            );
+
             throw new ApiException(ErrorCode.RACE_PLAYER_RECONNECT_WINDOW_EXPIRED);
         }
 
@@ -97,13 +107,26 @@ public class RacePlayerRuntimeSessionService {
         Race race = Objects.requireNonNull(racePlayer.getRace());
         LocalDateTime now = LocalDateTime.now(clock);
 
-        if (isRaceOrPlayerFinished(race, racePlayer)) {
+        if (race.getStatus() == RaceStatus.FINISHED) {
             redisPresenceService.markOffline(race.getId(), racePlayer.getId());
 
             return buildReconnectResponse(
                     race,
                     racePlayer,
                     RacePlayerReconnectOutcome.RACE_FINISHED,
+                    false,
+                    false,
+                    now
+            );
+        }
+
+        if (racePlayer.getStatus() == RacePlayerStatus.FINISHED) {
+            redisPresenceService.markOffline(race.getId(), racePlayer.getId());
+
+            return buildReconnectResponse(
+                    race,
+                    racePlayer,
+                    RacePlayerReconnectOutcome.PLAYER_FINISHED,
                     false,
                     false,
                     now
@@ -196,15 +219,29 @@ public class RacePlayerRuntimeSessionService {
             throw new ApiException(ErrorCode.RACE_PLAYER_NOT_FOUND);
         }
 
+        return findLockedRacePlayer(
+                racePlayer.getId(),
+                racePlayer.getRace().getId()
+        );
+    }
+
+    private RacePlayer findLockedRacePlayer(
+            Long racePlayerId,
+            Long raceId
+    ) {
+        if (racePlayerId == null || raceId == null) {
+            throw new ApiException(ErrorCode.RACE_PLAYER_NOT_FOUND);
+        }
+
         return racePlayerRepository
                 .findLockedByIdAndRaceId(
-                        racePlayer.getId(),
-                        racePlayer.getRace().getId()
+                        racePlayerId,
+                        raceId
                 )
                 .orElseThrow(() -> new ApiException(ErrorCode.RACE_PLAYER_NOT_FOUND));
     }
 
-    private boolean shouldDisconnectAfterExpiredReconnectWindow(
+    private Optional<RacePlayer> findRacePlayerIfReconnectWindowExpired(
             RacePlayerSessionIdentity identity,
             LocalDateTime now
     ) {
@@ -215,21 +252,36 @@ public class RacePlayerRuntimeSessionService {
                 );
 
         if (lastHeartbeatAt.isEmpty()) {
-            return false;
+            return Optional.empty();
         }
 
-        RacePlayer racePlayer = racePlayerRepository
-                .findLockedByIdAndRaceId(
-                        identity.racePlayerId(),
-                        identity.raceId()
-                )
-                .orElseThrow(() -> new ApiException(ErrorCode.RACE_PLAYER_NOT_FOUND));
+        if (isWithinSimpleReconnectGrace(lastHeartbeatAt.get(), now)) {
+            return Optional.empty();
+        }
 
-        return isReconnectWindowExpired(
+        RacePlayer racePlayer = findLockedRacePlayer(
+                identity.racePlayerId(),
+                identity.raceId()
+        );
+
+        if (!isReconnectWindowExpired(
                 racePlayer.getRace(),
                 racePlayer,
                 now
-        );
+        )) {
+            return Optional.empty();
+        }
+
+        return Optional.of(racePlayer);
+    }
+
+    private boolean isWithinSimpleReconnectGrace(
+            LocalDateTime lastHeartbeatAt,
+            LocalDateTime now
+    ) {
+        return !lastHeartbeatAt
+                .plus(RacePlayerRuntimeRules.RECONNECT_GRACE_PERIOD)
+                .isBefore(now);
     }
 
     private boolean isReconnectWindowExpired(
@@ -253,25 +305,6 @@ public class RacePlayerRuntimeSessionService {
         );
     }
 
-    private void disconnectExpiredRacePlayer(
-            RacePlayerSessionIdentity identity,
-            LocalDateTime now
-    ) {
-        RacePlayer racePlayer = racePlayerRepository
-                .findLockedByIdAndRaceId(
-                        identity.racePlayerId(),
-                        identity.raceId()
-                )
-                .orElseThrow(() -> new ApiException(ErrorCode.RACE_PLAYER_NOT_FOUND));
-
-        disconnectRacePlayer(racePlayer, now);
-
-        redisPresenceService.markOffline(
-                identity.raceId(),
-                identity.racePlayerId()
-        );
-    }
-
     private void disconnectRacePlayer(
             RacePlayer racePlayer,
             LocalDateTime now
@@ -283,14 +316,6 @@ public class RacePlayerRuntimeSessionService {
         racePlayer.setStatus(RacePlayerStatus.DISCONNECTED);
         racePlayer.setLastSeenAt(now);
         racePlayerRepository.save(racePlayer);
-    }
-
-    private boolean isRaceOrPlayerFinished(
-            Race race,
-            RacePlayer racePlayer
-    ) {
-        return racePlayer.getStatus() == RacePlayerStatus.FINISHED
-                || race.getStatus() == RaceStatus.FINISHED;
     }
 
     private RacePlayerReconnectOutcome resolveReconnectOutcome(Race race) {

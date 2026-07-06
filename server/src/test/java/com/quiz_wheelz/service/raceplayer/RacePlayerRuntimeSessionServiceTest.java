@@ -69,20 +69,13 @@ class RacePlayerRuntimeSessionServiceTest {
     }
 
     @Test
-    void heartbeatWithinGraceShouldMarkOnlineWithTimestampAndNotSaveDb() {
+    void heartbeatWithinGraceShouldNotLockOrSaveDb() {
         RacePlayerSessionIdentity identity =
                 new RacePlayerSessionIdentity(RACE_ID, RACE_PLAYER_ID);
-        RacePlayer racePlayer = createRacePlayer(
-                RaceStatus.IN_PROGRESS,
-                RacePlayerStatus.RACING,
-                now().minusMinutes(1)
-        );
         when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
                 .thenReturn(identity);
         when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
                 .thenReturn(Optional.of(now().minusMinutes(1)));
-        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.of(racePlayer));
 
         RacePlayerHeartbeatResponse response =
                 runtimeSessionService.heartbeat(request);
@@ -95,6 +88,7 @@ class RacePlayerRuntimeSessionServiceTest {
         verify(currentRacePlayerService, never()).resolveCurrentRacePlayerSession(request);
         verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
         verify(racePlayerRepository, never()).findByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
+        verify(racePlayerRepository, never()).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
         verify(racePlayerRepository, never()).save(any());
     }
 
@@ -125,6 +119,7 @@ class RacePlayerRuntimeSessionServiceTest {
 
         verify(redisPresenceService, never()).markOnline(RACE_ID, RACE_PLAYER_ID, now());
         verify(redisPresenceService).markOffline(RACE_ID, RACE_PLAYER_ID);
+        verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
         verify(racePlayerRepository).save(racePlayer);
     }
 
@@ -151,6 +146,33 @@ class RacePlayerRuntimeSessionServiceTest {
         assertEquals(RacePlayerStatus.WAITING, racePlayer.getStatus());
 
         verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(racePlayerRepository, never()).save(any());
+    }
+
+    @Test
+    void heartbeatWithOldWaitingHeartbeatShouldStayOnlineWhenRaceStartedWithinGrace() {
+        RacePlayerSessionIdentity identity =
+                new RacePlayerSessionIdentity(RACE_ID, RACE_PLAYER_ID);
+        RacePlayer racePlayer = createRacePlayer(
+                RaceStatus.IN_PROGRESS,
+                RacePlayerStatus.RACING,
+                now().minusMinutes(1)
+        );
+        when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
+                .thenReturn(identity);
+        when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
+                .thenReturn(Optional.of(now().minusMinutes(10)));
+        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
+                .thenReturn(Optional.of(racePlayer));
+
+        RacePlayerHeartbeatResponse response =
+                runtimeSessionService.heartbeat(request);
+
+        assertEquals(now(), response.getHeartbeatAt());
+        assertEquals(RacePlayerStatus.RACING, racePlayer.getStatus());
+
+        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
         verify(racePlayerRepository, never()).save(any());
     }
 
@@ -308,7 +330,7 @@ class RacePlayerRuntimeSessionServiceTest {
     }
 
     @Test
-    void reconnectFinishedPlayerShouldReturnRaceFinishedAndOnlineFalse() {
+    void reconnectFinishedPlayerShouldReturnPlayerFinishedAndOnlineFalse() {
         RacePlayer sessionRacePlayer = createRacePlayer(
                 RaceStatus.IN_PROGRESS,
                 RacePlayerStatus.FINISHED,
@@ -328,11 +350,44 @@ class RacePlayerRuntimeSessionServiceTest {
 
         assertReconnectResponse(
                 response,
-                RacePlayerReconnectOutcome.RACE_FINISHED,
+                RacePlayerReconnectOutcome.PLAYER_FINISHED,
                 false,
                 false,
                 RacePlayerStatus.FINISHED,
                 RaceStatus.IN_PROGRESS
+        );
+
+        verify(redisPresenceService).markOffline(RACE_ID, RACE_PLAYER_ID);
+        verify(redisPresenceService, never()).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(racePlayerRepository, never()).save(any());
+    }
+
+    @Test
+    void reconnectFinishedRaceShouldReturnRaceFinishedAndOnlineFalse() {
+        RacePlayer sessionRacePlayer = createRacePlayer(
+                RaceStatus.FINISHED,
+                RacePlayerStatus.RACING,
+                now().minusMinutes(10)
+        );
+        RacePlayer lockedRacePlayer = createRacePlayer(
+                RaceStatus.FINISHED,
+                RacePlayerStatus.RACING,
+                now().minusMinutes(10)
+        );
+        when(currentRacePlayerService.resolveCurrentRacePlayerSession(request))
+                .thenReturn(sessionRacePlayer);
+        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
+                .thenReturn(Optional.of(lockedRacePlayer));
+
+        RacePlayerReconnectResponse response = runtimeSessionService.reconnect(request);
+
+        assertReconnectResponse(
+                response,
+                RacePlayerReconnectOutcome.RACE_FINISHED,
+                false,
+                false,
+                RacePlayerStatus.RACING,
+                RaceStatus.FINISHED
         );
 
         verify(redisPresenceService).markOffline(RACE_ID, RACE_PLAYER_ID);
