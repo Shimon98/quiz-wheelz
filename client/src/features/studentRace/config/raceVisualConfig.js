@@ -35,7 +35,11 @@ export const STUDENT_RACE_VISUAL_CONFIG = Object.freeze({
     horizonYRatio: 0.34, // vanishing-point height (matches the reference art)
     vanishingPointXRatio: 0.5,
     roadTopWidthRatio: 0.18, // road width where it meets the horizon
-    roadBottomWidthRatio: 0.95, // road width at the screen bottom
+    // Track-model decision (F-1): the near road is WIDER than the screen —
+    // it bleeds off both edges next to the player (a full 8-lane track
+    // can't fit the frame up close); road edges + jungle read from
+    // mid-depth toward the horizon.
+    roadBottomWidthRatio: 1.35,
   }),
 
   // Placeholder road drawing density (visual detail, never game rules).

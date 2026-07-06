@@ -20,10 +20,13 @@ export const STUDENT_RACE_ANIMATION_CONFIG = Object.freeze({
     targetSpeedLerpFactor: 0.12,
   }),
 
-  // Distance-to-go (server units) at which the finish line enters the frame.
-  // (Owner moved here from studentRaceConfig in UI-10C.)
-  finishLine: Object.freeze({
-    revealDistanceFromFinish: 150,
+  // The visible track window ahead of the player (server units): any
+  // on-track object enters at the horizon when its relative distance drops
+  // below this — which makes it also THE finish-line reveal distance (you
+  // see the line exactly when it comes into sight). Single owner for the
+  // unified projection (F-1); replaces finishLine.revealDistanceFromFinish.
+  projection: Object.freeze({
+    viewDistanceAhead: 150,
   }),
 
   // One-shot effect durations, keyed by visual.activeEffect values

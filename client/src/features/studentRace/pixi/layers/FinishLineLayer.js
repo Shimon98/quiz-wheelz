@@ -1,12 +1,13 @@
 import { Graphics } from "pixi.js";
 
-import { STUDENT_RACE_ANIMATION_CONFIG } from "../../config/raceAnimationConfig";
-
 /*
- * Finish-line placeholder: a checkered band lying on the road, visible only
- * when totalDistance is known AND distance-to-go drops under the reveal
- * threshold (raceAnimationConfig.finishLine). It enters at the horizon and
- * approaches the player with depth.
+ * Finish-line placeholder: a checkered band lying on the road. Visibility
+ * and placement come ENTIRELY from the unified track projection (F-1):
+ * the band becomes visible exactly when the player's distance-to-go enters
+ * the view window (perspective.viewDistanceAhead), entering at the horizon
+ * and approaching the player with depth. First consumer of
+ * perspective.projectTrackObject — future track objects (opponents, props)
+ * follow the same path.
  *
  * This layer only DISPLAYS the line — it never decides that the player
  * finished; a real finish arrives from the server (playerStatus /
@@ -22,9 +23,7 @@ const CHECKER_COLUMNS = 10;
 
 export class FinishLineLayer {
   constructor(container) {
-    this.finishConfig = STUDENT_RACE_ANIMATION_CONFIG.finishLine;
     this.isVisible = false;
-
     this.graphics = new Graphics();
     container.addChild(this.graphics);
   }
@@ -43,16 +42,16 @@ export class FinishLineLayer {
     const totalDistance = runtimeState?.totalDistance;
     if (totalDistance == null) return;
 
-    const distanceToFinish = totalDistance - visualPosition;
-    const reveal = this.finishConfig.revealDistanceFromFinish;
-    if (distanceToFinish > reveal || distanceToFinish < 0) return;
+    const projected = perspective.projectTrackObject(
+      totalDistance - visualPosition,
+    );
+    if (!projected.visible) return;
 
     this.isVisible = true;
 
-    // 0 at the reveal edge (horizon) -> 1 when the player reaches it.
-    const t = 1 - distanceToFinish / reveal;
-    const y = perspective.depthToY(t);
-    const halfWidth = perspective.roadHalfWidthAt(t);
+    const t = projected.depth;
+    const y = projected.y;
+    const halfWidth = projected.roadHalfWidth;
     const bandHeight = Math.max(4, 22 * t);
     const cellWidth = (halfWidth * 2) / CHECKER_COLUMNS;
     const rowHeight = bandHeight / 2;

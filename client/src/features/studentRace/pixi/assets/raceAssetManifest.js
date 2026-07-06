@@ -48,9 +48,11 @@ export const STUDENT_RACE_ASSET_MANIFEST = Object.freeze({
   [KEYS.ROAD_LOOP]: Object.freeze({
     key: KEYS.ROAD_LOOP,
     description:
-      "Jungle road surface for the pseudo-perspective (over-the-shoulder) " +
-      "camera — art must read correctly as a trapezoid converging to the " +
-      "horizon, NOT as a flat vertically-scrolling texture (F camera decision).",
+      "Wide muddy jungle track for the pseudo-perspective camera — ONE road " +
+      "with NO lane lines or lane numbers (server lanes stay invisible), " +
+      "wider than the frame at the bottom (edges bleed off-screen near the " +
+      "player, read toward the horizon). Must work as a trapezoid converging " +
+      "to the vanishing point, never as a flat vertically-scrolling texture.",
     expectedPath: "client/src/assets/game/studentRace/road/road-loop.webp",
     required: true,
     fallback: ASSET_PLACEHOLDER.GRAPHICS,

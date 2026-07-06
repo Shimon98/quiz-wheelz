@@ -83,12 +83,39 @@ export class StudentRaceRenderer {
     const topHalf = (this.width * this.camera.roadTopWidthRatio) / 2;
     const bottomHalf = (this.width * this.camera.roadBottomWidthRatio) / 2;
     const depthHeight = this.height - horizonY;
+    const { viewDistanceAhead } = STUDENT_RACE_ANIMATION_CONFIG.projection;
+
+    const depthToY = (t) => horizonY + depthHeight * t * t;
+    const roadHalfWidthAt = (t) => topHalf + (bottomHalf - topHalf) * t * t;
 
     return {
       horizonY,
       centerX,
-      depthToY: (t) => horizonY + depthHeight * t * t,
-      roadHalfWidthAt: (t) => topHalf + (bottomHalf - topHalf) * t * t,
+      viewDistanceAhead,
+      depthToY,
+      roadHalfWidthAt,
+
+      /*
+       * THE unified track projection (F-1, track model): every on-track
+       * object — the finish line today, opponents/props in the future —
+       * maps its distance ahead of the player to screen space through this
+       * ONE function, never through its own math. Future extension (master
+       * plan, Track Model section): a laneDelta argument adding the lateral
+       * offset of server lanes inside the road width.
+       */
+      projectTrackObject: (relativeDistance) => {
+        if (relativeDistance < 0 || relativeDistance > viewDistanceAhead) {
+          return { visible: false, depth: 0, y: 0, roadHalfWidth: 0 };
+        }
+
+        const depth = 1 - relativeDistance / viewDistanceAhead;
+        return {
+          visible: true,
+          depth,
+          y: depthToY(depth),
+          roadHalfWidth: roadHalfWidthAt(depth),
+        };
+      },
     };
   }
 

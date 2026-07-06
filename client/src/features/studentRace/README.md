@@ -36,6 +36,30 @@ decisions): `docs/vision/ui10BigPlan_UPDATED.md`.
   `client/src/i18n/locales/{he,en}` — added in the first stage that renders
   text. No hardcoded user-facing strings, no `content/` folder.
 
+## Track model (locked)
+
+**Player-Centered Wide Mud Track + Server Lanes as Invisible Slots +
+Depth-Aware Visibility.** Full rules live in the master plan; the load-bearing
+ones for code:
+
+- **Depth Lock:** screen depth (y + scale + draw order) is a pure function of
+  server position. De-cluttering may only hide/fade karts — never move them
+  forward or backward.
+- Visually ONE wide muddy track (no lane lines/numbers); the invisible slots
+  are the server's `laneNumber` (unique per race by DB constraint — slot
+  conflicts are impossible). Opponent lateral offset = lane delta from MY
+  lane; opponent colors = server `vehicleColorKey`.
+- The near road is wider than the screen (`camera.roadBottomWidthRatio > 1`).
+- Every on-track object projects through
+  `perspective.projectTrackObject(relativeDistance)` — the finish line is the
+  first consumer; opponents/props follow the same path.
+  `raceAnimationConfig.projection.viewDistanceAhead` is the visible track
+  window AND the finish-line reveal distance (one owner; replaced
+  `finishLine.revealDistanceFromFinish`).
+- Future opponents get a visual state machine (hidden/entering/visible/
+  exiting) with hysteresis + fades; depth-aware caps (near few, far many);
+  `laneNumber ≠ rank` — rank UI only with server rank.
+
 ## Pending server decisions (Diana)
 
 Initial race-state endpoint, student SSE snapshots, refresh/reconnect
@@ -80,4 +104,10 @@ duplicated here.
   `playerContainer`, lost the D debug marker, and snap-guards the local
   runtime's wrap-around. Dev preview: `dev/StudentRaceVisualPreview.jsx`
   (unrouted — wire a temp route to eyeball, remove before commit).
-- UI-10G…M: see the master plan §22.
+- UI-10F-1 (track model lock): done — unified `projectTrackObject` on the
+  perspective object with FinishLineLayer as first consumer, near-road
+  wider than screen, dev preview route hardened to DEV-only (lazy +
+  `import.meta.env.DEV`, verified absent from the production bundle).
+- Next: UI-10G (layout contract) → H (race-state bootstrap; needs the server
+  endpoint on main) → I (question panel + first i18n namespace) → J (submit +
+  snapshot mapper) → K (basic HUD). See the master plan status board.

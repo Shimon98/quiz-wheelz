@@ -23,6 +23,25 @@ renderer loads through the manifest and never references file names directly.
 - The road texture must **loop seamlessly** vertically; parallax backgrounds
   should tile or be tall enough to scroll.
 
+## Asset categories
+
+Every asset belongs to exactly one behavior category — the spec of a new
+image must say which one it is:
+
+| Category | Behavior | Examples |
+|---|---|---|
+| static background | almost no movement, painted backdrop | sky + waterfall + far jungle |
+| screen-fixed | pinned to screen coordinates | player kart |
+| depth-projected | flows along the depth axis, scales with depth | side trees/bushes, road markers |
+| track-projected | positioned by server distance via the unified projection | finish line, future opponent karts |
+| React overlay decoration | DOM/CSS above the canvas | question-panel leaves/frame |
+
+**Road spec (locked, track model):** ONE wide muddy jungle track — no lane
+lines, no lane numbers (server lanes stay invisible). Wider than the frame at
+the bottom (edges bleed off-screen near the player); edges + curbs read from
+mid-depth toward the horizon. Perspective art (trapezoid to the vanishing
+point), never a flat vertical loop.
+
 ## Expected layout
 
 ```text
