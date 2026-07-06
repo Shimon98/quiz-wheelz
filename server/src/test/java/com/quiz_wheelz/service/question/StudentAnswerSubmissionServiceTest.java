@@ -17,6 +17,7 @@ import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
+import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -79,6 +80,7 @@ class StudentAnswerSubmissionServiceTest {
                 playerQuestionChoiceRepository,
                 racePlayerRepository,
                 raceEngineService,
+                new StudentRaceRuntimeSnapshotMapper(),
                 fixedClock
         );
     }
@@ -118,13 +120,19 @@ class StudentAnswerSubmissionServiceTest {
         assertNotNull(response.getRaceImpact());
         assertEquals(10, response.getRaceImpact().getScoreDelta());
         assertEquals(10.0, response.getRaceImpact().getProgressDelta());
-        assertEquals(10, response.getRaceImpact().getNewScore());
-        assertEquals(10.0, response.getRaceImpact().getNewPosition());
-        assertEquals(Difficulty.EASY.name(), response.getRaceImpact().getCurrentDifficulty());
-        assertEquals(RacePlayerStatus.RACING.name(), response.getRaceImpact().getPlayerStatus());
-        assertEquals(RaceStatus.IN_PROGRESS.name(), response.getRaceImpact().getRaceStatus());
-        assertFalse(response.getRaceImpact().isPlayerFinished());
-        assertFalse(response.getRaceImpact().isRaceFinished());
+        assertFalse(response.getRaceImpact().isDifficultyChanged());
+        assertNotNull(response.getRaceImpact().getSnapshot());
+        assertEquals(1000, response.getRaceImpact().getSnapshot().getTotalDistance());
+        assertEquals(10, response.getRaceImpact().getSnapshot().getScore());
+        assertEquals(10.0, response.getRaceImpact().getSnapshot().getPosition());
+        assertEquals(1.2, response.getRaceImpact().getSnapshot().getSpeed());
+        assertEquals(1, response.getRaceImpact().getSnapshot().getStreak());
+        assertEquals(1, response.getRaceImpact().getSnapshot().getHighestStreak());
+        assertEquals(Difficulty.EASY, response.getRaceImpact().getSnapshot().getCurrentDifficulty());
+        assertEquals(RacePlayerStatus.RACING, response.getRaceImpact().getSnapshot().getPlayerStatus());
+        assertEquals(RaceStatus.IN_PROGRESS, response.getRaceImpact().getSnapshot().getRaceStatus());
+        assertFalse(response.getRaceImpact().getSnapshot().isPlayerFinished());
+        assertFalse(response.getRaceImpact().getSnapshot().isRaceFinished());
 
         verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
         verify(playerQuestionRepository).findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer);
@@ -169,7 +177,10 @@ class StudentAnswerSubmissionServiceTest {
         assertNotNull(response.getRaceImpact());
         assertEquals(0, response.getRaceImpact().getScoreDelta());
         assertEquals(0.0, response.getRaceImpact().getProgressDelta());
-        assertEquals(RacePlayerStatus.RACING.name(), response.getRaceImpact().getPlayerStatus());
+        assertEquals(
+                RacePlayerStatus.RACING,
+                response.getRaceImpact().getSnapshot().getPlayerStatus()
+        );
 
         verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
         verify(playerQuestionRepository).findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer);

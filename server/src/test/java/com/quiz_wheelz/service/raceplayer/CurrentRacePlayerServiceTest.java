@@ -148,6 +148,31 @@ class CurrentRacePlayerServiceTest {
     }
 
     @Test
+    void shouldResolveCurrentRacePlayerSessionWithoutRequiringRacingStatus() {
+        RacePlayer racePlayer = createRacePlayer(RacePlayerStatus.WAITING);
+
+        mockValidTokenResolvingTo(racePlayer);
+
+        RacePlayer result = createService().resolveCurrentRacePlayerSession(request);
+
+        assertSame(racePlayer, result);
+    }
+
+    @Test
+    void shouldResolveCurrentRacePlayerSessionWithoutRequiringRaceInProgress() {
+        RacePlayer racePlayer = createRacePlayer(
+                RacePlayerStatus.RACING,
+                RaceStatus.WAITING_FOR_PLAYERS
+        );
+
+        mockValidTokenResolvingTo(racePlayer);
+
+        RacePlayer result = createService().resolveCurrentRacePlayerSession(request);
+
+        assertSame(racePlayer, result);
+    }
+
+    @Test
     void shouldRejectRacePlayerWithoutRace() {
         RacePlayer racePlayer = new RacePlayer();
         racePlayer.setStatus(RacePlayerStatus.RACING);
