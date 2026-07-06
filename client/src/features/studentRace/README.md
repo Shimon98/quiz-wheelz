@@ -112,6 +112,11 @@ duplicated here.
   perspective object with FinishLineLayer as first consumer, near-road
   wider than screen, dev preview route hardened to DEV-only (lazy +
   `import.meta.env.DEV`, verified absent from the production bundle).
+- UI-10F-2 (road alignment + live zones): done — RoadLayer redrawn as the
+  lane-less wide mud track (center markers removed; scattered deterministic
+  mud details; curbs fade out inside the near zone), first LIVE consumer of
+  `raceVisualConfig.viewDepthZones` — future opponent visibility caps join
+  the same zones.
 - Next: UI-10G (layout contract) → H (race-state bootstrap; needs the server
   endpoint on main) → I (question panel + first i18n namespace) → J (submit +
   snapshot mapper) → K (basic HUD). See the master plan status board.

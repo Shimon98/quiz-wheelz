@@ -49,12 +49,15 @@ export class StudentRaceRenderer {
       this.effectsContainer,
     );
 
-    const { camera, road } = STUDENT_RACE_VISUAL_CONFIG;
+    const { camera, road, viewDepthZones } = STUDENT_RACE_VISUAL_CONFIG;
     this.camera = camera;
     this.perspective = this.buildPerspective();
 
     this.jungleLayer = new JungleLayer(this.backgroundContainer);
-    this.roadLayer = new RoadLayer(this.worldContainer, { road });
+    this.roadLayer = new RoadLayer(this.worldContainer, {
+      road,
+      viewDepthZones,
+    });
     this.finishLineLayer = new FinishLineLayer(this.worldContainer);
     this.playerKartLayer = new PlayerKartLayer(this.playerContainer);
     this.effectsLayer = new EffectsLayer(this.effectsContainer);

@@ -44,7 +44,18 @@ export const STUDENT_RACE_VISUAL_CONFIG = Object.freeze({
 
   // Placeholder road drawing density (visual detail, never game rules).
   road: Object.freeze({
-    depthMarkerCount: 5,
     curbSegmentCount: 14,
+    mudDetailCount: 15,
+  }),
+
+  // The view window split (track model, LIVE since F-2): depth 0 = horizon,
+  // 1 = the player. Live consumers today: RoadLayer (curb/edge fade, mud
+  // detail). Future consumers: opponent visibility caps per zone
+  // (maxOpponents / maxLaneDeltaVisible — documented in the master plan,
+  // added here when opponents land).
+  viewDepthZones: Object.freeze({
+    far: Object.freeze({ minDepth: 0, maxDepth: 0.35 }),
+    mid: Object.freeze({ minDepth: 0.35, maxDepth: 0.7 }),
+    near: Object.freeze({ minDepth: 0.7, maxDepth: 1 }),
   }),
 });

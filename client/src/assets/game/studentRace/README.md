@@ -20,8 +20,9 @@ renderer loads through the manifest and never references file names directly.
   renderer draws simple shapes under the same keys.
 - **Trim baked-in transparent margins before export** — learned on the
   entry-shell plants: transparent padding breaks edge-hugging placement.
-- The road texture must **loop seamlessly** vertically; parallax backgrounds
-  should tile or be tall enough to scroll.
+- The road asset is a **wide muddy perspective track** (see the Road spec
+  below) — NOT a vertically looping texture; that older instruction is void.
+  Parallax backgrounds should tile horizontally or be tall enough to scroll.
 
 ## Asset categories
 
