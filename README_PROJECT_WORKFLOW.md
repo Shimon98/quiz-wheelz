@@ -1,102 +1,103 @@
-# Quiz Wheelz — Project Workflow Notes
+# QuizWheelz — Project Workflow
 
-This file is a short starting guide for Shimon, Diana, and AI coding agents.
+This is the short entry point for human developers and AI coding agents.
 
-## First Setup
+## Before starting
 
-Copy these files into the root of the project:
+```bash
+git switch main
+git pull
+git status
+```
+
+Read:
 
 ```text
 AGENTS.md
-.env.example
-README_PROJECT_WORKFLOW.md
-docs/
+docs/README.md
+docs/00-project/CURRENT_STATE.md
+docs/00-project/MASTER_IMPLEMENTATION_ROADMAP.md
 ```
 
-Do not commit real `.env` files with secrets.
-
-## Recommended First Commit
-
-```bash
-git add AGENTS.md docs .env.example README_PROJECT_WORKFLOW.md
-git commit -m "docs: add project workflow and stage a planning"
-git push
-```
-
-## Recommended Branch Setup
-
-If `develop` does not exist yet:
-
-```bash
-git checkout main
-git pull origin main
-git checkout -b develop
-git push -u origin develop
-```
-
-## Working on an Issue
-
-Example:
-
-```bash
-git checkout develop
-git pull origin develop
-git checkout -b feature/issue-01-user-role-model
-```
-
-Work, test, commit:
-
-```bash
-git status
-git add <files>
-git commit -m "feat(auth): add user role model"
-git push -u origin feature/issue-01-user-role-model
-```
-
-Open PR into `develop`.
-
-## Prompt for Copilot / Codex / ChatGPT
-
-Use this at the start of every coding task:
+Then read the relevant track:
 
 ```text
-Read AGENTS.md first and follow it strictly.
-Read docs/STAGE_A_PLAN.md and docs/ISSUES.md.
+Server work:
+docs/01-server/SERVER_IMPLEMENTATION_PLAN.md
+docs/01-server/SERVER_RULES_AND_CONVENTIONS.md
 
-Current issue:
-feature/issue-XX-name
-
-Goal:
-[write the exact goal]
-
-Before modifying files:
-1. Run git status.
-2. Inspect the relevant project structure.
-3. Explain your plan.
-4. List expected changed files.
-5. Wait for my approval.
-
-Important:
-- Do not touch unrelated files.
-- Do not hardcode Math.
-- Server is the source of truth.
-- Keep business logic in services.
-- Add tests for new backend logic when possible.
+Client work:
+docs/02-client/CLIENT_IMPLEMENTATION_PLAN.md
+docs/02-client/CLIENT_RULES_AND_CONVENTIONS.md
 ```
 
-## Tracking Work by Shimon and Diana
+## Create one focused branch
 
-Use `docs/ISSUES.md` and update:
+```bash
+git switch -c feature/<short-task-name>
+```
+
+Use `fix/`, `chore/`, or `docs/` when that better describes the work.
+
+## Before code
+
+1. State the exact goal.
+2. Verify current status from code, not old issue numbers.
+3. Search for existing owners and reusable code.
+4. Confirm the API contract.
+5. List expected files.
+6. Identify tests and manual QA.
+7. Keep unrelated refactors out.
+
+## During work
 
 ```text
-Owner: Shimon / Diana
-Status: TODO / IN_PROGRESS / REVIEW / DONE / BLOCKED
+One responsibility per file.
+One owner per constant.
+No hardcoded user text.
+No invented endpoint.
+No client-owned game rule.
+No DB-only or cache-only shortcut that violates the architecture.
 ```
 
-Also write short notes under each issue if needed:
+## Verify
 
-```md
-### Notes
-- 2026-06-16 Shimon: created User entity, waiting for review.
-- 2026-06-16 Diana: reviewed, asked to rename field.
+Client:
+
+```bash
+cd client
+npm run lint
+npm run build
+```
+
+Server:
+
+```bash
+cd server
+./mvnw clean test
+```
+
+Windows:
+
+```powershell
+.\mvnw.cmd clean test
+```
+
+## Pull request
+
+The PR must include:
+
+- Goal and why.
+- What changed.
+- What did not change.
+- API/DB/security notes.
+- Tests run.
+- Manual demo flow.
+- Known follow-ups.
+- Canonical documentation updates, when status or decisions changed.
+
+Use the issue/PR template in:
+
+```text
+docs/03-quality/ISSUE_PR_AND_AI_WORKFLOW.md
 ```
