@@ -186,13 +186,13 @@ Target local development:
 
 ```text
 Run Spring Boot
-→ Spring Boot starts MySQL + Redis through Docker Compose
-→ health checks pass
-→ application connects automatically
+→ application connects to existing local MySQL at localhost:3306
+→ Spring Boot starts Redis through Docker Compose
+→ Redis health check passes and its connection details are applied automatically
 ```
 
-Docker Desktop is the only external prerequisite. Tests use H2 and must not start
-Docker Compose.
+Local MySQL and Docker Desktop are external prerequisites. Tests use H2 and must not
+start Docker Compose.
 
 ## 11. Git and AI workflow
 

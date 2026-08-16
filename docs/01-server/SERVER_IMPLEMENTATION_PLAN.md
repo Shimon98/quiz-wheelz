@@ -23,26 +23,27 @@ contract_owner: server
 
 ## S0 — Development infrastructure and runtime reliability
 
-### S0-01 — Unified automatic Compose
+### S0-01 — Local MySQL and automatic Redis
 
 **Status:** `DONE`
 
-- create one backend-owned Compose file with MySQL and Redis
-- add health checks
-- let Spring Boot start/stop it
+- keep DEV MySQL on the existing local `localhost:3306/quiz_wheelz` database
+- create one backend-owned Compose file for Redis
+- add a Redis health check
+- let Spring Boot start/stop Redis
 - remove Redis ignore-label/mixed ownership
 - tests must not start Compose
-- verify clean clone on both development machines.
+- verify the local development workflow.
 
 **Output:** reproducible dev environment.
 
-**Verification:** `server/compose.yaml` owns DEV MySQL and Redis through Spring
-Boot's `start-and-stop` lifecycle. Both services have health checks and use dynamic
-localhost-only ports. Ordinary tests keep Docker Compose disabled. Implementation
-and clean DEV startup were verified on Diana's machine. A fresh clean clone was
-verified on Shimon's machine: the shared IntelliJ configuration resolved the working
-directory without manual setup, MySQL and Redis started automatically and became
-healthy, and application startup succeeded. Test isolation was also verified.
+**Verification:** DEV MySQL is the developer's existing local service at
+`localhost:3306/quiz_wheelz`; Docker Compose does not own it. `server/compose.yaml`
+owns only DEV Redis through Spring Boot's `start-and-stop` lifecycle, with a health
+check and a dynamic localhost-only port supplied through the Compose service
+connection. Ordinary tests use H2 and keep Docker Compose and Redis disabled. The
+shared IntelliJ configuration keeps the backend working directory at `server` so
+automatic Redis startup resolves the Compose file correctly.
 
 ### S0-02 — Durable heartbeat fallback
 

@@ -85,7 +85,6 @@ Remove it later only after import search confirms it is unused.
 
 ## Partial or missing
 
-- Unified automatic MySQL + Redis Compose environment.
 - DB `lastSeenAt` fallback for missing Redis heartbeat.
 - Teacher live-state query.
 - Teacher SSE stream.

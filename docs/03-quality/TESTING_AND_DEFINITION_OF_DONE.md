@@ -110,12 +110,12 @@ teacher login
 → teacher sees final state/results
 ```
 
-## Infrastructure clean-clone check
+## Infrastructure development-startup check
 
-- no local DB creation
+- existing local MySQL at `localhost:3306/quiz_wheelz` remains the DEV database
 - no manual Redis start
 - no source edit for credentials
-- Compose services healthy
+- Redis Compose service healthy
 - seed data created idempotently
 - restarting server preserves durable state
 - Redis restart does not break durable rules.

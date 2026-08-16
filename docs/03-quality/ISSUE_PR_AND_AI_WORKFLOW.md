@@ -111,7 +111,7 @@ Use clear scoped messages:
 ```text
 feat(student-race): wire runtime snapshot bootstrap
 fix(runtime): fall back to durable lastSeenAt
-chore(dev): auto-start mysql and redis
+fix(dev): restore local mysql and auto-start redis
 docs: replace legacy planning documents
 test(race-engine): cover finish tie behavior
 ```

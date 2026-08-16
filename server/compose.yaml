@@ -1,32 +1,4 @@
 services:
-  mysql:
-    image: mysql:8.4
-    environment:
-      MYSQL_DATABASE: quiz_wheelz
-      MYSQL_USER: quizwheelz
-      MYSQL_PASSWORD: quizwheelz-local
-      MYSQL_ROOT_PASSWORD: quizwheelz-root-local
-
-    ports:
-      - "127.0.0.1::3306"
-
-    volumes:
-      - quizwheelz_mysql_data:/var/lib/mysql
-
-    labels:
-      org.springframework.boot.jdbc.parameters: "useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Jerusalem"
-
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"
-        ]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-      start_period: 10s
-
   redis:
     image: redis:7.4-alpine
 
@@ -51,5 +23,4 @@ services:
       start_period: 5s
 
 volumes:
-  quizwheelz_mysql_data:
   quizwheelz_redis_data:
