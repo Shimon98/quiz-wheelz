@@ -10,10 +10,9 @@
 > then update this document in the same pull request.
 ## Audit boundary
 
-This state is based on GitHub `main` at the recorded baseline. A local branch named
-`chore/redis-dev-autostart` appeared in the development environment but was not
-available in the GitHub branch search. Treat its changes as `VERIFY LOCALLY` until
-they are reviewed and merged.
+This state is based on GitHub `main` at the recorded baseline plus the completed
+S0-01 development-infrastructure implementation verified on both development
+machines.
 
 ## Executive summary
 
@@ -50,7 +49,7 @@ race/SSE screen and results.
 | Junction/highway/dirt road | PLANNED | PLANNED | REQUIRED |
 | Fair luck/power-ups | foundation ideas only | PLANNED | REQUIRED |
 | Catch-up assistance | foundation ideas only | PLANNED | REQUIRED |
-| Automatic MySQL + Redis dev setup | PARTIAL/VERIFY LOCALLY | N/A | PARTIAL |
+| Automatic MySQL + Redis dev setup | DONE | N/A | DONE |
 | Production migrations/deployment | PLANNED | build exists | PLANNED |
 
 ## Backend implemented

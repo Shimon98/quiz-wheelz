@@ -25,7 +25,7 @@ contract_owner: server
 
 ### S0-01 — Unified automatic Compose
 
-**Status:** `VERIFY LOCALLY / PARTIAL`
+**Status:** `DONE`
 
 - create one backend-owned Compose file with MySQL and Redis
 - add health checks
@@ -35,6 +35,14 @@ contract_owner: server
 - verify clean clone on both development machines.
 
 **Output:** reproducible dev environment.
+
+**Verification:** `server/compose.yaml` owns DEV MySQL and Redis through Spring
+Boot's `start-and-stop` lifecycle. Both services have health checks and use dynamic
+localhost-only ports. Ordinary tests keep Docker Compose disabled. Implementation
+and clean DEV startup were verified on Diana's machine. A fresh clean clone was
+verified on Shimon's machine: the shared IntelliJ configuration resolved the working
+directory without manual setup, MySQL and Redis started automatically and became
+healthy, and application startup succeeded. Test isolation was also verified.
 
 ### S0-02 — Durable heartbeat fallback
 
