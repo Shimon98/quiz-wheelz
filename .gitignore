@@ -5,6 +5,7 @@ Thumbs.db
 .env.*
 !.env.example
 AGENTS.md
+CLAUDE.md
 
 # Java / Maven
 target/
