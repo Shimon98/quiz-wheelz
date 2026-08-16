@@ -28,10 +28,11 @@ function readStoredJoin() {
 
 /**
  * StudentWaitingPage — "you're in, hang tight". Renders the join response
- * (kept in sessionStorage so a refresh survives); there is no student
- * room-state endpoint yet (e.g. GET /api/race-players/me/room), so no live
- * counters and no polling — when the server grows one (or SSE lands), this
- * page picks up live updates and the automatic jump into the game.
+ * (kept in sessionStorage so a refresh survives). The server race-state
+ * endpoint (API_ENDPOINTS.RACE_PLAYERS.RACE_STATE) is live and owns the
+ * waiting/racing/finished truth; wiring the live transition into the game
+ * happens with the real student race route (C1-01), so this page still shows
+ * no live counters and does no polling.
  */
 export default function StudentWaitingPage() {
   const { t } = useTranslation(I18N_NAMESPACES.STUDENT_JOIN);

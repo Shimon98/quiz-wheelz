@@ -27,11 +27,17 @@ Use this package, remove nested READMEs and verify no stale links.
 
 ### C0-02 — Endpoint and route constants
 
-- mark race-state live
-- add heartbeat/leave/reconnect
-- add student race route constant
-- wire only routes backed by real pages
-- remove stale comments.
+**Status: DONE**
+
+Completed:
+
+- verified RacePlayer gameplay/runtime paths against the current server `ApiPaths`
+- marked race-state as live
+- registered heartbeat, leave, and reconnect endpoint constants
+- added the future `/student/race` route constant
+- removed stale "endpoint not implemented" comments
+- verified active client code does not duplicate these endpoint strings
+- intentionally did not wire the real student race route; that begins in C1-01
 
 ### C0-03 — Package audit
 
