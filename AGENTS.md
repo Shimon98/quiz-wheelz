@@ -149,13 +149,10 @@ Use existing packages before adding alternatives:
 - Axios: HTTP through the shared client.
 - React Router: routes and guards.
 - Zustand: limited global state.
-- PixiJS: race-world rendering.
+- PixiJS (`pixi.js`): race-world rendering and frame animation.
 - Lucide React: icons.
 - react-qr-code: room QR.
-- One motion library only after import audit.
-
-`@pixi/react`, `framer-motion`, and `motion` must not all remain by habit. Remove an
-unused package only after repository-wide import search and successful build.
+- Framer Motion: React UI animation when CSS/Mantine is not sufficient.
 
 ## 9. Student race rendering rules
 

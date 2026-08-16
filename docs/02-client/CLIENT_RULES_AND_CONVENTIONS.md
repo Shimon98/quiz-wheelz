@@ -172,7 +172,8 @@ Before custom work:
 | Icon | Lucide React |
 | QR | react-qr-code |
 | Race rendering | PixiJS |
-| Animation | one approved motion package, or Pixi ticker for world animation |
+| React UI animation | Framer Motion when CSS/Mantine animation is not sufficient |
+| Race/world animation | PixiJS ticker/renderer |
 
 Do not install a package for a one-line helper. Do not rebuild a full library feature
 in custom code.
