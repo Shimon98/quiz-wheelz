@@ -88,11 +88,7 @@ Implemented A–G:
 
 ## Stale client state to clean
 
-- race-state is still commented as “not implemented”
-- heartbeat/leave/reconnect constants are missing
 - live/results route constants exist without routes
-- student race route constant is missing
-- nested source-folder READMEs duplicate canonical documentation
 - both `framer-motion` and `motion` are installed
 - `@pixi/react` is installed while the approved renderer is manual `pixi.js`.
 
@@ -102,7 +98,7 @@ assumption.
 ## Immediate client priority
 
 ```text
-Contract/constants cleanup
+Package audit
 → student race route/bootstrap
 → question panel
 → answer/snapshot mapping

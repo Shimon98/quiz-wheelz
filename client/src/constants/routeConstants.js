@@ -13,6 +13,7 @@ export const ROUTES = {
   STUDENT_JOIN: "/join",
   STUDENT_JOIN_WITH_CODE: "/join/:roomCode",
   STUDENT_WAITING: "/student/waiting",
+  STUDENT_RACE: "/student/race",
   UNAUTHORIZED: "/unauthorized",
   NOT_FOUND: "*",
 };

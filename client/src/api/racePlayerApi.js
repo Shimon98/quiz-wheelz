@@ -17,11 +17,11 @@ export async function joinRace({ roomCode, displayName }) {
 }
 
 /*
- * Gameplay (UI-10) — thin wrappers only: no navigation, no UI text, no game
- * logic. The server owns correctness/score/progress; submitAnswer's response
- * carries the safe raceImpact the screen maps into its runtime state.
- * Both endpoints require an ACTIVE race (RACING + IN_PROGRESS) server-side —
- * the screen checks race-state first once that endpoint ships.
+ * Gameplay wrappers stay thin: no navigation, UI text, or game logic. The
+ * server owns correctness, score, progress, and runtime state; submitAnswer's
+ * response carries the safe raceImpact the screen maps into its runtime state.
+ * Question/answer actions are used only after the student runtime confirms
+ * (via race-state) that the current RacePlayer is allowed to play.
  */
 export async function getCurrentQuestion() {
   const response = await httpClient.get(
