@@ -49,7 +49,7 @@ race/SSE screen and results.
 | Junction/highway/dirt road | PLANNED | PLANNED | REQUIRED |
 | Fair luck/power-ups | foundation ideas only | PLANNED | REQUIRED |
 | Catch-up assistance | foundation ideas only | PLANNED | REQUIRED |
-| Automatic MySQL + Redis dev setup | DONE | N/A | DONE |
+| Local MySQL + automatic Redis dev setup | DONE | N/A | DONE |
 | Production migrations/deployment | PLANNED | build exists | PLANNED |
 
 ## Backend implemented

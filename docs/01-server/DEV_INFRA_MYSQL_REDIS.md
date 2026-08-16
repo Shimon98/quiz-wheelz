@@ -1,4 +1,4 @@
-# Automatic Development Infrastructure — MySQL and Redis
+# Development Infrastructure — Local MySQL and Automatic Redis
 
 **Status:** Canonical  
 **Audit date:** 2026-07-30  
@@ -20,13 +20,13 @@ now creates a high-risk refactor without improving the core product.
 
 ## Current implementation
 
-Development uses `server/compose.yaml` as the single owner of local MySQL and Redis.
-Spring Boot starts and stops both services automatically, waits for their health
-checks, and applies their generated connection details. Both host ports are dynamic
-and bound only to localhost. Development Redis intentionally has no password;
-production Redis remains separate and requires its external password and SSL
-configuration. This implementation and clean DEV startup are complete and verified
-on Diana's machine and from a fresh clean clone on Shimon's machine.
+Development uses the developer's existing MySQL service and database at
+`localhost:3306/quiz_wheelz`. Docker Compose does not own DEV MySQL. Spring Boot
+starts and stops Redis automatically from `server/compose.yaml`, waits for its
+health check, and applies its generated connection details. The Redis host port is
+dynamic and bound only to localhost. Development Redis intentionally has no
+password; production Redis remains separate and requires its external password and
+SSL configuration.
 
 ## Target
 
@@ -36,10 +36,9 @@ Backend-owned file:
 server/compose.yaml
 ```
 
-Services:
+Service:
 
 ```text
-mysql
 redis
 ```
 
@@ -48,14 +47,16 @@ Normal workflow:
 ```text
 Run QuizWheelzApplication
 → Spring Boot runs docker compose up
-→ health checks pass
-→ connection details are applied
+→ Redis health check passes
+→ Redis connection details are applied
+→ application connects to local MySQL at localhost:3306
 → app starts
-→ stopping app stops dev services
+→ stopping app stops DEV Redis
 ```
 
-Docker Desktop and Docker Compose are prerequisites. No manual `docker compose up`
-should be part of normal daily work.
+The existing local MySQL service and `quiz_wheelz` database are prerequisites.
+Docker Desktop and Docker Compose are required for Redis. No manual
+`docker compose up` should be part of normal daily work.
 
 IntelliJ developers should use the shared `QuizWheelzApplication` configuration in
 `.run/`. Its working directory is `$PROJECT_DIR$/server`, allowing the DEV profile
@@ -66,26 +67,6 @@ backend working directory when launching the application through IntelliJ.
 
 ```yaml
 services:
-  mysql:
-    image: mysql:8.4
-    environment:
-      MYSQL_DATABASE: quiz_wheelz
-      MYSQL_USER: quizwheelz
-      MYSQL_PASSWORD: quizwheelz-local
-      MYSQL_ROOT_PASSWORD: quizwheelz-root-local
-    ports:
-      - "127.0.0.1::3306"
-    volumes:
-      - quizwheelz_mysql_data:/var/lib/mysql
-    labels:
-      org.springframework.boot.jdbc.parameters: "useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Jerusalem"
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-      start_period: 10s
-
   redis:
     image: redis:7.4-alpine
     ports:
@@ -101,26 +82,29 @@ services:
       start_period: 5s
 
 volumes:
-  quizwheelz_mysql_data:
   quizwheelz_redis_data:
 ```
 
-The local MySQL application user is separate from the root administration account.
-Never reuse local defaults in production.
+This Compose file does not create, migrate or manage the local MySQL database.
 
 ## Spring development profile
 
 Target:
 
 ```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/quiz_wheelz?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Jerusalem
+spring.datasource.username=${DB_USERNAME:root}
+spring.datasource.password=${DB_PASSWORD:}
+
 spring.docker.compose.enabled=true
 spring.docker.compose.file=compose.yaml
 spring.docker.compose.lifecycle-management=start-and-stop
 spring.docker.compose.readiness.timeout=60s
 ```
 
-DEV uses Spring Boot Compose service connections. It does not define explicit
-datasource or Redis host, port or password properties.
+DEV uses the explicit local MySQL datasource above. Redis uses the Spring Boot
+Compose service connection and does not define explicit host, port or password
+properties.
 
 Production profiles never start Docker Compose.
 
@@ -164,15 +148,15 @@ Tests:
 
 ## Remaining runtime reliability work
 
-S0-01 is complete and verified on both development machines. Verification included
-the backend-owned Compose environment, automatic lifecycle, service connections,
-health checks and test isolation on Diana's machine, plus a fresh clean clone on
-Shimon's machine using the shared IntelliJ configuration without manual working-
-directory or service configuration. S0-02 remains `PLANNED` and owns the durable
-`RacePlayer.lastSeenAt` heartbeat fallback described above.
+S0-01 is complete with its corrected scope: the application uses the developer's
+existing local MySQL database, while the backend-owned Compose environment provides
+automatic Redis lifecycle, service connection and health checking. Test isolation
+remains H2 with Compose and Redis disabled. S0-02 remains `PLANNED` and owns the
+durable `RacePlayer.lastSeenAt` heartbeat fallback described above.
 
-## Clean-clone definition of done
+## Development prerequisite
 
-A developer with Java, Node and Docker Desktop can clone the repository, run the
-Spring Boot application and receive a healthy MySQL/Redis-backed server without
-creating a database, entering SQL, starting Redis manually or editing source files.
+A developer must have the local MySQL service available at `localhost:3306` with
+credentials supplied through `DB_USERNAME` and `DB_PASSWORD` when they differ from
+the DEV defaults. Spring Boot automates Redis only; it does not provision MySQL on a
+clean clone.

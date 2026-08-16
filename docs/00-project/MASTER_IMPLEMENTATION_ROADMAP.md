@@ -19,10 +19,11 @@ side says its files are finished.
 **Goal:** every developer can understand and start the project consistently.
 
 Server:
-- merge/verify automatic MySQL + Redis startup
+- restore/verify the existing local MySQL workflow
+- merge/verify automatic Redis startup
 - remove mixed/manual Redis startup behavior
 - add durable `lastSeenAt` fallback
-- verify clean-clone startup.
+- verify local development startup.
 
 Client:
 - replace old docs and nested READMEs
@@ -32,9 +33,9 @@ Client:
 **Gate:**
 
 ```text
-Clean clone
-→ run backend
-→ MySQL and Redis start automatically
+Existing local MySQL is available at localhost:3306
+→ run backend from server working directory
+→ Redis starts automatically
 → backend tests pass
 → client lint/build pass
 ```
