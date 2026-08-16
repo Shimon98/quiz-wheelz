@@ -41,12 +41,20 @@ Completed:
 
 ### C0-03 — Package audit
 
-Search imports and decide:
+**Status: DONE**
 
-- `motion` vs `framer-motion`
-- manual `pixi.js` vs unused `@pixi/react`.
+Completed:
 
-Remove only unused packages after lint/build.
+- audited client animation dependencies
+- kept `framer-motion` as the active React UI animation library
+- removed unused `motion`
+- confirmed the student race renderer uses manual `pixi.js`
+- removed unused `@pixi/react`
+- removed `pixi-filters` after repository-wide source search confirmed zero usage
+- regenerated the npm lockfile through npm
+- verified client lint and production build
+
+**C0 COMPLETE**
 
 ## C1 — Student playable loop
 

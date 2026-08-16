@@ -19,9 +19,9 @@
 - Axios
 - Zustand
 - PixiJS
+- Framer Motion for React UI animation
 - Lucide React
-- react-qr-code
-- motion/framer-motion overlap to clean after import audit.
+- react-qr-code.
 
 ## Implemented product areas
 
@@ -88,18 +88,12 @@ Implemented A–G:
 
 ## Stale client state to clean
 
-- live/results route constants exist without routes
-- both `framer-motion` and `motion` are installed
-- `@pixi/react` is installed while the approved renderer is manual `pixi.js`.
-
-Cleanup must follow import search → removal → lint/build. Do not remove packages by
-assumption.
+- live/results route constants exist without routes.
 
 ## Immediate client priority
 
 ```text
-Package audit
-→ student race route/bootstrap
+Student race route/bootstrap
 → question panel
 → answer/snapshot mapping
 → HUD + reconnect
