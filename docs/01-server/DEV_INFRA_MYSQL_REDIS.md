@@ -26,8 +26,7 @@ checks, and applies their generated connection details. Both host ports are dyna
 and bound only to localhost. Development Redis intentionally has no password;
 production Redis remains separate and requires its external password and SSL
 configuration. This implementation and clean DEV startup are complete and verified
-on Diana's machine; clean-clone verification on a second development machine is
-still pending.
+on Diana's machine and from a fresh clean clone on Shimon's machine.
 
 ## Target
 
@@ -165,11 +164,12 @@ Tests:
 
 ## Remaining runtime reliability work
 
-S0-01 implementation is complete on Diana's machine: the backend-owned Compose
-environment, automatic lifecycle, service connections, health checks and test
-isolation are verified there. Verification on a second development machine is still
-pending, so S0-01 remains `VERIFY LOCALLY / PARTIAL`. S0-02 remains pending and owns
-the durable `RacePlayer.lastSeenAt` heartbeat fallback described above.
+S0-01 is complete and verified on both development machines. Verification included
+the backend-owned Compose environment, automatic lifecycle, service connections,
+health checks and test isolation on Diana's machine, plus a fresh clean clone on
+Shimon's machine using the shared IntelliJ configuration without manual working-
+directory or service configuration. S0-02 remains `PLANNED` and owns the durable
+`RacePlayer.lastSeenAt` heartbeat fallback described above.
 
 ## Clean-clone definition of done
 

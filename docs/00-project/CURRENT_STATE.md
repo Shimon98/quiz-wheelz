@@ -10,8 +10,9 @@
 > then update this document in the same pull request.
 ## Audit boundary
 
-This state is based on GitHub `main` at the recorded baseline plus the locally
-verified S0-01 development-infrastructure implementation described below.
+This state is based on GitHub `main` at the recorded baseline plus the completed
+S0-01 development-infrastructure implementation verified on both development
+machines.
 
 ## Executive summary
 
@@ -48,7 +49,7 @@ race/SSE screen and results.
 | Junction/highway/dirt road | PLANNED | PLANNED | REQUIRED |
 | Fair luck/power-ups | foundation ideas only | PLANNED | REQUIRED |
 | Catch-up assistance | foundation ideas only | PLANNED | REQUIRED |
-| Automatic MySQL + Redis dev setup | implementation complete on Diana's machine; second-machine verification pending | N/A | VERIFY LOCALLY / PARTIAL |
+| Automatic MySQL + Redis dev setup | DONE | N/A | DONE |
 | Production migrations/deployment | PLANNED | build exists | PLANNED |
 
 ## Backend implemented
