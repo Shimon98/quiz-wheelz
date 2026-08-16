@@ -18,18 +18,16 @@ Do not replace it with Caffeine before the playable loop.
 Redis already supports presence, TTL, heartbeat and reconnect behavior. Replacing it
 now creates a high-risk refactor without improving the core product.
 
-## Current audited problem
+## Current implementation
 
-The current main branch:
-
-- has a root Redis-only Compose file
-- points Spring Boot to `docker-compose.redis.yml`
-- starts with `start-only`
-- marks Redis with `org.springframework.boot.ignore: true`
-- still requires a separately installed/running local MySQL.
-
-The configuration mixes Spring-owned lifecycle with manually defined connections and
-does not provide a clean-clone environment.
+Development uses `server/compose.yaml` as the single owner of local MySQL and Redis.
+Spring Boot starts and stops both services automatically, waits for their health
+checks, and applies their generated connection details. Both host ports are dynamic
+and bound only to localhost. Development Redis intentionally has no password;
+production Redis remains separate and requires its external password and SSL
+configuration. This implementation and clean DEV startup are complete and verified
+on Diana's machine; clean-clone verification on a second development machine is
+still pending.
 
 ## Target
 
@@ -60,6 +58,11 @@ Run QuizWheelzApplication
 Docker Desktop and Docker Compose are prerequisites. No manual `docker compose up`
 should be part of normal daily work.
 
+IntelliJ developers should use the shared `QuizWheelzApplication` configuration in
+`.run/`. Its working directory is `$PROJECT_DIR$/server`, allowing the DEV profile
+to resolve `server/compose.yaml` correctly. Do not use the repository root as the
+backend working directory when launching the application through IntelliJ.
+
 ## Target Compose shape
 
 ```yaml
@@ -72,40 +75,39 @@ services:
       MYSQL_PASSWORD: quizwheelz-local
       MYSQL_ROOT_PASSWORD: quizwheelz-root-local
     ports:
-      - "3306:3306"
+      - "127.0.0.1::3306"
     volumes:
       - quizwheelz_mysql_data:/var/lib/mysql
+    labels:
+      org.springframework.boot.jdbc.parameters: "useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Jerusalem"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 5s
       timeout: 5s
       retries: 20
+      start_period: 10s
 
   redis:
     image: redis:7.4-alpine
-    command:
-      - redis-server
-      - --appendonly
-      - "yes"
-      - --requirepass
-      - quizwheelz-local-redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1::6379"
+    command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - quizwheelz_redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "quizwheelz-local-redis", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 20
+      start_period: 5s
 
 volumes:
   quizwheelz_mysql_data:
   quizwheelz_redis_data:
 ```
 
-The exact credentials may be moved to environment variables, but defaults must be
-consistent and documented. Never reuse local defaults in production.
+The local MySQL application user is separate from the root administration account.
+Never reuse local defaults in production.
 
 ## Spring development profile
 
@@ -118,12 +120,8 @@ spring.docker.compose.lifecycle-management=start-and-stop
 spring.docker.compose.readiness.timeout=60s
 ```
 
-Use one connection-detail strategy:
-
-1. Prefer Spring Boot Compose service connections for dev when verified.
-2. Otherwise use explicit properties consistently.
-3. Do not combine ignore labels, auto connection details and conflicting local
-   properties.
+DEV uses Spring Boot Compose service connections. It does not define explicit
+datasource or Redis host, port or password properties.
 
 Production profiles never start Docker Compose.
 
@@ -165,19 +163,13 @@ Tests:
 - player already finished
 - race already finished.
 
-## Migration checklist
+## Remaining runtime reliability work
 
-1. Verify the local `chore/redis-dev-autostart` branch.
-2. Add MySQL to Compose.
-3. Move/rename Compose to the backend-owned location.
-4. remove the ignore label
-5. choose one connection-detail strategy
-6. use `start-and-stop`
-7. add both health checks
-8. update test profile
-9. add DB fallback
-10. test clean clone
-11. remove old Redis-only compose only after successful verification.
+S0-01 implementation is complete on Diana's machine: the backend-owned Compose
+environment, automatic lifecycle, service connections, health checks and test
+isolation are verified there. Verification on a second development machine is still
+pending, so S0-01 remains `VERIFY LOCALLY / PARTIAL`. S0-02 remains pending and owns
+the durable `RacePlayer.lastSeenAt` heartbeat fallback described above.
 
 ## Clean-clone definition of done
 

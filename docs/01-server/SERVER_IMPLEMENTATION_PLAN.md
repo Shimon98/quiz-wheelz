@@ -36,6 +36,12 @@ contract_owner: server
 
 **Output:** reproducible dev environment.
 
+**Verification:** `server/compose.yaml` owns DEV MySQL and Redis through Spring
+Boot's `start-and-stop` lifecycle. Both services have health checks and use dynamic
+localhost-only ports. Ordinary tests keep Docker Compose disabled. Implementation
+and clean DEV startup with both service connections were verified on Diana's
+machine; clean-clone verification on a second development machine is still pending.
+
 ### S0-02 — Durable heartbeat fallback
 
 **Status:** `PLANNED`
