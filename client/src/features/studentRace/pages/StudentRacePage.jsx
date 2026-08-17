@@ -1,5 +1,9 @@
+import { Navigate } from "react-router-dom";
+
 import useRaceBootstrap from "../hooks/useRaceBootstrap";
 import { RACE_VIEWS } from "../../../shared/racePlayer/getRaceView";
+import { isRacePlayerSessionError } from "../../../errors/errorChecks";
+import { ROUTES } from "../../../constants/routeConstants";
 import StudentRaceScreen from "../layout/StudentRaceScreen";
 import StudentRaceStatusView from "../components/StudentRaceStatusView";
 import { STUDENT_RACE_STATUSES } from "../components/studentRaceStatusConfig";
@@ -17,6 +21,13 @@ import { STUDENT_RACE_STATUSES } from "../components/studentRaceStatusConfig";
  */
 export default function StudentRacePage() {
   const { runtimeState, view, isLoading, error, retry } = useRaceBootstrap();
+
+  // Session check FIRST: when the server says the RacePlayer identity is gone,
+  // last-known runtime no longer authorizes this screen — unlike transient
+  // NETWORK/SERVER failures, which keep the last-known presentation below.
+  if (isRacePlayerSessionError(error)) {
+    return <Navigate to={ROUTES.STUDENT_JOIN} replace />;
+  }
 
   if (!runtimeState && isLoading) {
     return <StudentRaceStatusView status={STUDENT_RACE_STATUSES.LOADING} />;
