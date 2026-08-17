@@ -89,6 +89,23 @@ public class RedisPresenceService {
         }
     }
 
+    public boolean tryAcquireLastSeenDbSyncGate(Long raceId, Long racePlayerId) {
+        validateIds(raceId, racePlayerId);
+
+        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(
+                buildLastSeenDbSyncKey(raceId, racePlayerId),
+                RacePlayerRuntimeRules.REDIS_PRESENCE_VALUE,
+                RacePlayerRuntimeRules.LAST_SEEN_DB_CHECKPOINT_INTERVAL
+        );
+
+        return Boolean.TRUE.equals(acquired);
+    }
+
+    public void releaseLastSeenDbSyncGate(Long raceId, Long racePlayerId) {
+        validateIds(raceId, racePlayerId);
+        redisTemplate.delete(buildLastSeenDbSyncKey(raceId, racePlayerId));
+    }
+
     String buildPresenceKey(Long raceId, Long racePlayerId) {
         validateIds(raceId, racePlayerId);
 
@@ -99,6 +116,11 @@ public class RedisPresenceService {
         validateIds(raceId, racePlayerId);
 
         return redisKeyBuilder.presenceLastHeartbeatKey(raceId, racePlayerId);
+    }
+
+    String buildLastSeenDbSyncKey(Long raceId, Long racePlayerId) {
+        validateIds(raceId, racePlayerId);
+        return redisKeyBuilder.presenceLastSeenDbSyncKey(raceId, racePlayerId);
     }
 
     private void validateIds(Long raceId, Long racePlayerId) {

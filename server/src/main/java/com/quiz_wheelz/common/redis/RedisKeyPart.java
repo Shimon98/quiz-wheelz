@@ -7,7 +7,8 @@ public enum RedisKeyPart {
 
     RACE("race"),
     PLAYER("player"),
-    LAST_HEARTBEAT("last-heartbeat");
+    LAST_HEARTBEAT("last-heartbeat"),
+    LAST_SEEN_DB_SYNC("last-seen-db-sync");
 
     private final String value;
 

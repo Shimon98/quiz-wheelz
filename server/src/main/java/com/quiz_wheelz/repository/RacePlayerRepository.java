@@ -6,7 +6,11 @@ import com.quiz_wheelz.enums.RacePlayerStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +33,20 @@ public interface RacePlayerRepository extends JpaRepository<RacePlayer, Long> {
     Optional<RacePlayer> findLockedByIdAndRaceId(
             Long playerId,
             Long raceId
+    );
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update RacePlayer racePlayer
+            set racePlayer.lastSeenAt = :heartbeatAt
+            where racePlayer.id = :racePlayerId
+              and racePlayer.race.id = :raceId
+              and (racePlayer.lastSeenAt is null or racePlayer.lastSeenAt < :heartbeatAt)
+            """)
+    int updateLastSeenAtIfOlder(
+            @Param("racePlayerId") Long racePlayerId,
+            @Param("raceId") Long raceId,
+            @Param("heartbeatAt") LocalDateTime heartbeatAt
     );
 
     long countByRace(Race race);

@@ -36,6 +36,17 @@ public class RedisKeyBuilder {
         );
     }
 
+    public String presenceLastSeenDbSyncKey(Long raceId, Long racePlayerId) {
+        return join(
+                RedisKeyNamespace.PRESENCE.getValue(),
+                RedisKeyPart.RACE.getValue(),
+                requirePositiveId(raceId),
+                RedisKeyPart.PLAYER.getValue(),
+                requirePositiveId(racePlayerId),
+                RedisKeyPart.LAST_SEEN_DB_SYNC.getValue()
+        );
+    }
+
     public String rateLimitKey(
             RedisRateLimitScope scope,
             RedisKeyIdentifier identifier
