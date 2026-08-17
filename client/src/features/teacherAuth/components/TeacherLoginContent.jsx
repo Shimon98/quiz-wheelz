@@ -63,7 +63,7 @@ export default function TeacherLoginContent() {
         </Text>
       </Stack>
 
-      {/* Server failures pop as notifications (useApiErrorNotifier) — no
+      {/* Server failures pop as notifications (appNotifications) — no
           inline alert, so the card never grows on error. */}
       <form onSubmit={form.onSubmit(submit)} noValidate>
         <Stack gap="sm">

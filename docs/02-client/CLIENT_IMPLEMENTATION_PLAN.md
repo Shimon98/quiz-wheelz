@@ -62,6 +62,26 @@ Completed:
 
 Depends on frozen race-state contract.
 
+#### C1-01-ERR — Shared API error foundation
+
+**Status: DONE**
+
+Completed:
+
+- normalized every API failure to one shape:
+  `{ status, code, errorName, category, messageKey, validationErrors }`
+- decisions now use the semantic server error name; numeric codes are debug
+  metadata only (stale `errorCodes.js` removed, `serverErrorNames.js` added)
+- added error categories + `errorChecks` predicates
+  (network / auth session / RacePlayer session / server / contract / transient)
+- separated teacher auth session from RacePlayer session — a RacePlayer 401
+  no longer clears the teacher auth store
+- network/5xx failures no longer log the teacher out (`loadCurrentUser`)
+- malformed success envelopes fail fast as `ApiContractError` (API_CONTRACT)
+- consolidated toasts into `appNotifications` (removed duplicate
+  `useApiErrorNotifier`); login now shows "wrong credentials", not
+  "session expired"
+
 - add `/student/race`
 - add RacePlayer-session guard
 - fetch race-state first

@@ -195,6 +195,31 @@ for one form, one page request, one modal or one animation frame.
 Pixi frame values stay inside the renderer. React receives meaningful snapshots and
 targets only.
 
+## API error ownership
+
+```text
+transport (httpClient)     → request/response only
+shared error layer         → normalize and classify (errors/normalizeApiError,
+                             errorCategories, errorChecks, ApiContractError)
+feature hook/controller    → decide retry/navigation/UI/notification
+components                 → render localized states
+```
+
+Rules:
+
+- Every API failure is handled through `normalizeApiError` — feature code
+  branches on `errorChecks` predicates and the semantic server `errorName`,
+  never on axios internals or numeric server codes.
+- Teacher auth and RacePlayer sessions are SEPARATE identities. A RacePlayer
+  session error never clears the teacher auth store, and vice versa.
+- Global interceptors never navigate and never toast every failure; feature
+  logic decides whether a toast, retry, inline state or navigation fits.
+- Raw backend messages are never user-facing UI — only `messageKey` → i18n.
+- Retry policy belongs to features: `isTransientError` only says a retry MAY
+  succeed; re-sending a state-changing POST is the feature's judgment call.
+- A malformed success envelope throws `ApiContractError` (API_CONTRACT) —
+  never silently returns `undefined`.
+
 ## Honest UI
 
 - No fake success.

@@ -34,4 +34,7 @@ export default {
   student: {
     joinFailed: "לא הצלחנו לצרף אתכם למרוץ. נסו שוב.",
   },
+  racePlayer: {
+    sessionLost: "החיבור שלכם למרוץ לא נמצא. הצטרפו שוב עם קוד החדר.",
+  },
 };

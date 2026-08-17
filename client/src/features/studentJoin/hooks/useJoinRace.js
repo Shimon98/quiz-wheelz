@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { joinRace } from "../../../api/racePlayerApi";
 import { ROUTES } from "../../../constants/routeConstants";
-import { normalizeApiError } from "../../../errors/normalizeApiError";
-import useApiErrorNotifier from "../../../hooks/useApiErrorNotifier";
+import { showApiErrorNotification } from "../../../shared/notifications/appNotifications";
 import { STUDENT_JOIN_STORAGE_KEY } from "../config/studentJoinConfig";
 
 /**
@@ -17,7 +16,6 @@ import { STUDENT_JOIN_STORAGE_KEY } from "../config/studentJoinConfig";
  */
 export default function useJoinRace() {
   const navigate = useNavigate();
-  const { notifyErrorKey } = useApiErrorNotifier();
 
   const [isJoining, setIsJoining] = useState(false);
 
@@ -34,13 +32,11 @@ export default function useJoinRace() {
 
       navigate(ROUTES.STUDENT_WAITING);
     } catch (requestError) {
-      const { messageKey } = normalizeApiError(requestError);
-
-      // A generic "unexpected" reads scary to kids — use the friendlier
-      // join-specific fallback instead.
-      notifyErrorKey(
-        messageKey === "general.unexpected" ? "student.joinFailed" : messageKey,
-      );
+      // A generic "unexpected" reads scary to kids — the join-specific
+      // fallback replaces it (fallbackKey applies exactly in that case).
+      showApiErrorNotification(requestError, {
+        fallbackKey: "student.joinFailed",
+      });
     } finally {
       setIsJoining(false);
     }

@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser } from "../../../api/authApi";
 import { useAuthStore } from "../../../stores/authStore";
-import useApiErrorNotifier from "../../../hooks/useApiErrorNotifier";
+import { normalizeApiError } from "../../../errors/normalizeApiError";
+import { isAuthSessionError } from "../../../errors/errorChecks";
+import { showErrorKeyNotification } from "../../../shared/notifications/appNotifications";
 import { getRouteByRole } from "../../../utils/authRouteUtils";
 
 /**
@@ -18,7 +20,6 @@ import { getRouteByRole } from "../../../utils/authRouteUtils";
  */
 export default function useTeacherLogin() {
   const navigate = useNavigate();
-  const { notifyApiError } = useApiErrorNotifier();
 
   const isLoading = useAuthStore((state) => state.isLoading);
   const setUser = useAuthStore((state) => state.setUser);
@@ -32,8 +33,14 @@ export default function useTeacherLogin() {
       const loggedInUser = await loginUser({ identifier, password });
       setUser(loggedInUser);
       navigate(getRouteByRole(loggedInUser.role), { replace: true });
-    } catch (error) {
-      notifyApiError(error);
+    } catch (rawError) {
+      // In a LOGIN context an auth failure means wrong credentials — not an
+      // expired session (the server answers both with UNAUTHORIZED).
+      const error = normalizeApiError(rawError);
+
+      showErrorKeyNotification(
+        isAuthSessionError(error) ? "auth.invalidCredentials" : error.messageKey,
+      );
     } finally {
       setSubmitting(false);
     }

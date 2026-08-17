@@ -39,7 +39,7 @@ export default function ForgotPasswordContent() {
 
   return (
     <Stack gap="lg" w="100%" maw={{ lg: AUTH_FORM_MAX_WIDTH }} mx="auto">
-      {/* Server failures pop as notifications (useApiErrorNotifier) — no
+      {/* Server failures pop as notifications (appNotifications) — no
           inline alert, so the card never grows on error. */}
       {flow.step === FORGOT_PASSWORD_STEPS.REQUEST && (
         <RequestStep t={t} flow={flow} />
