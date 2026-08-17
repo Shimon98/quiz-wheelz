@@ -13,4 +13,13 @@ export const STUDENT_RACE_CONFIG = Object.freeze({
   feedbackDelayMs: 900,
   // Pause after feedback before requesting the next question.
   nextQuestionDelayMs: 1000,
+
+  // Question countdown DISPLAY (the server's expiresAt is the truth; these
+  // only tune presentation). Urgency thresholds switch the timer accent —
+  // one owner here, never inline in components.
+  timer: Object.freeze({
+    tickMs: 250,
+    warningSeconds: 10,
+    dangerSeconds: 5,
+  }),
 });

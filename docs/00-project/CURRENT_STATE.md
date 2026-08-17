@@ -90,11 +90,7 @@ race/SSE screen and results.
 
 These must be corrected during the next client integration work:
 
-- `apiEndpointConstants.js` still says race-state is not implemented.
-- Heartbeat, leave and reconnect endpoints are not registered in the client constants.
 - Teacher live and results routes are constants only; they are not routed.
-- There is no real student race route.
-- The nested studentRace README still describes race-state as blocked.
 - Old Stage B issue tables mark completed backend work as TODO.
 
 ## Immediate next product outcome

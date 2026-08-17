@@ -25,4 +25,15 @@ export default {
     unknownTitle: "Something went wrong",
     unknownBody: "We got an unexpected state from the server. Try refreshing.",
   },
+
+  question: {
+    instruction: "Choose the correct answer",
+    errorTitle: "We couldn't load the question",
+    timeUp: "Time's up! Loading a new question...",
+    syncError: "Time's up, but we couldn't update",
+  },
+
+  timer: {
+    label: "Time left for this question",
+  },
 };

@@ -22,6 +22,10 @@ export function isServerError(error) {
   return error?.category === ERROR_CATEGORIES.SERVER;
 }
 
+export function isConflictError(error) {
+  return error?.category === ERROR_CATEGORIES.CONFLICT;
+}
+
 export function isApiContractError(error) {
   return error?.category === ERROR_CATEGORIES.API_CONTRACT;
 }

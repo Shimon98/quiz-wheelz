@@ -51,8 +51,23 @@
 
 - join by code/name
 - code-from-route support
-- waiting screen
+- waiting screen with authoritative race-state polling (~2s while WAITING)
+- automatic waiting → race transition when the teacher starts
 - mobile-first shell.
+
+### Student race bootstrap (C1-01 — done, E2E verified 2026-08-17)
+
+- production `/student/race` route, lazy, standalone from the entry shell
+- `getRaceState` wrapper + shared `useRacePlayerState` request lifecycle
+- normalized semantic API errors; RacePlayer session distinct from teacher auth
+- race-state → `StudentRaceRuntimeState` mapping (`applyRaceSnapshot` is the
+  one snapshot mapper, ready for the C1-03 `raceImpact.snapshot` reuse)
+- `getRaceView` view resolution (WAITING/PLAYING/FINISHED/CANCELLED/
+  DISCONNECTED/UNKNOWN)
+- `StudentRacePage` + status presentations, incl. basic FINISHED state
+- shared `RacePlayerSessionGate`: invalid RacePlayer session → `/join`
+- refresh/direct entry rebuild everything from the HttpOnly cookie via
+  race-state; `sessionStorage` joinData is display cache only.
 
 ### Student race UI-10 foundation
 
@@ -71,12 +86,20 @@ Implemented A–G:
 - persistent question-panel shell
 - dev-only preview.
 
+### Student race question panel (C1-02 — done, E2E verified 2026-08-18)
+
+- real current question + choices from the server, rendered in the panel
+  that replaced the UI-10G shell (same geometry contract)
+- question lifecycle hook separate from the race runtime; requests only
+  while authoritatively PLAYING
+- deadline timer chip in its final HUD position, derived from server
+  expiresAt (refresh/background-safe); expiry locks and resyncs once —
+  the server expires and generates the next question
+- choice buttons carry ids and an onChoiceSelect contract, disabled until
+  C1-03 wires submission.
+
 ## Missing integration
 
-- real `/student/race` route
-- race-state bootstrap and route guard
-- server snapshot mapper
-- real question content and timer
 - submit/feedback/next-question flow
 - HUD
 - heartbeat/leave/reconnect
@@ -93,10 +116,8 @@ Implemented A–G:
 ## Immediate client priority
 
 ```text
-Student race route/bootstrap
-→ question panel
-→ answer/snapshot mapping
-→ HUD + reconnect
-→ real assets/opponents
-→ teacher live/SSE
+Answer/snapshot mapping (C1-03)
+→ HUD + reconnect (C1-04/05)
+→ real assets/opponents (C1-06/C2)
+→ teacher live/SSE (C3)
 ```
