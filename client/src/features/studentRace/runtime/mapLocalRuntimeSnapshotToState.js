@@ -1,7 +1,9 @@
 /*
- * Maps a local-runtime snapshot into the ONE runtime state contract — the
- * same mapper shape the future server-snapshot mapper (24E/SSE) will have,
- * so swapping the movement source is a mapper swap, not a screen change.
+ * Maps a local-runtime snapshot into the ONE runtime state contract. Local
+ * dev snapshots and real server snapshots feed the same
+ * StudentRaceRuntimeState through separate mappers — applyRaceSnapshot owns
+ * the authoritative server one; swapping the movement source is a mapper
+ * swap, not a screen change.
  *
  * Only movement/status fields update. question/answer/score/streak/
  * difficulty belong to REAL server responses and pass through untouched —

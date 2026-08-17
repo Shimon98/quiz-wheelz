@@ -1,4 +1,4 @@
-import { STUDENT_RACE_FEEDBACK } from "./studentRaceRuntimeConstants";
+import { STUDENT_RACE_FEEDBACK } from "./studentRaceRuntimeConstants.js";
 
 /**
  * THE state contract of the student race screen. Every data source — REST
@@ -13,8 +13,12 @@ import { STUDENT_RACE_FEEDBACK } from "./studentRaceRuntimeConstants";
  * camera, world offset) live inside the Pixi renderer, never here (README).
  *
  * @typedef {Object} StudentRaceRuntimeState
+ * @property {{id: ?number, title: string, roomCode: string, startedAt: ?string,
+ *   finishedAt: ?string}} race       Server race metadata (mapRaceStateToRuntime)
  * @property {?string} raceStatus     Server RaceStatus name (null until known)
  * @property {?string} playerStatus   Server RacePlayerStatus name (null until known)
+ * @property {boolean} playerFinished Authoritative server flag — never derived locally
+ * @property {boolean} raceFinished   Authoritative server flag — never derived locally
  * @property {?number} totalDistance  Track length in server units (null until known)
  * @property {{position: number, speed: number, score: number, streak: number,
  *   highestStreak: number, currentDifficulty: ?string}} player
@@ -30,8 +34,20 @@ import { STUDENT_RACE_FEEDBACK } from "./studentRaceRuntimeConstants";
 /** @returns {StudentRaceRuntimeState} a fresh object per call — never a shared singleton. */
 export function createInitialRaceRuntimeState() {
   return {
+    race: {
+      id: null,
+      title: "",
+      roomCode: "",
+      startedAt: null,
+      finishedAt: null,
+    },
+
     raceStatus: null,
     playerStatus: null,
+
+    playerFinished: false,
+    raceFinished: false,
+
     totalDistance: null,
 
     player: {
