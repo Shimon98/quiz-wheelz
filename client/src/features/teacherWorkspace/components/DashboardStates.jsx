@@ -1,18 +1,8 @@
 import { useTranslation } from "react-i18next";
-import {
-  Alert,
-  Button,
-  Paper,
-  SimpleGrid,
-  Skeleton,
-  Stack,
-  Text,
-  Title,
-} from "@mantine/core";
-import { CircleAlert } from "lucide-react";
+import { Paper, SimpleGrid, Skeleton, Stack, Text, Title } from "@mantine/core";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
-import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
+import RetryableErrorAlert from "../../../shared/components/feedback/RetryableErrorAlert";
 import DashboardPrimaryAction from "./DashboardPrimaryAction";
 
 /*
@@ -39,24 +29,12 @@ export function DashboardErrorState({ onRetry }) {
   const { t } = useTranslation(I18N_NAMESPACES.TEACHER_WORKSPACE);
 
   return (
-    <Alert
-      color={UI_TONES.DANGER}
-      radius="xl"
-      icon={<CircleAlert aria-hidden="true" />}
+    <RetryableErrorAlert
       title={t("states.errorTitle")}
-    >
-      <Stack gap="sm" align="flex-start">
-        <Text size="sm">{t("states.errorBody")}</Text>
-        <Button
-          variant="light"
-          color={UI_TONES.DANGER}
-          size="sm"
-          onClick={onRetry}
-        >
-          {t("states.retry")}
-        </Button>
-      </Stack>
-    </Alert>
+      message={t("states.errorBody")}
+      retryLabel={t("states.retry")}
+      onRetry={onRetry}
+    />
   );
 }
 
