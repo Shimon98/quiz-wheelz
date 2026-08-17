@@ -26,5 +26,7 @@ export default {
     playersLabel: "משתתפים מחוברים",
     waitingForTeacher: "ממתינים למורה שיתחיל את המרוץ",
     keepOpen: "השאירו את המסך פתוח — המרוץ יתחיל ממש בקרוב!",
+    loadErrorTitle: "משהו השתבש",
+    retry: "נסו שוב",
   },
 };
