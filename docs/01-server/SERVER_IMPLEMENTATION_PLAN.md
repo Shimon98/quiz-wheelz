@@ -81,12 +81,15 @@ lifecycle is outside S0-02 and does not block it.
 
 ### S0-03 — Runtime dependency/config cleanup
 
-**Status:** `PLANNED`
+**Status:** `DONE`
 
-- verify whether WebSocket starter is unused
-- verify Docker Compose dependency behavior
-- remove stale Redis properties/comments only after S0-01
-- update OpenAPI/dev docs.
+- kept Spring Boot Docker Compose as the optional DEV dependency
+- cleaned redundant base Redis connection properties
+- preserved active Redis runtime policy configuration
+- corrected the OpenAPI project description
+- removed generated server HELP boilerplate
+- synchronized canonical DEV/current-state documentation
+- intentionally deferred WebSocket cleanup because it does not block S1.
 
 ## S1 — Student playable-loop contract closure
 

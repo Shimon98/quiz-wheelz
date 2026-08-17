@@ -28,7 +28,18 @@ dynamic and bound only to localhost. Development Redis intentionally has no
 password; production Redis remains separate and requires its external password and
 SSL configuration.
 
-## Target
+## Architecture
+
+```text
+DEV
+Spring Boot
+├── local developer-owned MySQL
+│   └── localhost:3306/quiz_wheelz
+└── Redis
+    └── Spring Boot managed Docker Compose
+```
+
+## Infrastructure owner
 
 Backend-owned file:
 
@@ -63,7 +74,7 @@ IntelliJ developers should use the shared `QuizWheelzApplication` configuration 
 to resolve `server/compose.yaml` correctly. Do not use the repository root as the
 backend working directory when launching the application through IntelliJ.
 
-## Target Compose shape
+## Compose shape
 
 ```yaml
 services:
@@ -88,8 +99,6 @@ volumes:
 This Compose file does not create, migrate or manage the local MySQL database.
 
 ## Spring development profile
-
-Target:
 
 ```properties
 spring.datasource.url=jdbc:mysql://localhost:3306/quiz_wheelz?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Jerusalem
@@ -119,40 +128,23 @@ QUIZWHEELZ_REDIS_REQUIRED=false
 management.health.redis.enabled=false
 ```
 
-## Reconnect durability fix
+## Runtime reliability
 
-Current heartbeat data cannot exist only in Redis.
+S0-01 and S0-02 are implemented and verified. Heartbeat and presence are Redis-first
+with a 45-second presence TTL. Redis gates the durable `RacePlayer.lastSeenAt`
+checkpoint to one opportunity every 30 seconds. Reconnect uses a 5-minute grace
+period, with a 30-second safety margin only when the Redis timestamp is unavailable
+and the decision relies on durable state.
 
-Target flow:
+During a runtime Redis outage, heartbeat checkpoints fall back directly to durable
+MySQL state. When Redis is reachable but runtime keys are missing, the application
+rehydrates them; after Redis recovery, subsequent heartbeats return to the
+Redis-first path.
 
-```text
-heartbeat
-→ refresh Redis online key + last-heartbeat TTL
-→ periodically persist RacePlayer.lastSeenAt
-
-reconnect
-→ Redis timestamp
-→ if absent, DB lastSeenAt
-→ if absent, race startedAt/policy fallback
-```
-
-Tests:
-
-- Redis available
-- Redis empty
-- Redis restarted
-- reconnect within grace
-- reconnect after grace
-- player already finished
-- race already finished.
-
-## Remaining runtime reliability work
-
-S0-01 is complete with its corrected scope: the application uses the developer's
-existing local MySQL database, while the backend-owned Compose environment provides
-automatic Redis lifecycle, service connection and health checking. Test isolation
-remains H2 with Compose and Redis disabled. S0-02 remains `PLANNED` and owns the
-durable `RacePlayer.lastSeenAt` heartbeat fallback described above.
+One DEV infrastructure limitation remains: a literal Redis container stop/start can
+receive a different dynamic host port while the already-running Spring Boot process
+remains bound to the startup endpoint. Pause/unpause preserves the endpoint and was
+used to verify runtime outage and recovery. Changing this behavior is outside S0-03.
 
 ## Development prerequisite
 

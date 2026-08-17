@@ -22,8 +22,8 @@
 - JUnit/Mockito
 - Docker Compose development support.
 
-The WebSocket starter is installed, but the approved live strategy is REST + SSE.
-Remove it later only after import search confirms it is unused.
+The WebSocket starter and demo package still exist, but the approved teacher live
+strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 
 ## Implemented domains and flows
 
