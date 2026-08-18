@@ -91,8 +91,12 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
   expire/create questions, so it is not a safe GET), serialized per
   RacePlayer with the existing PESSIMISTIC_WRITE row lock BEFORE the
   ACTIVE-question lookup — concurrent requests cannot create two ACTIVE
-  questions; the QuestionPlan is built under the lock only when a new
-  question is needed
+  questions; the LOCKED player/race lifecycle is revalidated after the lock
+  (the pre-lock check is only a cheap early rejection), so a player finished
+  by a concurrent answer can never receive a fresh question; one decision
+  instant serves both the expiry check and the returned `serverTimeEpochMs`;
+  the QuestionPlan is built under the lock only when a new question is
+  needed
 - expiry handling
 - safe DTOs with epoch-millisecond timing (`serverTimeEpochMs` +
   `expiresAtEpochMs`; submit-answer exposes `answeredAtEpochMs` +

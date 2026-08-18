@@ -22,10 +22,22 @@ export function mapCurrentQuestionToModel(
   response,
   clientReceivedAtEpochMs = Date.now(),
 ) {
+  // The receive time feeds serverClockOffsetMs — a bad caller value would
+  // silently poison every remaining-time calculation with NaN.
+  if (
+    !Number.isSafeInteger(clientReceivedAtEpochMs) ||
+    clientReceivedAtEpochMs <= 0
+  ) {
+    throw new ApiContractError("Client receive time is invalid");
+  }
+
+  // ids go straight into C1-03's submit — positive safe integers only, no
+  // string coercion.
   if (
     response == null ||
     typeof response !== "object" ||
-    response.questionId == null ||
+    !Number.isSafeInteger(response.questionId) ||
+    response.questionId <= 0 ||
     typeof response.questionText !== "string" ||
     response.questionText.trim().length === 0
   ) {
@@ -63,7 +75,8 @@ export function mapCurrentQuestionToModel(
   for (const choice of response.choices) {
     if (
       choice == null ||
-      choice.choiceId == null ||
+      !Number.isSafeInteger(choice.choiceId) ||
+      choice.choiceId <= 0 ||
       typeof choice.choiceText !== "string" ||
       choice.choiceText.trim().length === 0 ||
       !Number.isSafeInteger(choice.displayOrder) ||

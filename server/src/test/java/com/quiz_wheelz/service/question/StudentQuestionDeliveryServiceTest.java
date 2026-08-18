@@ -18,6 +18,8 @@ import com.quiz_wheelz.enums.Difficulty;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
 import com.quiz_wheelz.enums.QuestionGenerationPattern;
 import com.quiz_wheelz.enums.QuestionType;
+import com.quiz_wheelz.enums.RacePlayerStatus;
+import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
@@ -197,6 +199,74 @@ class StudentQuestionDeliveryServiceTest {
     }
 
     @Test
+    void shouldUseOneDecisionInstantForExpiryAndServerTime() {
+        // A clock that advances 5ms per read: if the service read the clock
+        // once for the expiry decision and AGAIN for serverTimeEpochMs, the
+        // mapper would receive a later time than the decision moment — and a
+        // returned ACTIVE question could claim a server time at/after its own
+        // deadline. One decision instant makes that impossible.
+        Clock steppingClock = new Clock() {
+            private long reads = 0;
+
+            @Override
+            public ZoneId getZone() {
+                return FIXED_ZONE;
+            }
+
+            @Override
+            public Clock withZone(ZoneId zone) {
+                return this;
+            }
+
+            @Override
+            public Instant instant() {
+                return FIXED_INSTANT.plusMillis(5 * reads++);
+            }
+        };
+
+        StudentQuestionDeliveryService steppingService = new StudentQuestionDeliveryService(
+                racePlayerRepository,
+                playerQuestionRepository,
+                playerQuestionChoiceRepository,
+                racePlayerQuestionPlanService,
+                questionGenerationService,
+                playerQuestionPersistenceService,
+                studentQuestionResponseMapper,
+                steppingClock
+        );
+
+        RacePlayer racePlayer = createRacePlayer();
+        RacePlayer lockedRacePlayer = createRacePlayer();
+        LocalDateTime expiresAt = now().plusSeconds(QuestionRules.DEFAULT_TIME_LIMIT_SECONDS);
+        PlayerQuestion activeQuestion = createPlayerQuestion(
+                PlayerQuestionStatus.ACTIVE,
+                expiresAt
+        );
+        List<PlayerQuestionChoice> choices = createPlayerQuestionChoices(activeQuestion);
+
+        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
+                .thenReturn(Optional.of(lockedRacePlayer));
+        when(playerQuestionRepository.findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(
+                lockedRacePlayer,
+                PlayerQuestionStatus.ACTIVE
+        )).thenReturn(Optional.of(activeQuestion));
+        when(playerQuestionChoiceRepository.findByPlayerQuestionOrderByDisplayOrderAsc(activeQuestion))
+                .thenReturn(choices);
+        when(studentQuestionResponseMapper.toResponse(any(), any(), anyLong(), anyLong()))
+                .thenReturn(createStudentQuestionResponse());
+
+        steppingService.getOrCreateCurrentQuestion(racePlayer);
+
+        // serverTimeEpochMs is EXACTLY the first (decision) clock read.
+        verify(studentQuestionResponseMapper).toResponse(
+                activeQuestion,
+                choices,
+                FIXED_INSTANT.toEpochMilli(),
+                DateTimeUtils.toEpochMilli(expiresAt, FIXED_ZONE)
+        );
+    }
+
+    @Test
     void shouldGenerateAndPersistQuestionWhenNoActiveQuestionExists() {
         RacePlayer racePlayer = createRacePlayer();
         RacePlayer lockedRacePlayer = createRacePlayer();
@@ -331,6 +401,55 @@ class StudentQuestionDeliveryServiceTest {
     }
 
     @Test
+    void shouldRejectLockedPlayerThatFinishedWhileWaitingForTheLock() {
+        // TOCTOU: the pre-lock check saw RACING, but a concurrent answer
+        // finished the player before this request acquired the row lock.
+        RacePlayer racePlayer = createRacePlayer();
+        RacePlayer lockedRacePlayer =
+                createRacePlayer(RacePlayerStatus.FINISHED, RaceStatus.IN_PROGRESS);
+
+        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
+                .thenReturn(Optional.of(lockedRacePlayer));
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer)
+        );
+
+        assertEquals(ErrorCode.RACE_PLAYER_NOT_RACING, exception.getErrorCode());
+
+        // A finished player must never receive or create gameplay state.
+        verify(playerQuestionRepository, never())
+                .findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(any(), any());
+        verify(racePlayerQuestionPlanService, never()).buildQuestionPlan(any());
+        verify(questionGenerationService, never()).generate(any(QuestionPlan.class));
+        verify(playerQuestionPersistenceService, never()).persistGeneratedQuestion(any(), any());
+    }
+
+    @Test
+    void shouldRejectLockedPlayerWhoseRaceEndedWhileWaitingForTheLock() {
+        RacePlayer racePlayer = createRacePlayer();
+        RacePlayer lockedRacePlayer =
+                createRacePlayer(RacePlayerStatus.RACING, RaceStatus.FINISHED);
+
+        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
+                .thenReturn(Optional.of(lockedRacePlayer));
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer)
+        );
+
+        assertEquals(ErrorCode.RACE_NOT_IN_PROGRESS, exception.getErrorCode());
+
+        verify(playerQuestionRepository, never())
+                .findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(any(), any());
+        verify(racePlayerQuestionPlanService, never()).buildQuestionPlan(any());
+        verify(questionGenerationService, never()).generate(any(QuestionPlan.class));
+        verify(playerQuestionPersistenceService, never()).persistGeneratedQuestion(any(), any());
+    }
+
+    @Test
     void shouldRejectMissingRacePlayerIdentity() {
         ApiException exception = assertThrows(
                 ApiException.class,
@@ -380,12 +499,21 @@ class StudentQuestionDeliveryServiceTest {
     }
 
     private RacePlayer createRacePlayer() {
+        return createRacePlayer(RacePlayerStatus.RACING, RaceStatus.IN_PROGRESS);
+    }
+
+    private RacePlayer createRacePlayer(
+            RacePlayerStatus playerStatus,
+            RaceStatus raceStatus
+    ) {
         Race race = new Race();
         race.setId(RACE_ID);
+        race.setStatus(raceStatus);
 
         RacePlayer racePlayer = new RacePlayer();
         racePlayer.setId(RACE_PLAYER_ID);
         racePlayer.setRace(race);
+        racePlayer.setStatus(playerStatus);
 
         return racePlayer;
     }

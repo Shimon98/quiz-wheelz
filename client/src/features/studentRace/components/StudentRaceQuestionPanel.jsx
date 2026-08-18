@@ -143,8 +143,12 @@ export default function StudentRaceQuestionPanel({
         </div>
       ) : null}
 
+      {/* auto-rows-fr + min-h-0 buttons: rows split the available panel
+          height equally, so the legal 6-choice case (3 rows) fits 360x640
+          instead of clipping below the fold; with 4 choices the rows are
+          simply taller. */}
       <div
-        className={`grid flex-1 grid-cols-2 gap-3 ${
+        className={`grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-3 ${
           isExpired ? "opacity-50" : ""
         }`}
       >
@@ -154,7 +158,7 @@ export default function StudentRaceQuestionPanel({
             type="button"
             disabled={!canInteract}
             onClick={canInteract ? () => onChoiceSelect(choice.id) : undefined}
-            className="flex min-h-[3.75rem] items-center justify-center rounded-xl border-b-4 bg-[var(--qw-surface-alt)] px-3 py-2 text-center text-2xl font-bold text-[var(--qw-text)] disabled:cursor-default"
+            className="flex min-h-0 items-center justify-center rounded-xl border-b-4 bg-[var(--qw-surface-alt)] px-3 py-2 text-center text-2xl font-bold text-[var(--qw-text)] disabled:cursor-default"
             style={{
               borderColor:
                 CHOICE_ACCENT_VARS[index % CHOICE_ACCENT_VARS.length],

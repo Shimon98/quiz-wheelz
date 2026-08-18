@@ -2,16 +2,33 @@ package com.quiz_wheelz.config;
 
 import com.quiz_wheelz.common.AppConstants;
 import com.quiz_wheelz.exception.ConfigurationException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.time.Clock;
 import java.time.ZoneId;
+import java.util.TimeZone;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TimeConfigTest {
+
+    // TimeConfig.init() mutates the GLOBAL JVM default timezone — restore it
+    // so no other test depends on execution order.
+    private TimeZone originalTimeZone;
+
+    @BeforeEach
+    void rememberDefaultTimeZone() {
+        originalTimeZone = TimeZone.getDefault();
+    }
+
+    @AfterEach
+    void restoreDefaultTimeZone() {
+        TimeZone.setDefault(originalTimeZone);
+    }
 
     @Test
     void shouldDefaultToApplicationTimeZone() {
@@ -33,6 +50,8 @@ class TimeConfigTest {
         timeConfig.init();
 
         assertEquals(ZoneId.of("UTC"), timeConfig.applicationZoneId());
+        // The legacy-compatibility JVM bridge follows the configured zone.
+        assertEquals(ZoneId.of("UTC"), TimeZone.getDefault().toZoneId());
     }
 
     @Test

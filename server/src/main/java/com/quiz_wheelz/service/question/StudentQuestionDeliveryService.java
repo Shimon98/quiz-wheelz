@@ -5,8 +5,11 @@ import com.quiz_wheelz.dto.question.internal.InternalGeneratedQuestion;
 import com.quiz_wheelz.dto.question.student.StudentQuestionResponse;
 import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.entitys.PlayerQuestionChoice;
+import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
+import com.quiz_wheelz.enums.RacePlayerStatus;
+import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -75,6 +79,12 @@ public class StudentQuestionDeliveryService {
     public StudentQuestionResponse getOrCreateCurrentQuestion(RacePlayer racePlayer) {
         RacePlayer lockedRacePlayer = findLockedRacePlayer(racePlayer);
 
+        // The controller's pre-check happened BEFORE the lock; state may have
+        // changed while waiting for it (e.g. a concurrent answer finished the
+        // player/race). Only the LOCKED row is authoritative — without this
+        // re-check a FINISHED player could receive a fresh ACTIVE question.
+        validateLockedRacePlayerCanReceiveQuestion(lockedRacePlayer);
+
         Optional<PlayerQuestion> active = playerQuestionRepository
                 .findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(
                         lockedRacePlayer,
@@ -85,14 +95,33 @@ public class StudentQuestionDeliveryService {
             PlayerQuestion activeQuestion = active.get();
             validateExistingQuestion(activeQuestion);
 
-            if (!isExpired(activeQuestion)) {
-                return mapToStudentResponse(activeQuestion);
+            // ONE decision instant: the same moment decides expiry AND is the
+            // response's serverTimeEpochMs, so a returned ACTIVE question can
+            // never carry a server time at/after its own deadline.
+            Instant decisionInstant = clock.instant();
+            LocalDateTime decisionNow =
+                    DateTimeUtils.toLocalDateTime(decisionInstant, clock.getZone());
+
+            if (!DateTimeUtils.isExpired(activeQuestion.getExpiresAt(), decisionNow)) {
+                return mapToStudentResponse(activeQuestion, decisionInstant.toEpochMilli());
             }
 
             expireQuestion(activeQuestion);
         }
 
         return generatePersistAndMapQuestion(lockedRacePlayer);
+    }
+
+    private void validateLockedRacePlayerCanReceiveQuestion(RacePlayer racePlayer) {
+        if (racePlayer.getStatus() != RacePlayerStatus.RACING) {
+            throw new ApiException(ErrorCode.RACE_PLAYER_NOT_RACING);
+        }
+
+        Race race = racePlayer.getRace();
+
+        if (race == null || race.getStatus() != RaceStatus.IN_PROGRESS) {
+            throw new ApiException(ErrorCode.RACE_NOT_IN_PROGRESS);
+        }
     }
 
     private RacePlayer findLockedRacePlayer(RacePlayer racePlayer) {
@@ -125,16 +154,17 @@ public class StudentQuestionDeliveryService {
                 generatedQuestion
         );
 
-        return mapToStudentResponse(persistedQuestion);
+        // A brand-new question made no "still active?" decision — a fresh
+        // post-persistence server time is the correct reference.
+        return mapToStudentResponse(persistedQuestion, clock.millis());
     }
 
     private StudentQuestionResponse mapToStudentResponse(
-            PlayerQuestion playerQuestion
+            PlayerQuestion playerQuestion,
+            long serverTimeEpochMs
     ) {
         List<PlayerQuestionChoice> choices = playerQuestionChoiceRepository
                 .findByPlayerQuestionOrderByDisplayOrderAsc(playerQuestion);
-
-        long serverTimeEpochMs = clock.millis();
 
         long expiresAtEpochMs = DateTimeUtils.toEpochMilli(
                 playerQuestion.getExpiresAt(),
@@ -152,13 +182,6 @@ public class StudentQuestionDeliveryService {
     private void expireQuestion(PlayerQuestion playerQuestion) {
         playerQuestion.setStatus(PlayerQuestionStatus.EXPIRED);
         playerQuestionRepository.save(playerQuestion);
-    }
-
-    private boolean isExpired(PlayerQuestion playerQuestion) {
-        return DateTimeUtils.isExpired(
-                playerQuestion.getExpiresAt(),
-                LocalDateTime.now(clock)
-        );
     }
 
     private void validateExistingQuestion(PlayerQuestion playerQuestion) {
