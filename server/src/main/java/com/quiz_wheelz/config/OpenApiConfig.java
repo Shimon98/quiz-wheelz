@@ -20,6 +20,6 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title(appConfig.getAppName() + " API")
                         .version("1.0.0")
-                        .description("Reusable Spring Boot boilerplate API"));
+                        .description("QuizWheelz educational racing game backend API"));
     }
 }

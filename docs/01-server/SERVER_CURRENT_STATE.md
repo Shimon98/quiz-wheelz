@@ -22,8 +22,8 @@
 - JUnit/Mockito
 - Docker Compose development support.
 
-The WebSocket starter is installed, but the approved live strategy is REST + SSE.
-Remove it later only after import search confirms it is unused.
+The WebSocket starter and demo package still exist, but the approved teacher live
+strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 
 ## Implemented domains and flows
 
@@ -56,7 +56,12 @@ Remove it later only after import search confirms it is unused.
 - separate race-player token/cookie
 - lane and vehicle assignment
 - race-state snapshot
-- heartbeat, leave and reconnect grace.
+- Redis-first heartbeat and presence with 45-second presence TTL.
+- 30-second Redis-gated durable `lastSeenAt` checkpoints and direct MySQL fallback
+  during runtime Redis outages.
+- reconnect using the freshest Redis heartbeat, durable `lastSeenAt` and race start,
+  with a 5-minute grace period and a 30-second DB-only fallback margin.
+- leave/disconnect persistence that remains authoritative when Redis cleanup fails.
 
 ### Question flow
 
@@ -85,7 +90,6 @@ Remove it later only after import search confirms it is unused.
 
 ## Partial or missing
 
-- DB `lastSeenAt` fallback for missing Redis heartbeat.
 - Teacher live-state query.
 - Teacher SSE stream.
 - Nearby-player/rank data needed by student opponents/HUD.
@@ -95,18 +99,23 @@ Remove it later only after import search confirms it is unused.
 - Registration, email verification, reset and 2FA.
 - Database migrations and production deployment.
 
-## Known configuration mismatch on audited main
+## Development configuration
 
-The current development profile:
+The development profile connects to the developer-owned MySQL database at
+`localhost:3306/quiz_wheelz`. Spring Boot owns the Redis-only `server/compose.yaml`
+lifecycle with `start-and-stop`, waits for its health check and applies the dynamic
+localhost service connection. Tests use H2 and keep Docker Compose disabled.
 
-- connects to a manually available local MySQL
-- requires Redis
-- asks Spring Boot to start a root Redis-only compose file
-- uses `start-only`
-- keeps a Docker Compose ignore label on Redis.
+S0-02 is implemented and verified. Automated and DEV runtime verification covers
+Redis-first checkpoints, reachable-but-missing key rehydration, DB fallback,
+runtime-outage heartbeat/reconnect, durable leave, recovery on the same Redis
+endpoint, and the live 5-minute-30-second expiry boundary.
 
-This is neither fully automatic nor a clean single-owner configuration. The target
-is specified in `DEV_INFRA_MYSQL_REDIS.md`.
+A separate DEV infrastructure limitation remains: a literal Redis container
+stop/start can allocate a new dynamic host port, while the already-running Spring
+Boot service connection remains bound to the startup endpoint. Pause/unpause
+preserves that endpoint and successfully verified S0-02 runtime outage and recovery.
+Changing this lifecycle/port behavior is outside S0-02.
 
 ## Current server priority
 

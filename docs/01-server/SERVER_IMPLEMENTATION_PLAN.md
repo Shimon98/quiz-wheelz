@@ -47,30 +47,49 @@ automatic Redis startup resolves the Compose file correctly.
 
 ### S0-02 — Durable heartbeat fallback
 
-**Status:** `PLANNED`
+**Status:** `DONE`
 
-- keep Redis presence TTL
-- update `RacePlayer.lastSeenAt` at a bounded interval or each heartbeat
-- reconnect lookup order:
+- keep the 45-second Redis presence TTL and exact Redis heartbeat timestamp
+- gate targeted, monotonic `RacePlayer.lastSeenAt` updates in Redis at one update
+  opportunity per RacePlayer every 30 seconds
+- fall back to a direct durable checkpoint when Redis fails at runtime
+- use a 5-minute reconnect grace period
+- reconnect activity precedence:
 
 ```text
 Redis last heartbeat
-→ DB lastSeenAt
-→ race startedAt/fallback policy
+DB lastSeenAt
+race startedAt
+→ choose the freshest trustworthy timestamp
 ```
 
-- test Redis loss/restart and reconnect grace.
+- apply the shared 30-second checkpoint interval as a safety margin only when the
+  Redis heartbeat is missing or unusable and the decision relies on durable state
+- keep durable leave/disconnect changes when Redis cleanup fails
+- automated unit, repository and full Maven verification pass
+- DEV startup, Redis-first throttling, missing-key rehydration, DB fallback,
+  runtime-outage heartbeat/reconnect, durable leave, same-endpoint Redis recovery and
+  the live 5-minute-30-second expiry boundary pass
+
+**DEV infrastructure limitation:** a literal Redis container stop/start can allocate
+a new dynamic host port, while the already-running Spring Boot service connection
+remains bound to the startup endpoint. Pause/unpause preserves the endpoint and
+successfully verified S0-02 runtime outage and recovery. Changing S0-01's dynamic-port
+lifecycle is outside S0-02 and does not block it.
 
 **Blocks:** reliable client reconnect integration.
 
 ### S0-03 — Runtime dependency/config cleanup
 
-**Status:** `PLANNED`
+**Status:** `DONE`
 
-- verify whether WebSocket starter is unused
-- verify Docker Compose dependency behavior
-- remove stale Redis properties/comments only after S0-01
-- update OpenAPI/dev docs.
+- kept Spring Boot Docker Compose as the optional DEV dependency
+- cleaned redundant base Redis connection properties
+- preserved active Redis runtime policy configuration
+- corrected the OpenAPI project description
+- removed generated server HELP boilerplate
+- synchronized canonical DEV/current-state documentation
+- intentionally deferred WebSocket cleanup because it does not block S1.
 
 ## S1 — Student playable-loop contract closure
 
