@@ -13,6 +13,7 @@ import com.quiz_wheelz.service.auth.UserService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.Clock;
 import java.time.LocalDateTime;
 
 @Service
@@ -22,17 +23,20 @@ public class TeacherRaceStartService {
     private final UserService userService;
     private final RaceRepository raceRepository;
     private final RacePlayerService racePlayerService;
+    private final Clock clock;
 
     public TeacherRaceStartService(
             CurrentUserService currentUserService,
             UserService userService,
             RaceRepository raceRepository,
-            RacePlayerService racePlayerService
+            RacePlayerService racePlayerService,
+            Clock clock
     ) {
         this.currentUserService = currentUserService;
         this.userService = userService;
         this.raceRepository = raceRepository;
         this.racePlayerService = racePlayerService;
+        this.clock = clock;
     }
 
     @Transactional
@@ -43,7 +47,7 @@ public class TeacherRaceStartService {
                 .orElseThrow(() -> new ApiException(ErrorCode.RACE_NOT_FOUND));
         validateRaceCanStart(race);
         validateMinimumPlayersToStart(race);
-        LocalDateTime startedAt = LocalDateTime.now();
+        LocalDateTime startedAt = LocalDateTime.now(clock);
         int playersStarted = racePlayerService.startWaitingPlayers(race, startedAt);
         race.setStatus(RaceStatus.IN_PROGRESS);
         race.setStartedAt(startedAt);

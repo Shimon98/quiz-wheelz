@@ -18,9 +18,15 @@ public class StudentQuestionResponseMapper {
     private static final String INVALID_PLAYER_QUESTION_CHOICES_ERROR_MESSAGE =
             "Player question choices are required for student question response mapping";
 
+    /*
+     * The mapper never decides what "now" is — the delivery service owns the
+     * Clock and hands in the already-resolved epoch values (C1-02K).
+     */
     public StudentQuestionResponse toResponse(
             PlayerQuestion playerQuestion,
-            List<PlayerQuestionChoice> choices
+            List<PlayerQuestionChoice> choices,
+            long serverTimeEpochMs,
+            long expiresAtEpochMs
     ) {
         validateMappingInput(playerQuestion, choices);
 
@@ -28,7 +34,8 @@ public class StudentQuestionResponseMapper {
                 playerQuestion.getId(),
                 playerQuestion.getQuestionText(),
                 playerQuestion.getTimeLimitSeconds(),
-                playerQuestion.getExpiresAt(),
+                serverTimeEpochMs,
+                expiresAtEpochMs,
                 choices.stream()
                         .sorted(Comparator.comparing(PlayerQuestionChoice::getDisplayOrder))
                         .map(this::toChoiceResponse)

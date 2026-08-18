@@ -114,8 +114,8 @@ class StudentAnswerSubmissionServiceTest {
         assertEquals(PlayerQuestionStatus.ANSWERED.name(), response.getQuestionStatus());
         assertEquals(PlayerQuestionStatus.ANSWERED, question.getStatus());
         assertEquals(now(), question.getAnsweredAt());
-        assertEquals(now(), response.getAnsweredAt());
-        assertEquals(question.getExpiresAt(), response.getExpiresAt());
+        assertEquals(epochOf(now()), response.getAnsweredAtEpochMs());
+        assertEquals(epochOf(question.getExpiresAt()), response.getExpiresAtEpochMs());
 
         assertNotNull(response.getRaceImpact());
         assertEquals(10, response.getRaceImpact().getScoreDelta());
@@ -570,5 +570,9 @@ class StudentAnswerSubmissionServiceTest {
 
     private LocalDateTime now() {
         return LocalDateTime.ofInstant(FIXED_INSTANT, FIXED_ZONE);
+    }
+
+    private long epochOf(LocalDateTime localDateTime) {
+        return localDateTime.atZone(FIXED_ZONE).toInstant().toEpochMilli();
     }
 }

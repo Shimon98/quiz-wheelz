@@ -9,11 +9,17 @@ import StudentRaceOverlay from "./StudentRaceOverlay";
  *   └── Pixi canvas — FULL area, absolute, the world continues behind the panel
  *   └── React overlay — HUD safe area on top, persistent question panel below
  *
- * Pure composition: no API, no game data, no question logic — pages/hooks
- * own those in later stages (H/I/J). runtimeState is passed through to the
- * canvas untouched.
+ * Pure composition: no API, no error classification, no navigation — the
+ * page/hooks own those. runtimeState goes to the canvas untouched; question
+ * state goes to the overlay untouched.
  */
-export default function StudentRaceScreen({ runtimeState = null }) {
+export default function StudentRaceScreen({
+  runtimeState = null,
+  question = null,
+  questionError = null,
+  questionExpired = false,
+  onQuestionRetry = null,
+}) {
   const { gameFrame } = STUDENT_RACE_VISUAL_CONFIG;
 
   return (
@@ -26,7 +32,12 @@ export default function StudentRaceScreen({ runtimeState = null }) {
           runtimeState={runtimeState}
           className="absolute inset-0"
         />
-        <StudentRaceOverlay />
+        <StudentRaceOverlay
+          question={question}
+          questionError={questionError}
+          questionExpired={questionExpired}
+          onQuestionRetry={onQuestionRetry}
+        />
       </div>
     </div>
   );

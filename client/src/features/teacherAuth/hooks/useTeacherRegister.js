@@ -4,7 +4,7 @@ import { notifications } from "@mantine/notifications";
 import { useTranslation } from "react-i18next";
 import { registerUser } from "../../../api/authApi";
 import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
-import useApiErrorNotifier from "../../../hooks/useApiErrorNotifier";
+import { showApiErrorNotification } from "../../../shared/notifications/appNotifications";
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { ROUTES } from "../../../constants/routeConstants";
 
@@ -18,7 +18,6 @@ import { ROUTES } from "../../../constants/routeConstants";
 export default function useTeacherRegister() {
   const navigate = useNavigate();
   const { t } = useTranslation(I18N_NAMESPACES.TEACHER_AUTH);
-  const { notifyApiError } = useApiErrorNotifier();
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -34,7 +33,7 @@ export default function useTeacherRegister() {
       });
       navigate(ROUTES.TEACHER_LOGIN);
     } catch (error) {
-      notifyApiError(error);
+      showApiErrorNotification(error);
     } finally {
       setSubmitting(false);
     }

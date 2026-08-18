@@ -26,5 +26,7 @@ export default {
     playersLabel: "Players connected",
     waitingForTeacher: "Waiting for your teacher to start the race",
     keepOpen: "Keep this screen open — the race starts very soon!",
+    loadErrorTitle: "Something went wrong",
+    retry: "Try again",
   },
 };

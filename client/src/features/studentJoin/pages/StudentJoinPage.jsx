@@ -118,7 +118,7 @@ export default function StudentJoinPage() {
           {...form.getInputProps("displayName")}
         />
 
-        {/* Server failures pop as notifications (useApiErrorNotifier) — no
+        {/* Server failures pop as notifications (appNotifications) — no
             inline alert, so the card never grows on error. */}
         <Stack gap="xs">
           <Button

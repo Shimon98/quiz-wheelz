@@ -33,4 +33,7 @@ export default {
   student: {
     joinFailed: "We could not add you to the race. Please try again.",
   },
+  racePlayer: {
+    sessionLost: "We could not find your race connection. Join again with the room code.",
+  },
 };

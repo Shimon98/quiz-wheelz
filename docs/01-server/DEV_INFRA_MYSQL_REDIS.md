@@ -141,6 +141,12 @@ MySQL state. When Redis is reachable but runtime keys are missing, the applicati
 rehydrates them; after Redis recovery, subsequent heartbeats return to the
 Redis-first path.
 
+Redis heartbeat timestamps are stored as absolute Unix epoch milliseconds (C1-02K),
+never as zone-less ISO local date-time strings. A leftover legacy ISO value reads as
+unusable (`Optional.empty`) and the durable fallback above covers it until the next
+heartbeat rewrites the key in epoch format; TTLs, the checkpoint gate and the
+reconnect policy are unchanged.
+
 One DEV infrastructure limitation remains: a literal Redis container stop/start can
 receive a different dynamic host port while the already-running Spring Boot process
 remains bound to the startup endpoint. Pause/unpause preserves the endpoint and was

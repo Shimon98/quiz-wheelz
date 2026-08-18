@@ -10,6 +10,7 @@ import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -17,9 +18,14 @@ import java.util.List;
 public class RaceFinishService {
 
     private final RacePlayerRepository racePlayerRepository;
+    private final Clock clock;
 
-    public RaceFinishService(RacePlayerRepository racePlayerRepository) {
+    public RaceFinishService(
+            RacePlayerRepository racePlayerRepository,
+            Clock clock
+    ) {
         this.racePlayerRepository = racePlayerRepository;
+        this.clock = clock;
     }
 
     public boolean finishPlayerIfNeeded(RacePlayer racePlayer) {
@@ -45,7 +51,7 @@ public class RaceFinishService {
         racePlayer.setPosition(totalDistance.doubleValue());
         racePlayer.setStatus(RacePlayerStatus.FINISHED);
         racePlayer.setSpeed(RaceProgressRules.FINISHED_SPEED);
-        racePlayer.setFinishedAt(LocalDateTime.now());
+        racePlayer.setFinishedAt(LocalDateTime.now(clock));
 
         return true;
     }
@@ -62,7 +68,7 @@ public class RaceFinishService {
         }
 
         race.setStatus(RaceStatus.FINISHED);
-        race.setFinishedAt(LocalDateTime.now());
+        race.setFinishedAt(LocalDateTime.now(clock));
 
         return true;
     }

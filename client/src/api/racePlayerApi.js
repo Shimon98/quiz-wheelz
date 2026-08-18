@@ -23,8 +23,27 @@ export async function joinRace({ roomCode, displayName }) {
  * Question/answer actions are used only after the student runtime confirms
  * (via race-state) that the current RacePlayer is allowed to play.
  */
-export async function getCurrentQuestion() {
+/*
+ * Race-state bootstrap — the server resolves the RacePlayer session from the
+ * cookie and returns race metadata + the shared runtime snapshot. Unlike the
+ * question/answer actions, the server validates only the session here (any
+ * race status), so screens can route by server truth from this response.
+ */
+export async function getRaceState() {
   const response = await httpClient.get(
+    API_ENDPOINTS.RACE_PLAYERS.RACE_STATE,
+  );
+
+  return unwrapApiResponse(response);
+}
+
+/*
+ * POST, not GET (C1-02K): the server "ensures" the current question — it can
+ * expire the old one and generate the next — so this is a command-like
+ * resolve on the same path, no body.
+ */
+export async function getCurrentQuestion() {
+  const response = await httpClient.post(
     API_ENDPOINTS.RACE_PLAYERS.CURRENT_QUESTION,
   );
 

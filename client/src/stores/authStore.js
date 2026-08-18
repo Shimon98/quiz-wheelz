@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import { getCurrentUser, logoutUser } from "../api/authApi";
+import { normalizeApiError } from "../errors/normalizeApiError";
+import { isTransientError } from "../errors/errorChecks";
 
 export const useAuthStore = create((set) => ({
   user: null,
@@ -39,7 +41,19 @@ export const useAuthStore = create((set) => ({
       });
 
       return user;
-    } catch {
+    } catch (rawError) {
+      const error = normalizeApiError(rawError);
+
+      // A network blip or a 5xx is NOT a logout — keep whatever auth state
+      // we already had and surface the transient failure instead.
+      if (isTransientError(error)) {
+        set({ isLoading: false, hasCheckedCurrentUser: true, error });
+
+        return null;
+      }
+
+      // Genuinely no valid teacher session (guest /me probe, expired or
+      // invalid token, inactive account) — clear.
       set({
         user: null,
         isAuthenticated: false,

@@ -11,7 +11,6 @@ import com.quiz_wheelz.service.raceplayer.CurrentRacePlayerService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerJoinService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerRuntimeSessionService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStateService;
-import com.quiz_wheelz.service.question.RacePlayerQuestionPlanService;
 import com.quiz_wheelz.service.question.StudentAnswerSubmissionService;
 import com.quiz_wheelz.service.question.StudentQuestionDeliveryService;
 import com.quiz_wheelz.utils.CookieUtils;
@@ -41,9 +40,6 @@ class RacePlayerControllerRaceStateTest {
 
     @Mock
     private CurrentRacePlayerService currentRacePlayerService;
-
-    @Mock
-    private RacePlayerQuestionPlanService racePlayerQuestionPlanService;
 
     @Mock
     private StudentQuestionDeliveryService studentQuestionDeliveryService;
@@ -88,7 +84,6 @@ class RacePlayerControllerRaceStateTest {
                 racePlayerJoinService,
                 cookieUtils,
                 currentRacePlayerService,
-                racePlayerQuestionPlanService,
                 studentQuestionDeliveryService,
                 studentAnswerSubmissionService,
                 studentRaceStateService,

@@ -3,8 +3,11 @@ package com.quiz_wheelz.dto.answer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
-
+/**
+ * Timing fields are absolute Unix epoch milliseconds — the client uses them
+ * for authoritative answer/deadline timing, so a zone-less LocalDateTime is
+ * not allowed on this wire contract (C1-02K).
+ */
 @Getter
 @AllArgsConstructor
 public class SubmitAnswerResponse {
@@ -14,7 +17,7 @@ public class SubmitAnswerResponse {
     private boolean correct;
     private Long correctAnswerChoiceId;
     private String questionStatus;
-    private LocalDateTime answeredAt;
-    private LocalDateTime expiresAt;
+    private Long answeredAtEpochMs;
+    private Long expiresAtEpochMs;
     private StudentAnswerRaceImpactResponse raceImpact;
 }

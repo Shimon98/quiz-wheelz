@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Badge,
@@ -12,9 +11,12 @@ import {
 } from "@mantine/core";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
-import { ROUTES } from "../../../constants/routeConstants";
 import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
+import { RACE_VIEWS } from "../../../shared/racePlayer/getRaceView";
+import RacePlayerSessionGate from "../../../shared/racePlayer/RacePlayerSessionGate";
+import RetryableErrorAlert from "../../../shared/components/feedback/RetryableErrorAlert";
 import { STUDENT_JOIN_STORAGE_KEY } from "../config/studentJoinConfig";
+import useWaitingRace from "../hooks/useWaitingRace";
 import StudentWaitingStatCard from "../components/StudentWaitingStatCard";
 
 function readStoredJoin() {
@@ -26,26 +28,48 @@ function readStoredJoin() {
   }
 }
 
-/**
- * StudentWaitingPage — "you're in, hang tight". Renders the join response
- * (kept in sessionStorage so a refresh survives). The server race-state
- * endpoint (API_ENDPOINTS.RACE_PLAYERS.RACE_STATE) is live and owns the
- * waiting/racing/finished truth; wiring the live transition into the game
- * happens with the real student race route (C1-01), so this page still shows
- * no live counters and does no polling.
+/*
+ * StudentWaitingPage — "you're in, hang tight". The server race-state is the
+ * ONLY authority: useWaitingRace polls it while WAITING and navigates to the
+ * race route once the race page owns the view; RacePlayerSessionGate sends a
+ * dead RacePlayer identity back to join. The stored join response is an
+ * OPTIONAL display cache (name/lane/counters race-state doesn't return) —
+ * when it's missing the page still works from server data and simply hides
+ * what it can't know; race title/room code prefer the fresher server values.
  */
-export default function StudentWaitingPage() {
-  const { t } = useTranslation(I18N_NAMESPACES.STUDENT_JOIN);
-  const [joinData] = useState(readStoredJoin);
 
-  if (!joinData) {
-    return <Navigate to={ROUTES.STUDENT_JOIN} replace />;
+function WaitingContent({ t, joinData, raceState, view, isLoading, error, retry }) {
+  // Blocking states only while nothing is known yet — once a WAITING state
+  // exists it keeps rendering through transient poll failures (last-known
+  // state; the next poll retries silently, no toast spam).
+  if (!raceState && isLoading) {
+    return (
+      <Stack align="center" py="xl" aria-busy="true">
+        <Loader size="lg" />
+      </Stack>
+    );
   }
 
-  const playerName = joinData.player?.displayName ?? "";
-  const laneNumber = joinData.player?.laneNumber;
+  if ((!raceState && error) || view === RACE_VIEWS.UNKNOWN) {
+    return (
+      <RetryableErrorAlert
+        title={t("waiting.loadErrorTitle")}
+        message={t(
+          `${I18N_NAMESPACES.ERRORS}:${error?.messageKey ?? "general.unexpected"}`,
+        )}
+        retryLabel={t("waiting.retry")}
+        onRetry={retry}
+      />
+    );
+  }
 
-  // Small stat cubes — only the facts the join response actually has.
+  const playerName = joinData?.player?.displayName ?? "";
+  const laneNumber = joinData?.player?.laneNumber;
+  const raceTitle = raceState?.raceTitle ?? joinData?.raceTitle ?? "";
+  const roomCode = raceState?.roomCode ?? joinData?.roomCode ?? "";
+
+  // Small stat cubes — only the facts we actually have (join cache is
+  // optional, so any of these may be absent).
   const statCards = [];
   if (laneNumber != null) {
     statCards.push({
@@ -54,7 +78,7 @@ export default function StudentWaitingPage() {
       value: laneNumber,
     });
   }
-  if (joinData.currentPlayers != null && joinData.maxPlayers != null) {
+  if (joinData?.currentPlayers != null && joinData?.maxPlayers != null) {
     statCards.push({
       key: "players",
       label: t("waiting.playersLabel"),
@@ -71,20 +95,26 @@ export default function StudentWaitingPage() {
 
       <Stack gap={2}>
         {/* Same brand-font treatment as the join title (see there). */}
-        <Title order={1} fz={{ base: 26, sm: 30 }} fw={700} ff="var(--font-sans)">
-          {t("waiting.hello", { name: playerName })}
-        </Title>
-        <Text c="dimmed" fw={600}>
-          {joinData.raceTitle}
-        </Text>
+        {playerName ? (
+          <Title order={1} fz={{ base: 26, sm: 30 }} fw={700} ff="var(--font-sans)">
+            {t("waiting.hello", { name: playerName })}
+          </Title>
+        ) : null}
+        {raceTitle ? (
+          <Text c="dimmed" fw={600}>
+            {raceTitle}
+          </Text>
+        ) : null}
       </Stack>
 
       <Stack gap="xs" w="100%">
-        <StudentWaitingStatCard
-          label={t("waiting.roomCodeLabel")}
-          value={joinData.roomCode}
-          valueDir="ltr"
-        />
+        {roomCode ? (
+          <StudentWaitingStatCard
+            label={t("waiting.roomCodeLabel")}
+            value={roomCode}
+            valueDir="ltr"
+          />
+        ) : null}
         {statCards.length > 0 && (
           <SimpleGrid cols={statCards.length} spacing="xs" w="100%">
             {statCards.map((card) => (
@@ -109,5 +139,25 @@ export default function StudentWaitingPage() {
         </Text>
       </Stack>
     </Stack>
+  );
+}
+
+export default function StudentWaitingPage() {
+  const { t } = useTranslation(I18N_NAMESPACES.STUDENT_JOIN);
+  const [joinData] = useState(readStoredJoin);
+  const { raceState, view, isLoading, error, retry } = useWaitingRace();
+
+  return (
+    <RacePlayerSessionGate error={error}>
+      <WaitingContent
+        t={t}
+        joinData={joinData}
+        raceState={raceState}
+        view={view}
+        isLoading={isLoading}
+        error={error}
+        retry={retry}
+      />
+    </RacePlayerSessionGate>
   );
 }

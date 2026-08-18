@@ -9,7 +9,6 @@ import com.quiz_wheelz.enums.PlayerQuestionStatus;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,14 +23,8 @@ public class PlayerQuestionPersistenceService {
     private final PlayerQuestionRepository playerQuestionRepository;
     private final Clock clock;
 
-    @Autowired
+    // Shared application Clock (TimeConfig) — injected, never self-created.
     public PlayerQuestionPersistenceService(
-            PlayerQuestionRepository playerQuestionRepository
-    ) {
-        this(playerQuestionRepository, Clock.systemDefaultZone());
-    }
-
-    PlayerQuestionPersistenceService(
             PlayerQuestionRepository playerQuestionRepository,
             Clock clock
     ) {

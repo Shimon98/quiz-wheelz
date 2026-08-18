@@ -19,6 +19,9 @@ class StudentQuestionResponseMapperTest {
     private final StudentQuestionResponseMapper mapper =
             new StudentQuestionResponseMapper();
 
+    private static final long SERVER_TIME_EPOCH_MS = 1_787_045_370_000L;
+    private static final long EXPIRES_AT_EPOCH_MS = 1_787_045_400_000L;
+
     @Test
     void shouldMapPlayerQuestionToSafeStudentResponse() {
         LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(
@@ -36,13 +39,17 @@ class StudentQuestionResponseMapperTest {
 
         StudentQuestionResponse response = mapper.toResponse(
                 playerQuestion,
-                List.of(firstChoice, secondChoice)
+                List.of(firstChoice, secondChoice),
+                SERVER_TIME_EPOCH_MS,
+                EXPIRES_AT_EPOCH_MS
         );
 
         assertEquals(10L, response.getQuestionId());
         assertEquals("6 + 6 = ?", response.getQuestionText());
         assertEquals(QuestionRules.DEFAULT_TIME_LIMIT_SECONDS, response.getTimeLimitSeconds());
-        assertEquals(expiresAt, response.getExpiresAt());
+        // Epoch values are passed through exactly — the mapper never invents time.
+        assertEquals(SERVER_TIME_EPOCH_MS, response.getServerTimeEpochMs());
+        assertEquals(EXPIRES_AT_EPOCH_MS, response.getExpiresAtEpochMs());
         assertEquals(2, response.getChoices().size());
 
         StudentQuestionChoiceResponse firstResponseChoice = response.getChoices().get(0);
@@ -56,7 +63,12 @@ class StudentQuestionResponseMapperTest {
     void shouldRejectMissingPlayerQuestion() {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> mapper.toResponse(null, List.of(createChoice("12", 12, true, 1)))
+                () -> mapper.toResponse(
+                        null,
+                        List.of(createChoice("12", 12, true, 1)),
+                        SERVER_TIME_EPOCH_MS,
+                        EXPIRES_AT_EPOCH_MS
+                )
         );
 
         assertEquals(
@@ -73,7 +85,12 @@ class StudentQuestionResponseMapperTest {
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> mapper.toResponse(playerQuestion, List.of())
+                () -> mapper.toResponse(
+                        playerQuestion,
+                        List.of(),
+                        SERVER_TIME_EPOCH_MS,
+                        EXPIRES_AT_EPOCH_MS
+                )
         );
 
         assertEquals(

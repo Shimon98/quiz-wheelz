@@ -75,7 +75,7 @@ class RacePlayerRuntimeSessionServiceTest {
         when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
                 .thenReturn(identity);
         when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
-                .thenReturn(Optional.of(now().minusMinutes(1)));
+                .thenReturn(Optional.of(instantOf(now().minusMinutes(1))));
 
         RacePlayerHeartbeatResponse response =
                 runtimeSessionService.heartbeat(request);
@@ -86,7 +86,7 @@ class RacePlayerRuntimeSessionServiceTest {
 
         verify(currentRacePlayerService).resolveCurrentRacePlayerIdentity(request);
         verify(currentRacePlayerService, never()).resolveCurrentRacePlayerSession(request);
-        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
         verify(racePlayerRepository, never()).findByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
         verify(racePlayerRepository, never()).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
         verify(racePlayerRepository, never()).save(any());
@@ -104,7 +104,7 @@ class RacePlayerRuntimeSessionServiceTest {
         when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
                 .thenReturn(identity);
         when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
-                .thenReturn(Optional.of(now().minusMinutes(6)));
+                .thenReturn(Optional.of(instantOf(now().minusMinutes(6))));
         when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
                 .thenReturn(Optional.of(racePlayer));
 
@@ -117,7 +117,7 @@ class RacePlayerRuntimeSessionServiceTest {
         assertEquals(RacePlayerStatus.DISCONNECTED, racePlayer.getStatus());
         assertEquals(now(), racePlayer.getLastSeenAt());
 
-        verify(redisPresenceService, never()).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService, never()).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
         verify(redisPresenceService, times(1)).findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
         verify(redisPresenceService).markOffline(RACE_ID, RACE_PLAYER_ID);
         verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
@@ -136,7 +136,7 @@ class RacePlayerRuntimeSessionServiceTest {
         when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
                 .thenReturn(identity);
         when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
-                .thenReturn(Optional.of(now().minusMinutes(4)));
+                .thenReturn(Optional.of(instantOf(now().minusMinutes(4))));
 
         RacePlayerHeartbeatResponse response =
                 runtimeSessionService.heartbeat(request);
@@ -144,7 +144,7 @@ class RacePlayerRuntimeSessionServiceTest {
         assertEquals(now(), response.getHeartbeatAt());
         assertEquals(RacePlayerStatus.WAITING, racePlayer.getStatus());
 
-        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
         verify(redisPresenceService, times(1)).findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
         verify(racePlayerRepository, never()).save(any());
     }
@@ -161,7 +161,7 @@ class RacePlayerRuntimeSessionServiceTest {
         when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
                 .thenReturn(identity);
         when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
-                .thenReturn(Optional.of(now().minusMinutes(10)));
+                .thenReturn(Optional.of(instantOf(now().minusMinutes(10))));
         when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
                 .thenReturn(Optional.of(racePlayer));
 
@@ -171,7 +171,7 @@ class RacePlayerRuntimeSessionServiceTest {
         assertEquals(now(), response.getHeartbeatAt());
         assertEquals(RacePlayerStatus.RACING, racePlayer.getStatus());
 
-        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
         verify(redisPresenceService, times(1)).findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
         verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
         verify(racePlayerRepository, never()).save(any());
@@ -199,7 +199,7 @@ class RacePlayerRuntimeSessionServiceTest {
 
         assertEquals(now(), response.getHeartbeatAt());
 
-        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
         verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
         verify(racePlayerRepository, never()).save(any());
     }
@@ -232,7 +232,7 @@ class RacePlayerRuntimeSessionServiceTest {
                 RaceStatus.WAITING_FOR_PLAYERS
         );
 
-        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
         verify(redisPresenceService, never()).findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
         verify(racePlayerRepository, never()).save(any());
     }
@@ -266,7 +266,7 @@ class RacePlayerRuntimeSessionServiceTest {
                 RaceStatus.READY
         );
 
-        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
         verify(redisPresenceService, never()).findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
         verify(racePlayerRepository, never()).save(any());
     }
@@ -288,7 +288,7 @@ class RacePlayerRuntimeSessionServiceTest {
         when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
                 .thenReturn(Optional.of(lockedRacePlayer));
         when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
-                .thenReturn(Optional.of(now().minusMinutes(1)));
+                .thenReturn(Optional.of(instantOf(now().minusMinutes(1))));
 
         RacePlayerReconnectResponse response = runtimeSessionService.reconnect(request);
 
@@ -301,7 +301,7 @@ class RacePlayerRuntimeSessionServiceTest {
                 RaceStatus.IN_PROGRESS
         );
 
-        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
         verify(racePlayerRepository, never()).save(any());
     }
 
@@ -322,7 +322,7 @@ class RacePlayerRuntimeSessionServiceTest {
         when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
                 .thenReturn(Optional.of(lockedRacePlayer));
         when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
-                .thenReturn(Optional.of(now().minusMinutes(6)));
+                .thenReturn(Optional.of(instantOf(now().minusMinutes(6))));
 
         RacePlayerReconnectResponse response = runtimeSessionService.reconnect(request);
 
@@ -369,7 +369,7 @@ class RacePlayerRuntimeSessionServiceTest {
         );
 
         verify(redisPresenceService).markOffline(RACE_ID, RACE_PLAYER_ID);
-        verify(redisPresenceService, never()).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService, never()).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
         verify(racePlayerRepository, never()).save(any());
     }
 
@@ -402,7 +402,7 @@ class RacePlayerRuntimeSessionServiceTest {
         );
 
         verify(redisPresenceService).markOffline(RACE_ID, RACE_PLAYER_ID);
-        verify(redisPresenceService, never()).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService, never()).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
         verify(racePlayerRepository, never()).save(any());
     }
 
@@ -435,7 +435,7 @@ class RacePlayerRuntimeSessionServiceTest {
         );
 
         verify(redisPresenceService).markOffline(RACE_ID, RACE_PLAYER_ID);
-        verify(redisPresenceService, never()).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService, never()).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
         verify(racePlayerRepository, never()).save(any());
     }
 
@@ -505,7 +505,7 @@ class RacePlayerRuntimeSessionServiceTest {
         when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
                 .thenReturn(identity);
         when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
-                .thenReturn(Optional.of(now().minusMinutes(1)));
+                .thenReturn(Optional.of(instantOf(now().minusMinutes(1))));
         when(redisPresenceService.tryAcquireLastSeenDbSyncGate(RACE_ID, RACE_PLAYER_ID))
                 .thenReturn(true);
 
@@ -525,7 +525,7 @@ class RacePlayerRuntimeSessionServiceTest {
         when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
                 .thenReturn(identity);
         when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
-                .thenReturn(Optional.of(now().minusMinutes(1)));
+                .thenReturn(Optional.of(instantOf(now().minusMinutes(1))));
         when(redisPresenceService.tryAcquireLastSeenDbSyncGate(RACE_ID, RACE_PLAYER_ID))
                 .thenReturn(false);
 
@@ -542,7 +542,7 @@ class RacePlayerRuntimeSessionServiceTest {
         when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
                 .thenReturn(identity);
         when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
-                .thenReturn(Optional.of(now().minusMinutes(1)));
+                .thenReturn(Optional.of(instantOf(now().minusMinutes(1))));
         when(redisPresenceService.tryAcquireLastSeenDbSyncGate(RACE_ID, RACE_PLAYER_ID))
                 .thenReturn(true);
         when(racePlayerRepository.updateLastSeenAtIfOlder(RACE_PLAYER_ID, RACE_ID, now()))
@@ -586,9 +586,9 @@ class RacePlayerRuntimeSessionServiceTest {
         when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
                 .thenReturn(identity);
         when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
-                .thenReturn(Optional.of(now().minusMinutes(1)));
+                .thenReturn(Optional.of(instantOf(now().minusMinutes(1))));
         org.mockito.Mockito.doThrow(new RedisConnectionFailureException("down"))
-                .when(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+                .when(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
 
         runtimeSessionService.heartbeat(request);
 
@@ -615,7 +615,7 @@ class RacePlayerRuntimeSessionServiceTest {
         when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
                 .thenThrow(new RedisConnectionFailureException("down"));
         org.mockito.Mockito.doThrow(new RedisConnectionFailureException("down"))
-                .when(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+                .when(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
 
         RacePlayerReconnectResponse response = runtimeSessionService.reconnect(request);
 
@@ -662,14 +662,14 @@ class RacePlayerRuntimeSessionServiceTest {
                 .thenReturn(identity);
         when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
                 .thenThrow(new RedisConnectionFailureException("down"))
-                .thenReturn(Optional.of(now().minusSeconds(1)));
+                .thenReturn(Optional.of(instantOf(now().minusSeconds(1))));
         when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
                 .thenReturn(Optional.of(racePlayer));
 
         runtimeSessionService.heartbeat(request);
         runtimeSessionService.heartbeat(request);
 
-        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
         verify(redisPresenceService).tryAcquireLastSeenDbSyncGate(RACE_ID, RACE_PLAYER_ID);
     }
 
@@ -688,7 +688,7 @@ class RacePlayerRuntimeSessionServiceTest {
         when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
                 .thenThrow(new RedisConnectionFailureException("down"))
                 .thenReturn(Optional.empty())
-                .thenReturn(Optional.of(now().minusSeconds(1)));
+                .thenReturn(Optional.of(instantOf(now().minusSeconds(1))));
         when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
                 .thenReturn(Optional.of(racePlayer));
 
@@ -701,7 +701,7 @@ class RacePlayerRuntimeSessionServiceTest {
         verify(racePlayerRepository, times(1))
                 .updateLastSeenAtIfOlder(RACE_PLAYER_ID, RACE_ID, now());
         verify(redisPresenceService, times(2))
-                .markOnline(RACE_ID, RACE_PLAYER_ID, now());
+                .markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
         verify(redisPresenceService, times(2))
                 .tryAcquireLastSeenDbSyncGate(RACE_ID, RACE_PLAYER_ID);
     }
@@ -730,7 +730,7 @@ class RacePlayerRuntimeSessionServiceTest {
 
         assertEquals(RacePlayerReconnectOutcome.RECONNECTED, response.getOutcome());
         assertEquals(now(), lockedRacePlayer.getLastSeenAt());
-        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
     }
 
     @Test
@@ -798,5 +798,11 @@ class RacePlayerRuntimeSessionServiceTest {
 
     private LocalDateTime now() {
         return LocalDateTime.ofInstant(FIXED_INSTANT, FIXED_ZONE);
+    }
+
+    // Redis now speaks absolute Instants — same moment as the LocalDateTime
+    // domain used by the reconnect policy.
+    private Instant instantOf(LocalDateTime localDateTime) {
+        return localDateTime.atZone(FIXED_ZONE).toInstant();
     }
 }

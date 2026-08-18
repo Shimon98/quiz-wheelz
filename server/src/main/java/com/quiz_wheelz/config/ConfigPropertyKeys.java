@@ -14,6 +14,8 @@ public final class ConfigPropertyKeys {
 
     public static final String CORS_ALLOWED_ORIGINS = "CORS_ALLOWED_ORIGINS";
 
+    public static final String QUIZWHEELZ_TIME_ZONE = "QUIZWHEELZ_TIME_ZONE";
+
     public static final String QUIZWHEELZ_REDIS_ENABLED = "QUIZWHEELZ_REDIS_ENABLED";
     public static final String QUIZWHEELZ_REDIS_REQUIRED = "QUIZWHEELZ_REDIS_REQUIRED";
     public static final String QUIZWHEELZ_REDIS_REQUIRE_PASSWORD = "QUIZWHEELZ_REDIS_REQUIRE_PASSWORD";

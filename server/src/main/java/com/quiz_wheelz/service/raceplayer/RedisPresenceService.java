@@ -6,17 +6,13 @@ import com.quiz_wheelz.exception.ErrorMessages;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
+import java.time.DateTimeException;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
 @Service
 public class RedisPresenceService {
-
-    private static final DateTimeFormatter HEARTBEAT_FORMATTER =
-            DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     private final StringRedisTemplate redisTemplate;
     private final RedisKeyBuilder redisKeyBuilder;
@@ -29,14 +25,18 @@ public class RedisPresenceService {
         this.redisKeyBuilder = Objects.requireNonNull(redisKeyBuilder);
     }
 
-    public void markOnline(Long raceId, Long racePlayerId) {
-        markOnline(raceId, racePlayerId, LocalDateTime.now());
-    }
-
+    /*
+     * Heartbeats are ABSOLUTE runtime moments, so Redis stores Unix epoch
+     * milliseconds — never a zone-less LocalDateTime string. The caller
+     * (RacePlayerRuntimeSessionService) owns the timestamp; there is no
+     * hidden "now" here. A leftover pre-epoch ISO value simply parses as
+     * unusable (Optional.empty) and the existing durable DB fallback covers
+     * it until the next heartbeat rewrites the key.
+     */
     public void markOnline(
             Long raceId,
             Long racePlayerId,
-            LocalDateTime heartbeatAt
+            Instant heartbeatAt
     ) {
         validateIds(raceId, racePlayerId);
 
@@ -52,7 +52,7 @@ public class RedisPresenceService {
 
         redisTemplate.opsForValue().set(
                 buildLastHeartbeatKey(raceId, racePlayerId),
-                HEARTBEAT_FORMATTER.format(heartbeatAt),
+                Long.toString(heartbeatAt.toEpochMilli()),
                 RacePlayerRuntimeRules.LAST_HEARTBEAT_TTL
         );
     }
@@ -69,7 +69,7 @@ public class RedisPresenceService {
         return redisTemplate.hasKey(buildPresenceKey(raceId, racePlayerId));
     }
 
-    public Optional<LocalDateTime> findLastHeartbeatAt(
+    public Optional<Instant> findLastHeartbeatAt(
             Long raceId,
             Long racePlayerId
     ) {
@@ -83,8 +83,14 @@ public class RedisPresenceService {
         }
 
         try {
-            return Optional.of(LocalDateTime.parse(value, HEARTBEAT_FORMATTER));
-        } catch (DateTimeParseException exception) {
+            long epochMs = Long.parseLong(value);
+
+            if (epochMs <= 0) {
+                return Optional.empty();
+            }
+
+            return Optional.of(Instant.ofEpochMilli(epochMs));
+        } catch (NumberFormatException | DateTimeException exception) {
             return Optional.empty();
         }
     }

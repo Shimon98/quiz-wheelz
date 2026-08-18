@@ -32,6 +32,12 @@ const StudentRaceVisualPreview = import.meta.env.DEV
     ? lazy(() => import("../features/studentRace/dev/StudentRaceVisualPreview"))
     : null;
 
+// Production race page — lazy because it pulls the Pixi renderer, which the
+// landing/auth/join entry bundle must not pay for.
+const StudentRacePage = lazy(
+    () => import("../features/studentRace/pages/StudentRacePage")
+);
+
 
 
 export default function AppRouter() {
@@ -131,6 +137,17 @@ export default function AppRouter() {
                         element={<StudentWaitingPage />}
                     />
                 </Route>
+
+                {/* Production game surface — deliberately OUTSIDE StudentShell:
+                    a full-screen race world, not the entry hero/card layout. */}
+                <Route
+                    path={ROUTES.STUDENT_RACE}
+                    element={
+                        <Suspense fallback={null}>
+                            <StudentRacePage />
+                        </Suspense>
+                    }
+                />
 
                 <Route path={ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
                 <Route path={ROUTES.NOT_FOUND} element={<NotFoundPage />} />

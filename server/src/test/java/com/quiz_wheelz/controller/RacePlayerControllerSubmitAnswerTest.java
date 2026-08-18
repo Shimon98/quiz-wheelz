@@ -15,7 +15,6 @@ import com.quiz_wheelz.service.raceplayer.CurrentRacePlayerService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerJoinService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerRuntimeSessionService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStateService;
-import com.quiz_wheelz.service.question.RacePlayerQuestionPlanService;
 import com.quiz_wheelz.service.question.StudentAnswerSubmissionService;
 import com.quiz_wheelz.service.question.StudentQuestionDeliveryService;
 import com.quiz_wheelz.utils.CookieUtils;
@@ -46,9 +45,6 @@ class RacePlayerControllerSubmitAnswerTest {
 
     @Mock
     private CurrentRacePlayerService currentRacePlayerService;
-
-    @Mock
-    private RacePlayerQuestionPlanService racePlayerQuestionPlanService;
 
     @Mock
     private StudentQuestionDeliveryService studentQuestionDeliveryService;
@@ -93,8 +89,8 @@ class RacePlayerControllerSubmitAnswerTest {
                 false,
                 102L,
                 PlayerQuestionStatus.ANSWERED.name(),
-                LocalDateTime.now(),
-                LocalDateTime.now().plusSeconds(30),
+                1_787_045_370_000L,
+                1_787_045_400_000L,
                 raceImpact
         );
 
@@ -134,7 +130,6 @@ class RacePlayerControllerSubmitAnswerTest {
                 racePlayerJoinService,
                 cookieUtils,
                 currentRacePlayerService,
-                racePlayerQuestionPlanService,
                 studentQuestionDeliveryService,
                 studentAnswerSubmissionService,
                 studentRaceStateService,

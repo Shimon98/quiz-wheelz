@@ -25,10 +25,22 @@ export function showInfoNotification({ id, title, message }) {
 }
 
 /**
+ * Show a specific errors-namespace key as an error toast — for flows that
+ * classify the error themselves and pick a contextual message (e.g. login
+ * mapping an auth failure to "wrong credentials").
+ */
+export function showErrorKeyNotification(messageKey, { id } = {}) {
+  showErrorNotification({
+    id,
+    message: i18n.t(`${I18N_NAMESPACES.ERRORS}:${messageKey}`),
+  });
+}
+
+/**
  * Show an API failure as a friendly localized toast. Raw server text is
  * never displayed. `fallbackKey` (errors-namespace key) lets a flow override
  * the generic mapping with a contextual message for unexpected failures,
- * e.g. "teacher.createRaceFailed".
+ * e.g. "teacher.createRaceFailed". Accepts raw or normalized errors.
  */
 export function showApiErrorNotification(error, { id, fallbackKey } = {}) {
   const { messageKey } = normalizeApiError(error);
@@ -36,8 +48,5 @@ export function showApiErrorNotification(error, { id, fallbackKey } = {}) {
   const key =
     fallbackKey && messageKey === "general.unexpected" ? fallbackKey : messageKey;
 
-  showErrorNotification({
-    id,
-    message: i18n.t(`${I18N_NAMESPACES.ERRORS}:${key}`),
-  });
+  showErrorKeyNotification(key, { id });
 }
