@@ -10,83 +10,83 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RacePlayerReconnectPolicyTest {
 
+    private static final LocalDateTime NOW = LocalDateTime.of(2026, 7, 6, 13, 10);
+
     private final RacePlayerReconnectPolicy policy = new RacePlayerReconnectPolicy();
 
     @Test
-    void activityReferenceInsideGraceShouldReturnTrueAtExactGraceBoundary() {
-        assertTrue(policy.isActivityReferenceInsideGrace(
-                LocalDateTime.of(2026, 7, 6, 13, 0),
-                LocalDateTime.of(2026, 7, 6, 13, 3)
+    void redisHeartbeatAtFiveMinuteBoundaryShouldRemainInsideGrace() {
+        assertFalse(expired(Optional.of(NOW.minusMinutes(5)), null, null));
+    }
+
+    @Test
+    void redisHeartbeatBeyondFiveMinutesShouldExpireWithoutFallbackMargin() {
+        assertTrue(expired(Optional.of(NOW.minusMinutes(5).minusSeconds(1)), null, null));
+    }
+
+    @Test
+    void missingRedisHeartbeatShouldUseRecentDurableLastSeen() {
+        assertFalse(expired(Optional.empty(), NOW.minusMinutes(5), null));
+    }
+
+    @Test
+    void dbOnlyFallbackShouldIncludeThirtySecondSafetyMargin() {
+        assertFalse(expired(Optional.empty(), NOW.minusMinutes(5).minusSeconds(30), null));
+        assertTrue(expired(Optional.empty(), NOW.minusMinutes(5).minusSeconds(31), null));
+    }
+
+    @Test
+    void newerDbTimestampShouldWinOverOldRedisTimestamp() {
+        assertFalse(expired(
+                Optional.of(NOW.minusMinutes(8)),
+                NOW.minusMinutes(1),
+                NOW.minusMinutes(10)
         ));
     }
 
     @Test
-    void activityReferenceInsideGraceShouldReturnFalseAfterGraceBoundary() {
-        assertFalse(policy.isActivityReferenceInsideGrace(
-                LocalDateTime.of(2026, 7, 6, 13, 0),
-                LocalDateTime.of(2026, 7, 6, 13, 3, 1)
+    void newerRedisTimestampShouldWinOverOldDbTimestamp() {
+        assertFalse(expired(
+                Optional.of(NOW.minusMinutes(1)),
+                NOW.minusMinutes(8),
+                NOW.minusMinutes(10)
         ));
     }
 
     @Test
-    void activityReferenceInsideGraceShouldReturnFalseWhenTimestampIsMissing() {
-        assertFalse(policy.isActivityReferenceInsideGrace(
-                null,
-                LocalDateTime.of(2026, 7, 6, 13, 3)
+    void raceStartShouldProtectAgainstOldLobbyActivity() {
+        assertFalse(expired(
+                Optional.of(NOW.minusMinutes(10)),
+                NOW.minusMinutes(10),
+                NOW.minusMinutes(1)
         ));
     }
 
     @Test
-    void shouldReturnFalseWhenLastHeartbeatIsEmpty() {
+    void missingAllActivityReferencesShouldRemainForgiving() {
+        assertFalse(expired(Optional.empty(), null, null));
+    }
+
+    @Test
+    void nullNowShouldNotExpire() {
         assertFalse(policy.isReconnectWindowExpired(
-                Optional.empty(),
-                LocalDateTime.of(2026, 7, 6, 13, 0),
-                LocalDateTime.of(2026, 7, 6, 13, 5)
+                Optional.of(NOW.minusMinutes(10)),
+                NOW.minusMinutes(10),
+                NOW.minusMinutes(10),
+                null
         ));
     }
 
-    @Test
-    void shouldReturnFalseWhenRaceStartedAtIsNull() {
-        assertFalse(policy.isReconnectWindowExpired(
-                Optional.of(LocalDateTime.of(2026, 7, 6, 13, 0)),
-                null,
-                LocalDateTime.of(2026, 7, 6, 13, 5)
-        ));
-    }
-
-    @Test
-    void shouldReturnFalseWhenHeartbeatIsWithinGrace() {
-        assertFalse(policy.isReconnectWindowExpired(
-                Optional.of(LocalDateTime.of(2026, 7, 6, 13, 2)),
-                LocalDateTime.of(2026, 7, 6, 13, 0),
-                LocalDateTime.of(2026, 7, 6, 13, 4)
-        ));
-    }
-
-    @Test
-    void shouldReturnFalseWhenRaceStartedAfterOldHeartbeatAndGraceHasNotPassedSinceStart() {
-        assertFalse(policy.isReconnectWindowExpired(
-                Optional.of(LocalDateTime.of(2026, 7, 6, 12, 55)),
-                LocalDateTime.of(2026, 7, 6, 13, 0),
-                LocalDateTime.of(2026, 7, 6, 13, 2)
-        ));
-    }
-
-    @Test
-    void shouldReturnTrueWhenLastHeartbeatAfterStartIsOlderThanGrace() {
-        assertTrue(policy.isReconnectWindowExpired(
-                Optional.of(LocalDateTime.of(2026, 7, 6, 13, 1)),
-                LocalDateTime.of(2026, 7, 6, 13, 0),
-                LocalDateTime.of(2026, 7, 6, 13, 5, 1)
-        ));
-    }
-
-    @Test
-    void shouldReturnTrueWhenLastHeartbeatBeforeStartButGracePassedSinceRaceStart() {
-        assertTrue(policy.isReconnectWindowExpired(
-                Optional.of(LocalDateTime.of(2026, 7, 6, 12, 55)),
-                LocalDateTime.of(2026, 7, 6, 13, 0),
-                LocalDateTime.of(2026, 7, 6, 13, 3, 1)
-        ));
+    private boolean expired(
+            Optional<LocalDateTime> redisHeartbeatAt,
+            LocalDateTime durableLastSeenAt,
+            LocalDateTime raceStartedAt
+    ) {
+        return policy.isReconnectWindowExpired(
+                redisHeartbeatAt,
+                durableLastSeenAt,
+                raceStartedAt,
+                NOW
+        );
     }
 }

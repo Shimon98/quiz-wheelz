@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -102,7 +104,7 @@ class RacePlayerRuntimeSessionServiceTest {
         when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
                 .thenReturn(identity);
         when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
-                .thenReturn(Optional.of(now().minusMinutes(4)));
+                .thenReturn(Optional.of(now().minusMinutes(6)));
         when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
                 .thenReturn(Optional.of(racePlayer));
 
@@ -135,8 +137,6 @@ class RacePlayerRuntimeSessionServiceTest {
                 .thenReturn(identity);
         when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
                 .thenReturn(Optional.of(now().minusMinutes(4)));
-        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.of(racePlayer));
 
         RacePlayerHeartbeatResponse response =
                 runtimeSessionService.heartbeat(request);
@@ -181,10 +181,18 @@ class RacePlayerRuntimeSessionServiceTest {
     void heartbeatWithMissingLastHeartbeatShouldBeForgivingAndMarkOnline() {
         RacePlayerSessionIdentity identity =
                 new RacePlayerSessionIdentity(RACE_ID, RACE_PLAYER_ID);
+        RacePlayer racePlayer = createRacePlayer(
+                RaceStatus.IN_PROGRESS,
+                RacePlayerStatus.RACING,
+                now().minusMinutes(1)
+        );
+        racePlayer.setLastSeenAt(now().minusMinutes(1));
         when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
                 .thenReturn(identity);
         when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
                 .thenReturn(Optional.empty());
+        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
+                .thenReturn(Optional.of(racePlayer));
 
         RacePlayerHeartbeatResponse response =
                 runtimeSessionService.heartbeat(request);
@@ -192,7 +200,7 @@ class RacePlayerRuntimeSessionServiceTest {
         assertEquals(now(), response.getHeartbeatAt());
 
         verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
-        verify(racePlayerRepository, never()).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
+        verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
         verify(racePlayerRepository, never()).save(any());
     }
 
@@ -314,7 +322,7 @@ class RacePlayerRuntimeSessionServiceTest {
         when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
                 .thenReturn(Optional.of(lockedRacePlayer));
         when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
-                .thenReturn(Optional.of(now().minusMinutes(4)));
+                .thenReturn(Optional.of(now().minusMinutes(6)));
 
         RacePlayerReconnectResponse response = runtimeSessionService.reconnect(request);
 
@@ -488,6 +496,268 @@ class RacePlayerRuntimeSessionServiceTest {
 
         verify(redisPresenceService).markOffline(RACE_ID, RACE_PLAYER_ID);
         verify(racePlayerRepository, never()).save(lockedRacePlayer);
+    }
+
+    @Test
+    void heartbeatWithOpenGateShouldPerformFocusedDurableCheckpoint() {
+        RacePlayerSessionIdentity identity =
+                new RacePlayerSessionIdentity(RACE_ID, RACE_PLAYER_ID);
+        when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
+                .thenReturn(identity);
+        when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
+                .thenReturn(Optional.of(now().minusMinutes(1)));
+        when(redisPresenceService.tryAcquireLastSeenDbSyncGate(RACE_ID, RACE_PLAYER_ID))
+                .thenReturn(true);
+
+        runtimeSessionService.heartbeat(request);
+
+        verify(racePlayerRepository).updateLastSeenAtIfOlder(
+                RACE_PLAYER_ID,
+                RACE_ID,
+                now()
+        );
+    }
+
+    @Test
+    void heartbeatWithClosedGateShouldSkipCheckpointDbAccess() {
+        RacePlayerSessionIdentity identity =
+                new RacePlayerSessionIdentity(RACE_ID, RACE_PLAYER_ID);
+        when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
+                .thenReturn(identity);
+        when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
+                .thenReturn(Optional.of(now().minusMinutes(1)));
+        when(redisPresenceService.tryAcquireLastSeenDbSyncGate(RACE_ID, RACE_PLAYER_ID))
+                .thenReturn(false);
+
+        runtimeSessionService.heartbeat(request);
+
+        verify(racePlayerRepository, never()).updateLastSeenAtIfOlder(any(), any(), any());
+        verify(racePlayerRepository, never()).findLockedByIdAndRaceId(any(), any());
+    }
+
+    @Test
+    void failedDbCheckpointShouldReleaseGateAndPropagateDatabaseFailure() {
+        RacePlayerSessionIdentity identity =
+                new RacePlayerSessionIdentity(RACE_ID, RACE_PLAYER_ID);
+        when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
+                .thenReturn(identity);
+        when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
+                .thenReturn(Optional.of(now().minusMinutes(1)));
+        when(redisPresenceService.tryAcquireLastSeenDbSyncGate(RACE_ID, RACE_PLAYER_ID))
+                .thenReturn(true);
+        when(racePlayerRepository.updateLastSeenAtIfOlder(RACE_PLAYER_ID, RACE_ID, now()))
+                .thenThrow(new DataIntegrityViolationException("db failed"));
+
+        assertThrows(
+                DataIntegrityViolationException.class,
+                () -> runtimeSessionService.heartbeat(request)
+        );
+
+        verify(redisPresenceService).releaseLastSeenDbSyncGate(RACE_ID, RACE_PLAYER_ID);
+    }
+
+    @Test
+    void redisReadFailureDuringHeartbeatShouldUseDbAndPersistDirectly() {
+        RacePlayerSessionIdentity identity =
+                new RacePlayerSessionIdentity(RACE_ID, RACE_PLAYER_ID);
+        RacePlayer racePlayer = createRacePlayer(
+                RaceStatus.IN_PROGRESS,
+                RacePlayerStatus.RACING,
+                now().minusMinutes(2)
+        );
+        racePlayer.setLastSeenAt(now().minusMinutes(1));
+        when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
+                .thenReturn(identity);
+        when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
+                .thenThrow(new RedisConnectionFailureException("down"));
+        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
+                .thenReturn(Optional.of(racePlayer));
+
+        runtimeSessionService.heartbeat(request);
+
+        verify(redisPresenceService, never()).markOnline(any(), any(), any());
+        verify(racePlayerRepository).updateLastSeenAtIfOlder(RACE_PLAYER_ID, RACE_ID, now());
+    }
+
+    @Test
+    void redisWriteFailureDuringHeartbeatShouldPersistDirectly() {
+        RacePlayerSessionIdentity identity =
+                new RacePlayerSessionIdentity(RACE_ID, RACE_PLAYER_ID);
+        when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
+                .thenReturn(identity);
+        when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
+                .thenReturn(Optional.of(now().minusMinutes(1)));
+        org.mockito.Mockito.doThrow(new RedisConnectionFailureException("down"))
+                .when(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+
+        runtimeSessionService.heartbeat(request);
+
+        verify(racePlayerRepository).updateLastSeenAtIfOlder(RACE_PLAYER_ID, RACE_ID, now());
+    }
+
+    @Test
+    void redisFailureDuringReconnectShouldUseDurableStateAndRefreshLastSeen() {
+        RacePlayer sessionRacePlayer = createRacePlayer(
+                RaceStatus.IN_PROGRESS,
+                RacePlayerStatus.RACING,
+                now().minusMinutes(10)
+        );
+        RacePlayer lockedRacePlayer = createRacePlayer(
+                RaceStatus.IN_PROGRESS,
+                RacePlayerStatus.RACING,
+                now().minusMinutes(10)
+        );
+        lockedRacePlayer.setLastSeenAt(now().minusMinutes(1));
+        when(currentRacePlayerService.resolveCurrentRacePlayerSession(request))
+                .thenReturn(sessionRacePlayer);
+        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
+                .thenReturn(Optional.of(lockedRacePlayer));
+        when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
+                .thenThrow(new RedisConnectionFailureException("down"));
+        org.mockito.Mockito.doThrow(new RedisConnectionFailureException("down"))
+                .when(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+
+        RacePlayerReconnectResponse response = runtimeSessionService.reconnect(request);
+
+        assertEquals(RacePlayerReconnectOutcome.RECONNECTED, response.getOutcome());
+        assertEquals(now(), lockedRacePlayer.getLastSeenAt());
+    }
+
+    @Test
+    void redisCleanupFailureShouldNotUndoDurableLeave() {
+        RacePlayer sessionRacePlayer = createRacePlayer(
+                RaceStatus.IN_PROGRESS,
+                RacePlayerStatus.RACING,
+                now().minusMinutes(1)
+        );
+        RacePlayer lockedRacePlayer = createRacePlayer(
+                RaceStatus.IN_PROGRESS,
+                RacePlayerStatus.RACING,
+                now().minusMinutes(1)
+        );
+        when(currentRacePlayerService.resolveCurrentRacePlayerSession(request))
+                .thenReturn(sessionRacePlayer);
+        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
+                .thenReturn(Optional.of(lockedRacePlayer));
+        org.mockito.Mockito.doThrow(new RedisConnectionFailureException("down"))
+                .when(redisPresenceService).markOffline(RACE_ID, RACE_PLAYER_ID);
+
+        RacePlayerLeaveResponse response = runtimeSessionService.leave(request);
+
+        assertEquals(RacePlayerStatus.DISCONNECTED, response.getPlayerStatus());
+        verify(racePlayerRepository).save(lockedRacePlayer);
+    }
+
+    @Test
+    void laterHeartbeatShouldResumeNormalRedisPathAfterOutage() {
+        RacePlayerSessionIdentity identity =
+                new RacePlayerSessionIdentity(RACE_ID, RACE_PLAYER_ID);
+        RacePlayer racePlayer = createRacePlayer(
+                RaceStatus.IN_PROGRESS,
+                RacePlayerStatus.RACING,
+                now().minusMinutes(1)
+        );
+        racePlayer.setLastSeenAt(now().minusMinutes(1));
+        when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
+                .thenReturn(identity);
+        when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
+                .thenThrow(new RedisConnectionFailureException("down"))
+                .thenReturn(Optional.of(now().minusSeconds(1)));
+        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
+                .thenReturn(Optional.of(racePlayer));
+
+        runtimeSessionService.heartbeat(request);
+        runtimeSessionService.heartbeat(request);
+
+        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService).tryAcquireLastSeenDbSyncGate(RACE_ID, RACE_PLAYER_ID);
+    }
+
+    @Test
+    void recoveredRedisWithMissingHeartbeatShouldRehydrateThenUseRedisFirst() {
+        RacePlayerSessionIdentity identity =
+                new RacePlayerSessionIdentity(RACE_ID, RACE_PLAYER_ID);
+        RacePlayer racePlayer = createRacePlayer(
+                RaceStatus.IN_PROGRESS,
+                RacePlayerStatus.RACING,
+                now().minusMinutes(2)
+        );
+        racePlayer.setLastSeenAt(now().minusMinutes(1));
+        when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
+                .thenReturn(identity);
+        when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
+                .thenThrow(new RedisConnectionFailureException("down"))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(now().minusSeconds(1)));
+        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
+                .thenReturn(Optional.of(racePlayer));
+
+        runtimeSessionService.heartbeat(request);
+        runtimeSessionService.heartbeat(request);
+        runtimeSessionService.heartbeat(request);
+
+        verify(racePlayerRepository, times(2))
+                .findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
+        verify(racePlayerRepository, times(1))
+                .updateLastSeenAtIfOlder(RACE_PLAYER_ID, RACE_ID, now());
+        verify(redisPresenceService, times(2))
+                .markOnline(RACE_ID, RACE_PLAYER_ID, now());
+        verify(redisPresenceService, times(2))
+                .tryAcquireLastSeenDbSyncGate(RACE_ID, RACE_PLAYER_ID);
+    }
+
+    @Test
+    void reconnectWithRecoveredRedisAndMissingHeartbeatShouldRehydrateRedis() {
+        RacePlayer sessionRacePlayer = createRacePlayer(
+                RaceStatus.IN_PROGRESS,
+                RacePlayerStatus.RACING,
+                now().minusMinutes(10)
+        );
+        RacePlayer lockedRacePlayer = createRacePlayer(
+                RaceStatus.IN_PROGRESS,
+                RacePlayerStatus.RACING,
+                now().minusMinutes(10)
+        );
+        lockedRacePlayer.setLastSeenAt(now().minusMinutes(1));
+        when(currentRacePlayerService.resolveCurrentRacePlayerSession(request))
+                .thenReturn(sessionRacePlayer);
+        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
+                .thenReturn(Optional.of(lockedRacePlayer));
+        when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
+                .thenReturn(Optional.empty());
+
+        RacePlayerReconnectResponse response = runtimeSessionService.reconnect(request);
+
+        assertEquals(RacePlayerReconnectOutcome.RECONNECTED, response.getOutcome());
+        assertEquals(now(), lockedRacePlayer.getLastSeenAt());
+        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, now());
+    }
+
+    @Test
+    void expiredReconnectWithRecoveredRedisAndMissingHeartbeatShouldStayOffline() {
+        RacePlayer sessionRacePlayer = createRacePlayer(
+                RaceStatus.IN_PROGRESS,
+                RacePlayerStatus.RACING,
+                now().minusMinutes(10)
+        );
+        RacePlayer lockedRacePlayer = createRacePlayer(
+                RaceStatus.IN_PROGRESS,
+                RacePlayerStatus.RACING,
+                now().minusMinutes(10)
+        );
+        lockedRacePlayer.setLastSeenAt(now().minusMinutes(5).minusSeconds(31));
+        when(currentRacePlayerService.resolveCurrentRacePlayerSession(request))
+                .thenReturn(sessionRacePlayer);
+        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
+                .thenReturn(Optional.of(lockedRacePlayer));
+        when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
+                .thenReturn(Optional.empty());
+
+        RacePlayerReconnectResponse response = runtimeSessionService.reconnect(request);
+
+        assertEquals(RacePlayerReconnectOutcome.RECONNECT_WINDOW_EXPIRED, response.getOutcome());
+        verify(redisPresenceService, never()).markOnline(any(), any(), any());
+        verify(redisPresenceService).markOffline(RACE_ID, RACE_PLAYER_ID);
     }
 
     private void assertReconnectResponse(

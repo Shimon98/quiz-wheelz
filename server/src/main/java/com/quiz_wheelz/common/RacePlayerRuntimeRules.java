@@ -6,9 +6,11 @@ public final class RacePlayerRuntimeRules {
 
     public static final Duration PRESENCE_TTL = Duration.ofSeconds(45);
 
-    public static final Duration RECONNECT_GRACE_PERIOD = Duration.ofMinutes(3);
+    public static final Duration RECONNECT_GRACE_PERIOD = Duration.ofMinutes(5);
 
     public static final Duration LAST_HEARTBEAT_TTL = Duration.ofHours(2);
+
+    public static final Duration LAST_SEEN_DB_CHECKPOINT_INTERVAL = Duration.ofSeconds(30);
 
     public static final String REDIS_PRESENCE_VALUE = "online";
 

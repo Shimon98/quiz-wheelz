@@ -31,6 +31,8 @@ class RedisPresenceServiceTest {
             "quizwheelz:test:presence:race:1:player:12";
     private static final String LAST_HEARTBEAT_KEY =
             "quizwheelz:test:presence:last-heartbeat:race:1:player:12";
+    private static final String LAST_SEEN_DB_SYNC_KEY =
+            "quizwheelz:test:presence:race:1:player:12:last-seen-db-sync";
     private static final LocalDateTime HEARTBEAT_AT =
             LocalDateTime.of(2026, 7, 6, 13, 20);
 
@@ -118,6 +120,43 @@ class RedisPresenceServiceTest {
     }
 
     @Test
+    void checkpointGateShouldUseAtomicSetIfAbsentWithCanonicalInterval() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.setIfAbsent(
+                LAST_SEEN_DB_SYNC_KEY,
+                RacePlayerRuntimeRules.REDIS_PRESENCE_VALUE,
+                RacePlayerRuntimeRules.LAST_SEEN_DB_CHECKPOINT_INTERVAL
+        )).thenReturn(true);
+
+        assertTrue(redisPresenceService.tryAcquireLastSeenDbSyncGate(
+                RACE_ID,
+                RACE_PLAYER_ID
+        ));
+    }
+
+    @Test
+    void checkpointGateShouldRemainClosedWhenKeyAlreadyExists() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.setIfAbsent(
+                LAST_SEEN_DB_SYNC_KEY,
+                RacePlayerRuntimeRules.REDIS_PRESENCE_VALUE,
+                RacePlayerRuntimeRules.LAST_SEEN_DB_CHECKPOINT_INTERVAL
+        )).thenReturn(false);
+
+        assertFalse(redisPresenceService.tryAcquireLastSeenDbSyncGate(
+                RACE_ID,
+                RACE_PLAYER_ID
+        ));
+    }
+
+    @Test
+    void releaseCheckpointGateShouldDeleteOnlyGateKey() {
+        redisPresenceService.releaseLastSeenDbSyncGate(RACE_ID, RACE_PLAYER_ID);
+
+        verify(redisTemplate).delete(LAST_SEEN_DB_SYNC_KEY);
+    }
+
+    @Test
     void isOnlineShouldReturnTrueWhenRedisHasKey() {
         when(redisTemplate.hasKey(PRESENCE_KEY)).thenReturn(true);
 
@@ -184,6 +223,14 @@ class RedisPresenceServiceTest {
         String key = redisPresenceService.buildLastHeartbeatKey(RACE_ID, RACE_PLAYER_ID);
 
         assertEquals(LAST_HEARTBEAT_KEY, key);
+    }
+
+    @Test
+    void buildLastSeenDbSyncKeyShouldUseSharedRedisKeyBuilderConvention() {
+        assertEquals(
+                LAST_SEEN_DB_SYNC_KEY,
+                redisPresenceService.buildLastSeenDbSyncKey(RACE_ID, RACE_PLAYER_ID)
+        );
     }
 
     private RedisKeyBuilder createRedisKeyBuilder() {

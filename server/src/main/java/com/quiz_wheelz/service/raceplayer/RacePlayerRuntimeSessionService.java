@@ -14,7 +14,10 @@ import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.exception.ErrorMessages;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +28,9 @@ import java.util.Optional;
 
 @Service
 public class RacePlayerRuntimeSessionService {
+
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(RacePlayerRuntimeSessionService.class);
 
     private final CurrentRacePlayerService currentRacePlayerService;
     private final RacePlayerRepository racePlayerRepository;
@@ -70,8 +76,17 @@ public class RacePlayerRuntimeSessionService {
 
         LocalDateTime now = LocalDateTime.now(clock);
 
-        Optional<RacePlayer> expiredRacePlayer =
-                findRacePlayerIfReconnectWindowExpired(identity, now);
+        RedisHeartbeatLookup redisHeartbeatLookup = readRedisHeartbeat(
+                identity.raceId(),
+                identity.racePlayerId(),
+                "read heartbeat"
+        );
+
+        Optional<RacePlayer> expiredRacePlayer = findRacePlayerIfReconnectWindowExpired(
+                identity,
+                redisHeartbeatLookup.lastHeartbeatAt(),
+                now
+        );
 
         if (expiredRacePlayer.isPresent()) {
             RacePlayer racePlayer = expiredRacePlayer.get();
@@ -85,17 +100,39 @@ public class RacePlayerRuntimeSessionService {
             throw new ApiException(ErrorCode.RACE_PLAYER_RECONNECT_WINDOW_EXPIRED);
         }
 
-        redisPresenceService.markOnline(
-                identity.raceId(),
-                identity.racePlayerId(),
-                now
-        );
+        if (redisHeartbeatLookup.available()) {
+            try {
+                redisPresenceService.markOnline(
+                        identity.raceId(),
+                        identity.racePlayerId(),
+                        now
+                );
+            } catch (DataAccessException exception) {
+                logRedisFailure("refresh heartbeat", identity.raceId(), identity.racePlayerId(), exception);
+                checkpointLastSeen(identity, now);
+                return heartbeatResponse(identity, now);
+            }
 
-        return new RacePlayerHeartbeatResponse(
-                identity.raceId(),
-                identity.racePlayerId(),
-                now
-        );
+            boolean checkpointGateAcquired;
+            try {
+                checkpointGateAcquired = redisPresenceService.tryAcquireLastSeenDbSyncGate(
+                        identity.raceId(),
+                        identity.racePlayerId()
+                );
+            } catch (DataAccessException exception) {
+                logRedisFailure("acquire checkpoint gate", identity.raceId(), identity.racePlayerId(), exception);
+                checkpointLastSeen(identity, now);
+                return heartbeatResponse(identity, now);
+            }
+
+            if (checkpointGateAcquired) {
+                checkpointLastSeenWithGateReleaseOnFailure(identity, now);
+            }
+        } else {
+            checkpointLastSeen(identity, now);
+        }
+
+        return heartbeatResponse(identity, now);
     }
 
     @Transactional
@@ -108,7 +145,7 @@ public class RacePlayerRuntimeSessionService {
         LocalDateTime now = LocalDateTime.now(clock);
 
         if (race.getStatus() == RaceStatus.FINISHED) {
-            redisPresenceService.markOffline(race.getId(), racePlayer.getId());
+            markOfflineIgnoringRedisOutage(race.getId(), racePlayer.getId());
 
             return buildReconnectResponse(
                     race,
@@ -121,7 +158,7 @@ public class RacePlayerRuntimeSessionService {
         }
 
         if (racePlayer.getStatus() == RacePlayerStatus.FINISHED) {
-            redisPresenceService.markOffline(race.getId(), racePlayer.getId());
+            markOfflineIgnoringRedisOutage(race.getId(), racePlayer.getId());
 
             return buildReconnectResponse(
                     race,
@@ -134,7 +171,7 @@ public class RacePlayerRuntimeSessionService {
         }
 
         if (racePlayer.getStatus() == RacePlayerStatus.DISCONNECTED) {
-            redisPresenceService.markOffline(race.getId(), racePlayer.getId());
+            markOfflineIgnoringRedisOutage(race.getId(), racePlayer.getId());
 
             return buildReconnectResponse(
                     race,
@@ -159,7 +196,13 @@ public class RacePlayerRuntimeSessionService {
             );
         }
 
-        redisPresenceService.markOnline(race.getId(), racePlayer.getId(), now);
+        advanceLastSeenAt(racePlayer, now);
+
+        try {
+            redisPresenceService.markOnline(race.getId(), racePlayer.getId(), now);
+        } catch (DataAccessException exception) {
+            logRedisFailure("refresh reconnect presence", race.getId(), racePlayer.getId(), exception);
+        }
 
         RacePlayerReconnectOutcome outcome = resolveReconnectOutcome(race);
         boolean canContinueRace = canContinueRace(race, racePlayer);
@@ -233,22 +276,14 @@ public class RacePlayerRuntimeSessionService {
 
     private Optional<RacePlayer> findRacePlayerIfReconnectWindowExpired(
             RacePlayerSessionIdentity identity,
+            Optional<LocalDateTime> lastHeartbeatAt,
             LocalDateTime now
     ) {
-        Optional<LocalDateTime> lastHeartbeatAt =
-                redisPresenceService.findLastHeartbeatAt(
-                        identity.raceId(),
-                        identity.racePlayerId()
-                );
-
-        if (lastHeartbeatAt.isEmpty()) {
-            return Optional.empty();
-        }
-
-        if (racePlayerReconnectPolicy.isActivityReferenceInsideGrace(
-                lastHeartbeatAt.get(),
-                now
-        )) {
+        if (lastHeartbeatAt.isPresent()
+                && racePlayerReconnectPolicy.isActivityReferenceInsideGrace(
+                        lastHeartbeatAt.get(),
+                        now
+                )) {
             return Optional.empty();
         }
 
@@ -278,13 +313,16 @@ public class RacePlayerRuntimeSessionService {
             return false;
         }
 
+        RedisHeartbeatLookup redisHeartbeatLookup = readRedisHeartbeat(
+                race.getId(),
+                racePlayer.getId(),
+                "read reconnect heartbeat"
+        );
+
         return isReconnectWindowExpired(
                 race,
                 racePlayer,
-                redisPresenceService.findLastHeartbeatAt(
-                        race.getId(),
-                        racePlayer.getId()
-                ),
+                redisHeartbeatLookup.lastHeartbeatAt(),
                 now
         );
     }
@@ -301,6 +339,7 @@ public class RacePlayerRuntimeSessionService {
 
         return racePlayerReconnectPolicy.isReconnectWindowExpired(
                 lastHeartbeatAt,
+                racePlayer.getLastSeenAt(),
                 race.getStartedAt(),
                 now
         );
@@ -323,9 +362,92 @@ public class RacePlayerRuntimeSessionService {
     ) {
         disconnectRacePlayerIfNotFinished(racePlayer, now);
 
-        redisPresenceService.markOffline(
-                race.getId(),
-                racePlayer.getId()
+        markOfflineIgnoringRedisOutage(race.getId(), racePlayer.getId());
+    }
+
+    private void checkpointLastSeenWithGateReleaseOnFailure(
+            RacePlayerSessionIdentity identity,
+            LocalDateTime now
+    ) {
+        try {
+            checkpointLastSeen(identity, now);
+        } catch (DataAccessException exception) {
+            try {
+                redisPresenceService.releaseLastSeenDbSyncGate(
+                        identity.raceId(),
+                        identity.racePlayerId()
+                );
+            } catch (DataAccessException releaseException) {
+                exception.addSuppressed(releaseException);
+                logRedisFailure(
+                        "release failed checkpoint gate",
+                        identity.raceId(),
+                        identity.racePlayerId(),
+                        releaseException
+                );
+            }
+
+            throw exception;
+        }
+    }
+
+    private RacePlayerHeartbeatResponse heartbeatResponse(
+            RacePlayerSessionIdentity identity,
+            LocalDateTime now
+    ) {
+        return new RacePlayerHeartbeatResponse(
+                identity.raceId(),
+                identity.racePlayerId(),
+                now
+        );
+    }
+
+    private void checkpointLastSeen(
+            RacePlayerSessionIdentity identity,
+            LocalDateTime now
+    ) {
+        racePlayerRepository.updateLastSeenAtIfOlder(
+                identity.racePlayerId(),
+                identity.raceId(),
+                now
+        );
+    }
+
+    private void markOfflineIgnoringRedisOutage(Long raceId, Long racePlayerId) {
+        try {
+            redisPresenceService.markOffline(raceId, racePlayerId);
+        } catch (DataAccessException exception) {
+            logRedisFailure("mark player offline", raceId, racePlayerId, exception);
+        }
+    }
+
+    private RedisHeartbeatLookup readRedisHeartbeat(
+            Long raceId,
+            Long racePlayerId,
+            String operation
+    ) {
+        try {
+            return RedisHeartbeatLookup.available(
+                    redisPresenceService.findLastHeartbeatAt(raceId, racePlayerId)
+            );
+        } catch (DataAccessException exception) {
+            logRedisFailure(operation, raceId, racePlayerId, exception);
+            return RedisHeartbeatLookup.unavailable();
+        }
+    }
+
+    private void logRedisFailure(
+            String operation,
+            Long raceId,
+            Long racePlayerId,
+            DataAccessException exception
+    ) {
+        LOGGER.warn(
+                "Unable to {} in Redis for raceId={} racePlayerId={}; using durable state",
+                operation,
+                raceId,
+                racePlayerId,
+                exception
         );
     }
 
@@ -338,8 +460,15 @@ public class RacePlayerRuntimeSessionService {
         }
 
         racePlayer.setStatus(RacePlayerStatus.DISCONNECTED);
-        racePlayer.setLastSeenAt(now);
+        advanceLastSeenAt(racePlayer, now);
         racePlayerRepository.save(racePlayer);
+    }
+
+    private void advanceLastSeenAt(RacePlayer racePlayer, LocalDateTime activityAt) {
+        if (racePlayer.getLastSeenAt() == null
+                || racePlayer.getLastSeenAt().isBefore(activityAt)) {
+            racePlayer.setLastSeenAt(activityAt);
+        }
     }
 
     private RacePlayerReconnectOutcome resolveReconnectOutcome(Race race) {
@@ -376,5 +505,24 @@ public class RacePlayerRuntimeSessionService {
                 race.getStatus(),
                 resolvedAt
         );
+    }
+
+    private record RedisHeartbeatLookup(
+            boolean available,
+            Optional<LocalDateTime> lastHeartbeatAt
+    ) {
+
+        private static RedisHeartbeatLookup available(
+                Optional<LocalDateTime> lastHeartbeatAt
+        ) {
+            return new RedisHeartbeatLookup(
+                    true,
+                    Objects.requireNonNull(lastHeartbeatAt)
+            );
+        }
+
+        private static RedisHeartbeatLookup unavailable() {
+            return new RedisHeartbeatLookup(false, Optional.empty());
+        }
     }
 }
