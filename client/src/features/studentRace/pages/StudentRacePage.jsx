@@ -5,7 +5,7 @@ import useStudentRaceQuestion from "../hooks/useStudentRaceQuestion";
 import { RACE_VIEWS } from "../../../shared/racePlayer/getRaceView";
 import RacePlayerSessionGate from "../../../shared/racePlayer/RacePlayerSessionGate";
 import {
-  isConflictError,
+  isRaceLifecycleConflictError,
   isRacePlayerSessionError,
 } from "../../../errors/errorChecks";
 import StudentRaceScreen from "../layout/StudentRaceScreen";
@@ -85,14 +85,15 @@ export default function StudentRacePage() {
     refreshQuestion,
   } = useStudentRaceQuestion({ enabled: questionEnabled });
 
-  // The race page has no polling, so a question-endpoint gameplay conflict
-  // (RACE_NOT_IN_PROGRESS / RACE_PLAYER_NOT_RACING / ...) is how it learns
-  // the race ended mid-question. One race-state resync per error instance —
-  // getRaceView then routes to the right status view; no request loop.
+  // The race page has no polling, so a SEMANTIC lifecycle conflict from the
+  // question endpoint (RACE_NOT_IN_PROGRESS / RACE_PLAYER_NOT_RACING — never
+  // just any 409) is how it learns the race ended mid-question. One
+  // race-state resync per error instance — getRaceView then routes to the
+  // right status view; no request loop.
   const conflictHandledRef = useRef(null);
   useEffect(() => {
     if (
-      isConflictError(questionError) &&
+      isRaceLifecycleConflictError(questionError) &&
       conflictHandledRef.current !== questionError
     ) {
       conflictHandledRef.current = questionError;

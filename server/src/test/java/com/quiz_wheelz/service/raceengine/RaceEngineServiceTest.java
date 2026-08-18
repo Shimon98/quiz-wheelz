@@ -33,7 +33,7 @@ class RaceEngineServiceTest {
 
     @BeforeEach
     void setUp() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository);
+        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
 
         raceEngineService = new RaceEngineService(
                 new ScoringService(),

@@ -19,7 +19,8 @@ export default function StudentRaceOverlay({
       <StudentRaceHudSafeArea>
         {question ? (
           <StudentRaceQuestionTimer
-            expiresAtMs={question.expiresAtMs}
+            expiresAtEpochMs={question.expiresAtEpochMs}
+            serverClockOffsetMs={question.serverClockOffsetMs}
             timeLimitSeconds={question.timeLimitSeconds}
           />
         ) : null}

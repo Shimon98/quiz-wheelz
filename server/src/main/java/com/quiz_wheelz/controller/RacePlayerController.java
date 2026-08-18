@@ -5,7 +5,6 @@ import com.quiz_wheelz.common.ApiPaths;
 import com.quiz_wheelz.common.ApiResponse;
 import com.quiz_wheelz.dto.answer.SubmitAnswerRequest;
 import com.quiz_wheelz.dto.answer.SubmitAnswerResponse;
-import com.quiz_wheelz.dto.question.QuestionPlan;
 import com.quiz_wheelz.dto.question.student.StudentQuestionResponse;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerHeartbeatResponse;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerJoinRequest;
@@ -19,7 +18,6 @@ import com.quiz_wheelz.service.raceplayer.CurrentRacePlayerService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerJoinService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerRuntimeSessionService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStateService;
-import com.quiz_wheelz.service.question.RacePlayerQuestionPlanService;
 import com.quiz_wheelz.service.question.StudentAnswerSubmissionService;
 import com.quiz_wheelz.service.question.StudentQuestionDeliveryService;
 import com.quiz_wheelz.utils.CookieUtils;
@@ -40,7 +38,6 @@ public class RacePlayerController {
     private final RacePlayerJoinService racePlayerJoinService;
     private final CookieUtils cookieUtils;
     private final CurrentRacePlayerService currentRacePlayerService;
-    private final RacePlayerQuestionPlanService racePlayerQuestionPlanService;
     private final StudentQuestionDeliveryService studentQuestionDeliveryService;
     private final StudentAnswerSubmissionService studentAnswerSubmissionService;
     private final StudentRaceStateService studentRaceStateService;
@@ -50,7 +47,6 @@ public class RacePlayerController {
             RacePlayerJoinService racePlayerJoinService,
             CookieUtils cookieUtils,
             CurrentRacePlayerService currentRacePlayerService,
-            RacePlayerQuestionPlanService racePlayerQuestionPlanService,
             StudentQuestionDeliveryService studentQuestionDeliveryService,
             StudentAnswerSubmissionService studentAnswerSubmissionService,
             StudentRaceStateService studentRaceStateService,
@@ -59,7 +55,6 @@ public class RacePlayerController {
         this.racePlayerJoinService = racePlayerJoinService;
         this.cookieUtils = cookieUtils;
         this.currentRacePlayerService = currentRacePlayerService;
-        this.racePlayerQuestionPlanService = racePlayerQuestionPlanService;
         this.studentQuestionDeliveryService = studentQuestionDeliveryService;
         this.studentAnswerSubmissionService = studentAnswerSubmissionService;
         this.studentRaceStateService = studentRaceStateService;
@@ -142,19 +137,20 @@ public class RacePlayerController {
         );
     }
 
-    @GetMapping(ApiPaths.CURRENT_QUESTION)
+    /*
+     * POST, not GET (C1-02K): this operation is "ensure/resolve the current
+     * question" — it can expire the old question and create a new one, so it
+     * is not a safe read. Same path, no body. The delivery service builds the
+     * QuestionPlan itself, under the RacePlayer lock.
+     */
+    @PostMapping(ApiPaths.CURRENT_QUESTION)
     public ResponseEntity<ApiResponse<StudentQuestionResponse>> getCurrentQuestion(
             HttpServletRequest request
     ) {
         RacePlayer racePlayer = currentRacePlayerService.resolveCurrentRacePlayer(request);
 
-        QuestionPlan questionPlan = racePlayerQuestionPlanService.buildQuestionPlan(racePlayer);
-
         StudentQuestionResponse response =
-                studentQuestionDeliveryService.getOrCreateCurrentQuestion(
-                        racePlayer,
-                        questionPlan
-                );
+                studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer);
 
         return ResponseEntity.ok(
                 ApiResponse.ok(

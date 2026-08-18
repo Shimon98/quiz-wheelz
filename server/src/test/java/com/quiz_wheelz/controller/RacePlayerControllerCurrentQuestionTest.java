@@ -1,23 +1,16 @@
 package com.quiz_wheelz.controller;
 
 import com.quiz_wheelz.common.ApiMessages;
+import com.quiz_wheelz.common.ApiPaths;
 import com.quiz_wheelz.common.ApiResponse;
 import com.quiz_wheelz.common.QuestionRules;
-import com.quiz_wheelz.dto.question.QuestionPlan;
 import com.quiz_wheelz.dto.question.student.StudentQuestionChoiceResponse;
 import com.quiz_wheelz.dto.question.student.StudentQuestionResponse;
 import com.quiz_wheelz.entitys.RacePlayer;
-import com.quiz_wheelz.entitys.Subject;
-import com.quiz_wheelz.enums.AdaptiveMode;
-import com.quiz_wheelz.enums.AssistanceLevel;
-import com.quiz_wheelz.enums.Difficulty;
-import com.quiz_wheelz.enums.QuestionGenerationPattern;
-import com.quiz_wheelz.enums.QuestionType;
 import com.quiz_wheelz.service.raceplayer.CurrentRacePlayerService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerJoinService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerRuntimeSessionService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStateService;
-import com.quiz_wheelz.service.question.RacePlayerQuestionPlanService;
 import com.quiz_wheelz.service.question.StudentAnswerSubmissionService;
 import com.quiz_wheelz.service.question.StudentQuestionDeliveryService;
 import com.quiz_wheelz.utils.CookieUtils;
@@ -27,11 +20,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
 
-import java.time.LocalDateTime;
+import java.lang.reflect.Method;
+import java.time.Instant;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
@@ -39,6 +35,8 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class RacePlayerControllerCurrentQuestionTest {
+
+    private static final Instant FIXED_INSTANT = Instant.parse("2026-06-30T10:00:00Z");
 
     @Mock
     private RacePlayerJoinService racePlayerJoinService;
@@ -48,9 +46,6 @@ class RacePlayerControllerCurrentQuestionTest {
 
     @Mock
     private CurrentRacePlayerService currentRacePlayerService;
-
-    @Mock
-    private RacePlayerQuestionPlanService racePlayerQuestionPlanService;
 
     @Mock
     private StudentQuestionDeliveryService studentQuestionDeliveryService;
@@ -70,12 +65,10 @@ class RacePlayerControllerCurrentQuestionTest {
     @Test
     void shouldReturnCurrentStudentQuestionForCurrentRacePlayer() {
         RacePlayer racePlayer = new RacePlayer();
-        QuestionPlan questionPlan = createQuestionPlan();
         StudentQuestionResponse questionResponse = createStudentQuestionResponse();
 
         when(currentRacePlayerService.resolveCurrentRacePlayer(request)).thenReturn(racePlayer);
-        when(racePlayerQuestionPlanService.buildQuestionPlan(racePlayer)).thenReturn(questionPlan);
-        when(studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer, questionPlan))
+        when(studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer))
                 .thenReturn(questionResponse);
 
         ResponseEntity<ApiResponse<StudentQuestionResponse>> response =
@@ -92,11 +85,22 @@ class RacePlayerControllerCurrentQuestionTest {
         assertSame(questionResponse, body.getData());
 
         verify(currentRacePlayerService).resolveCurrentRacePlayer(request);
-        verify(racePlayerQuestionPlanService).buildQuestionPlan(racePlayer);
-        verify(studentQuestionDeliveryService).getOrCreateCurrentQuestion(
-                racePlayer,
-                questionPlan
+        verify(studentQuestionDeliveryService).getOrCreateCurrentQuestion(racePlayer);
+    }
+
+    @Test
+    void currentQuestionOperationShouldBePostOnTheSamePath() throws NoSuchMethodException {
+        // The operation can expire/create questions — it is a POST resolve,
+        // never a safe GET (C1-02K).
+        Method endpoint = RacePlayerController.class.getMethod(
+                "getCurrentQuestion",
+                HttpServletRequest.class
         );
+
+        PostMapping postMapping = endpoint.getAnnotation(PostMapping.class);
+
+        assertNotNull(postMapping);
+        assertEquals(ApiPaths.CURRENT_QUESTION, postMapping.value()[0]);
     }
 
     private RacePlayerController createController() {
@@ -104,31 +108,10 @@ class RacePlayerControllerCurrentQuestionTest {
                 racePlayerJoinService,
                 cookieUtils,
                 currentRacePlayerService,
-                racePlayerQuestionPlanService,
                 studentQuestionDeliveryService,
                 studentAnswerSubmissionService,
                 studentRaceStateService,
                 racePlayerRuntimeSessionService
-        );
-    }
-
-    private QuestionPlan createQuestionPlan() {
-        Subject subject = new Subject();
-        subject.setCode(QuestionRules.DEFAULT_SUBJECT_CODE);
-        subject.setName("Math");
-        subject.setActive(true);
-
-        return new QuestionPlan(
-                subject,
-                QuestionType.ADDITION,
-                Difficulty.EASY,
-                1,
-                10,
-                QuestionRules.DEFAULT_TIME_LIMIT_SECONDS,
-                QuestionRules.DEFAULT_CHOICES_COUNT,
-                QuestionGenerationPattern.BINARY_OPERATION,
-                AdaptiveMode.BASIC,
-                AssistanceLevel.NONE
         );
     }
 
@@ -137,7 +120,8 @@ class RacePlayerControllerCurrentQuestionTest {
                 1L,
                 "6 + 6 = ?",
                 QuestionRules.DEFAULT_TIME_LIMIT_SECONDS,
-                LocalDateTime.now().plusSeconds(QuestionRules.DEFAULT_TIME_LIMIT_SECONDS),
+                FIXED_INSTANT.toEpochMilli(),
+                FIXED_INSTANT.plusSeconds(QuestionRules.DEFAULT_TIME_LIMIT_SECONDS).toEpochMilli(),
                 List.of(
                         new StudentQuestionChoiceResponse(1L, "12", 1),
                         new StudentQuestionChoiceResponse(2L, "10", 2)

@@ -31,7 +31,7 @@ class RaceFinishServiceTest {
 
     @Test
     void shouldFinishPlayerWhenPositionReachesTotalDistance() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository);
+        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         RacePlayer player = player(RacePlayerStatus.RACING, 120.0, 2.0, race(100));
 
         boolean finished = raceFinishService.finishPlayerIfNeeded(player);
@@ -45,7 +45,7 @@ class RaceFinishServiceTest {
 
     @Test
     void shouldNotFinishPlayerBeforeTotalDistance() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository);
+        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         RacePlayer player = player(RacePlayerStatus.RACING, 99.0, 2.0, race(100));
 
         assertFalse(raceFinishService.finishPlayerIfNeeded(player));
@@ -54,7 +54,7 @@ class RaceFinishServiceTest {
 
     @Test
     void shouldThrowWhenFinishingPlayerAndRaceTotalDistanceIsMissing() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository);
+        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         RacePlayer player = player(RacePlayerStatus.RACING, 120.0, 2.0, race(null));
 
         ApiException exception = assertThrows(
@@ -67,7 +67,7 @@ class RaceFinishServiceTest {
 
     @Test
     void shouldNotRefinishAlreadyFinishedPlayer() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository);
+        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         RacePlayer player = player(RacePlayerStatus.FINISHED, 100.0, 0.0, race(100));
         LocalDateTime finishedAt = LocalDateTime.now().minusMinutes(1);
         player.setFinishedAt(finishedAt);
@@ -78,7 +78,7 @@ class RaceFinishServiceTest {
 
     @Test
     void shouldNotConvertDisconnectedPlayerToFinished() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository);
+        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         RacePlayer player = player(RacePlayerStatus.DISCONNECTED, 100.0, 0.0, race(100));
 
         assertFalse(raceFinishService.finishPlayerIfNeeded(player));
@@ -87,7 +87,7 @@ class RaceFinishServiceTest {
 
     @Test
     void shouldFinishRaceWhenAllPlayersAreFinished() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository);
+        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         Race race = race(100);
 
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
@@ -103,7 +103,7 @@ class RaceFinishServiceTest {
 
     @Test
     void shouldFinishRaceWhenAllPlayersAreFinishedOrDisconnected() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository);
+        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         Race race = race(100);
 
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
@@ -118,7 +118,7 @@ class RaceFinishServiceTest {
 
     @Test
     void shouldNotFinishRaceWhenPlayerIsStillRacing() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository);
+        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         Race race = race(100);
 
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
@@ -133,7 +133,7 @@ class RaceFinishServiceTest {
 
     @Test
     void shouldNotFinishRaceWhenPlayerIsWaiting() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository);
+        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         Race race = race(100);
 
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
@@ -145,7 +145,7 @@ class RaceFinishServiceTest {
 
     @Test
     void shouldNotRefinishAlreadyFinishedRace() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository);
+        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         Race race = race(100);
         race.setStatus(RaceStatus.FINISHED);
         LocalDateTime finishedAt = LocalDateTime.now().minusMinutes(1);

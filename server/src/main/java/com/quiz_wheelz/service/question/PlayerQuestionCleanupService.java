@@ -4,7 +4,6 @@ import com.quiz_wheelz.common.PlayerQuestionCleanupRules;
 import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,14 +24,8 @@ public class PlayerQuestionCleanupService {
     private final PlayerQuestionRepository playerQuestionRepository;
     private final Clock clock;
 
-    @Autowired
+    // Shared application Clock (TimeConfig) — injected, never self-created.
     public PlayerQuestionCleanupService(
-            PlayerQuestionRepository playerQuestionRepository
-    ) {
-        this(playerQuestionRepository, Clock.systemDefaultZone());
-    }
-
-    PlayerQuestionCleanupService(
             PlayerQuestionRepository playerQuestionRepository,
             Clock clock
     ) {

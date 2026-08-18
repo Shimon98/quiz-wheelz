@@ -63,6 +63,23 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
   with a 5-minute grace period and a 30-second DB-only fallback margin.
 - leave/disconnect persistence that remains authoritative when Redis cleanup fails.
 
+### Server time policy (C1-02K)
+
+- One configured application `ZoneId` (`QUIZWHEELZ_TIME_ZONE`, default
+  `Asia/Jerusalem` — matching the dev MySQL `serverTimezone` and existing
+  zone-less rows) and ONE shared injected `Clock` bean (`TimeConfig`).
+- Correctness-sensitive services (question delivery/persistence/cleanup,
+  answers, runtime session, race start/finish) use the injected Clock; no
+  service creates its own `Clock.systemDefaultZone()`.
+- Legacy static/JPA `LocalDateTime.now()` calls (BaseEntity, ApiResponse,
+  ErrorResponse, SSE) follow the JVM default zone, which TimeConfig aligns
+  to the application zone at startup.
+- Durable MySQL model keeps `LocalDateTime` for now; Redis runtime
+  timestamps are Unix epoch milliseconds/`Instant`; timing-critical client
+  contracts (current question, submit answer) expose epoch milliseconds
+  only. A future DB migration to Instant/UTC is separate production work.
+- `DateTimeUtils` is pure conversion/comparison — it never decides "now".
+
 ### Question flow
 
 - reusable `QuestionTemplate`
@@ -70,9 +87,16 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - operator/difficulty generation patterns
 - unique four-choice generation
 - generated question and choice persistence
-- current-question delivery
+- current-question delivery: POST resolve on the same path (the operation can
+  expire/create questions, so it is not a safe GET), serialized per
+  RacePlayer with the existing PESSIMISTIC_WRITE row lock BEFORE the
+  ACTIVE-question lookup — concurrent requests cannot create two ACTIVE
+  questions; the QuestionPlan is built under the lock only when a new
+  question is needed
 - expiry handling
-- safe DTOs
+- safe DTOs with epoch-millisecond timing (`serverTimeEpochMs` +
+  `expiresAtEpochMs`; submit-answer exposes `answeredAtEpochMs` +
+  `expiresAtEpochMs`)
 - answer validation and persistence
 - duplicate-submit protection.
 

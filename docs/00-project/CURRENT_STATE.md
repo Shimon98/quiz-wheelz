@@ -33,15 +33,15 @@ race/SSE screen and results.
 | Teacher waiting room | DONE | DONE | DONE |
 | Start race command | DONE | DONE | DONE |
 | RacePlayer join/session | DONE | DONE | DONE |
-| Student waiting page | race-state exists | DONE, needs live transition | PARTIAL |
+| Student waiting page | race-state exists | DONE incl. live waiting→race transition | DONE |
 | Question template/generation | DONE | N/A | DONE |
-| Question persistence/delivery | DONE | wrapper exists | PARTIAL integration |
+| Question persistence/delivery | DONE (POST resolve, per-player lock, epoch timing) | question panel + timer integrated | DONE |
 | Answer validation | DONE | wrapper exists | PARTIAL integration |
 | Race engine | DONE | not wired to real race screen | PARTIAL integration |
 | Student runtime snapshot | DONE | contract/mapper foundation exists | PARTIAL |
 | Heartbeat/leave/reconnect | DONE | not integrated | PARTIAL |
 | Student Pixi race foundation | N/A | UI-10A–G DONE | PARTIAL feature |
-| Student question panel/HUD | server data exists | PLANNED | PLANNED |
+| Student question panel/HUD | server data exists | panel + timer DONE (C1-02); HUD stats PLANNED (C1-04) | PARTIAL |
 | Opponent vehicles/nearby players | missing contract | planned renderer | PLANNED |
 | Teacher live-state query | PLANNED | route constant only | PLANNED |
 | Teacher SSE | PLANNED | PLANNED | PLANNED |

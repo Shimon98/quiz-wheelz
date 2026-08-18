@@ -16,7 +16,7 @@ import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.quiz_wheelz.utils.DateTimeUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,25 +35,8 @@ public class StudentAnswerSubmissionService {
     private final StudentRaceRuntimeSnapshotMapper snapshotMapper;
     private final Clock clock;
 
-    @Autowired
+    // Shared application Clock (TimeConfig) — injected, never self-created.
     public StudentAnswerSubmissionService(
-            PlayerQuestionRepository playerQuestionRepository,
-            PlayerQuestionChoiceRepository playerQuestionChoiceRepository,
-            RacePlayerRepository racePlayerRepository,
-            RaceEngineService raceEngineService,
-            StudentRaceRuntimeSnapshotMapper snapshotMapper
-    ) {
-        this(
-                playerQuestionRepository,
-                playerQuestionChoiceRepository,
-                racePlayerRepository,
-                raceEngineService,
-                snapshotMapper,
-                Clock.systemDefaultZone()
-        );
-    }
-
-    StudentAnswerSubmissionService(
             PlayerQuestionRepository playerQuestionRepository,
             PlayerQuestionChoiceRepository playerQuestionChoiceRepository,
             RacePlayerRepository racePlayerRepository,
@@ -112,14 +95,16 @@ public class StudentAnswerSubmissionService {
 
         PlayerQuestion savedQuestion = playerQuestionRepository.save(question);
 
+        // Public timing contract is absolute epoch ms — the durable
+        // LocalDateTime stays internal, converted with the shared Clock zone.
         return new SubmitAnswerResponse(
                 savedQuestion.getId(),
                 selectedChoice.getId(),
                 correct,
                 correctAnswerChoiceId,
                 savedQuestion.getStatus().name(),
-                savedQuestion.getAnsweredAt(),
-                savedQuestion.getExpiresAt(),
+                DateTimeUtils.toEpochMilli(savedQuestion.getAnsweredAt(), clock.getZone()),
+                DateTimeUtils.toEpochMilli(savedQuestion.getExpiresAt(), clock.getZone()),
                 StudentAnswerRaceImpactResponse.from(answerRaceImpact, snapshot)
         );
     }
@@ -173,7 +158,7 @@ public class StudentAnswerSubmissionService {
             PlayerQuestion question,
             LocalDateTime now
     ) {
-        if (!question.getExpiresAt().isAfter(now)) {
+        if (DateTimeUtils.isExpired(question.getExpiresAt(), now)) {
             question.setStatus(PlayerQuestionStatus.EXPIRED);
             playerQuestionRepository.save(question);
 

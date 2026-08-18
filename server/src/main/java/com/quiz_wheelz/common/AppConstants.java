@@ -13,6 +13,10 @@ public final class AppConstants {
 
     public static final long DEFAULT_SSE_TIMEOUT_MILLIS = 1_800_000L;
 
+    // Matches the dev MySQL serverTimezone and the meaning of existing
+    // zone-less LocalDateTime rows; overridable via QUIZWHEELZ_TIME_ZONE.
+    public static final String DEFAULT_TIME_ZONE = "Asia/Jerusalem";
+
     private AppConstants() {
     }
 }

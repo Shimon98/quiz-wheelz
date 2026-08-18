@@ -106,7 +106,10 @@ export default function StudentRaceQuestionPanel({
     );
   }
 
-  const choicesLocked = !interactionEnabled || isExpired;
+  // A button may only be live when ALL hold — interactionEnabled without a
+  // real callback must never render an enabled button that does nothing.
+  const canInteract =
+    interactionEnabled && !isExpired && typeof onChoiceSelect === "function";
 
   return (
     <PanelSurface>
@@ -149,12 +152,8 @@ export default function StudentRaceQuestionPanel({
           <button
             key={choice.id}
             type="button"
-            disabled={choicesLocked}
-            onClick={
-              interactionEnabled && onChoiceSelect
-                ? () => onChoiceSelect(choice.id)
-                : undefined
-            }
+            disabled={!canInteract}
+            onClick={canInteract ? () => onChoiceSelect(choice.id) : undefined}
             className="flex min-h-[3.75rem] items-center justify-center rounded-xl border-b-4 bg-[var(--qw-surface-alt)] px-3 py-2 text-center text-2xl font-bold text-[var(--qw-text)] disabled:cursor-default"
             style={{
               borderColor:

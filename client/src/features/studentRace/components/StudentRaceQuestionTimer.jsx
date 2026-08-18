@@ -4,17 +4,20 @@ import { TimerIcon } from "lucide-react";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig";
+import { getQuestionRemainingMs } from "../runtime/questionTiming";
 
 /*
  * StudentRaceQuestionTimer — the ONE question countdown chip, already in its
  * final C1-04 HUD position ([SCORE] [TIMER] [STREAK] later fills around it).
  *
- * Pure presentation of an absolute deadline: every tick recomputes remaining
- * time from expiresAt vs Date.now(), so background-tab throttling or a
- * refresh can never drift it — it self-corrects on the next tick. It owns
- * its OWN tick state so the rest of the race screen does not re-render four
- * times a second; expiry POLICY (locking, server resync) lives in
- * useStudentRaceQuestion, never here.
+ * Pure presentation of an absolute server deadline: every tick recomputes
+ * remaining time via the SHARED getQuestionRemainingMs formula (epoch
+ * deadline + server clock calibration — the same one the expiry hook
+ * schedules with), so background-tab throttling, refreshes, device timezone
+ * or a skewed device clock can never drift it. It owns its OWN tick state so
+ * the rest of the race screen does not re-render four times a second; expiry
+ * POLICY (locking, server resync) lives in useStudentRaceQuestion, never
+ * here.
  *
  * No aria-live: announcing every second would spam screen readers. The
  * panel announces "time's up" once instead.
@@ -32,7 +35,8 @@ function resolveAccentVar(remainingSeconds, timer) {
 }
 
 export default function StudentRaceQuestionTimer({
-  expiresAtMs,
+  expiresAtEpochMs,
+  serverClockOffsetMs,
   timeLimitSeconds,
 }) {
   const { t } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
@@ -49,7 +53,10 @@ export default function StudentRaceQuestionTimer({
     };
   }, [timer.tickMs]);
 
-  const remainingMs = Math.max(0, expiresAtMs - now);
+  const remainingMs = getQuestionRemainingMs(
+    { expiresAtEpochMs, serverClockOffsetMs },
+    now,
+  );
   const remainingSeconds = Math.ceil(remainingMs / 1000);
   const progress = Math.min(1, Math.max(0, remainingMs / (timeLimitSeconds * 1000)));
   const accentVar = resolveAccentVar(remainingSeconds, timer);

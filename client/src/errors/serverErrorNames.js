@@ -29,4 +29,10 @@ export const SERVER_ERROR_NAMES = Object.freeze({
   RACE_PLAYER_TOKEN_MISSING: "RACE_PLAYER_TOKEN_MISSING",
   INVALID_RACE_PLAYER_TOKEN: "INVALID_RACE_PLAYER_TOKEN",
   RACE_PLAYER_NOT_FOUND: "RACE_PLAYER_NOT_FOUND",
+
+  // Race lifecycle conflicts — the RacePlayer identity is VALID but the
+  // race/player is no longer in a question-playable state; the student race
+  // page resyncs race-state and lets getRaceView decide the screen.
+  RACE_PLAYER_NOT_RACING: "RACE_PLAYER_NOT_RACING",
+  RACE_NOT_IN_PROGRESS: "RACE_NOT_IN_PROGRESS",
 });

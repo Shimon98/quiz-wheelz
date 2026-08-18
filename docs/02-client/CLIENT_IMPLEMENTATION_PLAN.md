@@ -193,9 +193,37 @@ tick; urgency thresholds in `studentRaceConfig.timer`) · H expiry sync
 policy (panel-level errors keep the race world; no toasts) · J i18n keys in
 the existing `studentRace` namespace, bdi-isolated math, mobile verified.
 
-Known contract note for Diana: `expiresAt` is a zone-less `LocalDateTime` —
-display parsing assumes client and server share a timezone (true in dev);
-the server stays the expiry authority regardless.
+**C1-02K — Timing & concurrency hardening (DONE, 2026-08-18).** Closed the
+gaps found in review before C1-03, after merging the latest `main`
+(Diana's S0-02/S0-03) into the branch:
+
+- Time contract: the question wire carries absolute Unix epoch ms —
+  `expiresAtEpochMs` (deadline truth) + `serverTimeEpochMs` (server clock
+  reference); the old zone-less `LocalDateTime expiresAt` and the client's
+  `Date.parse` are gone. The mapper derives `serverClockOffsetMs`, and ONE
+  shared formula (`runtime/questionTiming.js`) feeds both the timer chip
+  and expiry scheduling — device timezone/clock skew cannot drift them.
+  `SubmitAnswerResponse` was converted too (`answeredAtEpochMs`/
+  `expiresAtEpochMs`) so C1-03 starts on a clean contract.
+- Server time foundation: one `TimeConfig` (`QUIZWHEELZ_TIME_ZONE`, default
+  Asia/Jerusalem) owns the shared Clock; Redis heartbeats now store epoch
+  ms (S0-02 policy/TTLs unchanged; legacy ISO values fall back to durable
+  state).
+- Concurrency: current-question is POST on the same path (it can
+  expire/create) and the delivery service locks the RacePlayer row
+  (PESSIMISTIC_WRITE, same pattern as answer submission) BEFORE the
+  ACTIVE-question lookup, building the QuestionPlan under the lock only
+  when creation is needed — two near-simultaneous requests (StrictMode,
+  double tab) can no longer create two ACTIVE questions.
+- Question hook: strict single-flight (only the latest request clears the
+  in-flight slot), busy refreshes coalesce into ONE trailing refresh (an
+  expiry sync can never be lost), and the expiry latch is per question
+  MODEL INSTANCE — a same-question-still-active response re-arms the
+  deadline from fresh server timing instead of looping or locking forever.
+- Conflicts: only semantic `RACE_PLAYER_NOT_RACING`/`RACE_NOT_IN_PROGRESS`
+  trigger the one-shot race-state resync (`isRaceLifecycleConflictError`);
+  generic 409s no longer do. Choice buttons additionally require a real
+  `onChoiceSelect` callback before they can ever be enabled.
 
 Deliberately NOT here: submitAnswer, selected-answer state, correctness,
 feedback, snapshot application after answers (all C1-03); HUD stats (C1-04).

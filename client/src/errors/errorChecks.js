@@ -1,4 +1,5 @@
 import { ERROR_CATEGORIES } from "./errorCategories";
+import { SERVER_ERROR_NAMES } from "./serverErrorNames";
 
 /*
  * Tiny predicates over a NORMALIZED error (the result of normalizeApiError) —
@@ -22,8 +23,17 @@ export function isServerError(error) {
   return error?.category === ERROR_CATEGORIES.SERVER;
 }
 
-export function isConflictError(error) {
-  return error?.category === ERROR_CATEGORIES.CONFLICT;
+/*
+ * True only for the semantic "race/player is no longer playable" conflicts
+ * (RACE_NOT_IN_PROGRESS, RACE_PLAYER_NOT_RACING) — NEVER for every 409: the
+ * server has many unrelated conflicts (QUESTION_EXPIRED, RACE_FULL, ...)
+ * that must not trigger a race-state resync.
+ */
+export function isRaceLifecycleConflictError(error) {
+  return (
+    error?.errorName === SERVER_ERROR_NAMES.RACE_PLAYER_NOT_RACING ||
+    error?.errorName === SERVER_ERROR_NAMES.RACE_NOT_IN_PROGRESS
+  );
 }
 
 export function isApiContractError(error) {

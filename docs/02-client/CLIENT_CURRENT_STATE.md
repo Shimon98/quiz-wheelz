@@ -92,9 +92,13 @@ Implemented A–G:
   that replaced the UI-10G shell (same geometry contract)
 - question lifecycle hook separate from the race runtime; requests only
   while authoritatively PLAYING
-- deadline timer chip in its final HUD position, derived from server
-  expiresAt (refresh/background-safe); expiry locks and resyncs once —
-  the server expires and generates the next question
+- deadline timer chip in its final HUD position; question timing uses the
+  server-provided absolute epoch deadline plus a server clock reference
+  (offset calibration), so refresh, background tabs, device timezone and
+  clock skew cannot drift it — the client only presents the countdown and
+  the server remains the expiry authority; current-question is a POST
+  resolve; expiry locks and resyncs once (single-flight with one pending
+  trailing refresh)
 - choice buttons carry ids and an onChoiceSelect contract, disabled until
   C1-03 wires submission.
 

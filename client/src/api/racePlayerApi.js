@@ -37,8 +37,13 @@ export async function getRaceState() {
   return unwrapApiResponse(response);
 }
 
+/*
+ * POST, not GET (C1-02K): the server "ensures" the current question — it can
+ * expire the old one and generate the next — so this is a command-like
+ * resolve on the same path, no body.
+ */
 export async function getCurrentQuestion() {
-  const response = await httpClient.get(
+  const response = await httpClient.post(
     API_ENDPOINTS.RACE_PLAYERS.CURRENT_QUESTION,
   );
 

@@ -13,15 +13,16 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.exception.ErrorMessages;
 import com.quiz_wheelz.repository.RacePlayerRepository;
+import com.quiz_wheelz.utils.DateTimeUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
@@ -38,23 +39,9 @@ public class RacePlayerRuntimeSessionService {
     private final RacePlayerReconnectPolicy racePlayerReconnectPolicy;
     private final Clock clock;
 
-    @Autowired
+    // The shared application Clock (TimeConfig) is injected — services never
+    // create their own Clock.systemDefaultZone().
     public RacePlayerRuntimeSessionService(
-            CurrentRacePlayerService currentRacePlayerService,
-            RacePlayerRepository racePlayerRepository,
-            RedisPresenceService redisPresenceService,
-            RacePlayerReconnectPolicy racePlayerReconnectPolicy
-    ) {
-        this(
-                currentRacePlayerService,
-                racePlayerRepository,
-                redisPresenceService,
-                racePlayerReconnectPolicy,
-                Clock.systemDefaultZone()
-        );
-    }
-
-    RacePlayerRuntimeSessionService(
             CurrentRacePlayerService currentRacePlayerService,
             RacePlayerRepository racePlayerRepository,
             RedisPresenceService redisPresenceService,
@@ -74,7 +61,11 @@ public class RacePlayerRuntimeSessionService {
                 currentRacePlayerService.resolveCurrentRacePlayerIdentity(request);
         validateIdentity(identity);
 
-        LocalDateTime now = LocalDateTime.now(clock);
+        // One absolute read per operation: Redis stores the Instant (epoch),
+        // the durable LocalDateTime view of the SAME moment feeds MySQL and
+        // the reconnect policy.
+        Instant nowInstant = clock.instant();
+        LocalDateTime now = DateTimeUtils.toLocalDateTime(nowInstant, clock.getZone());
 
         RedisHeartbeatLookup redisHeartbeatLookup = readRedisHeartbeat(
                 identity.raceId(),
@@ -105,7 +96,7 @@ public class RacePlayerRuntimeSessionService {
                 redisPresenceService.markOnline(
                         identity.raceId(),
                         identity.racePlayerId(),
-                        now
+                        nowInstant
                 );
             } catch (DataAccessException exception) {
                 logRedisFailure("refresh heartbeat", identity.raceId(), identity.racePlayerId(), exception);
@@ -142,7 +133,8 @@ public class RacePlayerRuntimeSessionService {
 
         RacePlayer racePlayer = findLockedRacePlayer(sessionRacePlayer);
         Race race = Objects.requireNonNull(racePlayer.getRace());
-        LocalDateTime now = LocalDateTime.now(clock);
+        Instant nowInstant = clock.instant();
+        LocalDateTime now = DateTimeUtils.toLocalDateTime(nowInstant, clock.getZone());
 
         if (race.getStatus() == RaceStatus.FINISHED) {
             markOfflineIgnoringRedisOutage(race.getId(), racePlayer.getId());
@@ -199,7 +191,7 @@ public class RacePlayerRuntimeSessionService {
         advanceLastSeenAt(racePlayer, now);
 
         try {
-            redisPresenceService.markOnline(race.getId(), racePlayer.getId(), now);
+            redisPresenceService.markOnline(race.getId(), racePlayer.getId(), nowInstant);
         } catch (DataAccessException exception) {
             logRedisFailure("refresh reconnect presence", race.getId(), racePlayer.getId(), exception);
         }
@@ -427,8 +419,15 @@ public class RacePlayerRuntimeSessionService {
             String operation
     ) {
         try {
+            // Redis speaks absolute Instants; the reconnect policy still
+            // compares in the durable LocalDateTime domain, so convert the
+            // SAME moment using the application zone.
             return RedisHeartbeatLookup.available(
                     redisPresenceService.findLastHeartbeatAt(raceId, racePlayerId)
+                            .map(heartbeatInstant -> DateTimeUtils.toLocalDateTime(
+                                    heartbeatInstant,
+                                    clock.getZone()
+                            ))
             );
         } catch (DataAccessException exception) {
             logRedisFailure(operation, raceId, racePlayerId, exception);
