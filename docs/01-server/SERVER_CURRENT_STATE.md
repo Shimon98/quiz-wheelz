@@ -1,8 +1,8 @@
 # Server Current State
 
 **Status:** Canonical  
-**Audit date:** 2026-07-30  
-**Code baseline:** `main@47fe75fa763af2ecc4deb4e8bc972f564ee73b15`  
+**Audit date:** 2026-08-19
+**Code baseline:** `main@74402e6a8d702ca0299568e2130ce88dcb7a3917`
 **This document owns:** the implemented backend capabilities, gaps and stale assumptions
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -55,7 +55,8 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - capacity/status checks
 - separate race-player token/cookie
 - lane and vehicle assignment
-- race-state snapshot
+- race-state with refresh-safe current-player presentation identity and the shared
+  runtime snapshot
 - Redis-first heartbeat and presence with 45-second presence TTL.
 - 30-second Redis-gated durable `lastSeenAt` checkpoints and direct MySQL fallback
   during runtime Redis outages.
@@ -101,6 +102,8 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - safe DTOs with epoch-millisecond timing (`serverTimeEpochMs` +
   `expiresAtEpochMs`; submit-answer exposes `answeredAtEpochMs` +
   `expiresAtEpochMs`)
+- frozen ObjectMapper serialization/no-leak coverage for the public race-state,
+  current-question, submit-answer, heartbeat, leave and reconnect contracts
 - answer validation and persistence
 - duplicate-submit protection.
 

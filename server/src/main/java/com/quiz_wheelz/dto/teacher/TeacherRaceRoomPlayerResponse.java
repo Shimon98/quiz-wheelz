@@ -34,7 +34,10 @@ public class TeacherRaceRoomPlayerResponse {
                 player.getLaneNumber(),
                 player.getVehicleTypeKey(),
                 player.getVehicleColorKey(),
-                buildVehicleAssetKey(player),
+                RacePlayerRules.buildVehicleAssetKey(
+                        player.getVehicleTypeKey(),
+                        player.getVehicleColorKey()
+                ),
                 player.getPosition(),
                 player.getSpeed(),
                 player.getScore(),
@@ -42,11 +45,5 @@ public class TeacherRaceRoomPlayerResponse {
                 player.getStatus().name(),
                 player.getJoinedAt()
         );
-    }
-
-    private static String buildVehicleAssetKey(RacePlayer player) {
-        return player.getVehicleTypeKey()
-                + RacePlayerRules.VEHICLE_ASSET_SEPARATOR
-                + player.getVehicleColorKey();
     }
 }

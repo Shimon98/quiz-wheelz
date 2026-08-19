@@ -1,6 +1,7 @@
 package com.quiz_wheelz.controller;
 
 import com.quiz_wheelz.common.ApiMessages;
+import com.quiz_wheelz.common.ApiPaths;
 import com.quiz_wheelz.common.ApiResponse;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerHeartbeatResponse;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerLeaveResponse;
@@ -21,10 +22,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
 
+import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
@@ -74,6 +78,7 @@ class RacePlayerControllerRuntimeSessionTest {
         ApiResponse<RacePlayerHeartbeatResponse> body = response.getBody();
 
         assertEquals(200, response.getStatusCode().value());
+        assertNotNull(body);
         assertTrue(body.isSuccess());
         assertEquals(
                 ApiMessages.RACE_PLAYER_HEARTBEAT_RECEIVED_SUCCESSFULLY,
@@ -101,6 +106,7 @@ class RacePlayerControllerRuntimeSessionTest {
         ApiResponse<RacePlayerLeaveResponse> body = response.getBody();
 
         assertEquals(200, response.getStatusCode().value());
+        assertNotNull(body);
         assertTrue(body.isSuccess());
         assertEquals(
                 ApiMessages.RACE_PLAYER_LEFT_SUCCESSFULLY,
@@ -133,6 +139,7 @@ class RacePlayerControllerRuntimeSessionTest {
         ApiResponse<RacePlayerReconnectResponse> body = response.getBody();
 
         assertEquals(200, response.getStatusCode().value());
+        assertNotNull(body);
         assertTrue(body.isSuccess());
         assertEquals(
                 ApiMessages.RACE_PLAYER_RECONNECT_RESOLVED_SUCCESSFULLY,
@@ -141,6 +148,25 @@ class RacePlayerControllerRuntimeSessionTest {
         assertSame(reconnectResponse, body.getData());
 
         verify(racePlayerRuntimeSessionService).reconnect(request);
+    }
+
+    @Test
+    void runtimeSessionOperationsShouldBePostOnTheirFocusedPaths() throws NoSuchMethodException {
+        assertPostMapping("heartbeat", ApiPaths.CURRENT_HEARTBEAT);
+        assertPostMapping("leave", ApiPaths.CURRENT_LEAVE);
+        assertPostMapping("reconnect", ApiPaths.CURRENT_RECONNECT);
+    }
+
+    private void assertPostMapping(String methodName, String expectedPath)
+            throws NoSuchMethodException {
+        Method endpoint = RacePlayerController.class.getMethod(
+                methodName,
+                HttpServletRequest.class
+        );
+        PostMapping postMapping = endpoint.getAnnotation(PostMapping.class);
+
+        assertNotNull(postMapping);
+        assertEquals(expectedPath, postMapping.value()[0]);
     }
 
     private RacePlayerController createController() {

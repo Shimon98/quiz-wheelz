@@ -1,8 +1,8 @@
 # Architecture and Contracts
 
 **Status:** Canonical  
-**Audit date:** 2026-07-30  
-**Code baseline:** `main@47fe75fa763af2ecc4deb4e8bc972f564ee73b15`  
+**Audit date:** 2026-08-19
+**Code baseline:** `main@74402e6a8d702ca0299568e2130ce88dcb7a3917`
 **This document owns:** the cross-system architecture, data ownership, API boundaries and runtime contracts
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -133,7 +133,7 @@ SSE will use a dedicated teacher-owned stream path decided by the server plan.
 ```http
 POST /api/race-players/join
 GET  /api/race-players/me/race-state
-GET  /api/race-players/me/question/current
+POST /api/race-players/me/question/current
 POST /api/race-players/me/answers
 POST /api/race-players/me/heartbeat
 POST /api/race-players/me/leave
@@ -149,8 +149,16 @@ Every student state source maps into one client runtime shape:
   "raceId": 12,
   "raceTitle": "Multiplication Race",
   "roomCode": "ABC123",
-  "startedAt": "2026-07-30T10:00:00",
+  "startedAt": "2026-08-19T16:00:00",
   "finishedAt": null,
+  "player": {
+    "racePlayerId": 91,
+    "displayName": "Noa",
+    "laneNumber": 3,
+    "vehicleTypeKey": "HOVER_KART",
+    "vehicleColorKey": "GREEN",
+    "vehicleAssetKey": "HOVER_KART_GREEN"
+  },
   "snapshot": {
     "totalDistance": 1000,
     "score": 420,
@@ -162,14 +170,30 @@ Every student state source maps into one client runtime shape:
     "playerStatus": "RACING",
     "raceStatus": "IN_PROGRESS",
     "playerFinished": false,
-    "raceFinished": false
+    "raceFinished": false,
+    "snapshotAtEpochMs": 1787148000000,
+    "movementUnitsPerSecond": 4.8
   }
 }
 ```
 
-The answer response should contain deltas plus the same snapshot shape. Future
-reconnect and SSE data must reuse the same vocabulary instead of inventing another
-parallel state object.
+The answer response contains deltas plus the same snapshot shape. The `player`
+block owns stable presentation identity only; `snapshot.playerStatus` remains the
+single owner of runtime player status.
+
+Approved answer semantics:
+
+```text
+CORRECT → answer-derived progress bonus + speed boost
+WRONG   → no answer-derived progress bonus + speed penalty
+TIMEOUT → no answer-derived progress bonus + stronger speed penalty
+```
+
+Baseline server-authoritative movement continues after wrong answers and timeouts,
+so every race still finishes. Reconnect remains a focused command: when continuation
+is possible, the client follows it with `GET race-state` to rebuild the latest state.
+Future SSE data must reuse the snapshot vocabulary instead of inventing a parallel
+runtime model.
 
 ## Command/query rule
 

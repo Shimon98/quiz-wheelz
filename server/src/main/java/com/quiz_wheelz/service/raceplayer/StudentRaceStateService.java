@@ -1,5 +1,6 @@
 package com.quiz_wheelz.service.raceplayer;
 
+import com.quiz_wheelz.dto.raceplayer.StudentRacePlayerPresentationResponse;
 import com.quiz_wheelz.dto.raceplayer.StudentRaceRuntimeSnapshotResponse;
 import com.quiz_wheelz.dto.raceplayer.StudentRaceStateResponse;
 import com.quiz_wheelz.entitys.Race;
@@ -20,13 +21,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-/**
- * Race-state read with movement materialization (C1-03M): position advances
- * continuously with server time, so a snapshot must first settle the locked
- * player (honoring an overdue timeout) up to one decision instant. The
- * endpoint stays a GET — settling deterministic elapsed-time state is not a
- * game action, repeated reads award nothing and are idempotent over time.
- */
 @Service
 public class StudentRaceStateService {
 
@@ -58,8 +52,6 @@ public class StudentRaceStateService {
         RacePlayer sessionRacePlayer =
                 currentRacePlayerService.resolveCurrentRacePlayerSession(request);
 
-        // Settlement writes — serialize with answers/questions through the
-        // same PESSIMISTIC_WRITE player lock (a no-op for non-RACING states).
         RacePlayer racePlayer = racePlayerRepository
                 .findLockedByIdAndRaceId(
                         sessionRacePlayer.getId(),
@@ -82,9 +74,6 @@ public class StudentRaceStateService {
                 decisionEpochMs
         );
 
-        // Immediate raceFinished truth when THIS settlement crossed the line;
-        // the scheduler's reconciliation pass remains the concurrent-finish
-        // safety net.
         if (wasRacing && racePlayer.getStatus() == RacePlayerStatus.FINISHED) {
             raceFinishService.finishRaceIfNeeded(race);
         }
@@ -98,6 +87,7 @@ public class StudentRaceStateService {
                 race.getRoomCode(),
                 race.getStartedAt(),
                 race.getFinishedAt(),
+                StudentRacePlayerPresentationResponse.from(racePlayer),
                 snapshot
         );
     }

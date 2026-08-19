@@ -36,8 +36,17 @@ public final class RacePlayerRules {
             "CYAN"
     );
 
-    public static final String VEHICLE_ASSET_SEPARATOR = "_";
+    private static final String VEHICLE_ASSET_SEPARATOR = "_";
 
     private RacePlayerRules() {
+    }
+
+    public static String buildVehicleAssetKey(
+            String vehicleTypeKey,
+            String vehicleColorKey
+    ) {
+        return vehicleTypeKey
+                + VEHICLE_ASSET_SEPARATOR
+                + vehicleColorKey;
     }
 }
