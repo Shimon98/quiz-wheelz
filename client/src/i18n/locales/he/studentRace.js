@@ -32,6 +32,9 @@ export default {
     errorTitle: "לא הצלחנו לטעון את השאלה",
     timeUp: "נגמר הזמן! טוענים שאלה חדשה...",
     syncError: "נגמר הזמן, אבל לא הצלחנו להתעדכן",
+    correctFeedback: "נכון!",
+    wrongFeedback: "כמעט!",
+    answerSyncing: "בודקים את מצב המרוץ...",
   },
 
   timer: {

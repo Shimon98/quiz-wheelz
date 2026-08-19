@@ -229,16 +229,21 @@ Each pooled object tracks:
 
 Vehicles do not need visible wheels.
 
-Layer model:
+**LOCKED (2026-08-19): the character/vehicle is ONE composite art asset.**
+The monkey + helmet + scarf + tail + hover kart + propulsion housings are a
+single transparent rear-view image placed as one sprite. Never assemble the
+driver/vehicle from separate coded parts (head sprite + tail sprite + kart
+body...), and never redraw the final art with Graphics/CSS — the current
+Graphics kart is a placeholder that the real asset replaces wholesale.
 
-```text
-hoverKartBase
-hoverKartColorMask
-hoverKartShadow
-hoverKartTrail
-```
+Future idle animation (C1-06) = 3–4 COMPLETE aligned frame textures looped
+(same canvas size, same pivot, near-identical silhouette; only the tail,
+scarf, hover glow and tiny body posture vary between frames). Tail/scarf
+motion is baked into those frames, not rigged.
 
-Motion:
+Separate Pixi overlays remain allowed on top of the composite sprite:
+shadow, hover shockwave rings, trail, boost glow, mud splash, correct/wrong
+pulses (C1-06). Container-level motion also stays code-side:
 
 ```text
 idle       → subtle vertical bob
@@ -248,7 +253,25 @@ wrong      → short shake + mud splash
 lateral    → slight side tilt
 ```
 
-Server owns `vehicleTypeKey` and `vehicleColorKey`. Client maps keys to art.
+Server owns `vehicleTypeKey` and `vehicleColorKey`. Client maps keys to
+whole-asset art (opponents follow the same composite concept later).
+
+## Continuous world flow (C1-03)
+
+Two distances, never confused:
+
+```text
+position               server-authoritative race progress — finish line,
+                       future opponents, anything gameplay-relative
+continuousWorldOffset  renderer-internal cosmetic travel accumulated from
+                       the authoritative server speed — repeating road/
+                       jungle scroll only
+```
+
+The road flows the whole time the server speed is above zero (race start
+grants `MIN_RACING_SPEED`), accelerates/decelerates with answer results,
+and stops only because FINISHED speed is 0 — the renderer has no status
+logic, and decorative travel never becomes gameplay truth.
 
 ## Opponents
 

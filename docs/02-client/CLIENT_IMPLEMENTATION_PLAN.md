@@ -230,26 +230,56 @@ feedback, snapshot application after answers (all C1-03); HUD stats (C1-04).
 
 ### C1-03 — Submit answer and snapshot mapping
 
-**Status: NEXT** — `applyRaceSnapshot` already accepts the same snapshot
-shape `raceImpact` returns; reuse it, do not add a second snapshot mapper.
-C1-02 left ready: `submitAnswer()` wrapper, question/choice ids,
-`onChoiceSelect` + `interactionEnabled` props on the panel, and
-`refreshQuestion()` for the post-answer cycle.
+**Status: DONE (2026-08-19).** The playable loop is real:
 
 ```text
 select answer
-→ disable buttons
+→ lock all buttons immediately (single-flight ref)
 → submit selectedChoiceId
-→ show server result
-→ apply returned snapshot target
-→ fetch/receive next question
+→ server correctness feedback shown immediately (✓ נכון! / ✕ כמעט!)
+→ raceImpact.snapshot applied the same instant via applyRaceSnapshot
+→ feedbackDelayMs dwell → refreshQuestion() → next question
 ```
 
-All timings come from one feature config.
+Implementation notes:
+
+- `runtime/mapSubmitAnswerToModel.js` — the submit boundary. Validates ONLY
+  what the client consumes: response↔request identity, `correct`,
+  correct-answer semantics (null on correct; on wrong the revealed id must
+  belong to the submitted question's choices), snapshot presence. Unconsumed
+  wire fields (questionStatus, timing echoes, deltas) join when a consumer
+  exists (C1-04 HUD).
+- `hooks/useStudentRaceAnswer.js` — answer lifecycle owner, separate from
+  the question hook. Retains the submitted question MODEL INSTANCE for the
+  whole feedback window (feedback can never paint onto the next question);
+  staleness is DERIVED (dwell over + new question instance), so no reset
+  effects exist. Never computes score/progress/speed/finish.
+- `useRaceBootstrap` applies the latest answer snapshot over the race-state
+  baseline through the SAME `applyRaceSnapshot`; the override is keyed to
+  the raceState instance, so a fresh race-state refetch supersedes it
+  automatically.
+- Continuous Person-First motion: the renderer accumulates a cosmetic
+  `continuousWorldOffset` from the authoritative server speed and adds it to
+  the decorative `worldOffset` (Road/Jungle only) — position stays
+  server-owned, the finish line still projects from `visualPosition`, and
+  FINISHED speed 0 stops the flow with no status checks. Server side, race
+  start now sets `MIN_RACING_SPEED` on the WAITING→RACING transition.
+- Error policy: `QUESTION_EXPIRED` = time-up presentation + question resync
+  (never "wrong", no snapshot); lifecycle conflicts + ambiguous
+  transient/contract failures resync race-state + question — a POST is
+  NEVER auto-resubmitted; session errors go through the existing gate.
+  Only `QUESTION_EXPIRED` was added to `serverErrorNames` — the other
+  stale-question errors share the generic resync and are not branched on.
+- Finish: the final snapshot flips the view to FINISHED immediately; the
+  page keeps the race screen visible for the feedback window
+  (`isFeedbackDwellActive`) so the child sees the finish react, then the
+  existing finished view takes over.
+- `nextQuestionDelayMs` stays intentionally unused — one `feedbackDelayMs`
+  dwell is the whole pause; stacking both would feel sluggish.
 
 ### C1-04 — HUD
 
-**Status: PLANNED**
+**Status: NEXT**
 
 Render only fields provided by the server:
 

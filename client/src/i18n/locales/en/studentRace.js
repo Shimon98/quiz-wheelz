@@ -31,6 +31,9 @@ export default {
     errorTitle: "We couldn't load the question",
     timeUp: "Time's up! Loading a new question...",
     syncError: "Time's up, but we couldn't update",
+    correctFeedback: "Correct!",
+    wrongFeedback: "Almost!",
+    answerSyncing: "Checking the race state...",
   },
 
   timer: {

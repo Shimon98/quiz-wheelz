@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import useRacePlayerState from "../../../shared/racePlayer/useRacePlayerState.js";
 import { getRaceView } from "../../../shared/racePlayer/getRaceView.js";
 import { normalizeApiError } from "../../../errors/normalizeApiError.js";
 import { mapRaceStateToRuntime } from "../runtime/mapRaceStateToRuntime.js";
+import { applyRaceSnapshot } from "../runtime/applyRaceSnapshot.js";
 
 /*
  * useRaceBootstrap — the student race feature's orchestration layer. It only
@@ -12,14 +13,22 @@ import { mapRaceStateToRuntime } from "../runtime/mapRaceStateToRuntime.js";
  *   useRacePlayerState()          request lifecycle (shared loader)
  *           ↓ raceState
  *   mapRaceStateToRuntime()       server DTO → StudentRaceRuntimeState
- *           ↓ runtimeState
+ *           ↓ + latest answer snapshot (applyRaceSnapshot)
  *   getRaceView()                 authoritative state → client view
  *
- * and returns { runtimeState, view, isLoading, error, retry } for the future
- * StudentRacePage. The runtime is DERIVED from the loader's raceState (no
- * duplicated React state); a mapping failure (ApiContractError) surfaces as
- * a normalized API_CONTRACT error. No navigation, polling, notifications or
- * session redirects here — the page/guard layers decide what to DO.
+ * and returns { runtimeState, view, isLoading, error, retry,
+ * applyAuthoritativeSnapshot } for StudentRacePage. The runtime is DERIVED
+ * from the loader's raceState (no duplicated React state); a mapping failure
+ * (ApiContractError) surfaces as a normalized API_CONTRACT error. No
+ * navigation, polling, notifications or session redirects here — the
+ * page/guard layers decide what to DO.
+ *
+ * Answer snapshots (C1-03): submit-answer returns the same authoritative
+ * snapshot shape as race-state; the latest one overrides the baseline via
+ * the SAME applyRaceSnapshot owner. The override is keyed to the raceState
+ * instance it arrived on top of, so a successful race-state refetch (a new
+ * instance) automatically supersedes any stale answer override — fresh
+ * server truth always wins, with zero extra bookkeeping.
  */
 export default function useRaceBootstrap() {
   const {
@@ -29,20 +38,32 @@ export default function useRaceBootstrap() {
     retry,
   } = useRacePlayerState();
 
+  const [answerOverride, setAnswerOverride] = useState(null);
+
+  const applyAuthoritativeSnapshot = useCallback(
+    (snapshot) => {
+      setAnswerOverride({ snapshot, baseRaceState: raceState });
+    },
+    [raceState],
+  );
+
   const { runtimeState, mappingError } = useMemo(() => {
     if (raceState == null) {
       return { runtimeState: null, mappingError: null };
     }
 
     try {
-      return {
-        runtimeState: mapRaceStateToRuntime(raceState),
-        mappingError: null,
-      };
+      const baseline = mapRaceStateToRuntime(raceState);
+      const runtime =
+        answerOverride?.baseRaceState === raceState
+          ? applyRaceSnapshot(baseline, answerOverride.snapshot)
+          : baseline;
+
+      return { runtimeState: runtime, mappingError: null };
     } catch (rawError) {
       return { runtimeState: null, mappingError: normalizeApiError(rawError) };
     }
-  }, [raceState]);
+  }, [raceState, answerOverride]);
 
   // View exists only for real server state; UNKNOWN is a valid view (an
   // unrecognized status combination), NOT an API contract error.
@@ -53,5 +74,12 @@ export default function useRaceBootstrap() {
   // runtimeState/view can stay available ALONGSIDE the error.
   const error = requestError ?? mappingError;
 
-  return { runtimeState, view, isLoading, error, retry };
+  return {
+    runtimeState,
+    view,
+    isLoading,
+    error,
+    retry,
+    applyAuthoritativeSnapshot,
+  };
 }

@@ -36,6 +36,11 @@ export class StudentRaceRenderer {
     this.visualPosition = 0;
     this.visualSpeed = 0;
     this.cameraPosition = 0;
+    // Cosmetic Person-First flow (C1-03): repeating scenery keeps traveling
+    // at the authoritative server speed even while position holds still
+    // (the child is thinking). Presentation only — NEVER gameplay distance:
+    // the finish line and future opponents project from visualPosition.
+    this.continuousWorldOffset = 0;
 
     // Stacking order: background world behind, screen-fixed kart above the
     // moving world, effects on top.
@@ -175,6 +180,12 @@ export class StudentRaceRenderer {
       (targetPosition - this.visualPosition) * positionBlend;
     this.visualSpeed += (targetSpeed - this.visualSpeed) * speedBlend;
     this.cameraPosition = this.visualPosition;
+    // Speed-driven scenery travel: flows while RACING (server speed > 0),
+    // decays to a stop with the FINISHED speed of 0 — no status checks here.
+    this.continuousWorldOffset +=
+      this.visualSpeed *
+      serverUnits.speedToPixelsPerSecondRatio *
+      (ticker.deltaMS / 1000);
 
     // One frameState for every layer — the uniform layer interface.
     const frameState = {
@@ -184,7 +195,12 @@ export class StudentRaceRenderer {
       visualPosition: this.visualPosition,
       visualSpeed: this.visualSpeed,
       cameraPosition: this.cameraPosition,
-      worldOffset: this.cameraPosition * serverUnits.positionToPixelsRatio,
+      // Decorative repeating-scenery scroll (Road/Jungle only): the
+      // authoritative progress term keeps the correct-answer lurch, the
+      // continuous term keeps the road flowing between answers.
+      worldOffset:
+        this.cameraPosition * serverUnits.positionToPixelsRatio +
+        this.continuousWorldOffset,
       perspective: this.perspective,
       layout: this.layout,
       runtimeState: this.runtimeState,

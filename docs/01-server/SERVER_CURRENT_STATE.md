@@ -108,7 +108,9 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 
 - score delta
 - progress/position
-- speed
+- speed (race start moves WAITING→RACING players to `MIN_RACING_SPEED`, so
+  the race feels alive before the first answer; wrong answers floor at the
+  same minimum, FINISHED returns to 0 — C1-03)
 - streak/highest streak
 - difficulty progression
 - correct/wrong counters

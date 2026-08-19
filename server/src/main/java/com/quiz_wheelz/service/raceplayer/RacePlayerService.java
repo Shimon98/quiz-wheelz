@@ -1,5 +1,6 @@
 package com.quiz_wheelz.service.raceplayer;
 
+import com.quiz_wheelz.common.RaceProgressRules;
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.RacePlayerStatus;
@@ -43,6 +44,10 @@ public class RacePlayerService {
         for (RacePlayer player : players) {
             if (player.getStatus() == RacePlayerStatus.WAITING) {
                 player.setStatus(RacePlayerStatus.RACING);
+                // Racing starts at the minimum racing speed — the race must
+                // feel alive before the first answer (joining players stay at
+                // DEFAULT_SPEED 0 while WAITING; only this transition moves).
+                player.setSpeed(RaceProgressRules.MIN_RACING_SPEED);
                 player.setStartedAt(startedAt);
                 startedPlayers++;
             }

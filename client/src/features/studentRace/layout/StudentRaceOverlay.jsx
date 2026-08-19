@@ -13,6 +13,14 @@ export default function StudentRaceOverlay({
   questionError = null,
   questionExpired = false,
   onQuestionRetry = null,
+  // C1-03 answer flow (page-owned): interaction + server-driven feedback.
+  interactionEnabled = false,
+  onChoiceSelect = null,
+  selectedChoiceId = null,
+  correctAnswerChoiceId = null,
+  // No local default — the panel owns the IDLE fallback.
+  feedbackState,
+  isSubmitting = false,
 }) {
   return (
     <div className="pointer-events-none absolute inset-0 flex flex-col justify-between">
@@ -30,6 +38,12 @@ export default function StudentRaceOverlay({
         error={questionError}
         isExpired={questionExpired}
         onRetry={onQuestionRetry}
+        interactionEnabled={interactionEnabled}
+        onChoiceSelect={onChoiceSelect}
+        selectedChoiceId={selectedChoiceId}
+        correctAnswerChoiceId={correctAnswerChoiceId}
+        feedbackState={feedbackState}
+        isSubmitting={isSubmitting}
       />
     </div>
   );

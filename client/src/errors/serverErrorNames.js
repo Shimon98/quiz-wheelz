@@ -35,4 +35,10 @@ export const SERVER_ERROR_NAMES = Object.freeze({
   // page resyncs race-state and lets getRaceView decide the screen.
   RACE_PLAYER_NOT_RACING: "RACE_PLAYER_NOT_RACING",
   RACE_NOT_IN_PROGRESS: "RACE_NOT_IN_PROGRESS",
+
+  // Submit-answer: the deadline passed before the answer landed. Its own
+  // presentation (time-up, never "wrong"); the other stale-question errors
+  // (QUESTION_NOT_ACTIVE etc.) share the generic safe-resync path and are
+  // deliberately NOT named here — the client never branches on them.
+  QUESTION_EXPIRED: "QUESTION_EXPIRED",
 });

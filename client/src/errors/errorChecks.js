@@ -36,6 +36,14 @@ export function isRaceLifecycleConflictError(error) {
   );
 }
 
+/*
+ * Expiry on submit is NOT a wrong answer and NOT a lifecycle conflict: no
+ * feedback marking, no race resync — just a question resync.
+ */
+export function isQuestionExpiredError(error) {
+  return error?.errorName === SERVER_ERROR_NAMES.QUESTION_EXPIRED;
+}
+
 export function isApiContractError(error) {
   return error?.category === ERROR_CATEGORIES.API_CONTRACT;
 }

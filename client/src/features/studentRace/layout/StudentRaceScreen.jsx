@@ -15,10 +15,9 @@ import StudentRaceOverlay from "./StudentRaceOverlay";
  */
 export default function StudentRaceScreen({
   runtimeState = null,
-  question = null,
-  questionError = null,
-  questionExpired = false,
-  onQuestionRetry = null,
+  // Everything the overlay's question panel/timer needs (page-owned policy;
+  // see StudentRaceOverlay for the full prop list).
+  ...overlayProps
 }) {
   const { gameFrame } = STUDENT_RACE_VISUAL_CONFIG;
 
@@ -32,12 +31,7 @@ export default function StudentRaceScreen({
           runtimeState={runtimeState}
           className="absolute inset-0"
         />
-        <StudentRaceOverlay
-          question={question}
-          questionError={questionError}
-          questionExpired={questionExpired}
-          onQuestionRetry={onQuestionRetry}
-        />
+        <StudentRaceOverlay {...overlayProps} />
       </div>
     </div>
   );
