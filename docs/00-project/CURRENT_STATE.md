@@ -46,7 +46,7 @@ opponents, and the teacher live race/SSE screen and results.
 | Student runtime snapshot | DONE | applied from race-state AND answers via one mapper | DONE |
 | Heartbeat/leave/reconnect | DONE | not integrated | PARTIAL |
 | Student Pixi race foundation | N/A | UI-10A–G DONE | PARTIAL feature |
-| Student question panel/HUD | server data exists | panel + timer DONE (C1-02); HUD stats PLANNED (C1-04) | PARTIAL |
+| Student question panel/HUD | server data exists | panel + timer DONE (C1-02); HUD stats DONE (C1-04) | DONE |
 | Opponent vehicles/nearby players | missing contract | planned renderer | PLANNED |
 | Teacher live-state query | PLANNED | route constant only | PLANNED |
 | Teacher SSE | PLANNED | PLANNED | PLANNED |

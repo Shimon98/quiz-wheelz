@@ -31,7 +31,7 @@ export default function StudentRaceScreen({
           runtimeState={runtimeState}
           className="absolute inset-0"
         />
-        <StudentRaceOverlay {...overlayProps} />
+        <StudentRaceOverlay runtimeState={runtimeState} {...overlayProps} />
       </div>
     </div>
   );

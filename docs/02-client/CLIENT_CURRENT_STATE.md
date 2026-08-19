@@ -126,9 +126,22 @@ Implemented A–G:
   conflicts and ambiguous transient failures resync race+question with no
   automatic POST retry; session errors gate to `/join`.
 
+### Student race HUD (C1-04 — done 2026-08-19)
+
+- compact HUD in the existing safe area: score / existing question timer /
+  streak on top, progress bar + speed below — all read-only from the same
+  runtime state that race-state polling and answer snapshots already update
+  (no new store, polling or API)
+- progress is presentation-only (`getRaceProgressRatio`): clamped drawing of
+  position/totalDistance; no bar when the server has not provided a valid
+  distance; no rank (S1-02), no effect badge (no authoritative activeEffect
+  field yet), no difficulty in the HUD
+- client automated test foundation added (Vitest + jsdom + React Testing
+  Library, `npm run test`) with focused HUD/progress tests; policy in
+  TESTING_AND_DEFINITION_OF_DONE.
+
 ## Missing integration
 
-- HUD
 - heartbeat/leave/reconnect
 - opponent vehicles
 - teacher live page
@@ -143,7 +156,7 @@ Implemented A–G:
 ## Immediate client priority
 
 ```text
-HUD + reconnect (C1-04/05)
+reconnect (C1-05)
 → real assets/opponents (C1-06/C2)
 → teacher live/SSE (C3)
 ```
