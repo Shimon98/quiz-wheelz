@@ -292,6 +292,8 @@ export default function useRacePlayerRuntimeSession() {
     reconnectNow: runReconnect,
     stopPresence,
     isGameplayConnectionReady:
+      hasResolvedSession &&
+      error == null &&
       connectionState === RACE_PLAYER_CONNECTION_STATES.CONNECTED &&
       terminalOutcome == null &&
       isDocumentVisible &&

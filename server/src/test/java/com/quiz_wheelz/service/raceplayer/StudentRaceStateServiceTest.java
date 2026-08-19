@@ -73,6 +73,12 @@ class StudentRaceStateServiceTest {
         assertEquals(ROOM_CODE, response.getRoomCode());
         assertSame(racePlayer.getRace().getStartedAt(), response.getStartedAt());
         assertSame(racePlayer.getRace().getFinishedAt(), response.getFinishedAt());
+        assertEquals(RACE_PLAYER_ID, response.getPlayer().getRacePlayerId());
+        assertEquals("Noa", response.getPlayer().getDisplayName());
+        assertEquals(3, response.getPlayer().getLaneNumber());
+        assertEquals("HOVER_KART", response.getPlayer().getVehicleTypeKey());
+        assertEquals("GREEN", response.getPlayer().getVehicleColorKey());
+        assertEquals("HOVER_KART_GREEN", response.getPlayer().getVehicleAssetKey());
         assertEquals(RacePlayerStatus.RACING, response.getSnapshot().getPlayerStatus());
         assertEquals(RaceStatus.IN_PROGRESS, response.getSnapshot().getRaceStatus());
         assertFalse(response.getSnapshot().isPlayerFinished());
@@ -215,6 +221,10 @@ class StudentRaceStateServiceTest {
         RacePlayer racePlayer = new RacePlayer();
         racePlayer.setId(RACE_PLAYER_ID);
         racePlayer.setRace(race);
+        racePlayer.setDisplayName("Noa");
+        racePlayer.setLaneNumber(3);
+        racePlayer.setVehicleTypeKey("HOVER_KART");
+        racePlayer.setVehicleColorKey("GREEN");
         racePlayer.setStatus(playerStatus);
         racePlayer.setScore(50);
         racePlayer.setPosition(120.0);

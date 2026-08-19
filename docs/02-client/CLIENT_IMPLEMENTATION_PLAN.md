@@ -1,8 +1,8 @@
 # Client Implementation Plan
 
 **Status:** Canonical  
-**Audit date:** 2026-07-30  
-**Code baseline:** `main@47fe75fa763af2ecc4deb4e8bc972f564ee73b15`  
+**Audit date:** 2026-08-19
+**Code baseline:** `main@74402e6a8d702ca0299568e2130ce88dcb7a3917`
 **This document owns:** the ordered frontend task list with integration dependencies and completion gates
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -391,11 +391,11 @@ transient failure while online+visible
 
 ### C1-06 — Real asset pass and hover kart
 
-**Status: NEXT** — before building, re-audit the presentation-identity
-contract: the join response carries `laneNumber`/`vehicleTypeKey`/
-`vehicleColorKey`/`vehicleAssetKey` but race-state does not yet return them,
-so refresh-safe vehicle rendering must come from a server-restorable field
-(server contract gap to raise with Diana), never from sessionStorage.
+**Status: NEXT** — S1-01 closed the server-side presentation-identity gap:
+race-state now carries the current RacePlayer's `racePlayerId`, `displayName`,
+`laneNumber`, `vehicleTypeKey`, `vehicleColorKey` and `vehicleAssetKey`. C1-06 still
+owns client consumption and refresh-safe vehicle rendering; it must use this server
+truth, never `sessionStorage`.
 
 - asset manifest keys
 - metadata-driven props

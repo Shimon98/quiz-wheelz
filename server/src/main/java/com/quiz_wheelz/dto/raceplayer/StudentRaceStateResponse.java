@@ -16,5 +16,6 @@ public class StudentRaceStateResponse {
     private LocalDateTime startedAt;
     private LocalDateTime finishedAt;
 
+    private StudentRacePlayerPresentationResponse player;
     private StudentRaceRuntimeSnapshotResponse snapshot;
 }

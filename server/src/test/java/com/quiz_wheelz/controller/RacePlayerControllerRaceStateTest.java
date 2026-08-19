@@ -1,7 +1,9 @@
 package com.quiz_wheelz.controller;
 
 import com.quiz_wheelz.common.ApiMessages;
+import com.quiz_wheelz.common.ApiPaths;
 import com.quiz_wheelz.common.ApiResponse;
+import com.quiz_wheelz.dto.raceplayer.StudentRacePlayerPresentationResponse;
 import com.quiz_wheelz.dto.raceplayer.StudentRaceRuntimeSnapshotResponse;
 import com.quiz_wheelz.dto.raceplayer.StudentRaceStateResponse;
 import com.quiz_wheelz.enums.Difficulty;
@@ -20,10 +22,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
@@ -68,6 +74,7 @@ class RacePlayerControllerRaceStateTest {
         ApiResponse<StudentRaceStateResponse> body = response.getBody();
 
         assertEquals(200, response.getStatusCode().value());
+        assertNotNull(body);
         assertTrue(body.isSuccess());
         assertEquals(
                 ApiMessages.STUDENT_RACE_STATE_LOADED_SUCCESSFULLY,
@@ -77,6 +84,21 @@ class RacePlayerControllerRaceStateTest {
         assertEquals(RaceStatus.IN_PROGRESS, body.getData().getSnapshot().getRaceStatus());
 
         verify(studentRaceStateService).getRaceState(request);
+    }
+
+    @Test
+    void raceStateOperationShouldBeGetOnTheCurrentRaceStatePath() throws NoSuchMethodException {
+        RequestMapping baseMapping = RacePlayerController.class.getAnnotation(RequestMapping.class);
+        Method endpoint = RacePlayerController.class.getMethod(
+                "getRaceState",
+                HttpServletRequest.class
+        );
+        GetMapping getMapping = endpoint.getAnnotation(GetMapping.class);
+
+        assertNotNull(baseMapping);
+        assertEquals(ApiPaths.RACE_PLAYERS, baseMapping.value()[0]);
+        assertNotNull(getMapping);
+        assertEquals(ApiPaths.CURRENT_RACE_STATE, getMapping.value()[0]);
     }
 
     private RacePlayerController createController() {
@@ -98,6 +120,14 @@ class RacePlayerControllerRaceStateTest {
                 "ABC123",
                 LocalDateTime.of(2026, 7, 5, 10, 0),
                 null,
+                new StudentRacePlayerPresentationResponse(
+                        9L,
+                        "Noa",
+                        3,
+                        "HOVER_KART",
+                        "GREEN",
+                        "HOVER_KART_GREEN"
+                ),
                 new StudentRaceRuntimeSnapshotResponse(
                         1000,
                         50,

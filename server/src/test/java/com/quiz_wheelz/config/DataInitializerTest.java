@@ -60,6 +60,11 @@ class DataInitializerTest {
 
         List<QuestionTemplate> savedTemplates = templateCaptor.getAllValues();
 
+        assertTrue(savedTemplates.stream().allMatch(template ->
+                template.getChoicesCount()
+                        == QuestionTemplateSeedRules.DEFAULT_CHOICES_COUNT
+        ));
+
         assertContainsTemplate(
                 savedTemplates,
                 QuestionType.ADDITION,

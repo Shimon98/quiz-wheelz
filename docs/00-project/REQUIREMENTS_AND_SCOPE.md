@@ -1,8 +1,8 @@
 # Requirements and Scope
 
 **Status:** Canonical  
-**Audit date:** 2026-07-30  
-**Code baseline:** `main@47fe75fa763af2ecc4deb4e8bc972f564ee73b15`  
+**Audit date:** 2026-08-19
+**Code baseline:** `main@74402e6a8d702ca0299568e2130ce88dcb7a3917`
 **This document owns:** the product/lecturer requirements and the project decision for each one
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -26,9 +26,9 @@ rendered as a race.
 | Teacher may approve registrations | Current decision is automatic valid join; approval can be added only if required | DEFERRED decision |
 | Teacher starts/finishes race | Start exists; finish is engine-driven | PARTIAL |
 | Generated questions, not fixed bank | Template-driven on-demand generation | DONE |
-| Four mobile answer choices | Server and UI direction locked | PARTIAL integration |
+| Four mobile answer choices | Production Math generation and student UI use four unique choices | DONE |
 | Difficulty adaptation | Basic difficulty progression exists; richer skill policy later | PARTIAL |
-| Fair scoring/progress | Server engine exists | DONE foundation |
+| Fair scoring/progress | Continuous server movement; correct adds progress, wrong/timeout do not | DONE foundation |
 | Teacher projected live dashboard | Initial state + SSE + visual race required | PLANNED |
 | SSE for live updates | Preferred first live mechanism | PLANNED |
 | Live overtake/streak/bonus alerts | Derived from server events, never pixels | PLANNED |

@@ -24,9 +24,10 @@ public class JoinedRacePlayerResponse {
                 player.getLaneNumber(),
                 player.getVehicleTypeKey(),
                 player.getVehicleColorKey(),
-                player.getVehicleTypeKey()
-                        + RacePlayerRules.VEHICLE_ASSET_SEPARATOR
-                        + player.getVehicleColorKey(),
+                RacePlayerRules.buildVehicleAssetKey(
+                        player.getVehicleTypeKey(),
+                        player.getVehicleColorKey()
+                ),
                 player.getStatus().name()
         );
     }

@@ -1,6 +1,7 @@
 package com.quiz_wheelz.controller;
 
 import com.quiz_wheelz.common.ApiMessages;
+import com.quiz_wheelz.common.ApiPaths;
 import com.quiz_wheelz.common.ApiResponse;
 import com.quiz_wheelz.dto.answer.StudentAnswerRaceImpactResponse;
 import com.quiz_wheelz.dto.answer.SubmitAnswerRequest;
@@ -24,11 +25,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
 
-import java.time.LocalDateTime;
-
+import java.lang.reflect.Method;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
@@ -106,6 +108,7 @@ class RacePlayerControllerSubmitAnswerTest {
         ApiResponse<SubmitAnswerResponse> body = response.getBody();
 
         assertEquals(200, response.getStatusCode().value());
+        assertNotNull(body);
         assertTrue(body.isSuccess());
         assertEquals(
                 ApiMessages.STUDENT_ANSWER_SUBMITTED_SUCCESSFULLY,
@@ -125,6 +128,19 @@ class RacePlayerControllerSubmitAnswerTest {
                 racePlayer,
                 submitAnswerRequest
         );
+    }
+
+    @Test
+    void submitAnswerOperationShouldBePostOnTheSubmitAnswerPath() throws NoSuchMethodException {
+        Method endpoint = RacePlayerController.class.getMethod(
+                "submitAnswer",
+                HttpServletRequest.class,
+                SubmitAnswerRequest.class
+        );
+        PostMapping postMapping = endpoint.getAnnotation(PostMapping.class);
+
+        assertNotNull(postMapping);
+        assertEquals(ApiPaths.SUBMIT_ANSWER, postMapping.value()[0]);
     }
 
     private RacePlayerController createController() {
