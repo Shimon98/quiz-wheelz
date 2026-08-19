@@ -20,7 +20,7 @@ export default {
     cancelledBody: "The teacher closed this race. You can join a new race with a room code.",
 
     disconnectedTitle: "You lost connection to the race",
-    disconnectedBody: "You can try refreshing the race state.",
+    disconnectedBody: "You can't continue this race. You can join a new race with a room code.",
 
     unknownTitle: "Something went wrong",
     unknownBody: "We got an unexpected state from the server. Try refreshing.",
@@ -35,6 +35,13 @@ export default {
     wrongFeedback: "Almost!",
     answerSyncing: "Checking the race state...",
     loadingNext: "Loading the next question...",
+  },
+
+  connection: {
+    offlineTitle: "No internet connection",
+    offlineBody: "We'll keep your screen and try to reconnect",
+    reconnectingTitle: "Reconnecting...",
+    reconnectingBody: "Continuing from where the server left off in a moment",
   },
 
   hud: {

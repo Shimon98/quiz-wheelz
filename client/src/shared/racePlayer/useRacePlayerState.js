@@ -85,6 +85,13 @@ export default function useRacePlayerState() {
     setReloadToken((token) => token + 1);
   }, []);
 
+  // Recovery-grade resync (C1-05): unlike retry/silentRefresh it SUPERSEDES
+  // an in-flight request instead of no-oping (latest wins, no loading flip).
+  const authoritativeResync = useCallback(() => {
+    isLoadingRef.current = true;
+    setReloadToken((token) => token + 1);
+  }, []);
+
   // Single-flight guard for silent refreshes (retry() has isLoadingRef).
   const isSilentRefreshingRef = useRef(false);
 
@@ -117,5 +124,5 @@ export default function useRacePlayerState() {
       });
   }, []);
 
-  return { raceState, isLoading, error, retry, silentRefresh };
+  return { raceState, isLoading, error, retry, silentRefresh, authoritativeResync };
 }

@@ -347,19 +347,47 @@ safe area — server truth in, pixels out:
 
 ### C1-05 — Presence/reconnect
 
-**Status: NEXT** — C1-01 deliberately created no heartbeat, reconnect,
-online/offline or connection-state code; this task is the single future owner.
+**Status: DONE (2026-08-19, live E2E verified).** One shared runtime-session
+lifecycle owner, consumed by both the waiting page and the race page:
 
-- heartbeat interval
-- `visibilitychange`/page lifecycle policy
-- explicit leave where appropriate
-- reconnect on refresh/network recovery
-- friendly session-expired state
-- do not navigate based on local guess.
+```text
+route entry / browser online / hidden→visible / manual retry
+  → POST reconnect (server resolves the lifecycle FIRST)
+active outcome (RECONNECTED / WAITING_FOR_RACE)
+  → CONNECTED + heartbeat every 15s (single-flight, visible+online only)
+terminal outcome (PLAYER_FINISHED / RACE_FINISHED / ALREADY_DISCONNECTED /
+RECONNECT_WINDOW_EXPIRED — returned by reconnect, thrown by heartbeat)
+  → heartbeat stops + race-state resync decides the final view
+transient failure while online+visible
+  → ONE conservative 5s reconnect retry (no hot loop)
+```
+
+- `shared/racePlayer/useRacePlayerRuntimeSession` owns reconnect/heartbeat/
+  retry/browser-event lifecycle; `mapRacePlayerReconnectToModel` is the DTO
+  boundary (consumed fields only); cadences live in
+  `racePlayerRuntimeSessionConfig` (15s heartbeat vs the server's 45s TTL).
+- Initial gameplay is gated: race-state/question hooks mount only after the
+  first reconnect resolution; after that the screen stays mounted through
+  degraded periods — polling and question requests pause (`syncEnabled` /
+  `questionEnabled`), answer interaction locks, and the shared
+  `RacePlayerConnectionNotice` shows OFFLINE/RECONNECTING (healthy = no UI).
+- Recovery reuses the existing owners: `resyncToken` →
+  `useRacePlayerState.authoritativeResync()` (supersedes in-flight requests,
+  latest wins); the question re-resolves via its own enable flip. Local
+  browser OFFLINE never invents `DISCONNECTED`; reconnect-window expiry is
+  terminal lifecycle (never a `/join` redirect); the authoritative
+  DISCONNECTED view lost its misleading retry button.
+- **Leave is deliberately unwired**: no client wrapper, and nothing fires on
+  refresh/unmount/pagehide/hidden — refresh must never equal quitting; a
+  wrapper appears only with a real explicit "leave race" action.
+- Focused tests cover the mapper, the full hook lifecycle (fake timers,
+  StrictMode, single-flight, offline/online/visibility, retry, terminal
+  outcomes, cleanup, no-leave), page-level session-first gating and the
+  degraded interaction lock.
 
 ### C1-06 — Real asset pass and hover kart
 
-**Status: PLANNED** — before building, re-audit the presentation-identity
+**Status: NEXT** — before building, re-audit the presentation-identity
 contract: the join response carries `laneNumber`/`vehicleTypeKey`/
 `vehicleColorKey`/`vehicleAssetKey` but race-state does not yet return them,
 so refresh-safe vehicle rendering must come from a server-restorable field

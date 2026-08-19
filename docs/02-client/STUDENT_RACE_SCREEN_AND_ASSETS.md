@@ -25,12 +25,11 @@ UI-10G layout contract
 ```
 
 Done: C1-01 bootstrap, C1-02 question panel/timer, C1-03 answer loop,
-C1-03M continuous authoritative movement, C1-04 HUD.
+C1-03M continuous authoritative movement, C1-04 HUD, C1-05 presence/reconnect.
 
 Next:
 
 ```text
-C1-05 presence/reconnect
 C1-06 assets/polish
 C2    opponents
 ```

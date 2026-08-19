@@ -28,6 +28,25 @@ function buildQuestion() {
 }
 
 describe("StudentRaceOverlay", () => {
+  it("locks answers and shows the connection notice while degraded (C1-05)", () => {
+    render(
+      <StudentRaceOverlay
+        runtimeState={createInitialRaceRuntimeState()}
+        question={buildQuestion()}
+        connectionState="RECONNECTING"
+        interactionEnabled={false}
+        onChoiceSelect={() => {}}
+      />,
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      i18n.t("studentRace:connection.reconnectingTitle"),
+    );
+    for (const choice of ["5", "6", "7", "8"]) {
+      expect(screen.getByRole("button", { name: choice })).toBeDisabled();
+    }
+  });
+
   it("contains exactly one question timer across the whole overlay", () => {
     render(
       <StudentRaceOverlay

@@ -1,6 +1,7 @@
 import StudentRaceHud from "../components/StudentRaceHud";
 import StudentRaceHudSafeArea from "../components/StudentRaceHudSafeArea";
 import StudentRaceQuestionPanel from "../components/StudentRaceQuestionPanel";
+import RacePlayerConnectionNotice from "../../../shared/racePlayer/RacePlayerConnectionNotice";
 
 /*
  * The React layer above the Pixi canvas (layout contract, G). The wrapper
@@ -11,6 +12,8 @@ import StudentRaceQuestionPanel from "../components/StudentRaceQuestionPanel";
 export default function StudentRaceOverlay({
   // C1-04 HUD: read-only server truth for score/streak/progress/speed.
   runtimeState = null,
+  // C1-05: degraded-connection presentation (OFFLINE/RECONNECTING only).
+  connectionState = null,
   question = null,
   questionError = null,
   questionExpired = false,
@@ -27,9 +30,12 @@ export default function StudentRaceOverlay({
 }) {
   return (
     <div className="pointer-events-none absolute inset-0 flex flex-col justify-between">
-      <StudentRaceHudSafeArea>
-        <StudentRaceHud runtimeState={runtimeState} question={question} />
-      </StudentRaceHudSafeArea>
+      <div>
+        <StudentRaceHudSafeArea>
+          <StudentRaceHud runtimeState={runtimeState} question={question} />
+        </StudentRaceHudSafeArea>
+        <RacePlayerConnectionNotice connectionState={connectionState} />
+      </div>
       <StudentRaceQuestionPanel
         question={question}
         error={questionError}

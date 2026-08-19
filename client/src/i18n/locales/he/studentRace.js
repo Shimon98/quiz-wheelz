@@ -21,7 +21,7 @@ export default {
     cancelledBody: "המורה סגר את המרוץ הזה. אפשר להצטרף למרוץ חדש עם קוד חדר.",
 
     disconnectedTitle: "החיבור למרוץ נותק",
-    disconnectedBody: "אפשר לנסות לרענן את מצב המרוץ.",
+    disconnectedBody: "לא ניתן להמשיך במרוץ הזה. אפשר להצטרף למרוץ חדש עם קוד חדר.",
 
     unknownTitle: "משהו לא הסתדר",
     unknownBody: "קיבלנו מצב לא צפוי מהשרת. נסו לרענן.",
@@ -36,6 +36,13 @@ export default {
     wrongFeedback: "כמעט!",
     answerSyncing: "בודקים את מצב המרוץ...",
     loadingNext: "טוענים את השאלה הבאה...",
+  },
+
+  connection: {
+    offlineTitle: "אין חיבור לאינטרנט",
+    offlineBody: "נשמור על המסך וננסה להתחבר מחדש",
+    reconnectingTitle: "מתחברים מחדש...",
+    reconnectingBody: "עוד רגע ממשיכים מאותו מקום",
   },
 
   hud: {
