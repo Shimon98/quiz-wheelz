@@ -142,6 +142,16 @@ public class RacePlayer extends BaseEntity {
     private Integer difficultyWrongStreak =
             RacePlayerRules.DEFAULT_DIFFICULTY_WRONG_STREAK;
 
+    /*
+     * Movement settlement anchor (C1-03M): authoritative position already
+     * includes all continuous movement up to this instant. Epoch millis on
+     * purpose — elapsed-time math must be DST-proof, so it never subtracts
+     * two zone-less LocalDateTime values. Null while WAITING; set when the
+     * player enters RACING; advanced by every settlement.
+     */
+    @Column(name = "movement_updated_at_epoch_ms")
+    private Long movementUpdatedAtEpochMs;
+
     @Column(name = "joined_at", nullable = false)
     private LocalDateTime joinedAt;
 

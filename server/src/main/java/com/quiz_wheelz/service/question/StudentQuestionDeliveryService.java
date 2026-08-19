@@ -15,6 +15,7 @@ import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
+import com.quiz_wheelz.service.raceengine.RaceMovementService;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +52,8 @@ public class StudentQuestionDeliveryService {
     private final QuestionGenerationService questionGenerationService;
     private final PlayerQuestionPersistenceService playerQuestionPersistenceService;
     private final StudentQuestionResponseMapper studentQuestionResponseMapper;
+    private final RaceMovementService raceMovementService;
+    private final QuestionTimeoutService questionTimeoutService;
     private final Clock clock;
 
     // Shared application Clock (TimeConfig) — the same source that decides
@@ -63,6 +66,8 @@ public class StudentQuestionDeliveryService {
             QuestionGenerationService questionGenerationService,
             PlayerQuestionPersistenceService playerQuestionPersistenceService,
             StudentQuestionResponseMapper studentQuestionResponseMapper,
+            RaceMovementService raceMovementService,
+            QuestionTimeoutService questionTimeoutService,
             Clock clock
     ) {
         this.racePlayerRepository = Objects.requireNonNull(racePlayerRepository);
@@ -72,18 +77,17 @@ public class StudentQuestionDeliveryService {
         this.questionGenerationService = Objects.requireNonNull(questionGenerationService);
         this.playerQuestionPersistenceService = Objects.requireNonNull(playerQuestionPersistenceService);
         this.studentQuestionResponseMapper = Objects.requireNonNull(studentQuestionResponseMapper);
+        this.raceMovementService = Objects.requireNonNull(raceMovementService);
+        this.questionTimeoutService = Objects.requireNonNull(questionTimeoutService);
         this.clock = Objects.requireNonNull(clock);
     }
 
-    @Transactional
+    // noRollbackFor (C1-03M): settlement can finish the player mid-resolve;
+    // the resulting RACE_PLAYER_NOT_RACING must still COMMIT that movement
+    // truth (the client resyncs race-state and sees FINISHED).
+    @Transactional(noRollbackFor = ApiException.class)
     public StudentQuestionResponse getOrCreateCurrentQuestion(RacePlayer racePlayer) {
         RacePlayer lockedRacePlayer = findLockedRacePlayer(racePlayer);
-
-        // The controller's pre-check happened BEFORE the lock; state may have
-        // changed while waiting for it (e.g. a concurrent answer finished the
-        // player/race). Only the LOCKED row is authoritative — without this
-        // re-check a FINISHED player could receive a fresh ACTIVE question.
-        validateLockedRacePlayerCanReceiveQuestion(lockedRacePlayer);
 
         Optional<PlayerQuestion> active = playerQuestionRepository
                 .findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(
@@ -91,23 +95,46 @@ public class StudentQuestionDeliveryService {
                         PlayerQuestionStatus.ACTIVE
                 );
 
+        // ONE decision instant: the same moment decides expiry, settles
+        // movement AND is the response's serverTimeEpochMs, so a returned
+        // ACTIVE question can never carry a server time at/after its own
+        // deadline.
+        Instant decisionInstant = clock.instant();
+        LocalDateTime decisionNow =
+                DateTimeUtils.toLocalDateTime(decisionInstant, clock.getZone());
+        long decisionEpochMs = decisionInstant.toEpochMilli();
+
         if (active.isPresent()) {
             PlayerQuestion activeQuestion = active.get();
             validateExistingQuestion(activeQuestion);
 
-            // ONE decision instant: the same moment decides expiry AND is the
-            // response's serverTimeEpochMs, so a returned ACTIVE question can
-            // never carry a server time at/after its own deadline.
-            Instant decisionInstant = clock.instant();
-            LocalDateTime decisionNow =
-                    DateTimeUtils.toLocalDateTime(decisionInstant, clock.getZone());
-
             if (!DateTimeUtils.isExpired(activeQuestion.getExpiresAt(), decisionNow)) {
-                return mapToStudentResponse(activeQuestion, decisionInstant.toEpochMilli());
+                // Continuous movement is settled on every resolve; if the
+                // player crossed the line while thinking, the validation
+                // below rejects instead of returning another question.
+                raceMovementService.settleTo(lockedRacePlayer, decisionEpochMs);
+                validateLockedRacePlayerCanReceiveQuestion(lockedRacePlayer);
+
+                return mapToStudentResponse(activeQuestion, decisionEpochMs);
             }
 
-            expireQuestion(activeQuestion);
+            // Timeout gameplay has ONE owner: settles to the deadline at the
+            // old speed, expires, penalizes once, settles the remainder.
+            questionTimeoutService.processExpiredActiveQuestion(
+                    lockedRacePlayer,
+                    activeQuestion,
+                    decisionEpochMs
+            );
+        } else {
+            raceMovementService.settleTo(lockedRacePlayer, decisionEpochMs);
         }
+
+        // The controller's pre-check happened BEFORE the lock; state may have
+        // changed while waiting for it (a concurrent answer — or the
+        // settlement above — finished the player/race). Only the LOCKED row
+        // is authoritative — without this re-check a FINISHED player could
+        // receive a fresh ACTIVE question.
+        validateLockedRacePlayerCanReceiveQuestion(lockedRacePlayer);
 
         return generatePersistAndMapQuestion(lockedRacePlayer);
     }
@@ -177,11 +204,6 @@ public class StudentQuestionDeliveryService {
                 serverTimeEpochMs,
                 expiresAtEpochMs
         );
-    }
-
-    private void expireQuestion(PlayerQuestion playerQuestion) {
-        playerQuestion.setStatus(PlayerQuestionStatus.EXPIRED);
-        playerQuestionRepository.save(playerQuestion);
     }
 
     private void validateExistingQuestion(PlayerQuestion playerQuestion) {

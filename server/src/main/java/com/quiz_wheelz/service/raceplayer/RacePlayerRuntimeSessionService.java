@@ -13,6 +13,7 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.exception.ErrorMessages;
 import com.quiz_wheelz.repository.RacePlayerRepository;
+import com.quiz_wheelz.service.raceengine.RaceMovementService;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -37,6 +38,7 @@ public class RacePlayerRuntimeSessionService {
     private final RacePlayerRepository racePlayerRepository;
     private final RedisPresenceService redisPresenceService;
     private final RacePlayerReconnectPolicy racePlayerReconnectPolicy;
+    private final RaceMovementService raceMovementService;
     private final Clock clock;
 
     // The shared application Clock (TimeConfig) is injected — services never
@@ -46,12 +48,14 @@ public class RacePlayerRuntimeSessionService {
             RacePlayerRepository racePlayerRepository,
             RedisPresenceService redisPresenceService,
             RacePlayerReconnectPolicy racePlayerReconnectPolicy,
+            RaceMovementService raceMovementService,
             Clock clock
     ) {
         this.currentRacePlayerService = Objects.requireNonNull(currentRacePlayerService);
         this.racePlayerRepository = Objects.requireNonNull(racePlayerRepository);
         this.redisPresenceService = Objects.requireNonNull(redisPresenceService);
         this.racePlayerReconnectPolicy = Objects.requireNonNull(racePlayerReconnectPolicy);
+        this.raceMovementService = Objects.requireNonNull(raceMovementService);
         this.clock = Objects.requireNonNull(clock);
     }
 
@@ -454,6 +458,20 @@ public class RacePlayerRuntimeSessionService {
             RacePlayer racePlayer,
             LocalDateTime now
     ) {
+        if (racePlayer.getStatus() == RacePlayerStatus.FINISHED) {
+            return;
+        }
+
+        // Movement accrued while RACING belongs to the racing period — settle
+        // it to the same disconnect decision instant BEFORE the status flips
+        // (DISCONNECTED players are frozen, so unsettled time would vanish).
+        raceMovementService.settleTo(
+                racePlayer,
+                DateTimeUtils.toEpochMilli(now, clock.getZone())
+        );
+
+        // Settlement itself may cross the finish line — FINISHED wins over
+        // DISCONNECTED (a completed race result is never downgraded).
         if (racePlayer.getStatus() == RacePlayerStatus.FINISHED) {
             return;
         }

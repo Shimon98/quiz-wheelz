@@ -32,13 +32,33 @@ class RaceProgressServiceTest {
     }
 
     @Test
-    void shouldCalculateCorrectAnswerSpeedByDifficulty() {
-        RacePlayer player = racePlayer(0.0, 0.0, 100);
+    void shouldAddCorrectAnswerSpeedBoostByDifficulty() {
+        RacePlayer player = racePlayer(0.0, 0.5, 100);
 
-        assertEquals(1.0,
-                raceProgressService.calculateNewSpeed(player, Difficulty.EASY, true));
-        assertEquals(1.5,
-                raceProgressService.calculateNewSpeed(player, Difficulty.MEDIUM, true));
+        assertEquals(0.7,
+                raceProgressService.calculateNewSpeed(player, Difficulty.EASY, true),
+                1e-9);
+        assertEquals(0.8,
+                raceProgressService.calculateNewSpeed(player, Difficulty.MEDIUM, true),
+                1e-9);
+        assertEquals(0.9,
+                raceProgressService.calculateNewSpeed(player, Difficulty.HARD, true),
+                1e-9);
+    }
+
+    @Test
+    void shouldAccumulateRepeatedCorrectBoostsUpToMaxSpeed() {
+        RacePlayer player = racePlayer(0.0, 0.5, 100);
+
+        // Repeated success keeps accelerating (0.5 → 0.7 → 0.9 → ...) and
+        // caps at MAX_RACING_SPEED — never beyond.
+        for (int answer = 0; answer < 10; answer++) {
+            player.setSpeed(
+                    raceProgressService.calculateNewSpeed(player, Difficulty.EASY, true)
+            );
+        }
+
+        assertEquals(2.0, player.getSpeed());
         assertEquals(2.0,
                 raceProgressService.calculateNewSpeed(player, Difficulty.HARD, true));
     }
@@ -47,13 +67,34 @@ class RaceProgressServiceTest {
     void shouldReduceWrongAnswerSpeedWithoutGoingBelowMinimum() {
         RacePlayer player = racePlayer(0.0, 1.5, 100);
 
-        assertEquals(1.0,
-                raceProgressService.calculateNewSpeed(player, Difficulty.EASY, false));
+        assertEquals(1.3,
+                raceProgressService.calculateNewSpeed(player, Difficulty.EASY, false),
+                1e-9);
 
-        player.setSpeed(0.2);
+        player.setSpeed(0.6);
 
         assertEquals(0.5,
                 raceProgressService.calculateNewSpeed(player, Difficulty.EASY, false));
+    }
+
+    @Test
+    void shouldReduceTimeoutSpeedMoreThanWrongAnswerWithoutGoingBelowMinimum() {
+        RacePlayer player = racePlayer(0.0, 1.5, 100);
+
+        // Timeout (no answer) is a stronger failure than a wrong attempt.
+        assertEquals(1.1, raceProgressService.calculateTimeoutSpeed(player), 1e-9);
+
+        player.setSpeed(0.6);
+
+        assertEquals(0.5, raceProgressService.calculateTimeoutSpeed(player));
+    }
+
+    @Test
+    void shouldReturnFinishedSpeedForTimeoutOnFinishedPlayer() {
+        RacePlayer player = racePlayer(100.0, 1.5, 100);
+        player.setStatus(RacePlayerStatus.FINISHED);
+
+        assertEquals(0.0, raceProgressService.calculateTimeoutSpeed(player));
     }
 
     @Test

@@ -37,8 +37,14 @@ export const SERVER_ERROR_NAMES = Object.freeze({
   RACE_NOT_IN_PROGRESS: "RACE_NOT_IN_PROGRESS",
 
   // Submit-answer: the deadline passed before the answer landed. Its own
-  // presentation (time-up, never "wrong"); the other stale-question errors
-  // (QUESTION_NOT_ACTIVE etc.) share the generic safe-resync path and are
-  // deliberately NOT named here — the client never branches on them.
+  // presentation (time-up, never "wrong") — and no race resync, because no
+  // race impact was applied.
   QUESTION_EXPIRED: "QUESTION_EXPIRED",
+
+  // Stale submitted-question conflicts — the local question no longer
+  // matches server truth (answered/expired/replaced concurrently). One
+  // shared policy: automatic question + race resync, never an auto re-POST.
+  QUESTION_NOT_ACTIVE: "QUESTION_NOT_ACTIVE",
+  QUESTION_NOT_FOUND_FOR_PLAYER: "QUESTION_NOT_FOUND_FOR_PLAYER",
+  QUESTION_CHOICE_NOT_FOUND: "QUESTION_CHOICE_NOT_FOUND",
 });

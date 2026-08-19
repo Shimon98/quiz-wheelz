@@ -41,6 +41,12 @@ public class RaceProgressService {
         return Math.min(newPosition, totalDistance.doubleValue());
     }
 
+    /*
+     * Bounded cumulative speed model (C1-03M): correct answers ADD a
+     * difficulty boost (repeated success keeps accelerating up to the max);
+     * wrong answers subtract a penalty down to the racing minimum — a RACING
+     * player never reaches zero speed.
+     */
     public double calculateNewSpeed(
             RacePlayer racePlayer,
             Difficulty answeredDifficulty,
@@ -50,21 +56,47 @@ public class RaceProgressService {
             return RaceProgressRules.FINISHED_SPEED;
         }
 
+        double currentSpeed = currentSpeed(racePlayer);
+
         if (correct) {
-            return switch (difficultyOrDefault(answeredDifficulty)) {
-                case EASY -> RaceProgressRules.EASY_CORRECT_SPEED;
-                case MEDIUM -> RaceProgressRules.MEDIUM_CORRECT_SPEED;
-                case HARD -> RaceProgressRules.HARD_CORRECT_SPEED;
+            double boost = switch (difficultyOrDefault(answeredDifficulty)) {
+                case EASY -> RaceProgressRules.EASY_CORRECT_SPEED_BOOST;
+                case MEDIUM -> RaceProgressRules.MEDIUM_CORRECT_SPEED_BOOST;
+                case HARD -> RaceProgressRules.HARD_CORRECT_SPEED_BOOST;
             };
+
+            return clampToRacingBounds(currentSpeed + boost);
         }
 
-        double currentSpeed = racePlayer == null || racePlayer.getSpeed() == null
+        return clampToRacingBounds(
+                currentSpeed - RaceProgressRules.WRONG_ANSWER_SPEED_PENALTY
+        );
+    }
+
+    /*
+     * No answer at all is a stronger failure than a wrong attempt — a larger
+     * penalty, but still floored at the racing minimum.
+     */
+    public double calculateTimeoutSpeed(RacePlayer racePlayer) {
+        if (isFinished(racePlayer)) {
+            return RaceProgressRules.FINISHED_SPEED;
+        }
+
+        return clampToRacingBounds(
+                currentSpeed(racePlayer) - RaceProgressRules.TIMEOUT_SPEED_PENALTY
+        );
+    }
+
+    private double currentSpeed(RacePlayer racePlayer) {
+        return racePlayer == null || racePlayer.getSpeed() == null
                 ? 0.0
                 : racePlayer.getSpeed();
+    }
 
+    private double clampToRacingBounds(double speed) {
         return Math.max(
                 RaceProgressRules.MIN_RACING_SPEED,
-                currentSpeed - RaceProgressRules.WRONG_ANSWER_SPEED_PENALTY
+                Math.min(RaceProgressRules.MAX_RACING_SPEED, speed)
         );
     }
 

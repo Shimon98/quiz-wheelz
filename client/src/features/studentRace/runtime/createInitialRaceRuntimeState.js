@@ -26,7 +26,10 @@ import { STUDENT_RACE_FEEDBACK } from "./studentRaceRuntimeConstants.js";
  *   expiresAt: ?string, choices: Array<Object>}} question
  * @property {{isSubmitting: boolean, selectedChoiceId: ?number, correct: ?boolean,
  *   correctAnswerChoiceId: ?number, feedbackState: string}} answer
- * @property {{targetPosition: number, targetSpeed: number, activeEffect: ?string}} visual
+ * @property {?number} lastSnapshotAtEpochMs Server truth-time of the applied
+ *   snapshot — the freshness order; network arrival order never rolls back
+ * @property {{targetPosition: number, targetSpeed: number,
+ *   movementUnitsPerSecond: number, activeEffect: ?string}} visual
  * @property {{assets: boolean, raceState: boolean, question: boolean}} loading
  * @property {?Object} error
  */
@@ -75,9 +78,14 @@ export function createInitialRaceRuntimeState() {
       feedbackState: STUDENT_RACE_FEEDBACK.IDLE,
     },
 
+    lastSnapshotAtEpochMs: null,
+
     visual: {
       targetPosition: 0,
       targetSpeed: 0,
+      // Server-owned effective movement rate (speed x base rate) — the
+      // renderer predicts visual motion with it between snapshots.
+      movementUnitsPerSecond: 0,
       activeEffect: null,
     },
 

@@ -109,7 +109,9 @@ class RacePlayerControllerRaceStateTest {
                         RacePlayerStatus.RACING,
                         RaceStatus.IN_PROGRESS,
                         false,
-                        false
+                        false,
+                        1_787_045_370_000L,
+                        4.8
                 )
         );
     }

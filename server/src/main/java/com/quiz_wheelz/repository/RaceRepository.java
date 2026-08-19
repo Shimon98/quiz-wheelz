@@ -2,6 +2,7 @@ package com.quiz_wheelz.repository;
 
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.User;
+import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,12 +10,40 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 public interface RaceRepository extends JpaRepository<Race, Long> {
 
     Optional<Race> findByRoomCode(String roomCode);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select r from Race r where r.id = :raceId")
+    Optional<Race> findLockedById(@Param("raceId") Long raceId);
+
+    /*
+     * Race-finish reconciliation (C1-03M): candidate races whose players all
+     * left the active statuses. Two players finishing in concurrent worker
+     * transactions can each still see the other as RACING, so the per-answer
+     * finishRaceIfNeeded alone can strand a race IN_PROGRESS forever — the
+     * scheduler re-checks these under a race lock.
+     */
+    @Query("""
+            select race.id
+            from Race race
+            where race.status = :raceStatus
+              and not exists (
+                  select racePlayer.id
+                  from RacePlayer racePlayer
+                  where racePlayer.race = race
+                    and racePlayer.status in :activeStatuses
+              )
+            """)
+    List<Long> findRaceIdsWithoutPlayersInStatuses(
+            @Param("raceStatus") RaceStatus raceStatus,
+            @Param("activeStatuses") Collection<RacePlayerStatus> activeStatuses
+    );
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from Race r where r.roomCode = :roomCode")

@@ -17,6 +17,7 @@ import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
+import com.quiz_wheelz.service.raceengine.RaceMovementService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,6 +70,12 @@ class StudentAnswerSubmissionServiceTest {
     @Mock
     private RaceEngineService raceEngineService;
 
+    @Mock
+    private RaceMovementService raceMovementService;
+
+    @Mock
+    private QuestionTimeoutService questionTimeoutService;
+
     private StudentAnswerSubmissionService studentAnswerSubmissionService;
 
     @BeforeEach
@@ -80,6 +87,8 @@ class StudentAnswerSubmissionServiceTest {
                 playerQuestionChoiceRepository,
                 racePlayerRepository,
                 raceEngineService,
+                raceMovementService,
+                questionTimeoutService,
                 new StudentRaceRuntimeSnapshotMapper(),
                 fixedClock
         );
@@ -133,13 +142,48 @@ class StudentAnswerSubmissionServiceTest {
         assertEquals(RaceStatus.IN_PROGRESS, response.getRaceImpact().getSnapshot().getRaceStatus());
         assertFalse(response.getRaceImpact().getSnapshot().isPlayerFinished());
         assertFalse(response.getRaceImpact().getSnapshot().isRaceFinished());
+        assertEquals(
+                epochOf(now()),
+                response.getRaceImpact().getSnapshot().getSnapshotAtEpochMs()
+        );
+        assertEquals(
+                4.8,
+                response.getRaceImpact().getSnapshot().getMovementUnitsPerSecond()
+        );
 
         verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
         verify(playerQuestionRepository).findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer);
+        // The elapsed interval settles at the OLD speed before the boost.
+        verify(raceMovementService).settleTo(lockedRacePlayer, epochOf(now()));
         verify(raceEngineService).applyAnswerResult(lockedRacePlayer, true);
         verify(playerQuestionRepository).save(question);
         verify(playerQuestionChoiceRepository, never())
                 .findByPlayerQuestionOrderByDisplayOrderAsc(question);
+    }
+
+    @Test
+    void shouldNotApplyAnswerWhenMovementSettlementFinishesPlayerFirst() {
+        RacePlayer racePlayer = createRacePlayer();
+        RacePlayer lockedRacePlayer = mockLockedRacePlayer(racePlayer);
+        PlayerQuestion question = createActiveQuestion(now().plusSeconds(30));
+
+        when(playerQuestionRepository.findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer))
+                .thenReturn(Optional.of(question));
+        // Time-based movement crossed the finish line before this answer.
+        when(raceMovementService.settleTo(lockedRacePlayer, epochOf(now())))
+                .thenReturn(true);
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> studentAnswerSubmissionService.submitAnswer(
+                        racePlayer,
+                        createRequest(QUESTION_ID, CORRECT_CHOICE_ID)
+                )
+        );
+
+        assertEquals(ErrorCode.RACE_PLAYER_NOT_RACING, exception.getErrorCode());
+        verify(raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
+        verify(playerQuestionRepository, never()).save(question);
     }
 
     @Test
@@ -323,14 +367,13 @@ class StudentAnswerSubmissionServiceTest {
     }
 
     @Test
-    void shouldExpireQuestionWhenSubmittedAfterExpiration() {
+    void shouldDelegateExpiredSubmissionToTimeoutOwner() {
         RacePlayer racePlayer = createRacePlayer();
         RacePlayer lockedRacePlayer = mockLockedRacePlayer(racePlayer);
         PlayerQuestion question = createActiveQuestion(now().minusSeconds(1));
 
         when(playerQuestionRepository.findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer))
                 .thenReturn(Optional.of(question));
-        when(playerQuestionRepository.save(question)).thenReturn(question);
 
         ApiException exception = assertThrows(
                 ApiException.class,
@@ -341,8 +384,13 @@ class StudentAnswerSubmissionServiceTest {
         );
 
         assertEquals(ErrorCode.QUESTION_EXPIRED, exception.getErrorCode());
-        assertEquals(PlayerQuestionStatus.EXPIRED, question.getStatus());
-        verify(playerQuestionRepository).save(question);
+        // Timeout gameplay (settle-to-deadline, EXPIRED transition, penalty)
+        // has ONE owner — this service only routes to it.
+        verify(questionTimeoutService).processExpiredActiveQuestion(
+                lockedRacePlayer,
+                question,
+                epochOf(now())
+        );
         verify(playerQuestionChoiceRepository, never())
                 .findByIdAndPlayerQuestion(CORRECT_CHOICE_ID, question);
         verify(raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
@@ -356,7 +404,6 @@ class StudentAnswerSubmissionServiceTest {
 
         when(playerQuestionRepository.findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer))
                 .thenReturn(Optional.of(question));
-        when(playerQuestionRepository.save(question)).thenReturn(question);
 
         ApiException exception = assertThrows(
                 ApiException.class,
@@ -367,8 +414,11 @@ class StudentAnswerSubmissionServiceTest {
         );
 
         assertEquals(ErrorCode.QUESTION_EXPIRED, exception.getErrorCode());
-        assertEquals(PlayerQuestionStatus.EXPIRED, question.getStatus());
-        verify(playerQuestionRepository).save(question);
+        verify(questionTimeoutService).processExpiredActiveQuestion(
+                lockedRacePlayer,
+                question,
+                epochOf(now())
+        );
         verify(raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
     }
 

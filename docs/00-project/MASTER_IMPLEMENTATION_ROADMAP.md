@@ -46,6 +46,7 @@ Existing local MySQL is available at localhost:3306
 
 Server:
 - verify race-state and answer snapshot contracts
+- authoritative continuous movement + guaranteed finish (S1-01A — DONE)
 - expose any missing safe fields required by the student UI
 - keep heartbeat/reconnect behavior stable
 - add rank only when the server can calculate it authoritatively.

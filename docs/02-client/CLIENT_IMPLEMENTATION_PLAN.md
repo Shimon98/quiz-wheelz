@@ -168,7 +168,7 @@ Capability delivered:
 
 ```text
 view === PLAYING
-→ GET current-question (only then)
+→ POST current-question resolve (only then)
 → mapCurrentQuestionToModel (one DTO boundary, API_CONTRACT on malformed)
 → real question + choices in server displayOrder (ids kept for C1-03)
 → timer chip in the HUD safe area, derived from absolute expiresAt
@@ -176,7 +176,7 @@ view === PLAYING
 ```
 
 Internal slices: A contract/duplication audit (server DTO verified — no
-correctness leakage; expiry = same GET regenerates) · B DTO mapper
+correctness leakage; expiry = the same POST resolve regenerates) · B DTO mapper
 (`runtime/mapCurrentQuestionToModel`) · C controller
 (`hooks/useStudentRaceQuestion` — reloadToken pattern, last-known question,
 expiry latch) · D page integration (question enabled only for authoritative
@@ -258,12 +258,11 @@ Implementation notes:
   baseline through the SAME `applyRaceSnapshot`; the override is keyed to
   the raceState instance, so a fresh race-state refetch supersedes it
   automatically.
-- Continuous Person-First motion: the renderer accumulates a cosmetic
-  `continuousWorldOffset` from the authoritative server speed and adds it to
-  the decorative `worldOffset` (Road/Jungle only) — position stays
-  server-owned, the finish line still projects from `visualPosition`, and
-  FINISHED speed 0 stops the flow with no status checks. Server side, race
-  start now sets `MIN_RACING_SPEED` on the WAITING→RACING transition.
+- Continuous Person-First motion: superseded by C1-03M below — position
+  itself now advances continuously on the server, and the renderer predicts
+  it between snapshots (the interim cosmetic `continuousWorldOffset` was
+  retired to avoid double motion). Server side, race start sets
+  `MIN_RACING_SPEED` + the movement anchor on the WAITING→RACING transition.
 - Error policy: `QUESTION_EXPIRED` = time-up presentation + question resync
   (never "wrong", no snapshot); lifecycle conflicts + ambiguous
   transient/contract failures resync race-state + question — a POST is
@@ -276,6 +275,49 @@ Implementation notes:
   existing finished view takes over.
 - `nextQuestionDelayMs` stays intentionally unused — one `feedbackDelayMs`
   dwell is the whole pause; stacking both would feel sluggish.
+
+### C1-03M — Continuous authoritative movement hardening
+
+**Status: DONE (2026-08-19, with server task S1-01A).** The gameplay-model
+correction discovered after C1-03: authoritative `position` now advances
+continuously with server time, so a race can never run forever.
+
+```text
+TIME x speed x BASE_MOVEMENT_UNITS_PER_SECOND  →  continuous position
+ANSWER                                          →  speed boost/penalty
+                                                   (+ progress bonus when correct)
+```
+
+Client side:
+
+- `useRacePlayerState.silentRefresh()` — the shared polling-grade refresh
+  (no isLoading flicker, single-flight); `useRaceBootstrap` polls race-state
+  every `raceStatePollMs` (2s) while the view is PLAYING. This is gameplay
+  truth sync, NOT the C1-05 heartbeat (presence/reconnect). The waiting
+  flow's existing 2s poll now rides the same silent capability.
+- Snapshot freshness: every snapshot carries `snapshotAtEpochMs`;
+  `applyRaceSnapshot` ignores snapshots that are not strictly newer than the
+  applied one — network arrival order can never roll authoritative state
+  backward (replaces the C1-03 instance-keyed answer override).
+- Renderer prediction: snapshots also carry the server-owned
+  `movementUnitsPerSecond`; between snapshots `StudentRaceRenderer` advances
+  a predicted target with it (drawing only — capped at totalDistance, the
+  FINISHED transition remains server truth) and every new authoritative
+  snapshot re-bases the prediction. `continuousWorldOffset` and
+  `speedToPixelsPerSecondRatio` were retired; `positionToPixelsRatio` was
+  retuned (30) so speed 1.0 still feels like ~120 px/s.
+- Recovery fix from review: stale submitted-question errors
+  (`QUESTION_NOT_ACTIVE`/`QUESTION_NOT_FOUND_FOR_PLAYER`/
+  `QUESTION_CHOICE_NOT_FOUND`, `isStaleQuestionSubmissionError`) now trigger
+  automatic question resync in the answer hook + the page's race resync —
+  never an automatic re-POST.
+
+E2E verified live (2026-08-19): a player who never touches the phone
+advances (57.6→69.6 over 6s at the 0.5 floor), takes timeout penalties from
+expired questions, and reaches the FINISHED screen with zero clicks; a
+second player with NO client at all was settled and finished purely by the
+server scheduler, and the race itself was finalized by the reconciliation
+pass.
 
 ### C1-04 — HUD
 
@@ -312,8 +354,10 @@ so refresh-safe vehicle rendering must come from a server-restorable field
 
 - asset manifest keys
 - metadata-driven props
-- hover kart base/color/shadow/trail
-- correct/wrong/boost effects
+- ONE composite monkey+hover-kart sprite per vehicle identity (LOCKED
+  2026-08-19 — never body parts assembled in code; idle animation = 3-4
+  complete aligned frames; see STUDENT_RACE_SCREEN_AND_ASSETS)
+- correct/wrong/boost effects as separate Pixi overlays
 - no wheel animation.
 
 **C1 gate:** complete real single-player race flow including refresh/reconnect.

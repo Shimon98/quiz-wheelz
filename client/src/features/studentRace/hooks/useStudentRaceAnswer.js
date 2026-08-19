@@ -5,6 +5,7 @@ import { normalizeApiError } from "../../../errors/normalizeApiError.js";
 import {
   isApiContractError,
   isQuestionExpiredError,
+  isStaleQuestionSubmissionError,
   isTransientError,
 } from "../../../errors/errorChecks";
 import { mapSubmitAnswerToModel } from "../runtime/mapSubmitAnswerToModel.js";
@@ -32,6 +33,7 @@ import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig.js";
  * Error policy (safe recovery, never auto-resubmit a POST — it may have
  * committed server-side even when the response was lost):
  *   QUESTION_EXPIRED       time-up presentation, question resync only
+ *   stale question         question resync here + race resync by the page
  *   transient / contract   question resync here + race resync by the page
  *   lifecycle conflict     the page's race-state resync policy decides
  *   session error          the page's RacePlayerSessionGate decides
@@ -116,6 +118,7 @@ export default function useStudentRaceAnswer({
 
         if (
           isQuestionExpiredError(error) ||
+          isStaleQuestionSubmissionError(error) ||
           isTransientError(error) ||
           isApiContractError(error)
         ) {

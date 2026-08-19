@@ -53,6 +53,9 @@ class RacePlayerRuntimeSessionServiceTest {
     private RedisPresenceService redisPresenceService;
 
     @Mock
+    private com.quiz_wheelz.service.raceengine.RaceMovementService raceMovementService;
+
+    @Mock
     private HttpServletRequest request;
 
     private RacePlayerRuntimeSessionService runtimeSessionService;
@@ -64,6 +67,7 @@ class RacePlayerRuntimeSessionServiceTest {
                 racePlayerRepository,
                 redisPresenceService,
                 new RacePlayerReconnectPolicy(),
+                raceMovementService,
                 Clock.fixed(FIXED_INSTANT, FIXED_ZONE)
         );
     }

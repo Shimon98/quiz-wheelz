@@ -25,6 +25,7 @@ import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
+import com.quiz_wheelz.service.raceengine.RaceMovementService;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -80,6 +81,12 @@ class StudentQuestionDeliveryServiceTest {
     @Mock
     private StudentQuestionResponseMapper studentQuestionResponseMapper;
 
+    @Mock
+    private RaceMovementService raceMovementService;
+
+    @Mock
+    private QuestionTimeoutService questionTimeoutService;
+
     private StudentQuestionDeliveryService studentQuestionDeliveryService;
 
     @BeforeEach
@@ -94,6 +101,8 @@ class StudentQuestionDeliveryServiceTest {
                 questionGenerationService,
                 playerQuestionPersistenceService,
                 studentQuestionResponseMapper,
+                raceMovementService,
+                questionTimeoutService,
                 fixedClock
         );
     }
@@ -129,6 +138,8 @@ class StudentQuestionDeliveryServiceTest {
 
         assertSame(expectedResponse, result);
 
+        // Continuous movement is settled on every resolve (C1-03M).
+        verify(raceMovementService).settleTo(lockedRacePlayer, FIXED_INSTANT.toEpochMilli());
         verify(racePlayerQuestionPlanService, never()).buildQuestionPlan(any());
         verify(questionGenerationService, never()).generate(any(QuestionPlan.class));
         verify(playerQuestionPersistenceService, never()).persistGeneratedQuestion(any(), any());
@@ -232,6 +243,8 @@ class StudentQuestionDeliveryServiceTest {
                 questionGenerationService,
                 playerQuestionPersistenceService,
                 studentQuestionResponseMapper,
+                raceMovementService,
+                questionTimeoutService,
                 steppingClock
         );
 
@@ -357,9 +370,14 @@ class StudentQuestionDeliveryServiceTest {
                 studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer);
 
         assertSame(expectedResponse, result);
-        assertEquals(PlayerQuestionStatus.EXPIRED, expiredActiveQuestion.getStatus());
 
-        verify(playerQuestionRepository).save(expiredActiveQuestion);
+        // Timeout gameplay (settle-to-deadline, EXPIRED transition, penalty)
+        // has ONE owner — delivery only routes to it, then generates next.
+        verify(questionTimeoutService).processExpiredActiveQuestion(
+                lockedRacePlayer,
+                expiredActiveQuestion,
+                FIXED_INSTANT.toEpochMilli()
+        );
         verify(questionGenerationService).generate(questionPlan);
         verify(playerQuestionPersistenceService)
                 .persistGeneratedQuestion(lockedRacePlayer, generatedQuestion);
@@ -397,7 +415,11 @@ class StudentQuestionDeliveryServiceTest {
 
         studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer);
 
-        assertEquals(PlayerQuestionStatus.EXPIRED, activeQuestion.getStatus());
+        verify(questionTimeoutService).processExpiredActiveQuestion(
+                lockedRacePlayer,
+                activeQuestion,
+                FIXED_INSTANT.toEpochMilli()
+        );
     }
 
     @Test
@@ -419,11 +441,13 @@ class StudentQuestionDeliveryServiceTest {
         assertEquals(ErrorCode.RACE_PLAYER_NOT_RACING, exception.getErrorCode());
 
         // A finished player must never receive or create gameplay state.
-        verify(playerQuestionRepository, never())
-                .findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(any(), any());
+        // (The ACTIVE lookup itself may run — C1-03M settles movement/timeout
+        // before the lifecycle re-check — but nothing is generated/returned.)
         verify(racePlayerQuestionPlanService, never()).buildQuestionPlan(any());
         verify(questionGenerationService, never()).generate(any(QuestionPlan.class));
         verify(playerQuestionPersistenceService, never()).persistGeneratedQuestion(any(), any());
+        verify(studentQuestionResponseMapper, never())
+                .toResponse(any(), any(), anyLong(), anyLong());
     }
 
     @Test
@@ -442,11 +466,11 @@ class StudentQuestionDeliveryServiceTest {
 
         assertEquals(ErrorCode.RACE_NOT_IN_PROGRESS, exception.getErrorCode());
 
-        verify(playerQuestionRepository, never())
-                .findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(any(), any());
         verify(racePlayerQuestionPlanService, never()).buildQuestionPlan(any());
         verify(questionGenerationService, never()).generate(any(QuestionPlan.class));
         verify(playerQuestionPersistenceService, never()).persistGeneratedQuestion(any(), any());
+        verify(studentQuestionResponseMapper, never())
+                .toResponse(any(), any(), anyLong(), anyLong());
     }
 
     @Test

@@ -20,6 +20,12 @@ import { normalizeApiError } from "../../errors/normalizeApiError";
  * useTeacherDashboardHome) and is a no-op while a load is already running.
  * A refetch failure keeps the last successful raceState and only reports
  * the normalized error — known state is not destroyed by a transient blip.
+ *
+ * silentRefresh() (C1-03M) is the polling-grade variant: same authoritative
+ * request, but it never raises isLoading (no loading flicker at a 2s
+ * gameplay-sync cadence), keeps last-known state on failure, and is
+ * single-flight against both itself and retry(). Callers own the interval;
+ * this hook only owns the request lifecycle.
  */
 export default function useRacePlayerState() {
   const [raceState, setRaceState] = useState(null);
@@ -79,5 +85,37 @@ export default function useRacePlayerState() {
     setReloadToken((token) => token + 1);
   }, []);
 
-  return { raceState, isLoading, error, retry };
+  // Single-flight guard for silent refreshes (retry() has isLoadingRef).
+  const isSilentRefreshingRef = useRef(false);
+
+  const silentRefresh = useCallback(() => {
+    if (isLoadingRef.current || isSilentRefreshingRef.current) {
+      return;
+    }
+
+    isSilentRefreshingRef.current = true;
+    // Claim latest-request-wins like every other load; a retry() started
+    // afterwards supersedes this response the usual way.
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+
+    getRaceState()
+      .then((response) => {
+        if (requestId === requestIdRef.current) {
+          setRaceState(response);
+          setError(null);
+        }
+      })
+      .catch((rawError) => {
+        if (requestId === requestIdRef.current) {
+          // Keep the last successful raceState — report the failure only.
+          setError(normalizeApiError(rawError));
+        }
+      })
+      .finally(() => {
+        isSilentRefreshingRef.current = false;
+      });
+  }, []);
+
+  return { raceState, isLoading, error, retry, silentRefresh };
 }

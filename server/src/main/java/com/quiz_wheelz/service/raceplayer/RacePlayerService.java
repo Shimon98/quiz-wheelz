@@ -5,9 +5,11 @@ import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.repository.RacePlayerRepository;
+import com.quiz_wheelz.utils.DateTimeUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -15,9 +17,11 @@ import java.util.List;
 public class RacePlayerService {
 
     private final RacePlayerRepository racePlayerRepository;
+    private final Clock clock;
 
-    public RacePlayerService(RacePlayerRepository racePlayerRepository) {
+    public RacePlayerService(RacePlayerRepository racePlayerRepository, Clock clock) {
         this.racePlayerRepository = racePlayerRepository;
+        this.clock = clock;
     }
 
     @Transactional(readOnly = true)
@@ -39,6 +43,7 @@ public class RacePlayerService {
     public int startWaitingPlayers(Race race, LocalDateTime startedAt) {
         List<RacePlayer> players = racePlayerRepository.findByRaceOrderByLaneNumberAsc(race);
 
+        long startedAtEpochMs = DateTimeUtils.toEpochMilli(startedAt, clock.getZone());
         int startedPlayers = 0;
 
         for (RacePlayer player : players) {
@@ -49,6 +54,9 @@ public class RacePlayerService {
                 // DEFAULT_SPEED 0 while WAITING; only this transition moves).
                 player.setSpeed(RaceProgressRules.MIN_RACING_SPEED);
                 player.setStartedAt(startedAt);
+                // Movement anchor (C1-03M): every entry into RACING re-anchors
+                // continuous movement at the exact transition instant.
+                player.setMovementUpdatedAtEpochMs(startedAtEpochMs);
                 startedPlayers++;
             }
         }

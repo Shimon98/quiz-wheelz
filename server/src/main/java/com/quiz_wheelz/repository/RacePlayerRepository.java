@@ -3,6 +3,7 @@ package com.quiz_wheelz.repository;
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.RacePlayerStatus;
+import com.quiz_wheelz.enums.RaceStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -15,6 +16,28 @@ import java.util.List;
 import java.util.Optional;
 
 public interface RacePlayerRepository extends JpaRepository<RacePlayer, Long> {
+
+    /*
+     * Lightweight id pairs for the movement settlement sweep (C1-03M) — the
+     * worker re-loads and LOCKS each player in its own transaction, so full
+     * unlocked entities here would only be stale bait.
+     */
+    interface RacePlayerMovementCandidate {
+        Long getPlayerId();
+
+        Long getRaceId();
+    }
+
+    @Query("""
+            select racePlayer.id as playerId, racePlayer.race.id as raceId
+            from RacePlayer racePlayer
+            where racePlayer.status = :playerStatus
+              and racePlayer.race.status = :raceStatus
+            """)
+    List<RacePlayerMovementCandidate> findMovementSettlementCandidates(
+            @Param("playerStatus") RacePlayerStatus playerStatus,
+            @Param("raceStatus") RaceStatus raceStatus
+    );
 
     List<RacePlayer> findByRaceOrderByLaneNumberAsc(Race race);
 

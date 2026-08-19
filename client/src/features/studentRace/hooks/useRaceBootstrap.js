@@ -1,10 +1,12 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import useRacePlayerState from "../../../shared/racePlayer/useRacePlayerState.js";
-import { getRaceView } from "../../../shared/racePlayer/getRaceView.js";
+import { getRaceView, RACE_VIEWS } from "../../../shared/racePlayer/getRaceView.js";
 import { normalizeApiError } from "../../../errors/normalizeApiError.js";
+import { isRacePlayerSessionError } from "../../../errors/errorChecks.js";
 import { mapRaceStateToRuntime } from "../runtime/mapRaceStateToRuntime.js";
 import { applyRaceSnapshot } from "../runtime/applyRaceSnapshot.js";
+import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig.js";
 
 /*
  * useRaceBootstrap — the student race feature's orchestration layer. It only
@@ -23,12 +25,18 @@ import { applyRaceSnapshot } from "../runtime/applyRaceSnapshot.js";
  * navigation, polling, notifications or session redirects here — the
  * page/guard layers decide what to DO.
  *
- * Answer snapshots (C1-03): submit-answer returns the same authoritative
- * snapshot shape as race-state; the latest one overrides the baseline via
- * the SAME applyRaceSnapshot owner. The override is keyed to the raceState
- * instance it arrived on top of, so a successful race-state refetch (a new
- * instance) automatically supersedes any stale answer override — fresh
- * server truth always wins, with zero extra bookkeeping.
+ * Answer snapshots (C1-03/03M): submit-answer returns the same
+ * authoritative snapshot shape as race-state; the latest one is laid over
+ * the race-state baseline through the SAME applyRaceSnapshot owner, and
+ * `snapshotAtEpochMs` freshness ordering inside it decides which truth is
+ * newer — an old race-state response that arrives late can never roll a
+ * newer answer snapshot backward, and a fresher poll supersedes a stale
+ * answer override on its own.
+ *
+ * Polling (C1-03M): the server advances position continuously with time, so
+ * while the view is authoritatively PLAYING this hook silently re-syncs
+ * race-state every raceStatePollMs. NOT the C1-05 heartbeat — pure gameplay
+ * truth refresh; a future SSE stream replaces only this timer trigger.
  */
 export default function useRaceBootstrap() {
   const {
@@ -36,16 +44,14 @@ export default function useRaceBootstrap() {
     isLoading,
     error: requestError,
     retry,
+    silentRefresh,
   } = useRacePlayerState();
 
-  const [answerOverride, setAnswerOverride] = useState(null);
+  const [answerSnapshot, setAnswerSnapshot] = useState(null);
 
-  const applyAuthoritativeSnapshot = useCallback(
-    (snapshot) => {
-      setAnswerOverride({ snapshot, baseRaceState: raceState });
-    },
-    [raceState],
-  );
+  const applyAuthoritativeSnapshot = useCallback((snapshot) => {
+    setAnswerSnapshot(snapshot);
+  }, []);
 
   const { runtimeState, mappingError } = useMemo(() => {
     if (raceState == null) {
@@ -54,16 +60,15 @@ export default function useRaceBootstrap() {
 
     try {
       const baseline = mapRaceStateToRuntime(raceState);
-      const runtime =
-        answerOverride?.baseRaceState === raceState
-          ? applyRaceSnapshot(baseline, answerOverride.snapshot)
-          : baseline;
+      const runtime = answerSnapshot
+        ? applyRaceSnapshot(baseline, answerSnapshot)
+        : baseline;
 
       return { runtimeState: runtime, mappingError: null };
     } catch (rawError) {
       return { runtimeState: null, mappingError: normalizeApiError(rawError) };
     }
-  }, [raceState, answerOverride]);
+  }, [raceState, answerSnapshot]);
 
   // View exists only for real server state; UNKNOWN is a valid view (an
   // unrecognized status combination), NOT an API contract error.
@@ -73,6 +78,27 @@ export default function useRaceBootstrap() {
   // loader keeps the last successful raceState on refetch failures, so
   // runtimeState/view can stay available ALONGSIDE the error.
   const error = requestError ?? mappingError;
+
+  // Silent gameplay sync while PLAYING only: no polling for waiting/
+  // finished/cancelled views, and never once race-state has reported a dead
+  // RacePlayer session.
+  const pollingEnabled =
+    view === RACE_VIEWS.PLAYING && !isRacePlayerSessionError(error);
+
+  useEffect(() => {
+    if (!pollingEnabled) {
+      return undefined;
+    }
+
+    const timer = setInterval(
+      silentRefresh,
+      STUDENT_RACE_CONFIG.raceStatePollMs,
+    );
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [pollingEnabled, silentRefresh]);
 
   return {
     runtimeState,
