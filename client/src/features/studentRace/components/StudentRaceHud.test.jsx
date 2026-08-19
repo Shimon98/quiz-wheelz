@@ -86,7 +86,7 @@ describe("StudentRaceHud", () => {
     ).toHaveAttribute("aria-valuenow", "100");
   });
 
-  it("shows the plain speed value with no invented effect label", () => {
+  it("renders a high server speed as a plain numeric multiplier", () => {
     render(<StudentRaceHud runtimeState={buildRuntimeState({ speed: 2.0 })} />);
 
     expect(screen.getByText("×2.0")).toBeInTheDocument();

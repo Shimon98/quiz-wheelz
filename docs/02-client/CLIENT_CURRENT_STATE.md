@@ -99,8 +99,8 @@ Implemented A–G:
   the server remains the expiry authority; current-question is a POST
   resolve; expiry locks and resyncs once (single-flight with one pending
   trailing refresh)
-- choice buttons carry ids and an onChoiceSelect contract, disabled until
-  C1-03 wires submission.
+- choice buttons carry ids and the onChoiceSelect contract now used by the
+  C1-03 answer flow.
 
 ### Student answer loop (C1-03 — done 2026-08-19)
 

@@ -23,7 +23,7 @@ snapshot → next question), with CONTINUOUS server-authoritative movement
 (C1-03M): every racing student advances with time, correct answers boost
 speed and add progress bonuses, timeouts slow more than wrong answers, and
 every race is guaranteed to end — even for a student who never touches the
-phone. The main missing product slices are the student HUD/reconnect polish,
+phone. The main missing product slices are student presence/reconnect polish,
 opponents, and the teacher live race/SSE screen and results.
 
 ## Product status board
