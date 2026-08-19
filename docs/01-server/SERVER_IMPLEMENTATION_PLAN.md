@@ -1,8 +1,8 @@
 # Server Implementation Plan
 
 **Status:** Canonical  
-**Audit date:** 2026-07-30  
-**Code baseline:** `main@47fe75fa763af2ecc4deb4e8bc972f564ee73b15`  
+**Audit date:** 2026-08-19
+**Code baseline:** `main@74402e6a8d702ca0299568e2130ce88dcb7a3917`
 **This document owns:** the ordered backend task list with dependencies and integration outputs
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -14,10 +14,10 @@ Every server task/issue should begin with:
 
 ```yaml
 id: S1-01
-status: TODO
+status: DONE
 area: server
-depends_on: [S0-02]
-blocks: [C1-01]
+depends_on: [S0-02, S1-01A]
+blocks: [C1-06]
 contract_owner: server
 ```
 
@@ -95,14 +95,20 @@ lifecycle is outside S0-02 and does not block it.
 
 ### S1-01 — Verify and freeze student contracts
 
-**Status:** `PLANNED`
+**Status:** `DONE (2026-08-19)`
 
-- re-read actual controller/DTO source
-- freeze race-state, current-question, answer-impact, heartbeat, leave and reconnect
-  responses
-- ensure all endpoints use `ApiPaths`
-- add contract/serialization tests
-- update client endpoint constants in the matching client PR.
+- verified race-state, current-question, answer-impact, heartbeat, leave and reconnect
+  against the actual controller/DTO/service/client source
+- added refresh-safe current-player presentation identity to race-state without
+  duplicating `snapshot.playerStatus`
+- centralized `vehicleAssetKey` construction in `RacePlayerRules`
+- confirmed all six endpoint mappings use `ApiPaths` and froze their HTTP methods
+- added exact-field ObjectMapper serialization/no-leak tests for all six public
+  contracts
+- protected the four-choice production Math seed rule while retaining the generic
+  2–6-choice generator capability
+- synchronized the canonical server/client contract documentation; existing client
+  endpoint constants already matched and required no production-code change.
 
 ### S1-01A — Authoritative continuous movement contract
 
