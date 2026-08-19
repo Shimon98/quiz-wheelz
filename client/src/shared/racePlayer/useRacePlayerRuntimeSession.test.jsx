@@ -406,7 +406,140 @@ describe("useRacePlayerRuntimeSession — failures and recovery", () => {
   });
 });
 
+describe("useRacePlayerRuntimeSession — visibility readiness", () => {
+  it("a hidden document is not gameplay-ready", async () => {
+    const { result } = await renderResolvedActiveSession();
+    expect(result.current.isGameplayConnectionReady).toBe(true);
+
+    await act(async () => {
+      setDocumentVisibility("hidden");
+    });
+
+    expect(result.current.isGameplayConnectionReady).toBe(false);
+  });
+
+  it("a visible return stays not-ready until the reconnect resolves", async () => {
+    const { result } = await renderResolvedActiveSession();
+    await act(async () => {
+      setDocumentVisibility("hidden");
+    });
+
+    const pending = deferred();
+    reconnectRacePlayer.mockReturnValueOnce(pending.promise);
+    await act(async () => {
+      setDocumentVisibility("visible");
+    });
+
+    expect(result.current.connectionState).toBe(
+      RACE_PLAYER_CONNECTION_STATES.RECONNECTING,
+    );
+    expect(result.current.isGameplayConnectionReady).toBe(false);
+
+    await act(async () => {
+      pending.resolve(activeReconnectResponse());
+    });
+    expect(result.current.isGameplayConnectionReady).toBe(true);
+  });
+});
+
+describe("useRacePlayerRuntimeSession — presence stop", () => {
+  it("stopPresence halts heartbeat and automatic reconnect triggers", async () => {
+    const { result } = await renderResolvedActiveSession();
+    heartbeatRacePlayer.mockResolvedValue(heartbeatAck());
+    await advance(heartbeatIntervalMs);
+    expect(heartbeatRacePlayer).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      result.current.stopPresence();
+    });
+
+    await advance(heartbeatIntervalMs * 3);
+    expect(heartbeatRacePlayer).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      setDocumentVisibility("hidden");
+    });
+    await act(async () => {
+      setDocumentVisibility("visible");
+    });
+    await act(async () => {
+      window.dispatchEvent(new Event("online"));
+    });
+    expect(reconnectRacePlayer).toHaveBeenCalledTimes(1);
+    expect(result.current.isGameplayConnectionReady).toBe(false);
+  });
+});
+
+describe("useRacePlayerRuntimeSession — manual failure recovery", () => {
+  it("a malformed later reconnect waits for manual retry and recovers", async () => {
+    const { result } = await renderResolvedActiveSession();
+
+    reconnectRacePlayer.mockResolvedValueOnce({ outcome: "GARBAGE" });
+    await act(async () => {
+      setDocumentVisibility("hidden");
+    });
+    await act(async () => {
+      setDocumentVisibility("visible");
+    });
+    await flush();
+
+    expect(result.current.error).not.toBeNull();
+    expect(result.current.connectionState).toBe(
+      RACE_PLAYER_CONNECTION_STATES.RECONNECTING,
+    );
+
+    const callsAfterFailure = reconnectRacePlayer.mock.calls.length;
+    await advance(reconnectRetryMs * 3);
+    expect(reconnectRacePlayer).toHaveBeenCalledTimes(callsAfterFailure);
+
+    reconnectRacePlayer.mockResolvedValueOnce(activeReconnectResponse());
+    await act(async () => {
+      result.current.reconnectNow();
+    });
+    await flush();
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.isGameplayConnectionReady).toBe(true);
+  });
+});
+
 describe("useRacePlayerRuntimeSession — cleanup and leave safety", () => {
+  it("a reconnect rejecting after unmount schedules nothing", async () => {
+    const pending = deferred();
+    reconnectRacePlayer.mockReturnValueOnce(pending.promise);
+
+    const { unmount } = renderHook(() => useRacePlayerRuntimeSession());
+    await flush();
+    expect(reconnectRacePlayer).toHaveBeenCalledTimes(1);
+
+    unmount();
+    await act(async () => {
+      pending.reject(networkFailure());
+    });
+    await advance(reconnectRetryMs * 3);
+
+    expect(reconnectRacePlayer).toHaveBeenCalledTimes(1);
+    expect(heartbeatRacePlayer).not.toHaveBeenCalled();
+  });
+
+  it("a heartbeat rejecting after unmount launches no trailing reconnect", async () => {
+    const { unmount } = await renderResolvedActiveSession();
+
+    const slowHeartbeat = deferred();
+    heartbeatRacePlayer.mockReturnValueOnce(slowHeartbeat.promise);
+    await advance(heartbeatIntervalMs);
+    expect(heartbeatRacePlayer).toHaveBeenCalledTimes(1);
+
+    unmount();
+    await act(async () => {
+      slowHeartbeat.reject(networkFailure());
+    });
+    await advance(reconnectRetryMs * 3 + heartbeatIntervalMs * 2);
+
+    expect(reconnectRacePlayer).toHaveBeenCalledTimes(1);
+    expect(heartbeatRacePlayer).toHaveBeenCalledTimes(1);
+  });
+
   it("unmount/pagehide/hidden issue NO runtime-session command (and never leave)", async () => {
     const { unmount } = await renderResolvedActiveSession();
 

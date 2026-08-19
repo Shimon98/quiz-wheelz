@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { MantineProvider } from "@mantine/core";
 
@@ -7,8 +7,10 @@ import i18n from "../../../i18n/i18n";
 import StudentRacePage from "./StudentRacePage";
 import {
   getRaceState,
+  heartbeatRacePlayer,
   reconnectRacePlayer,
 } from "../../../api/racePlayerApi";
+import { RACE_PLAYER_RUNTIME_SESSION_CONFIG } from "../../../shared/racePlayer/racePlayerRuntimeSessionConfig";
 
 /*
  * C1-05 gate: route entry must resolve reconnect BEFORE any gameplay
@@ -94,6 +96,48 @@ describe("StudentRacePage — session-first gating", () => {
       await screen.findByText(i18n.t("studentRace:status.waitingTitle")),
     ).toBeInTheDocument();
     expect(getRaceState).toHaveBeenCalled();
+  });
+
+  it("an authoritative FINISHED view stops the heartbeat", async () => {
+    vi.useFakeTimers();
+    try {
+      reconnectRacePlayer.mockResolvedValue({
+        outcome: "RECONNECTED",
+        online: true,
+        canContinueRace: true,
+        playerStatus: "RACING",
+        raceStatus: "IN_PROGRESS",
+      });
+      const finished = waitingRaceStateResponse();
+      finished.snapshot = {
+        ...finished.snapshot,
+        raceStatus: "FINISHED",
+        playerStatus: "FINISHED",
+        playerFinished: true,
+        raceFinished: true,
+        position: 1000,
+      };
+      getRaceState.mockResolvedValue(finished);
+      heartbeatRacePlayer.mockResolvedValue({});
+
+      renderPage();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+
+      expect(
+        screen.getByText(i18n.t("studentRace:status.finishedTitle")),
+      ).toBeInTheDocument();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(
+          RACE_PLAYER_RUNTIME_SESSION_CONFIG.heartbeatIntervalMs * 2,
+        );
+      });
+      expect(heartbeatRacePlayer).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("offers reconnect retry when the initial reconnect fails", async () => {

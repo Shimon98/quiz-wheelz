@@ -15,10 +15,7 @@ import { RACE_VIEWS } from "../../../shared/racePlayer/getRaceView";
 import RetryableErrorAlert from "../../../shared/components/feedback/RetryableErrorAlert";
 import StudentWaitingStatCard from "./StudentWaitingStatCard";
 
-/*
- * The waiting card presentation. joinData is an optional display cache —
- * server race-state values win; missing cache just hides those facts.
- */
+// joinData is an optional display cache — server race-state values win.
 export default function StudentWaitingContent({
   joinData,
   raceState,

@@ -25,9 +25,8 @@ import {
 } from "./racePlayerRuntimeSessionPolicy";
 
 /*
- * The RacePlayer runtime-session lifecycle owner (C1-05): reconnect on
- * entry/online/visible/manual, heartbeat while resolved + visible, one
- * retry timer on transient failures. Never calls leave automatically.
+ * Never auto-calls leave. Reconnect-window expiry arrives on two server
+ * wire paths: reconnect returns it as an outcome, heartbeat throws it.
  */
 
 const OPERATIONS = Object.freeze({
@@ -47,14 +46,17 @@ export default function useRacePlayerRuntimeSession() {
   const [isDocumentVisible, setIsDocumentVisible] = useState(
     () => !isDocumentHidden(),
   );
+  const [presenceStopped, setPresenceStopped] = useState(false);
 
   const operationRef = useRef(OPERATIONS.NONE);
   const pendingReconnectRef = useRef(false);
   const retryTimerRef = useRef(null);
   const initialReconnectStartedRef = useRef(false);
+  const mountedRef = useRef(true);
   // Mirrors for event handlers (stale-closure safety).
   const hasResolvedSessionRef = useRef(false);
   const terminalOutcomeRef = useRef(null);
+  const presenceStoppedRef = useRef(false);
 
   const clearRetryTimer = useCallback(() => {
     if (retryTimerRef.current != null) {
@@ -63,7 +65,19 @@ export default function useRacePlayerRuntimeSession() {
     }
   }, []);
 
-  // A server lifecycle resolution (live or terminal) — not a failure.
+  // Placed first so its cleanup runs first: an in-flight request that
+  // settles after unmount must not set state, schedule a retry, or run a
+  // trailing reconnect.
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      pendingReconnectRef.current = false;
+      clearRetryTimer();
+    };
+  }, [clearRetryTimer]);
+
   const applySessionResolution = useCallback(
     (outcome) => {
       const terminal = isTerminalReconnectOutcome(outcome) ? outcome : null;
@@ -85,13 +99,30 @@ export default function useRacePlayerRuntimeSession() {
   const settleOperation = useCallback(() => {
     operationRef.current = OPERATIONS.NONE;
 
-    if (pendingReconnectRef.current) {
+    if (mountedRef.current && pendingReconnectRef.current) {
       pendingReconnectRef.current = false;
       runReconnectRef.current();
     }
   }, []);
 
+  // One-way: an authoritative final race view (FINISHED/CANCELLED/
+  // DISCONNECTED) needs no presence work anymore.
+  const stopPresence = useCallback(() => {
+    if (presenceStoppedRef.current) {
+      return;
+    }
+
+    presenceStoppedRef.current = true;
+    pendingReconnectRef.current = false;
+    clearRetryTimer();
+    setPresenceStopped(true);
+  }, [clearRetryTimer]);
+
   const runReconnect = useCallback(() => {
+    if (!mountedRef.current || presenceStoppedRef.current) {
+      return;
+    }
+
     if (operationRef.current === OPERATIONS.RECONNECT) {
       return;
     }
@@ -114,8 +145,15 @@ export default function useRacePlayerRuntimeSession() {
 
       try {
         const response = await reconnectRacePlayer();
+        if (!mountedRef.current) {
+          return;
+        }
         applySessionResolution(mapRacePlayerReconnectToModel(response).outcome);
       } catch (rawError) {
+        if (!mountedRef.current) {
+          return;
+        }
+
         const normalized = normalizeApiError(rawError);
         const failureKind = classifyRuntimeSessionFailure(normalized);
 
@@ -170,6 +208,10 @@ export default function useRacePlayerRuntimeSession() {
       try {
         await heartbeatRacePlayer();
       } catch (rawError) {
+        if (!mountedRef.current) {
+          return;
+        }
+
         const normalized = normalizeApiError(rawError);
         const failureKind = classifyRuntimeSessionFailure(normalized);
 
@@ -180,7 +222,6 @@ export default function useRacePlayerRuntimeSession() {
         } else if (failureKind === RUNTIME_SESSION_FAILURE_KINDS.SESSION) {
           setError(normalized);
         } else {
-          // Recovery belongs to the reconnect command.
           pendingReconnectRef.current = true;
         }
       } finally {
@@ -208,18 +249,17 @@ export default function useRacePlayerRuntimeSession() {
       connectionState === RACE_PLAYER_CONNECTION_STATES.CONNECTED &&
       terminalOutcome == null &&
       error == null &&
-      isDocumentVisible,
+      isDocumentVisible &&
+      !presenceStopped,
   );
 
-  // Local offline is a hint, never server DISCONNECTED; terminal sessions
-  // ignore automatic triggers.
   const handleBrowserOffline = useCallback(() => {
     clearRetryTimer();
     setConnectionState(RACE_PLAYER_CONNECTION_STATES.OFFLINE);
   }, [clearRetryTimer]);
 
   const handleBrowserOnline = useCallback(() => {
-    if (terminalOutcomeRef.current == null) {
+    if (terminalOutcomeRef.current == null && !presenceStoppedRef.current) {
       runReconnect();
     }
   }, [runReconnect]);
@@ -231,7 +271,7 @@ export default function useRacePlayerRuntimeSession() {
 
   const handleDocumentVisible = useCallback(() => {
     setIsDocumentVisible(true);
-    if (terminalOutcomeRef.current == null) {
+    if (terminalOutcomeRef.current == null && !presenceStoppedRef.current) {
       runReconnect();
     }
   }, [runReconnect]);
@@ -243,13 +283,6 @@ export default function useRacePlayerRuntimeSession() {
     onVisible: handleDocumentVisible,
   });
 
-  // Unmount cleans up locally only — never leave.
-  useEffect(() => {
-    return () => {
-      clearRetryTimer();
-    };
-  }, [clearRetryTimer]);
-
   return {
     connectionState,
     hasResolvedSession,
@@ -257,8 +290,11 @@ export default function useRacePlayerRuntimeSession() {
     error,
     resyncToken,
     reconnectNow: runReconnect,
+    stopPresence,
     isGameplayConnectionReady:
       connectionState === RACE_PLAYER_CONNECTION_STATES.CONNECTED &&
-      terminalOutcome == null,
+      terminalOutcome == null &&
+      isDocumentVisible &&
+      !presenceStopped,
   };
 }

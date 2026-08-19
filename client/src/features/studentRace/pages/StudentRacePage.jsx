@@ -9,12 +9,7 @@ import { isRacePlayerSessionError } from "../../../errors/errorChecks";
 import StudentRaceContent from "../components/StudentRaceContent";
 import StudentRaceSessionConnecting from "../components/StudentRaceSessionConnecting";
 
-/*
- * StudentRacePage — thin composition: reconnect resolves first (C1-05),
- * only a resolved session mounts the gameplay hooks; one session gate per
- * authoritative source.
- */
-
+// Gameplay hooks mount only after the initial reconnect resolves.
 function ResolvedStudentRacePage({ runtimeSession }) {
   const {
     runtimeState,
@@ -56,6 +51,8 @@ function ResolvedStudentRacePage({ runtimeSession }) {
   });
 
   useStudentRaceRecoverySync({
+    view,
+    stopPresence: runtimeSession.stopPresence,
     questionError,
     answerError,
     raceRetry,
@@ -91,6 +88,8 @@ function ResolvedStudentRacePage({ runtimeSession }) {
               isSubmitting,
               isAwaitingNextQuestion,
               connectionState: runtimeSession.connectionState,
+              connectionError: runtimeSession.error,
+              onConnectionRetry: runtimeSession.reconnectNow,
             }}
           />
         </RacePlayerSessionGate>

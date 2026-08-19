@@ -358,6 +358,10 @@ active outcome (RECONNECTED / WAITING_FOR_RACE)
 terminal outcome (PLAYER_FINISHED / RACE_FINISHED / ALREADY_DISCONNECTED /
 RECONNECT_WINDOW_EXPIRED — returned by reconnect, thrown by heartbeat)
   → heartbeat stops + race-state resync decides the final view
+authoritative final view (FINISHED / CANCELLED / DISCONNECTED)
+  → stopPresence(): heartbeat + automatic reconnect triggers stop
+hidden document
+  → not gameplay-ready: heartbeat, race-state polling and questions pause
 transient failure while online+visible
   → ONE conservative 5s reconnect retry (no hot loop)
 ```

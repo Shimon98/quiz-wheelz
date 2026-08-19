@@ -2,10 +2,6 @@ import RacePlayerConnectionNotice from "../../../shared/racePlayer/RacePlayerCon
 import StudentRaceStatusView from "./StudentRaceStatusView";
 import { STUDENT_RACE_STATUSES } from "./studentRaceStatusConfig";
 
-/*
- * Pre-resolution race surface (C1-05) — shown until the first reconnect
- * resolves.
- */
 export default function StudentRaceSessionConnecting({
   connectionState,
   error,

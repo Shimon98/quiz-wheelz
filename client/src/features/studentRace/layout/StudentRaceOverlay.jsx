@@ -12,8 +12,9 @@ import RacePlayerConnectionNotice from "../../../shared/racePlayer/RacePlayerCon
 export default function StudentRaceOverlay({
   // C1-04 HUD: read-only server truth for score/streak/progress/speed.
   runtimeState = null,
-  // C1-05: degraded-connection presentation (OFFLINE/RECONNECTING only).
   connectionState = null,
+  connectionError = null,
+  onConnectionRetry = null,
   question = null,
   questionError = null,
   questionExpired = false,
@@ -34,7 +35,11 @@ export default function StudentRaceOverlay({
         <StudentRaceHudSafeArea>
           <StudentRaceHud runtimeState={runtimeState} question={question} />
         </StudentRaceHudSafeArea>
-        <RacePlayerConnectionNotice connectionState={connectionState} />
+        <RacePlayerConnectionNotice
+          connectionState={connectionState}
+          error={connectionError}
+          onRetry={onConnectionRetry}
+        />
       </div>
       <StudentRaceQuestionPanel
         question={question}

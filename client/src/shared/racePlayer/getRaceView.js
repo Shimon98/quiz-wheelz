@@ -19,6 +19,11 @@ export const RACE_VIEWS = Object.freeze({
   UNKNOWN: "UNKNOWN",
 });
 
+// Authoritative end-of-participation views — presence work stops here.
+export const FINAL_RACE_VIEWS = Object.freeze(
+  new Set([RACE_VIEWS.FINISHED, RACE_VIEWS.CANCELLED, RACE_VIEWS.DISCONNECTED]),
+);
+
 /*
  * getRaceView — pure interpretation of authoritative server state. Accepts
  * any object carrying { raceStatus, playerStatus, playerFinished,

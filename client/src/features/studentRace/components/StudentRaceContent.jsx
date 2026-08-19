@@ -3,10 +3,6 @@ import StudentRaceScreen from "../layout/StudentRaceScreen";
 import StudentRaceStatusView from "./StudentRaceStatusView";
 import { STUDENT_RACE_STATUSES } from "./studentRaceStatusConfig";
 
-/*
- * The race route's view switch — blocking screens only while no runtime
- * exists; a known runtime keeps rendering through transient failures.
- */
 export default function StudentRaceContent({
   runtimeState,
   view,

@@ -9,11 +9,7 @@ import { readStoredJoinData } from "../utils/readStoredJoinData";
 import StudentWaitingContent from "../components/StudentWaitingContent";
 import StudentWaitingConnecting from "../components/StudentWaitingConnecting";
 
-/*
- * StudentWaitingPage — thin composition: reconnect resolves first (C1-05),
- * only a resolved session mounts the waiting race-state flow.
- */
-
+// The waiting race-state flow mounts only after the initial reconnect resolves.
 function ResolvedWaiting({ joinData, runtimeSession }) {
   const { raceState, view, isLoading, error, retry, authoritativeResync } =
     useWaitingRace({ syncEnabled: runtimeSession.isGameplayConnectionReady });
@@ -24,6 +20,8 @@ function ResolvedWaiting({ joinData, runtimeSession }) {
     <RacePlayerSessionGate error={error}>
       <RacePlayerConnectionNotice
         connectionState={runtimeSession.connectionState}
+        error={runtimeSession.error}
+        onRetry={runtimeSession.reconnectNow}
       />
       <StudentWaitingContent
         joinData={joinData}

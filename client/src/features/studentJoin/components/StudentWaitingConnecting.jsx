@@ -5,10 +5,6 @@ import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import RetryableErrorAlert from "../../../shared/components/feedback/RetryableErrorAlert";
 import RacePlayerConnectionNotice from "../../../shared/racePlayer/RacePlayerConnectionNotice";
 
-/*
- * Pre-resolution waiting surface (C1-05) — shown until the first reconnect
- * resolves.
- */
 export default function StudentWaitingConnecting({
   connectionState,
   error,

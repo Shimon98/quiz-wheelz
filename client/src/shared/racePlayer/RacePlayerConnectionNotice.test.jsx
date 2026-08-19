@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { MantineProvider } from "@mantine/core";
 
 import i18n from "../../i18n/i18n";
 import RacePlayerConnectionNotice from "./RacePlayerConnectionNotice";
@@ -32,6 +33,37 @@ describe("RacePlayerConnectionNotice", () => {
     expect(screen.getByRole("status")).toHaveTextContent(
       noticeText("reconnectingTitle"),
     );
+  });
+
+  it("exposes a working retry action when degraded with an error", () => {
+    const onRetry = vi.fn();
+    render(
+      <MantineProvider>
+        <RacePlayerConnectionNotice
+          connectionState={RACE_PLAYER_CONNECTION_STATES.RECONNECTING}
+          error={{ messageKey: "general.unexpected" }}
+          onRetry={onRetry}
+        />
+      </MantineProvider>,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: i18n.t("studentRace:status.retry") }),
+    );
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows no retry action without an error", () => {
+    render(
+      <MantineProvider>
+        <RacePlayerConnectionNotice
+          connectionState={RACE_PLAYER_CONNECTION_STATES.RECONNECTING}
+          onRetry={() => {}}
+        />
+      </MantineProvider>,
+    );
+
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
   it("renders nothing for healthy or unresolved states", () => {

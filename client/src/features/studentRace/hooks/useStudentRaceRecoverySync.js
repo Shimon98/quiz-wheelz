@@ -5,14 +5,17 @@ import {
   isRaceLifecycleConflictError,
   isRacePlayerSessionError,
 } from "../../../errors/errorChecks";
+import { FINAL_RACE_VIEWS } from "../../../shared/racePlayer/getRaceView";
 import useRuntimeSessionResync from "../../../shared/racePlayer/useRuntimeSessionResync";
 
 /*
- * The one owner of "pull fresh authoritative race truth": session resyncs,
- * question lifecycle conflicts, and non-expiry submit failures — each
- * latched per error instance so no request loop can form.
+ * The race page's lifecycle policy: pull fresh authoritative truth on
+ * session resyncs / question conflicts / non-expiry submit failures (each
+ * latched per error instance), and stop presence on a final race view.
  */
 export default function useStudentRaceRecoverySync({
+  view,
+  stopPresence,
   questionError,
   answerError,
   raceRetry,
@@ -20,6 +23,12 @@ export default function useStudentRaceRecoverySync({
   authoritativeResync,
 }) {
   useRuntimeSessionResync(resyncToken, authoritativeResync);
+
+  useEffect(() => {
+    if (FINAL_RACE_VIEWS.has(view)) {
+      stopPresence();
+    }
+  }, [view, stopPresence]);
 
   const conflictHandledRef = useRef(null);
   useEffect(() => {
