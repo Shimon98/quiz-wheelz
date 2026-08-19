@@ -96,6 +96,7 @@ export default function StudentRacePage() {
     submitChoice,
     displayedQuestion,
     isFeedbackDwellActive,
+    isAwaitingNextQuestion,
     isSubmitting,
     selectedChoiceId,
     correctAnswerChoiceId,
@@ -107,9 +108,9 @@ export default function StudentRacePage() {
     applyAuthoritativeSnapshot,
   });
 
-  // The race page has no polling, so a SEMANTIC lifecycle conflict from the
-  // question endpoint (RACE_NOT_IN_PROGRESS / RACE_PLAYER_NOT_RACING — never
-  // just any 409) is how it learns the race ended mid-question. One
+  // Beyond the bootstrap's silent polling, a SEMANTIC lifecycle conflict from
+  // the question endpoint (RACE_NOT_IN_PROGRESS / RACE_PLAYER_NOT_RACING — never
+  // just any 409) tells it immediately the race ended mid-question. One
   // race-state resync per error instance — getRaceView then routes to the
   // right status view; no request loop.
   const conflictHandledRef = useRef(null);
@@ -165,6 +166,7 @@ export default function StudentRacePage() {
               correctAnswerChoiceId,
               feedbackState,
               isSubmitting,
+              isAwaitingNextQuestion,
             }}
           />
         </RacePlayerSessionGate>

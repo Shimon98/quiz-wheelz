@@ -21,6 +21,7 @@ export default function StudentRaceOverlay({
   // No local default — the panel owns the IDLE fallback.
   feedbackState,
   isSubmitting = false,
+  isAwaitingNextQuestion = false,
 }) {
   return (
     <div className="pointer-events-none absolute inset-0 flex flex-col justify-between">
@@ -44,6 +45,7 @@ export default function StudentRaceOverlay({
         correctAnswerChoiceId={correctAnswerChoiceId}
         feedbackState={feedbackState}
         isSubmitting={isSubmitting}
+        isAwaitingNextQuestion={isAwaitingNextQuestion}
       />
     </div>
   );

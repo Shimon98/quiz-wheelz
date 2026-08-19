@@ -35,6 +35,7 @@ export default {
     correctFeedback: "נכון!",
     wrongFeedback: "כמעט!",
     answerSyncing: "בודקים את מצב המרוץ...",
+    loadingNext: "טוענים את השאלה הבאה...",
   },
 
   timer: {

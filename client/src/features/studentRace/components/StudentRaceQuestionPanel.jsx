@@ -79,6 +79,7 @@ export default function StudentRaceQuestionPanel({
   correctAnswerChoiceId = null,
   feedbackState = STUDENT_RACE_FEEDBACK.IDLE,
   isSubmitting = false,
+  isAwaitingNextQuestion = false,
 }) {
   const { t } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
 
@@ -139,7 +140,26 @@ export default function StudentRaceQuestionPanel({
       {/* One stable line: instruction ↔ feedback swap in place, so the
           answer grid never shifts (small-screen layout contract). Glyphs +
           text carry the result — never color alone. */}
-      {showAnswerFeedback ? (
+      {isAwaitingNextQuestion ? (
+        <p
+          role="status"
+          className="flex items-center justify-center gap-2 text-center text-sm font-bold text-[var(--qw-text-muted)]"
+        >
+          <span>
+            {t(error ? "question.errorTitle" : "question.loadingNext")}
+          </span>
+          {error && onRetry ? (
+            <Button
+              size="compact-sm"
+              variant="light"
+              color={UI_TONES.DANGER}
+              onClick={onRetry}
+            >
+              {t("status.retry")}
+            </Button>
+          ) : null}
+        </p>
+      ) : showAnswerFeedback ? (
         <p
           role="status"
           className="text-center text-sm font-bold"

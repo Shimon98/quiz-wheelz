@@ -161,6 +161,9 @@ export default function useStudentRaceAnswer({
     // finish moment, where no next question will ever end the freeze.
     isFeedbackDwellActive:
       active.submittedQuestion != null && !active.dwellComplete,
+    // Accepted answer, dwell over, next question not here yet (refresh in
+    // flight or failed) — the panel swaps feedback for a loading/retry line.
+    isAwaitingNextQuestion: active.result != null && active.dwellComplete,
     isSubmitting: active.isSubmitting,
     selectedChoiceId: active.selectedChoiceId,
     correctAnswerChoiceId: active.result?.correctAnswerChoiceId ?? null,

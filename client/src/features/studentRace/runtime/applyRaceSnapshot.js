@@ -7,10 +7,12 @@ import { ApiContractError } from "../../../errors/ApiContractError.js";
  * from submit-answer raceImpact (C1-03) — both flow through this one mapper.
  *
  * Freshness (C1-03M): every snapshot carries snapshotAtEpochMs — the server
- * decision instant it describes. A snapshot that is not strictly newer than
- * the applied one returns previousState untouched: network ARRIVAL order
- * must never roll authoritative state backward (a slow race-state poll
- * cannot undo a newer answer snapshot).
+ * decision instant it describes. A snapshot strictly older than the applied
+ * one returns previousState untouched: network ARRIVAL order must never
+ * roll authoritative state backward (a slow race-state poll cannot undo a
+ * newer answer snapshot). Equal-ms applies — two serialized server
+ * decisions can share a millisecond, and the later-applied overlay (the
+ * answer on top of the baseline) must win that tie.
  *
  * Pure translation only: no clamping, no derived finish/status, no game
  * rules — if the server says position 1005 on a 1000 track, runtime says
@@ -38,9 +40,17 @@ function assertValidSnapshot(snapshot) {
   }
 
   for (const field of REQUIRED_NUMBER_FIELDS) {
-    if (typeof snapshot[field] !== "number") {
+    // Finite only — NaN/Infinity would poison per-frame prediction math.
+    if (!Number.isFinite(snapshot[field])) {
       throw new ApiContractError(`Race snapshot field "${field}" is missing`);
     }
+  }
+
+  if (
+    !Number.isSafeInteger(snapshot.snapshotAtEpochMs) ||
+    snapshot.snapshotAtEpochMs <= 0
+  ) {
+    throw new ApiContractError("Race snapshot timestamp is invalid");
   }
 
   if (snapshot.raceStatus == null || snapshot.playerStatus == null) {
@@ -60,9 +70,9 @@ export function applyRaceSnapshot(previousState, snapshot) {
 
   if (
     previousState.lastSnapshotAtEpochMs != null &&
-    snapshot.snapshotAtEpochMs <= previousState.lastSnapshotAtEpochMs
+    snapshot.snapshotAtEpochMs < previousState.lastSnapshotAtEpochMs
   ) {
-    // Stale by server truth-time — keep the newer applied state.
+    // Strictly older by server truth-time — keep the newer applied state.
     return previousState;
   }
 

@@ -42,7 +42,7 @@ export class StudentRaceRenderer {
     // rate, and every new authoritative snapshot re-bases the prediction.
     // Drawing-only — gameplay truth (finish, status) stays with the server.
     this.predictedTargetPosition = 0;
-    this.lastAuthoritativeTargetPosition = null;
+    this.lastAuthoritativeSnapshotKey = null;
 
     // Stacking order: background world behind, screen-fixed kart above the
     // moving world, effects on top.
@@ -143,13 +143,19 @@ export class StudentRaceRenderer {
   updateRuntimeState(nextState) {
     this.runtimeState = nextState;
 
-    // A NEW authoritative position re-bases the prediction (an answer bonus
+    // A NEW authoritative snapshot re-bases the prediction (an answer bonus
     // jumps it forward; a fresh poll corrects small prediction drift — the
-    // lerp below absorbs the correction smoothly, no visual snap).
-    const authoritativeTarget = nextState?.visual?.targetPosition ?? 0;
-    if (authoritativeTarget !== this.lastAuthoritativeTargetPosition) {
-      this.lastAuthoritativeTargetPosition = authoritativeTarget;
-      this.predictedTargetPosition = authoritativeTarget;
+    // lerp below absorbs the correction smoothly, no visual snap). Identity
+    // is the snapshot timestamp — a fresh snapshot may change speed/rate
+    // while position stays equal; the dev local runtime has no snapshot
+    // clock, so it falls back to position identity.
+    const snapshotKey =
+      nextState?.lastSnapshotAtEpochMs ??
+      nextState?.visual?.targetPosition ??
+      0;
+    if (snapshotKey !== this.lastAuthoritativeSnapshotKey) {
+      this.lastAuthoritativeSnapshotKey = snapshotKey;
+      this.predictedTargetPosition = nextState?.visual?.targetPosition ?? 0;
     }
   }
 

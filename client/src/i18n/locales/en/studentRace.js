@@ -34,6 +34,7 @@ export default {
     correctFeedback: "Correct!",
     wrongFeedback: "Almost!",
     answerSyncing: "Checking the race state...",
+    loadingNext: "Loading the next question...",
   },
 
   timer: {

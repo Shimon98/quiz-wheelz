@@ -255,9 +255,9 @@ Implementation notes:
   staleness is DERIVED (dwell over + new question instance), so no reset
   effects exist. Never computes score/progress/speed/finish.
 - `useRaceBootstrap` applies the latest answer snapshot over the race-state
-  baseline through the SAME `applyRaceSnapshot`; the override is keyed to
-  the raceState instance, so a fresh race-state refetch supersedes it
-  automatically.
+  baseline through the SAME `applyRaceSnapshot`; since C1-03M freshness is
+  ordered by `snapshotAtEpochMs`, and a fresher race-state poll supersedes a
+  stale overlay automatically.
 - Continuous Person-First motion: superseded by C1-03M below — position
   itself now advances continuously on the server, and the renderer predicts
   it between snapshots (the interim cosmetic `continuousWorldOffset` was
@@ -267,8 +267,9 @@ Implementation notes:
   (never "wrong", no snapshot); lifecycle conflicts + ambiguous
   transient/contract failures resync race-state + question — a POST is
   NEVER auto-resubmitted; session errors go through the existing gate.
-  Only `QUESTION_EXPIRED` was added to `serverErrorNames` — the other
-  stale-question errors share the generic resync and are not branched on.
+  `QUESTION_EXPIRED` plus the stale-question names
+  (`isStaleQuestionSubmissionError`, added in C1-03M) live in
+  `serverErrorNames` for this branching.
 - Finish: the final snapshot flips the view to FINISHED immediately; the
   page keeps the race screen visible for the feedback window
   (`isFeedbackDwellActive`) so the child sees the finish react, then the
