@@ -61,9 +61,20 @@ Required gameplay tests:
 
 ```bash
 cd client
+npm run test
 npm run lint
 npm run build
 ```
+
+Client automated tests (Vitest + jsdom + React Testing Library, policy since
+C1-04):
+
+- new client behavior ships with focused automated tests when meaningful
+- pure logic → unit tests; React UI behavior → component tests
+- protect behavior and contracts, not implementation trivia (class order,
+  decorative icons, private structure, Pixi frame animation)
+- no retroactive full-suite backfill; touched high-risk legacy behavior
+  gains regression tests when practical.
 
 Manual viewport matrix:
 

@@ -11,8 +11,9 @@ import { ApiContractError } from "../../../errors/ApiContractError.js";
  * Deliberately validates ONLY what C1-03 consumes: correctness + the
  * authoritative snapshot (deep-validated by applyRaceSnapshot, the shared
  * snapshot owner). Unconsumed wire fields (questionStatus, timing echoes,
- * scoreDelta/progressDelta) are not validated or returned — they join the
- * model when a consumer exists (C1-04 HUD).
+ * scoreDelta/progressDelta) are not validated or returned — they stay
+ * outside the model until a future consumer actually needs them (the C1-04
+ * HUD reads the authoritative snapshot, not the deltas).
  */
 export function mapSubmitAnswerToModel(response, { question, choiceId }) {
   if (response == null || typeof response !== "object") {

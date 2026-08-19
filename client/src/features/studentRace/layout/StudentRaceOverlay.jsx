@@ -1,6 +1,6 @@
+import StudentRaceHud from "../components/StudentRaceHud";
 import StudentRaceHudSafeArea from "../components/StudentRaceHudSafeArea";
 import StudentRaceQuestionPanel from "../components/StudentRaceQuestionPanel";
-import StudentRaceQuestionTimer from "../components/StudentRaceQuestionTimer";
 
 /*
  * The React layer above the Pixi canvas (layout contract, G). The wrapper
@@ -9,6 +9,8 @@ import StudentRaceQuestionTimer from "../components/StudentRaceQuestionTimer";
  * Pure distribution — question state arrives from the page via the screen.
  */
 export default function StudentRaceOverlay({
+  // C1-04 HUD: read-only server truth for score/streak/progress/speed.
+  runtimeState = null,
   question = null,
   questionError = null,
   questionExpired = false,
@@ -26,13 +28,7 @@ export default function StudentRaceOverlay({
   return (
     <div className="pointer-events-none absolute inset-0 flex flex-col justify-between">
       <StudentRaceHudSafeArea>
-        {question ? (
-          <StudentRaceQuestionTimer
-            expiresAtEpochMs={question.expiresAtEpochMs}
-            serverClockOffsetMs={question.serverClockOffsetMs}
-            timeLimitSeconds={question.timeLimitSeconds}
-          />
-        ) : null}
+        <StudentRaceHud runtimeState={runtimeState} question={question} />
       </StudentRaceHudSafeArea>
       <StudentRaceQuestionPanel
         question={question}

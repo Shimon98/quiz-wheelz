@@ -38,6 +38,13 @@ export default {
     loadingNext: "טוענים את השאלה הבאה...",
   },
 
+  hud: {
+    scoreLabel: "ניקוד",
+    streakLabel: "רצף תשובות נכונות",
+    speedLabel: "מהירות",
+    progressLabel: "התקדמות במרוץ",
+  },
+
   timer: {
     label: "הזמן שנותר לשאלה",
   },
