@@ -17,9 +17,14 @@ machines.
 ## Executive summary
 
 QuizWheelz is not an early prototype. Most backend gameplay foundations and the
-teacher/student pre-race client flows exist. The main missing product slice is the
-real playable student race connected to the server, followed by the teacher live
-race/SSE screen and results.
+teacher/student pre-race client flows exist, and the core student race loop is
+playable against the server (question → answer → feedback → authoritative
+snapshot → next question), with CONTINUOUS server-authoritative movement
+(C1-03M): every racing student advances with time, correct answers boost
+speed and add progress bonuses, timeouts slow more than wrong answers, and
+every race is guaranteed to end — even for a student who never touches the
+phone. The main missing product slices are the student HUD/reconnect polish,
+opponents, and the teacher live race/SSE screen and results.
 
 ## Product status board
 
@@ -36,9 +41,9 @@ race/SSE screen and results.
 | Student waiting page | race-state exists | DONE incl. live waiting→race transition | DONE |
 | Question template/generation | DONE | N/A | DONE |
 | Question persistence/delivery | DONE (POST resolve, per-player lock, epoch timing) | question panel + timer integrated | DONE |
-| Answer validation | DONE | wrapper exists | PARTIAL integration |
-| Race engine | DONE | not wired to real race screen | PARTIAL integration |
-| Student runtime snapshot | DONE | contract/mapper foundation exists | PARTIAL |
+| Answer validation | DONE | submit + server-driven feedback wired (C1-03) | DONE |
+| Race engine | DONE | answer snapshots drive the race screen (C1-03) | DONE |
+| Student runtime snapshot | DONE | applied from race-state AND answers via one mapper | DONE |
 | Heartbeat/leave/reconnect | DONE | not integrated | PARTIAL |
 | Student Pixi race foundation | N/A | UI-10A–G DONE | PARTIAL feature |
 | Student question panel/HUD | server data exists | panel + timer DONE (C1-02); HUD stats PLANNED (C1-04) | PARTIAL |

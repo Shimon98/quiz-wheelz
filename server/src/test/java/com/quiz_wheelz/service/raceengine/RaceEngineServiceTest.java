@@ -46,7 +46,7 @@ class RaceEngineServiceTest {
     @Test
     void shouldApplyCorrectEasyAnswerImpact() {
         Race race = race(100, RaceStatus.IN_PROGRESS);
-        RacePlayer player = player(10L, race, Difficulty.EASY, 0.0, 0.0);
+        RacePlayer player = player(10L, race, Difficulty.EASY, 0.0, 0.5);
 
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
                 .thenReturn(List.of(player));
@@ -55,7 +55,8 @@ class RaceEngineServiceTest {
 
         assertEquals(10, player.getScore());
         assertEquals(10.0, player.getPosition());
-        assertEquals(1.0, player.getSpeed());
+        // Cumulative boost model (C1-03M): 0.5 + EASY boost 0.20.
+        assertEquals(0.7, player.getSpeed(), 1e-9);
         assertEquals(1, player.getStreak());
         assertEquals(1, player.getHighestStreak());
         assertEquals(1, player.getCorrectAnswers());
@@ -86,7 +87,7 @@ class RaceEngineServiceTest {
     @Test
     void shouldUseHardScoringAndProgress() {
         Race race = race(100, RaceStatus.IN_PROGRESS);
-        RacePlayer player = player(10L, race, Difficulty.HARD, 0.0, 0.0);
+        RacePlayer player = player(10L, race, Difficulty.HARD, 0.0, 1.7);
 
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
                 .thenReturn(List.of(player));
@@ -95,6 +96,7 @@ class RaceEngineServiceTest {
 
         assertEquals(20, impact.getScoreDelta());
         assertEquals(20.0, impact.getProgressDelta());
+        // 1.7 + HARD boost 0.40 caps at MAX_RACING_SPEED.
         assertEquals(2.0, impact.getNewSpeed());
     }
 
@@ -115,7 +117,8 @@ class RaceEngineServiceTest {
         assertEquals(0.0, impact.getProgressDelta());
         assertEquals(25, player.getScore());
         assertEquals(30.0, player.getPosition());
-        assertEquals(1.0, player.getSpeed());
+        // 1.5 - WRONG_ANSWER_SPEED_PENALTY 0.20.
+        assertEquals(1.3, player.getSpeed(), 1e-9);
         assertEquals(0, player.getStreak());
         assertEquals(1, player.getWrongAnswers());
     }

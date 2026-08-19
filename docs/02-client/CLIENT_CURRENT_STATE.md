@@ -102,9 +102,32 @@ Implemented A–G:
 - choice buttons carry ids and an onChoiceSelect contract, disabled until
   C1-03 wires submission.
 
+### Student answer loop (C1-03 — done 2026-08-19)
+
+- real submit on choice tap: immediate lock (single-flight), neutral
+  selected state, then server-driven ✓/✕ feedback with i18n text — never
+  color-only, never client-computed correctness
+- `mapSubmitAnswerToModel` boundary (identity echo + correct-answer
+  membership checks); `raceImpact.snapshot` applied through the one
+  `applyRaceSnapshot`, latest answer snapshot overrides the race-state
+  baseline until a fresh race-state supersedes it
+- feedback stays on the answered question model instance for the whole
+  `feedbackDelayMs` window, then the next question resolves; the finishing
+  answer keeps the race visible for that window before the finished view
+- continuous authoritative movement (C1-03M): position itself advances on
+  the server with time; the client silently polls race-state every 2s while
+  PLAYING (shared `silentRefresh` — NOT the C1-05 heartbeat), orders
+  snapshots by `snapshotAtEpochMs` (late responses never roll state back),
+  and the renderer PREDICTS between snapshots with the server-owned
+  `movementUnitsPerSecond` (drawing only; finish stays server truth);
+  race start grants `MIN_RACING_SPEED` + the movement anchor server-side
+- recovery: expiry = time-up + question resync (no snapshot); stale
+  submitted-question conflicts (`isStaleQuestionSubmissionError`), lifecycle
+  conflicts and ambiguous transient failures resync race+question with no
+  automatic POST retry; session errors gate to `/join`.
+
 ## Missing integration
 
-- submit/feedback/next-question flow
 - HUD
 - heartbeat/leave/reconnect
 - opponent vehicles
@@ -120,8 +143,7 @@ Implemented A–G:
 ## Immediate client priority
 
 ```text
-Answer/snapshot mapping (C1-03)
-→ HUD + reconnect (C1-04/05)
+HUD + reconnect (C1-04/05)
 → real assets/opponents (C1-06/C2)
 → teacher live/SSE (C3)
 ```

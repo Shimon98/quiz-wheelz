@@ -24,14 +24,16 @@ UI-10F-2 road alignment/depth zones
 UI-10G layout contract
 ```
 
+Done: C1-01 bootstrap, C1-02 question panel/timer, C1-03 answer loop,
+C1-03M continuous authoritative movement.
+
 Next:
 
 ```text
-H real race-state route/bootstrap
-I question panel/timer/i18n
-J answer + snapshot mapping
-K HUD/presence/reconnect
-L opponents/assets/polish
+C1-04 HUD
+C1-05 presence/reconnect
+C1-06 assets/polish
+C2    opponents
 ```
 
 The old “H is blocked” note is stale because the server race-state endpoint is now
@@ -229,16 +231,21 @@ Each pooled object tracks:
 
 Vehicles do not need visible wheels.
 
-Layer model:
+**LOCKED (2026-08-19): the character/vehicle is ONE composite art asset.**
+The monkey + helmet + scarf + tail + hover kart + propulsion housings are a
+single transparent rear-view image placed as one sprite. Never assemble the
+driver/vehicle from separate coded parts (head sprite + tail sprite + kart
+body...), and never redraw the final art with Graphics/CSS — the current
+Graphics kart is a placeholder that the real asset replaces wholesale.
 
-```text
-hoverKartBase
-hoverKartColorMask
-hoverKartShadow
-hoverKartTrail
-```
+Future idle animation (C1-06) = 3–4 COMPLETE aligned frame textures looped
+(same canvas size, same pivot, near-identical silhouette; only the tail,
+scarf, hover glow and tiny body posture vary between frames). Tail/scarf
+motion is baked into those frames, not rigged.
 
-Motion:
+Separate Pixi overlays remain allowed on top of the composite sprite:
+shadow, hover shockwave rings, trail, boost glow, mud splash, correct/wrong
+pulses (C1-06). Container-level motion also stays code-side:
 
 ```text
 idle       → subtle vertical bob
@@ -248,7 +255,33 @@ wrong      → short shake + mud splash
 lateral    → slight side tilt
 ```
 
-Server owns `vehicleTypeKey` and `vehicleColorKey`. Client maps keys to art.
+Server owns `vehicleTypeKey` and `vehicleColorKey`. Client maps keys to
+whole-asset art (opponents follow the same composite concept later).
+
+## Continuous world flow (C1-03M)
+
+Authoritative `position` itself advances continuously on the server
+(`elapsed time x speed x BASE_MOVEMENT_UNITS_PER_SECOND`); snapshots arrive
+every ~2s and carry `snapshotAtEpochMs` + the server-owned
+`movementUnitsPerSecond`.
+
+```text
+position                 server-authoritative race progress — finish line,
+                         future opponents, anything gameplay-relative
+predictedTargetPosition  renderer-internal DRAWING prediction: advances by
+                         movementUnitsPerSecond between snapshots, re-based
+                         by every new authoritative snapshot, capped at
+                         totalDistance (the FINISHED transition is server
+                         truth alone)
+```
+
+One motion source: the road/jungle scroll derives from the smoothed
+predicted position (the earlier separate cosmetic travel offset was retired
+— it would count movement twice). The world flows the whole time the server
+rate is above zero (race start grants `MIN_RACING_SPEED` + the movement
+anchor), accelerates/decelerates with answer results and timeouts, and
+stops only because the FINISHED rate is 0 — the renderer has no status
+logic, and prediction never becomes gameplay truth.
 
 ## Opponents
 

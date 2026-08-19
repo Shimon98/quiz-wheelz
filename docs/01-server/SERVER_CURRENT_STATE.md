@@ -107,8 +107,28 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 ### Race engine
 
 - score delta
-- progress/position
-- speed
+- progress bonus (correct answers only) + CONTINUOUS authoritative movement
+  (C1-03M): while RACING, `position` advances by
+  `elapsed x speed x BASE_MOVEMENT_UNITS_PER_SECOND` from the
+  `movementUpdatedAtEpochMs` anchor (`RaceMovementService`, epoch-ms math —
+  DST-proof; old speed owns past time, boosts/penalties own only the
+  future). Every RACING player eventually finishes even with zero answers.
+- speed: bounded cumulative model — race start grants `MIN_RACING_SPEED`
+  (0.5) + the movement anchor; correct answers ADD +0.20/+0.30/+0.40 by
+  difficulty up to MAX 2.0; wrong −0.20 and timeout −0.40 floor at the
+  minimum; FINISHED returns to 0
+- timeout is a real gameplay event with ONE exactly-once owner
+  (`QuestionTimeoutService`): settle to the deadline at the old speed,
+  ACTIVE→EXPIRED, penalty + wrong/failure progression, settle the remainder
+- safety settlement scheduler (5s) + per-player locked worker: movement,
+  overdue timeouts and guaranteed finish need NO client request; a
+  race-finish reconciliation pass finalizes IN_PROGRESS races with no
+  WAITING/RACING players under a race lock
+- GET race-state settles the locked player to one decision instant before
+  mapping (safe state-read materialization — repeated reads award nothing);
+  RACING→DISCONNECTED settles first, FINISHED wins over DISCONNECTED
+- runtime snapshot carries `snapshotAtEpochMs` (client freshness ordering)
+  and `movementUnitsPerSecond` (server-owned visual prediction rate)
 - streak/highest streak
 - difficulty progression
 - correct/wrong counters

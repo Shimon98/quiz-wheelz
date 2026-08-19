@@ -20,10 +20,11 @@ import { STUDENT_WAITING_POLL_MS } from "../config/studentJoinConfig";
  * plus the two waiting-specific behaviors:
  *
  * POLLING (temporary change detection): while the view is WAITING, refetch
- * race-state every STUDENT_WAITING_POLL_MS via the loader's retry(), which
- * is already a no-op while a request is in flight — no concurrent spam. A
- * future SSE "race started" event replaces only this timer trigger; the
- * source of truth (race-state) stays the same.
+ * race-state every STUDENT_WAITING_POLL_MS via the loader's silentRefresh()
+ * — the shared single-flight polling capability (C1-03M), which never
+ * raises isLoading, so the waiting card can't flicker per tick. A future
+ * SSE "race started" event replaces only this timer trigger; the source of
+ * truth (race-state) stays the same.
  *
  * TRANSITION: any view the race page owns (PLAYING/FINISHED/CANCELLED/
  * DISCONNECTED) navigates to /student/race with replace — the status
@@ -43,7 +44,8 @@ const RACE_PAGE_VIEWS = new Set([
 
 export default function useWaitingRace() {
   const navigate = useNavigate();
-  const { raceState, isLoading, error, retry } = useRacePlayerState();
+  const { raceState, isLoading, error, retry, silentRefresh } =
+    useRacePlayerState();
 
   const view = raceState ? getRaceView(raceState.snapshot) : null;
 
@@ -61,12 +63,12 @@ export default function useWaitingRace() {
       return undefined;
     }
 
-    const timer = setInterval(retry, STUDENT_WAITING_POLL_MS);
+    const timer = setInterval(silentRefresh, STUDENT_WAITING_POLL_MS);
 
     return () => {
       clearInterval(timer);
     };
-  }, [view, retry]);
+  }, [view, silentRefresh]);
 
   return { raceState, view, isLoading, error, retry };
 }

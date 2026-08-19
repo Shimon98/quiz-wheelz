@@ -9,8 +9,12 @@ export const STUDENT_RACE_ANIMATION_CONFIG = Object.freeze({
   // Server unit -> pixel conversions. Initial tuning guesses — adjust here
   // only, never inside layers.
   serverUnits: Object.freeze({
-    positionToPixelsRatio: 4, // 1 server distance unit = 4 world pixels
-    speedToPixelsPerSecondRatio: 120, // speed 1.0 = 120 px/s of world scroll
+    // 1 server distance unit = 30 world pixels. Tuned with the C1-03M
+    // continuous-movement server rate (speed 1.0 = 4 units/s) so the road
+    // flows ~120 px/s at speed 1.0 — the feel the old cosmetic scroll had.
+    // (The retired speedToPixelsPerSecondRatio is gone: position itself now
+    // advances continuously, so one conversion serves all world motion.)
+    positionToPixelsRatio: 30,
   }),
 
   // Per-frame lerp factors easing renderer-internal visual values toward the

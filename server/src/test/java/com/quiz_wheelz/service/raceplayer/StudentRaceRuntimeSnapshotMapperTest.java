@@ -15,6 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class StudentRaceRuntimeSnapshotMapperTest {
 
+    private static final long SNAPSHOT_AT_EPOCH_MS = 1_780_000_000_000L;
+
     private final StudentRaceRuntimeSnapshotMapper mapper =
             new StudentRaceRuntimeSnapshotMapper();
 
@@ -26,7 +28,7 @@ class StudentRaceRuntimeSnapshotMapperTest {
         );
 
         StudentRaceRuntimeSnapshotResponse snapshot =
-                mapper.fromRacePlayer(racePlayer);
+                mapper.fromRacePlayer(racePlayer, SNAPSHOT_AT_EPOCH_MS);
 
         assertEquals(1000, snapshot.getTotalDistance());
         assertEquals(50, snapshot.getScore());
@@ -39,6 +41,9 @@ class StudentRaceRuntimeSnapshotMapperTest {
         assertEquals(RaceStatus.IN_PROGRESS, snapshot.getRaceStatus());
         assertFalse(snapshot.isPlayerFinished());
         assertFalse(snapshot.isRaceFinished());
+        assertEquals(SNAPSHOT_AT_EPOCH_MS, snapshot.getSnapshotAtEpochMs());
+        // speed 1.2 x BASE_MOVEMENT_UNITS_PER_SECOND 4.0
+        assertEquals(4.8, snapshot.getMovementUnitsPerSecond());
     }
 
     @Test
@@ -49,7 +54,7 @@ class StudentRaceRuntimeSnapshotMapperTest {
         );
 
         StudentRaceRuntimeSnapshotResponse snapshot =
-                mapper.fromRacePlayer(racePlayer);
+                mapper.fromRacePlayer(racePlayer, SNAPSHOT_AT_EPOCH_MS);
 
         assertTrue(snapshot.isPlayerFinished());
         assertFalse(snapshot.isRaceFinished());
@@ -63,7 +68,7 @@ class StudentRaceRuntimeSnapshotMapperTest {
         );
 
         StudentRaceRuntimeSnapshotResponse snapshot =
-                mapper.fromRacePlayer(racePlayer);
+                mapper.fromRacePlayer(racePlayer, SNAPSHOT_AT_EPOCH_MS);
 
         assertFalse(snapshot.isPlayerFinished());
         assertTrue(snapshot.isRaceFinished());
@@ -97,7 +102,7 @@ class StudentRaceRuntimeSnapshotMapperTest {
         );
 
         StudentRaceRuntimeSnapshotResponse snapshot =
-                mapper.fromAnswerRaceImpact(impact, race);
+                mapper.fromAnswerRaceImpact(impact, race, SNAPSHOT_AT_EPOCH_MS);
 
         assertEquals(1000, snapshot.getTotalDistance());
         assertEquals(60, snapshot.getScore());
@@ -110,6 +115,9 @@ class StudentRaceRuntimeSnapshotMapperTest {
         assertEquals(RaceStatus.IN_PROGRESS, snapshot.getRaceStatus());
         assertFalse(snapshot.isPlayerFinished());
         assertFalse(snapshot.isRaceFinished());
+        assertEquals(SNAPSHOT_AT_EPOCH_MS, snapshot.getSnapshotAtEpochMs());
+        // speed 1.0 x BASE_MOVEMENT_UNITS_PER_SECOND 4.0
+        assertEquals(4.0, snapshot.getMovementUnitsPerSecond());
     }
 
     private RacePlayer createRacePlayer(

@@ -2,9 +2,11 @@ import { useEffect, useRef } from "react";
 
 import useRaceBootstrap from "../hooks/useRaceBootstrap";
 import useStudentRaceQuestion from "../hooks/useStudentRaceQuestion";
+import useStudentRaceAnswer from "../hooks/useStudentRaceAnswer";
 import { RACE_VIEWS } from "../../../shared/racePlayer/getRaceView";
 import RacePlayerSessionGate from "../../../shared/racePlayer/RacePlayerSessionGate";
 import {
+  isQuestionExpiredError,
   isRaceLifecycleConflictError,
   isRacePlayerSessionError,
 } from "../../../errors/errorChecks";
@@ -34,6 +36,7 @@ function StudentRaceContent({
   isLoading,
   error,
   retry,
+  showFinishMoment,
   questionProps,
 }) {
   if (!runtimeState && isLoading) {
@@ -56,7 +59,10 @@ function StudentRaceContent({
     );
   }
 
-  if (view === RACE_VIEWS.PLAYING) {
+  // showFinishMoment: the answer that finished the race keeps the game
+  // visible for its feedback window (the child sees the finish react) —
+  // presentation only, the runtime already says FINISHED.
+  if (view === RACE_VIEWS.PLAYING || showFinishMoment) {
     return <StudentRaceScreen runtimeState={runtimeState} {...questionProps} />;
   }
 
@@ -70,6 +76,7 @@ export default function StudentRacePage() {
     isLoading,
     error: raceError,
     retry: raceRetry,
+    applyAuthoritativeSnapshot,
   } = useRaceBootstrap();
 
   // Questions only for an authoritatively playable player: last-known
@@ -85,9 +92,25 @@ export default function StudentRacePage() {
     refreshQuestion,
   } = useStudentRaceQuestion({ enabled: questionEnabled });
 
-  // The race page has no polling, so a SEMANTIC lifecycle conflict from the
-  // question endpoint (RACE_NOT_IN_PROGRESS / RACE_PLAYER_NOT_RACING — never
-  // just any 409) is how it learns the race ended mid-question. One
+  const {
+    submitChoice,
+    displayedQuestion,
+    isFeedbackDwellActive,
+    isAwaitingNextQuestion,
+    isSubmitting,
+    selectedChoiceId,
+    correctAnswerChoiceId,
+    feedbackState,
+    answerError,
+  } = useStudentRaceAnswer({
+    question,
+    refreshQuestion,
+    applyAuthoritativeSnapshot,
+  });
+
+  // Beyond the bootstrap's silent polling, a SEMANTIC lifecycle conflict from
+  // the question endpoint (RACE_NOT_IN_PROGRESS / RACE_PLAYER_NOT_RACING — never
+  // just any 409) tells it immediately the race ended mid-question. One
   // race-state resync per error instance — getRaceView then routes to the
   // right status view; no request loop.
   const conflictHandledRef = useRef(null);
@@ -101,22 +124,52 @@ export default function StudentRacePage() {
     }
   }, [questionError, raceRetry]);
 
+  // Submit failures resync race truth the same way — for lifecycle conflicts
+  // AND for ambiguous transient/contract failures (the POST may have
+  // committed server-side; the answer hook never auto-resubmits, it resyncs
+  // the question while this resyncs the race). Expiry needs no race resync
+  // (no impact was applied) and session errors belong to the gate below.
+  const answerResyncHandledRef = useRef(null);
+  useEffect(() => {
+    if (
+      answerError &&
+      !isRacePlayerSessionError(answerError) &&
+      !isQuestionExpiredError(answerError) &&
+      answerResyncHandledRef.current !== answerError
+    ) {
+      answerResyncHandledRef.current = answerError;
+      raceRetry();
+    }
+  }, [answerError, raceRetry]);
+
   return (
     <RacePlayerSessionGate error={raceError}>
       <RacePlayerSessionGate error={questionError}>
-        <StudentRaceContent
-          runtimeState={runtimeState}
-          view={view}
-          isLoading={isLoading}
-          error={raceError}
-          retry={raceRetry}
-          questionProps={{
-            question,
-            questionError,
-            questionExpired,
-            onQuestionRetry: refreshQuestion,
-          }}
-        />
+        <RacePlayerSessionGate error={answerError}>
+          <StudentRaceContent
+            runtimeState={runtimeState}
+            view={view}
+            isLoading={isLoading}
+            error={raceError}
+            retry={raceRetry}
+            showFinishMoment={
+              view === RACE_VIEWS.FINISHED && isFeedbackDwellActive
+            }
+            questionProps={{
+              question: displayedQuestion,
+              questionError,
+              questionExpired,
+              onQuestionRetry: refreshQuestion,
+              interactionEnabled: view === RACE_VIEWS.PLAYING,
+              onChoiceSelect: submitChoice,
+              selectedChoiceId,
+              correctAnswerChoiceId,
+              feedbackState,
+              isSubmitting,
+              isAwaitingNextQuestion,
+            }}
+          />
+        </RacePlayerSessionGate>
       </RacePlayerSessionGate>
     </RacePlayerSessionGate>
   );

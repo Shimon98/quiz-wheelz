@@ -1,9 +1,12 @@
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import useRacePlayerState from "../../../shared/racePlayer/useRacePlayerState.js";
-import { getRaceView } from "../../../shared/racePlayer/getRaceView.js";
+import { getRaceView, RACE_VIEWS } from "../../../shared/racePlayer/getRaceView.js";
 import { normalizeApiError } from "../../../errors/normalizeApiError.js";
+import { isRacePlayerSessionError } from "../../../errors/errorChecks.js";
 import { mapRaceStateToRuntime } from "../runtime/mapRaceStateToRuntime.js";
+import { applyRaceSnapshot } from "../runtime/applyRaceSnapshot.js";
+import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig.js";
 
 /*
  * useRaceBootstrap — the student race feature's orchestration layer. It only
@@ -12,14 +15,28 @@ import { mapRaceStateToRuntime } from "../runtime/mapRaceStateToRuntime.js";
  *   useRacePlayerState()          request lifecycle (shared loader)
  *           ↓ raceState
  *   mapRaceStateToRuntime()       server DTO → StudentRaceRuntimeState
- *           ↓ runtimeState
+ *           ↓ + latest answer snapshot (applyRaceSnapshot)
  *   getRaceView()                 authoritative state → client view
  *
- * and returns { runtimeState, view, isLoading, error, retry } for the future
- * StudentRacePage. The runtime is DERIVED from the loader's raceState (no
- * duplicated React state); a mapping failure (ApiContractError) surfaces as
- * a normalized API_CONTRACT error. No navigation, polling, notifications or
- * session redirects here — the page/guard layers decide what to DO.
+ * and returns { runtimeState, view, isLoading, error, retry,
+ * applyAuthoritativeSnapshot } for StudentRacePage. The runtime is DERIVED
+ * from the loader's raceState (no duplicated React state); a mapping failure
+ * (ApiContractError) surfaces as a normalized API_CONTRACT error. No
+ * navigation, polling, notifications or session redirects here — the
+ * page/guard layers decide what to DO.
+ *
+ * Answer snapshots (C1-03/03M): submit-answer returns the same
+ * authoritative snapshot shape as race-state; the latest one is laid over
+ * the race-state baseline through the SAME applyRaceSnapshot owner, and
+ * `snapshotAtEpochMs` freshness ordering inside it decides which truth is
+ * newer — an old race-state response that arrives late can never roll a
+ * newer answer snapshot backward, and a fresher poll supersedes a stale
+ * answer override on its own.
+ *
+ * Polling (C1-03M): the server advances position continuously with time, so
+ * while the view is authoritatively PLAYING this hook silently re-syncs
+ * race-state every raceStatePollMs. NOT the C1-05 heartbeat — pure gameplay
+ * truth refresh; a future SSE stream replaces only this timer trigger.
  */
 export default function useRaceBootstrap() {
   const {
@@ -27,7 +44,14 @@ export default function useRaceBootstrap() {
     isLoading,
     error: requestError,
     retry,
+    silentRefresh,
   } = useRacePlayerState();
+
+  const [answerSnapshot, setAnswerSnapshot] = useState(null);
+
+  const applyAuthoritativeSnapshot = useCallback((snapshot) => {
+    setAnswerSnapshot(snapshot);
+  }, []);
 
   const { runtimeState, mappingError } = useMemo(() => {
     if (raceState == null) {
@@ -35,14 +59,16 @@ export default function useRaceBootstrap() {
     }
 
     try {
-      return {
-        runtimeState: mapRaceStateToRuntime(raceState),
-        mappingError: null,
-      };
+      const baseline = mapRaceStateToRuntime(raceState);
+      const runtime = answerSnapshot
+        ? applyRaceSnapshot(baseline, answerSnapshot)
+        : baseline;
+
+      return { runtimeState: runtime, mappingError: null };
     } catch (rawError) {
       return { runtimeState: null, mappingError: normalizeApiError(rawError) };
     }
-  }, [raceState]);
+  }, [raceState, answerSnapshot]);
 
   // View exists only for real server state; UNKNOWN is a valid view (an
   // unrecognized status combination), NOT an API contract error.
@@ -53,5 +79,33 @@ export default function useRaceBootstrap() {
   // runtimeState/view can stay available ALONGSIDE the error.
   const error = requestError ?? mappingError;
 
-  return { runtimeState, view, isLoading, error, retry };
+  // Silent gameplay sync while PLAYING only: no polling for waiting/
+  // finished/cancelled views, and never once race-state has reported a dead
+  // RacePlayer session.
+  const pollingEnabled =
+    view === RACE_VIEWS.PLAYING && !isRacePlayerSessionError(error);
+
+  useEffect(() => {
+    if (!pollingEnabled) {
+      return undefined;
+    }
+
+    const timer = setInterval(
+      silentRefresh,
+      STUDENT_RACE_CONFIG.raceStatePollMs,
+    );
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [pollingEnabled, silentRefresh]);
+
+  return {
+    runtimeState,
+    view,
+    isLoading,
+    error,
+    retry,
+    applyAuthoritativeSnapshot,
+  };
 }

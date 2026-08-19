@@ -6,18 +6,30 @@ import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.Difficulty;
 import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
+import com.quiz_wheelz.exception.ApiException;
+import com.quiz_wheelz.exception.ErrorCode;
+import com.quiz_wheelz.repository.RacePlayerRepository;
+import com.quiz_wheelz.service.question.QuestionTimeoutService;
+import com.quiz_wheelz.service.raceengine.RaceFinishService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,7 +37,10 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class StudentRaceStateServiceTest {
 
+    private static final Instant FIXED_INSTANT = Instant.parse("2026-06-30T10:00:00Z");
+    private static final ZoneId FIXED_ZONE = ZoneId.of("UTC");
     private static final long RACE_ID = 1L;
+    private static final long RACE_PLAYER_ID = 9L;
     private static final String RACE_TITLE = "Easy multiplication";
     private static final String ROOM_CODE = "ABC123";
 
@@ -33,16 +48,23 @@ class StudentRaceStateServiceTest {
     private CurrentRacePlayerService currentRacePlayerService;
 
     @Mock
+    private RacePlayerRepository racePlayerRepository;
+
+    @Mock
+    private QuestionTimeoutService questionTimeoutService;
+
+    @Mock
+    private RaceFinishService raceFinishService;
+
+    @Mock
     private HttpServletRequest request;
 
     @Test
-    void getRaceStateShouldUseSessionResolverAndReturnRaceMetadataAndSnapshot() {
-        RacePlayer racePlayer = createRacePlayer(
+    void getRaceStateShouldLockSettleAndReturnRaceMetadataAndSnapshot() {
+        RacePlayer racePlayer = mockResolvedAndLocked(
                 RacePlayerStatus.RACING,
                 RaceStatus.IN_PROGRESS
         );
-        when(currentRacePlayerService.resolveCurrentRacePlayerSession(request))
-                .thenReturn(racePlayer);
 
         StudentRaceStateResponse response = createService().getRaceState(request);
 
@@ -55,19 +77,30 @@ class StudentRaceStateServiceTest {
         assertEquals(RaceStatus.IN_PROGRESS, response.getSnapshot().getRaceStatus());
         assertFalse(response.getSnapshot().isPlayerFinished());
         assertFalse(response.getSnapshot().isRaceFinished());
+        assertEquals(
+                FIXED_INSTANT.toEpochMilli(),
+                response.getSnapshot().getSnapshotAtEpochMs()
+        );
+        // speed 1.2 x BASE_MOVEMENT_UNITS_PER_SECOND 4.0
+        assertEquals(4.8, response.getSnapshot().getMovementUnitsPerSecond());
 
-        verify(currentRacePlayerService).resolveCurrentRacePlayerSession(request);
+        // The snapshot describes SETTLED movement — locked + settled first.
+        verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
+        verify(questionTimeoutService).settleWithOverdueTimeout(
+                racePlayer,
+                LocalDateTime.ofInstant(FIXED_INSTANT, FIXED_ZONE),
+                FIXED_INSTANT.toEpochMilli()
+        );
+        verify(raceFinishService, never()).finishRaceIfNeeded(any());
         verify(currentRacePlayerService, never()).resolveCurrentRacePlayer(request);
     }
 
     @Test
     void getRaceStateShouldSupportWaitingPlayerAndWaitingRace() {
-        RacePlayer racePlayer = createRacePlayer(
+        mockResolvedAndLocked(
                 RacePlayerStatus.WAITING,
                 RaceStatus.WAITING_FOR_PLAYERS
         );
-        when(currentRacePlayerService.resolveCurrentRacePlayerSession(request))
-                .thenReturn(racePlayer);
 
         StudentRaceStateResponse response = createService().getRaceState(request);
 
@@ -75,19 +108,15 @@ class StudentRaceStateServiceTest {
         assertEquals(RaceStatus.WAITING_FOR_PLAYERS, response.getSnapshot().getRaceStatus());
         assertFalse(response.getSnapshot().isPlayerFinished());
         assertFalse(response.getSnapshot().isRaceFinished());
-
-        verify(currentRacePlayerService).resolveCurrentRacePlayerSession(request);
-        verify(currentRacePlayerService, never()).resolveCurrentRacePlayer(request);
+        verify(raceFinishService, never()).finishRaceIfNeeded(any());
     }
 
     @Test
     void getRaceStateShouldSupportFinishedPlayerAndFinishedRace() {
-        RacePlayer racePlayer = createRacePlayer(
+        mockResolvedAndLocked(
                 RacePlayerStatus.FINISHED,
                 RaceStatus.FINISHED
         );
-        when(currentRacePlayerService.resolveCurrentRacePlayerSession(request))
-                .thenReturn(racePlayer);
 
         StudentRaceStateResponse response = createService().getRaceState(request);
 
@@ -95,16 +124,75 @@ class StudentRaceStateServiceTest {
         assertEquals(RaceStatus.FINISHED, response.getSnapshot().getRaceStatus());
         assertTrue(response.getSnapshot().isPlayerFinished());
         assertTrue(response.getSnapshot().isRaceFinished());
+        // Already-finished before this read — no race finalization attempt.
+        verify(raceFinishService, never()).finishRaceIfNeeded(any());
+    }
 
-        verify(currentRacePlayerService).resolveCurrentRacePlayerSession(request);
-        verify(currentRacePlayerService, never()).resolveCurrentRacePlayer(request);
+    @Test
+    void getRaceStateShouldCheckRaceFinishWhenSettlementFinishesThePlayer() {
+        RacePlayer racePlayer = mockResolvedAndLocked(
+                RacePlayerStatus.RACING,
+                RaceStatus.IN_PROGRESS
+        );
+
+        // The settlement crosses the finish line during this read.
+        doAnswer(invocation -> {
+            racePlayer.setStatus(RacePlayerStatus.FINISHED);
+            return null;
+        }).when(questionTimeoutService).settleWithOverdueTimeout(
+                any(),
+                any(),
+                org.mockito.ArgumentMatchers.anyLong()
+        );
+
+        StudentRaceStateResponse response = createService().getRaceState(request);
+
+        assertTrue(response.getSnapshot().isPlayerFinished());
+        verify(raceFinishService).finishRaceIfNeeded(racePlayer.getRace());
+    }
+
+    @Test
+    void getRaceStateShouldRejectPlayerThatCannotBeLocked() {
+        RacePlayer racePlayer = createRacePlayer(
+                RacePlayerStatus.RACING,
+                RaceStatus.IN_PROGRESS
+        );
+        when(currentRacePlayerService.resolveCurrentRacePlayerSession(request))
+                .thenReturn(racePlayer);
+        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
+                .thenReturn(Optional.empty());
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> createService().getRaceState(request)
+        );
+
+        assertEquals(ErrorCode.RACE_PLAYER_NOT_FOUND, exception.getErrorCode());
     }
 
     private StudentRaceStateService createService() {
         return new StudentRaceStateService(
                 currentRacePlayerService,
-                new StudentRaceRuntimeSnapshotMapper()
+                racePlayerRepository,
+                questionTimeoutService,
+                raceFinishService,
+                new StudentRaceRuntimeSnapshotMapper(),
+                Clock.fixed(FIXED_INSTANT, FIXED_ZONE)
         );
+    }
+
+    private RacePlayer mockResolvedAndLocked(
+            RacePlayerStatus playerStatus,
+            RaceStatus raceStatus
+    ) {
+        RacePlayer racePlayer = createRacePlayer(playerStatus, raceStatus);
+
+        when(currentRacePlayerService.resolveCurrentRacePlayerSession(request))
+                .thenReturn(racePlayer);
+        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
+                .thenReturn(Optional.of(racePlayer));
+
+        return racePlayer;
     }
 
     private RacePlayer createRacePlayer(
@@ -125,6 +213,7 @@ class StudentRaceStateServiceTest {
         );
 
         RacePlayer racePlayer = new RacePlayer();
+        racePlayer.setId(RACE_PLAYER_ID);
         racePlayer.setRace(race);
         racePlayer.setStatus(playerStatus);
         racePlayer.setScore(50);

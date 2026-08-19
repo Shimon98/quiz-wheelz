@@ -35,4 +35,16 @@ export const SERVER_ERROR_NAMES = Object.freeze({
   // page resyncs race-state and lets getRaceView decide the screen.
   RACE_PLAYER_NOT_RACING: "RACE_PLAYER_NOT_RACING",
   RACE_NOT_IN_PROGRESS: "RACE_NOT_IN_PROGRESS",
+
+  // Submit-answer: the deadline passed before the answer landed. Its own
+  // presentation (time-up, never "wrong") — and no race resync, because no
+  // race impact was applied.
+  QUESTION_EXPIRED: "QUESTION_EXPIRED",
+
+  // Stale submitted-question conflicts — the local question no longer
+  // matches server truth (answered/expired/replaced concurrently). One
+  // shared policy: automatic question + race resync, never an auto re-POST.
+  QUESTION_NOT_ACTIVE: "QUESTION_NOT_ACTIVE",
+  QUESTION_NOT_FOUND_FOR_PLAYER: "QUESTION_NOT_FOUND_FOR_PLAYER",
+  QUESTION_CHOICE_NOT_FOUND: "QUESTION_CHOICE_NOT_FOUND",
 });

@@ -36,6 +36,13 @@ export class StudentRaceRenderer {
     this.visualPosition = 0;
     this.visualSpeed = 0;
     this.cameraPosition = 0;
+    // Prediction target (C1-03M): the server advances position continuously
+    // with time and snapshots arrive every ~2s, so between snapshots the
+    // renderer PREDICTS the target forward using the server-owned movement
+    // rate, and every new authoritative snapshot re-bases the prediction.
+    // Drawing-only — gameplay truth (finish, status) stays with the server.
+    this.predictedTargetPosition = 0;
+    this.lastAuthoritativeSnapshotKey = null;
 
     // Stacking order: background world behind, screen-fixed kart above the
     // moving world, effects on top.
@@ -135,6 +142,21 @@ export class StudentRaceRenderer {
 
   updateRuntimeState(nextState) {
     this.runtimeState = nextState;
+
+    // A NEW authoritative snapshot re-bases the prediction (an answer bonus
+    // jumps it forward; a fresh poll corrects small prediction drift — the
+    // lerp below absorbs the correction smoothly, no visual snap). Identity
+    // is the snapshot timestamp — a fresh snapshot may change speed/rate
+    // while position stays equal; the dev local runtime has no snapshot
+    // clock, so it falls back to position identity.
+    const snapshotKey =
+      nextState?.lastSnapshotAtEpochMs ??
+      nextState?.visual?.targetPosition ??
+      0;
+    if (snapshotKey !== this.lastAuthoritativeSnapshotKey) {
+      this.lastAuthoritativeSnapshotKey = snapshotKey;
+      this.predictedTargetPosition = nextState?.visual?.targetPosition ?? 0;
+    }
   }
 
   resize(width, height) {
@@ -148,18 +170,33 @@ export class StudentRaceRenderer {
   tick(ticker) {
     const { interpolation, serverUnits } = STUDENT_RACE_ANIMATION_CONFIG;
     const targets = this.runtimeState?.visual;
-    const targetPosition = targets?.targetPosition ?? 0;
     const targetSpeed = targets?.targetSpeed ?? 0;
+    // Server-owned effective movement rate (speed x base rate). Predict the
+    // target forward between snapshots — the world flows the whole time the
+    // server says the player is moving, and stops with the FINISHED rate of
+    // 0. No status checks here. (The dev local runtime has rate 0 and moves
+    // via its own frequent authoritative updates — same behavior as before.)
+    const movementRate = targets?.movementUnitsPerSecond ?? 0;
+    this.predictedTargetPosition += movementRate * (ticker.deltaMS / 1000);
+
+    // Prediction never visually crosses the authoritative finish line — the
+    // FINISHED transition belongs to the server snapshot alone.
+    const totalDistance = this.runtimeState?.totalDistance;
+    if (
+      totalDistance != null &&
+      this.predictedTargetPosition > totalDistance
+    ) {
+      this.predictedTargetPosition = totalDistance;
+    }
 
     // Wrap guard (dev local runtime rolls back to 0 at the track end): a
     // backward jump larger than half the track is a wrap, not movement —
     // snap instead of lerping the whole world backwards.
-    const totalDistance = this.runtimeState?.totalDistance;
     if (
       totalDistance != null &&
-      targetPosition - this.visualPosition < -totalDistance / 2
+      this.predictedTargetPosition - this.visualPosition < -totalDistance / 2
     ) {
-      this.visualPosition = targetPosition;
+      this.visualPosition = this.predictedTargetPosition;
     }
 
     // Frame-rate-independent-ish easing: config factors are tuned for a
@@ -172,7 +209,7 @@ export class StudentRaceRenderer {
     const speedBlend = Math.min(1, interpolation.targetSpeedLerpFactor * dt);
 
     this.visualPosition +=
-      (targetPosition - this.visualPosition) * positionBlend;
+      (this.predictedTargetPosition - this.visualPosition) * positionBlend;
     this.visualSpeed += (targetSpeed - this.visualSpeed) * speedBlend;
     this.cameraPosition = this.visualPosition;
 
@@ -184,6 +221,10 @@ export class StudentRaceRenderer {
       visualPosition: this.visualPosition,
       visualSpeed: this.visualSpeed,
       cameraPosition: this.cameraPosition,
+      // Decorative repeating-scenery scroll (Road/Jungle only) — a single
+      // motion source: the smoothed predicted position. The old separate
+      // cosmetic travel term is gone (C1-03M) — position itself now flows
+      // continuously, so a second term would count movement twice.
       worldOffset: this.cameraPosition * serverUnits.positionToPixelsRatio,
       perspective: this.perspective,
       layout: this.layout,

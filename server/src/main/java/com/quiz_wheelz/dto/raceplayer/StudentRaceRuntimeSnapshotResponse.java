@@ -26,4 +26,14 @@ public class StudentRaceRuntimeSnapshotResponse {
 
     private boolean playerFinished;
     private boolean raceFinished;
+
+    /*
+     * C1-03M: server decision instant this snapshot describes — the client
+     * orders snapshots by it (network arrival order must never roll state
+     * backward) — and the effective authoritative movement rate
+     * (speed x BASE_MOVEMENT_UNITS_PER_SECOND), so the client can predict
+     * visual motion without duplicating the server formula.
+     */
+    private Long snapshotAtEpochMs;
+    private Double movementUnitsPerSecond;
 }

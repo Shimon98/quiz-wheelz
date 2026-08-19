@@ -15,12 +15,14 @@ import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
+import com.quiz_wheelz.service.raceengine.RaceMovementService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -32,6 +34,8 @@ public class StudentAnswerSubmissionService {
     private final PlayerQuestionChoiceRepository playerQuestionChoiceRepository;
     private final RacePlayerRepository racePlayerRepository;
     private final RaceEngineService raceEngineService;
+    private final RaceMovementService raceMovementService;
+    private final QuestionTimeoutService questionTimeoutService;
     private final StudentRaceRuntimeSnapshotMapper snapshotMapper;
     private final Clock clock;
 
@@ -41,6 +45,8 @@ public class StudentAnswerSubmissionService {
             PlayerQuestionChoiceRepository playerQuestionChoiceRepository,
             RacePlayerRepository racePlayerRepository,
             RaceEngineService raceEngineService,
+            RaceMovementService raceMovementService,
+            QuestionTimeoutService questionTimeoutService,
             StudentRaceRuntimeSnapshotMapper snapshotMapper,
             Clock clock
     ) {
@@ -48,10 +54,15 @@ public class StudentAnswerSubmissionService {
         this.playerQuestionChoiceRepository = Objects.requireNonNull(playerQuestionChoiceRepository);
         this.racePlayerRepository = Objects.requireNonNull(racePlayerRepository);
         this.raceEngineService = Objects.requireNonNull(raceEngineService);
+        this.raceMovementService = Objects.requireNonNull(raceMovementService);
+        this.questionTimeoutService = Objects.requireNonNull(questionTimeoutService);
         this.snapshotMapper = Objects.requireNonNull(snapshotMapper);
         this.clock = Objects.requireNonNull(clock);
     }
 
+    // noRollbackFor is deliberate for the timeout path too: a late answer's
+    // QUESTION_EXPIRED must still COMMIT the settled movement, the EXPIRED
+    // transition and the timeout penalty.
     @Transactional(noRollbackFor = ApiException.class)
     public SubmitAnswerResponse submitAnswer(
             RacePlayer racePlayer,
@@ -60,7 +71,12 @@ public class StudentAnswerSubmissionService {
         validateInput(racePlayer, request);
 
         RacePlayer lockedRacePlayer = findLockedRacePlayer(racePlayer);
-        LocalDateTime now = LocalDateTime.now(clock);
+
+        // ONE decision instant: expiry, answeredAt, movement settlement and
+        // the snapshot timestamp all describe the same moment.
+        Instant decisionInstant = clock.instant();
+        LocalDateTime now = DateTimeUtils.toLocalDateTime(decisionInstant, clock.getZone());
+        long decisionEpochMs = decisionInstant.toEpochMilli();
 
         PlayerQuestion question = findLockedPlayerQuestion(
                 request.getQuestionId(),
@@ -68,7 +84,30 @@ public class StudentAnswerSubmissionService {
         );
 
         validateQuestionIsActive(question);
-        expireQuestionIfNeeded(question, now);
+
+        if (DateTimeUtils.isExpired(question.getExpiresAt(), now)) {
+            // Timeout is a gameplay event with ONE owner — it settles the
+            // pre/post-deadline intervals at the right speeds and penalizes
+            // exactly once.
+            questionTimeoutService.processExpiredActiveQuestion(
+                    lockedRacePlayer,
+                    question,
+                    decisionEpochMs
+            );
+
+            throw new ApiException(ErrorCode.QUESTION_EXPIRED);
+        }
+
+        // The elapsed interval up to this answer belongs to the OLD speed —
+        // settle it before any boost/penalty may change the speed.
+        boolean finishedByMovement =
+                raceMovementService.settleTo(lockedRacePlayer, decisionEpochMs);
+
+        if (finishedByMovement) {
+            // Finish wins chronologically: the player crossed the line before
+            // the answer was applied, so no answer impact after the finish.
+            throw new ApiException(ErrorCode.RACE_PLAYER_NOT_RACING);
+        }
 
         PlayerQuestionChoice selectedChoice = findSelectedChoice(
                 request.getChoiceId(),
@@ -87,7 +126,8 @@ public class StudentAnswerSubmissionService {
         StudentRaceRuntimeSnapshotResponse snapshot =
                 snapshotMapper.fromAnswerRaceImpact(
                         answerRaceImpact,
-                        lockedRacePlayer.getRace()
+                        lockedRacePlayer.getRace(),
+                        decisionEpochMs
                 );
 
         question.setStatus(PlayerQuestionStatus.ANSWERED);
@@ -151,18 +191,6 @@ public class StudentAnswerSubmissionService {
     private void validateQuestionIsActive(PlayerQuestion question) {
         if (question.getStatus() != PlayerQuestionStatus.ACTIVE) {
             throw new ApiException(ErrorCode.QUESTION_NOT_ACTIVE);
-        }
-    }
-
-    private void expireQuestionIfNeeded(
-            PlayerQuestion question,
-            LocalDateTime now
-    ) {
-        if (DateTimeUtils.isExpired(question.getExpiresAt(), now)) {
-            question.setStatus(PlayerQuestionStatus.EXPIRED);
-            playerQuestionRepository.save(question);
-
-            throw new ApiException(ErrorCode.QUESTION_EXPIRED);
         }
     }
 

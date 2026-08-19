@@ -3,8 +3,16 @@ import { ApiContractError } from "../../../errors/ApiContractError.js";
 /*
  * applyRaceSnapshot — folds an AUTHORITATIVE server runtime snapshot
  * (StudentRaceRuntimeSnapshotResponse) into an existing runtime state.
- * The same snapshot shape arrives from race-state (bootstrap) and from
- * submit-answer raceImpact (C1-03) — both flow through this one mapper.
+ * The same snapshot shape arrives from race-state (bootstrap/polling) and
+ * from submit-answer raceImpact (C1-03) — both flow through this one mapper.
+ *
+ * Freshness (C1-03M): every snapshot carries snapshotAtEpochMs — the server
+ * decision instant it describes. A snapshot strictly older than the applied
+ * one returns previousState untouched: network ARRIVAL order must never
+ * roll authoritative state backward (a slow race-state poll cannot undo a
+ * newer answer snapshot). Equal-ms applies — two serialized server
+ * decisions can share a millisecond, and the later-applied overlay (the
+ * answer on top of the baseline) must win that tie.
  *
  * Pure translation only: no clamping, no derived finish/status, no game
  * rules — if the server says position 1005 on a 1000 track, runtime says
@@ -22,6 +30,8 @@ const REQUIRED_NUMBER_FIELDS = [
   "speed",
   "streak",
   "highestStreak",
+  "snapshotAtEpochMs",
+  "movementUnitsPerSecond",
 ];
 
 function assertValidSnapshot(snapshot) {
@@ -30,9 +40,17 @@ function assertValidSnapshot(snapshot) {
   }
 
   for (const field of REQUIRED_NUMBER_FIELDS) {
-    if (typeof snapshot[field] !== "number") {
+    // Finite only — NaN/Infinity would poison per-frame prediction math.
+    if (!Number.isFinite(snapshot[field])) {
       throw new ApiContractError(`Race snapshot field "${field}" is missing`);
     }
+  }
+
+  if (
+    !Number.isSafeInteger(snapshot.snapshotAtEpochMs) ||
+    snapshot.snapshotAtEpochMs <= 0
+  ) {
+    throw new ApiContractError("Race snapshot timestamp is invalid");
   }
 
   if (snapshot.raceStatus == null || snapshot.playerStatus == null) {
@@ -50,8 +68,18 @@ function assertValidSnapshot(snapshot) {
 export function applyRaceSnapshot(previousState, snapshot) {
   assertValidSnapshot(snapshot);
 
+  if (
+    previousState.lastSnapshotAtEpochMs != null &&
+    snapshot.snapshotAtEpochMs < previousState.lastSnapshotAtEpochMs
+  ) {
+    // Strictly older by server truth-time — keep the newer applied state.
+    return previousState;
+  }
+
   return {
     ...previousState,
+
+    lastSnapshotAtEpochMs: snapshot.snapshotAtEpochMs,
 
     raceStatus: snapshot.raceStatus,
     playerStatus: snapshot.playerStatus,
@@ -73,9 +101,11 @@ export function applyRaceSnapshot(previousState, snapshot) {
     visual: {
       ...previousState.visual,
       // Server truth doubles as the Pixi animation target; the renderer
-      // interpolates its internal visualPosition toward it.
+      // interpolates its internal visualPosition toward it, and predicts
+      // between snapshots using the server-owned movement rate.
       targetPosition: snapshot.position,
       targetSpeed: snapshot.speed,
+      movementUnitsPerSecond: snapshot.movementUnitsPerSecond,
     },
   };
 }

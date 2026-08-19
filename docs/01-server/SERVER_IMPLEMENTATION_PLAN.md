@@ -104,6 +104,38 @@ lifecycle is outside S0-02 and does not block it.
 - add contract/serialization tests
 - update client endpoint constants in the matching client PR.
 
+### S1-01A — Authoritative continuous movement contract
+
+**Status:** `DONE (2026-08-19, C1-03M)`
+
+- `RacePlayer.movementUpdatedAtEpochMs` movement anchor (epoch ms — elapsed
+  math is DST-proof; every entry into RACING re-anchors it)
+- `RaceMovementService` — the ONE settlement owner:
+  `position += elapsed x speed x BASE_MOVEMENT_UNITS_PER_SECOND (4.0)`,
+  clamped at totalDistance; old speed owns past time, a boost/penalty owns
+  only the future; finish-by-time expires a leftover ACTIVE question
+- bounded cumulative speed policy: correct adds +0.20/+0.30/+0.40 by
+  difficulty up to MAX 2.0; wrong −0.20, timeout −0.40, floor MIN 0.5
+- `QuestionTimeoutService` — exactly-once timeout owner (settle→deadline at
+  the old speed, ACTIVE→EXPIRED, penalty + wrong/failure progression,
+  settle the remainder at the new speed); delivery, late submit, race-state
+  and the scheduler all route through it
+- `RaceMovementSettlementScheduler` + per-player transactional worker every
+  5s — movement, overdue timeouts and guaranteed finish need NO client
+  request; plus the race-finish reconciliation pass (IN_PROGRESS races with
+  no WAITING/RACING players are finalized under a race lock — concurrent
+  player finishes can no longer strand a race)
+- GET race-state now settles the locked player to one decision instant
+  before mapping (a safe state-read that materializes deterministic elapsed
+  state; repeated reads award nothing)
+- snapshot contract adds `snapshotAtEpochMs` (client freshness ordering) and
+  `movementUnitsPerSecond` (server-owned visual prediction rate)
+- RACING→DISCONNECTED transitions settle movement first; FINISHED wins over
+  DISCONNECTED
+- schema note: `movement_updated_at_epoch_ms` is created by the DEV
+  `ddl-auto=update` mechanism (verified locally; Diana's DEV DB gets it the
+  same way) — production migrations remain Phase 6 debt.
+
 ### S1-02 — Authoritative rank and nearby-player snapshot
 
 **Status:** `PLANNED`

@@ -4,6 +4,7 @@ import { Button } from "@mantine/core";
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
 import { STUDENT_RACE_VISUAL_CONFIG } from "../config/raceVisualConfig";
+import { STUDENT_RACE_FEEDBACK } from "../runtime/studentRaceRuntimeConstants";
 
 /*
  * StudentRaceQuestionPanel — the production question panel (C1-02, replaces
@@ -73,6 +74,12 @@ export default function StudentRaceQuestionPanel({
   interactionEnabled = false,
   onChoiceSelect = null,
   onRetry = null,
+  // C1-03 answer feedback — server-driven correctness presentation.
+  selectedChoiceId = null,
+  correctAnswerChoiceId = null,
+  feedbackState = STUDENT_RACE_FEEDBACK.IDLE,
+  isSubmitting = false,
+  isAwaitingNextQuestion = false,
 }) {
   const { t } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
 
@@ -109,13 +116,83 @@ export default function StudentRaceQuestionPanel({
   // A button may only be live when ALL hold — interactionEnabled without a
   // real callback must never render an enabled button that does nothing.
   const canInteract =
-    interactionEnabled && !isExpired && typeof onChoiceSelect === "function";
+    interactionEnabled &&
+    !isExpired &&
+    !isSubmitting &&
+    feedbackState === STUDENT_RACE_FEEDBACK.IDLE &&
+    typeof onChoiceSelect === "function";
+
+  const showCorrectFeedback = feedbackState === STUDENT_RACE_FEEDBACK.CORRECT;
+  const showWrongFeedback = feedbackState === STUDENT_RACE_FEEDBACK.WRONG;
+  const showAnswerFeedback = showCorrectFeedback || showWrongFeedback;
+  // Answer feedback / an in-flight submit outrank expiry presentation — the
+  // server already decided; a timer that hit zero mid-flight must not paint
+  // "time up" over a real result (no contradictory UI).
+  const showExpired =
+    !showAnswerFeedback &&
+    !isSubmitting &&
+    (isExpired || feedbackState === STUDENT_RACE_FEEDBACK.EXPIRED);
+  const showAnswerSyncError =
+    feedbackState === STUDENT_RACE_FEEDBACK.ERROR && !showExpired;
 
   return (
     <PanelSurface>
-      <p className="text-center text-sm font-semibold text-[var(--qw-text-muted)]">
-        {t("question.instruction")}
-      </p>
+      {/* One stable line: instruction ↔ feedback swap in place, so the
+          answer grid never shifts (small-screen layout contract). Glyphs +
+          text carry the result — never color alone. */}
+      {isAwaitingNextQuestion ? (
+        <p
+          role="status"
+          className="flex items-center justify-center gap-2 text-center text-sm font-bold text-[var(--qw-text-muted)]"
+        >
+          <span>
+            {t(error ? "question.errorTitle" : "question.loadingNext")}
+          </span>
+          {error && onRetry ? (
+            <Button
+              size="compact-sm"
+              variant="light"
+              color={UI_TONES.DANGER}
+              onClick={onRetry}
+            >
+              {t("status.retry")}
+            </Button>
+          ) : null}
+        </p>
+      ) : showAnswerFeedback ? (
+        <p
+          role="status"
+          className="text-center text-sm font-bold"
+          style={{
+            color: showCorrectFeedback ? "var(--qw-green)" : "var(--qw-gold)",
+          }}
+        >
+          {showCorrectFeedback
+            ? `✓ ${t("question.correctFeedback")}`
+            : `✕ ${t("question.wrongFeedback")}`}
+        </p>
+      ) : showAnswerSyncError ? (
+        <p
+          role="status"
+          className="flex items-center justify-center gap-2 text-center text-sm font-bold text-[var(--qw-text-muted)]"
+        >
+          <span>{t("question.answerSyncing")}</span>
+          {onRetry ? (
+            <Button
+              size="compact-sm"
+              variant="light"
+              color={UI_TONES.DANGER}
+              onClick={onRetry}
+            >
+              {t("status.retry")}
+            </Button>
+          ) : null}
+        </p>
+      ) : (
+        <p className="text-center text-sm font-semibold text-[var(--qw-text-muted)]">
+          {t("question.instruction")}
+        </p>
+      )}
 
       {/* bdi isolates the math expression from the surrounding RTL flow:
           "7 × 8 = ?" keeps LTR order, future Hebrew wording stays RTL. */}
@@ -123,7 +200,7 @@ export default function StudentRaceQuestionPanel({
         <bdi>{question.text}</bdi>
       </p>
 
-      {isExpired ? (
+      {showExpired ? (
         <div
           role="status"
           className="flex items-center justify-center gap-2 text-sm font-bold"
@@ -149,24 +226,52 @@ export default function StudentRaceQuestionPanel({
           simply taller. */}
       <div
         className={`grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-3 ${
-          isExpired ? "opacity-50" : ""
+          showExpired ? "opacity-50" : ""
         }`}
       >
-        {question.choices.map((choice, index) => (
-          <button
-            key={choice.id}
-            type="button"
-            disabled={!canInteract}
-            onClick={canInteract ? () => onChoiceSelect(choice.id) : undefined}
-            className="flex min-h-0 items-center justify-center rounded-xl border-b-4 bg-[var(--qw-surface-alt)] px-3 py-2 text-center text-2xl font-bold text-[var(--qw-text)] disabled:cursor-default"
-            style={{
-              borderColor:
-                CHOICE_ACCENT_VARS[index % CHOICE_ACCENT_VARS.length],
-            }}
-          >
-            <bdi>{choice.text}</bdi>
-          </button>
-        ))}
+        {question.choices.map((choice, index) => {
+          const isSelected = choice.id === selectedChoiceId;
+          // Server-driven correctness only: the child's correct pick, or the
+          // revealed correct answer after a wrong pick.
+          const markCorrect =
+            (showCorrectFeedback && isSelected) ||
+            (showWrongFeedback && choice.id === correctAnswerChoiceId);
+          const markWrong = showWrongFeedback && isSelected;
+          const isDimmed =
+            (isSubmitting || showAnswerFeedback) && !isSelected && !markCorrect;
+
+          return (
+            <button
+              key={choice.id}
+              type="button"
+              disabled={!canInteract}
+              onClick={
+                canInteract ? () => onChoiceSelect(choice.id) : undefined
+              }
+              className={`flex min-h-0 items-center justify-center gap-2 rounded-xl border-b-4 bg-[var(--qw-surface-alt)] px-3 py-2 text-center text-2xl font-bold text-[var(--qw-text)] transition-transform disabled:cursor-default ${
+                isSubmitting && isSelected ? "scale-95" : ""
+              } ${isDimmed ? "opacity-60" : ""}`}
+              style={{
+                borderColor: markCorrect
+                  ? "var(--qw-green)"
+                  : markWrong
+                    ? "var(--qw-red)"
+                    : CHOICE_ACCENT_VARS[index % CHOICE_ACCENT_VARS.length],
+                boxShadow: markCorrect
+                  ? "inset 0 0 0 2px var(--qw-green)"
+                  : markWrong
+                    ? "inset 0 0 0 2px var(--qw-red)"
+                    : undefined,
+              }}
+            >
+              {/* Glyph mark, never color alone; the status line above
+                  carries the accessible result text. */}
+              {markCorrect ? <span aria-hidden="true">✓</span> : null}
+              {markWrong ? <span aria-hidden="true">✕</span> : null}
+              <bdi>{choice.text}</bdi>
+            </button>
+          );
+        })}
       </div>
     </PanelSurface>
   );

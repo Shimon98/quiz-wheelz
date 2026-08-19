@@ -14,6 +14,12 @@ export const STUDENT_RACE_CONFIG = Object.freeze({
   // Pause after feedback before requesting the next question.
   nextQuestionDelayMs: 1000,
 
+  // Authoritative gameplay sync while PLAYING (C1-03M): the server advances
+  // position continuously with time, so the client refreshes race-state
+  // silently at this cadence. NOT the C1-05 heartbeat (presence/reconnect) —
+  // this only keeps position/speed/finish truth fresh between answers.
+  raceStatePollMs: 2000,
+
   // Question countdown DISPLAY (the server's expiresAt is the truth; these
   // only tune presentation). Urgency thresholds switch the timer accent —
   // one owner here, never inline in components.

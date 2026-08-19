@@ -36,6 +36,28 @@ export function isRaceLifecycleConflictError(error) {
   );
 }
 
+/*
+ * Expiry on submit is NOT a wrong answer and NOT a lifecycle conflict: no
+ * feedback marking, no race resync — just a question resync.
+ */
+export function isQuestionExpiredError(error) {
+  return error?.errorName === SERVER_ERROR_NAMES.QUESTION_EXPIRED;
+}
+
+/*
+ * The submitted question is stale relative to server truth (already
+ * answered/expired/replaced by a concurrent operation). Recovery is a safe
+ * automatic question + race resync — never a wrong-answer marking, never an
+ * automatic re-POST.
+ */
+export function isStaleQuestionSubmissionError(error) {
+  return (
+    error?.errorName === SERVER_ERROR_NAMES.QUESTION_NOT_ACTIVE ||
+    error?.errorName === SERVER_ERROR_NAMES.QUESTION_NOT_FOUND_FOR_PLAYER ||
+    error?.errorName === SERVER_ERROR_NAMES.QUESTION_CHOICE_NOT_FOUND
+  );
+}
+
 export function isApiContractError(error) {
   return error?.category === ERROR_CATEGORIES.API_CONTRACT;
 }
