@@ -322,20 +322,32 @@ pass.
 
 ### C1-04 — HUD
 
-**Status: NEXT**
+**Status: DONE (2026-08-19).** Compact presentation-only HUD in the existing
+safe area — server truth in, pixels out:
 
-Render only fields provided by the server:
+```text
+[SCORE]   [TIMER]   [STREAK]
+[progress ─────── %   ⚡ ×speed]
+```
 
-- score
-- streak
-- timer
-- progress
-- speed/effect state
-- rank only after S1-02.
+- `StudentRaceHud` grows around the existing `StudentRaceQuestionTimer`
+  (still the ONE countdown); the overlay/screen pass the existing
+  runtimeState down — no new store, polling or API.
+- score/streak/speed render straight from `runtimeState.player`; progress is
+  the one presentation-only derivation (`getRaceProgressRatio`:
+  position/totalDistance clamped 0–100% for DRAWING only — the runtime keeps
+  raw server truth, and a missing/non-positive totalDistance renders no bar,
+  never a fake fallback distance).
+- Deliberately absent until their server contracts exist: rank (S1-02),
+  effect badge (the snapshot wire has no authoritative activeEffect field —
+  contract gap reported for S1/gameplay), currentDifficulty (not core HUD).
+- Seeded the client test foundation (Vitest + jsdom + React Testing Library,
+  `npm run test`) with focused progress/HUD tests; the ongoing policy lives
+  in TESTING_AND_DEFINITION_OF_DONE.
 
 ### C1-05 — Presence/reconnect
 
-**Status: PLANNED** — C1-01 deliberately created no heartbeat, reconnect,
+**Status: NEXT** — C1-01 deliberately created no heartbeat, reconnect,
 online/offline or connection-state code; this task is the single future owner.
 
 - heartbeat interval

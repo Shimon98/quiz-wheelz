@@ -10,8 +10,9 @@ import StudentRaceOverlay from "./StudentRaceOverlay";
  *   └── React overlay — HUD safe area on top, persistent question panel below
  *
  * Pure composition: no API, no error classification, no navigation — the
- * page/hooks own those. runtimeState goes to the canvas untouched; question
- * state goes to the overlay untouched.
+ * page/hooks own those. runtimeState is shared read-only with the Pixi
+ * canvas and the overlay's HUD (C1-04); question state goes to the overlay
+ * untouched.
  */
 export default function StudentRaceScreen({
   runtimeState = null,
@@ -31,7 +32,7 @@ export default function StudentRaceScreen({
           runtimeState={runtimeState}
           className="absolute inset-0"
         />
-        <StudentRaceOverlay {...overlayProps} />
+        <StudentRaceOverlay runtimeState={runtimeState} {...overlayProps} />
       </div>
     </div>
   );

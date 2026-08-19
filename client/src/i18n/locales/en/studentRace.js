@@ -37,6 +37,13 @@ export default {
     loadingNext: "Loading the next question...",
   },
 
+  hud: {
+    scoreLabel: "Score",
+    streakLabel: "Correct answer streak",
+    speedLabel: "Speed",
+    progressLabel: "Race progress",
+  },
+
   timer: {
     label: "Time left for this question",
   },
