@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
+import useIntervalWhen from "../../../shared/hooks/useIntervalWhen.js";
 import useRacePlayerState from "../../../shared/racePlayer/useRacePlayerState.js";
 import { getRaceView, RACE_VIEWS } from "../../../shared/racePlayer/getRaceView.js";
 import { normalizeApiError } from "../../../errors/normalizeApiError.js";
@@ -38,13 +39,15 @@ import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig.js";
  * race-state every raceStatePollMs. NOT the C1-05 heartbeat — pure gameplay
  * truth refresh; a future SSE stream replaces only this timer trigger.
  */
-export default function useRaceBootstrap() {
+// syncEnabled (C1-05): a degraded connection pauses only the polling trigger.
+export default function useRaceBootstrap({ syncEnabled = true } = {}) {
   const {
     raceState,
     isLoading,
     error: requestError,
     retry,
     silentRefresh,
+    authoritativeResync,
   } = useRacePlayerState();
 
   const [answerSnapshot, setAnswerSnapshot] = useState(null);
@@ -82,23 +85,13 @@ export default function useRaceBootstrap() {
   // Silent gameplay sync while PLAYING only: no polling for waiting/
   // finished/cancelled views, and never once race-state has reported a dead
   // RacePlayer session.
-  const pollingEnabled =
-    view === RACE_VIEWS.PLAYING && !isRacePlayerSessionError(error);
-
-  useEffect(() => {
-    if (!pollingEnabled) {
-      return undefined;
-    }
-
-    const timer = setInterval(
-      silentRefresh,
-      STUDENT_RACE_CONFIG.raceStatePollMs,
-    );
-
-    return () => {
-      clearInterval(timer);
-    };
-  }, [pollingEnabled, silentRefresh]);
+  useIntervalWhen(
+    silentRefresh,
+    STUDENT_RACE_CONFIG.raceStatePollMs,
+    syncEnabled &&
+      view === RACE_VIEWS.PLAYING &&
+      !isRacePlayerSessionError(error),
+  );
 
   return {
     runtimeState,
@@ -106,6 +99,7 @@ export default function useRaceBootstrap() {
     isLoading,
     error,
     retry,
+    authoritativeResync,
     applyAuthoritativeSnapshot,
   };
 }

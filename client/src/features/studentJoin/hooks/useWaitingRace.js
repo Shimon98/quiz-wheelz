@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+import useIntervalWhen from "../../../shared/hooks/useIntervalWhen";
 import useRacePlayerState from "../../../shared/racePlayer/useRacePlayerState";
 import {
   getRaceView,
@@ -42,9 +43,10 @@ const RACE_PAGE_VIEWS = new Set([
   RACE_VIEWS.DISCONNECTED,
 ]);
 
-export default function useWaitingRace() {
+// syncEnabled (C1-05): a degraded connection pauses only the waiting poll.
+export default function useWaitingRace({ syncEnabled = true } = {}) {
   const navigate = useNavigate();
-  const { raceState, isLoading, error, retry, silentRefresh } =
+  const { raceState, isLoading, error, retry, silentRefresh, authoritativeResync } =
     useRacePlayerState();
 
   const view = raceState ? getRaceView(raceState.snapshot) : null;
@@ -58,17 +60,11 @@ export default function useWaitingRace() {
     }
   }, [shouldEnterRace, navigate]);
 
-  useEffect(() => {
-    if (view !== RACE_VIEWS.WAITING) {
-      return undefined;
-    }
+  useIntervalWhen(
+    silentRefresh,
+    STUDENT_WAITING_POLL_MS,
+    syncEnabled && view === RACE_VIEWS.WAITING,
+  );
 
-    const timer = setInterval(silentRefresh, STUDENT_WAITING_POLL_MS);
-
-    return () => {
-      clearInterval(timer);
-    };
-  }, [view, silentRefresh]);
-
-  return { raceState, view, isLoading, error, retry };
+  return { raceState, view, isLoading, error, retry, authoritativeResync };
 }

@@ -58,6 +58,13 @@ export function isStaleQuestionSubmissionError(error) {
   );
 }
 
+// Reconnect grace expired — terminal lifecycle, never a /join redirect.
+export function isReconnectWindowExpiredError(error) {
+  return (
+    error?.errorName === SERVER_ERROR_NAMES.RACE_PLAYER_RECONNECT_WINDOW_EXPIRED
+  );
+}
+
 export function isApiContractError(error) {
   return error?.category === ERROR_CATEGORIES.API_CONTRACT;
 }

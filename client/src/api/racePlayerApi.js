@@ -58,3 +58,20 @@ export async function submitAnswer({ questionId, choiceId }) {
 
   return unwrapApiResponse(response);
 }
+
+/*
+ * Runtime-session commands (C1-05). The leave endpoint stays deliberately
+ * unwired — it DISCONNECTS a non-finished player and must never fire from
+ * refresh/unmount.
+ */
+export async function heartbeatRacePlayer() {
+  const response = await httpClient.post(API_ENDPOINTS.RACE_PLAYERS.HEARTBEAT);
+
+  return unwrapApiResponse(response);
+}
+
+export async function reconnectRacePlayer() {
+  const response = await httpClient.post(API_ENDPOINTS.RACE_PLAYERS.RECONNECT);
+
+  return unwrapApiResponse(response);
+}

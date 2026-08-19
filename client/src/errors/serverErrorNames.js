@@ -47,4 +47,8 @@ export const SERVER_ERROR_NAMES = Object.freeze({
   QUESTION_NOT_ACTIVE: "QUESTION_NOT_ACTIVE",
   QUESTION_NOT_FOUND_FOR_PLAYER: "QUESTION_NOT_FOUND_FOR_PLAYER",
   QUESTION_CHOICE_NOT_FOUND: "QUESTION_CHOICE_NOT_FOUND",
+
+  // C1-05: reconnect grace expired — thrown by heartbeat (reconnect RETURNS
+  // it as an outcome). Terminal lifecycle, never a session error.
+  RACE_PLAYER_RECONNECT_WINDOW_EXPIRED: "RACE_PLAYER_RECONNECT_WINDOW_EXPIRED",
 });

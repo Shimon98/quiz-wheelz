@@ -30,10 +30,11 @@ export const STUDENT_RACE_STATUS_CONTENT = Object.freeze({
     titleKey: "status.cancelledTitle",
     bodyKey: "status.cancelledBody",
   },
+  // No retry action (C1-05): once the server resolved DISCONNECTED, reconnect
+  // returns ALREADY_DISCONNECTED — a refresh cannot bring the player back.
   [RACE_VIEWS.DISCONNECTED]: {
     titleKey: "status.disconnectedTitle",
     bodyKey: "status.disconnectedBody",
-    withRetry: true,
   },
   [RACE_VIEWS.UNKNOWN]: {
     titleKey: "status.unknownTitle",

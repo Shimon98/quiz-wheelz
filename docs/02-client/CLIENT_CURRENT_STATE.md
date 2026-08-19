@@ -140,9 +140,27 @@ Implemented A–G:
   Library, `npm run test`) with focused HUD/progress tests; policy in
   TESTING_AND_DEFINITION_OF_DONE.
 
-## Missing integration
+### Runtime session / presence (C1-05 — done 2026-08-19, live E2E verified)
 
-- heartbeat/leave/reconnect
+- one shared lifecycle owner (`useRacePlayerRuntimeSession`) for BOTH the
+  waiting and race pages: reconnect-first route entry (gameplay hooks mount
+  only after the server resolves the lifecycle), 15s heartbeat while
+  CONNECTED + visible + online (single-flight), immediate reconnect on
+  browser online / hidden→visible / manual retry, ONE conservative 5s retry
+  for transient failures
+- degraded connection keeps the last-known screen: polling/questions pause,
+  answers lock, shared `RacePlayerConnectionNotice` shows OFFLINE/
+  RECONNECTING; every reconnect resolution triggers an authoritative
+  race-state resync (`authoritativeResync` supersedes in-flight requests)
+- server truth boundaries: local offline never invents DISCONNECTED;
+  terminal outcomes (finished/already-disconnected/window-expired) stop the
+  heartbeat and let race-state decide the view; window expiry is lifecycle,
+  not a session error (no `/join` redirect); the DISCONNECTED view no longer
+  offers a useless retry
+- leave stays deliberately unwired — refresh/unmount/pagehide never mutate
+  the server session.
+
+## Missing integration
 - opponent vehicles
 - teacher live page
 - SSE
@@ -156,7 +174,6 @@ Implemented A–G:
 ## Immediate client priority
 
 ```text
-reconnect (C1-05)
-→ real assets/opponents (C1-06/C2)
+real assets/opponents (C1-06/C2)
 → teacher live/SSE (C3)
 ```
