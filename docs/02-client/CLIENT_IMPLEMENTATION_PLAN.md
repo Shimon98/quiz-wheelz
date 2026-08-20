@@ -391,11 +391,17 @@ transient failure while online+visible
 
 ### C1-06 — Real asset pass and hover kart
 
-**Status: NEXT** — S1-01 closed the server-side presentation-identity gap:
-race-state now carries the current RacePlayer's `racePlayerId`, `displayName`,
-`laneNumber`, `vehicleTypeKey`, `vehicleColorKey` and `vehicleAssetKey`. C1-06 still
-owns client consumption and refresh-safe vehicle rendering; it must use this server
-truth, never `sessionStorage`.
+**Status: IN PROGRESS (sliced A→G)** — S1-01 closed the server-side
+presentation-identity gap: race-state now carries the current RacePlayer's
+`racePlayerId`, `displayName`, `laneNumber`, `vehicleTypeKey`, `vehicleColorKey`
+and `vehicleAssetKey`. C1-06 still owns client consumption and refresh-safe
+vehicle rendering; it must use this server truth, never `sessionStorage`.
+
+- **C1-06A — presentation identity consumption — DONE.**
+  `mapRaceStateToRuntime` validates and maps `race-state.player` into
+  `runtimeState.player` (keys stay opaque strings — no client enum copy);
+  `applyRaceSnapshot`'s player spread preserves identity across snapshots.
+- **C1-06B — asset manifest/loader/resolver — NEXT.**
 
 - asset manifest keys
 - metadata-driven props

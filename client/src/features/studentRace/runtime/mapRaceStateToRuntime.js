@@ -9,7 +9,44 @@ import { applyRaceSnapshot } from "./applyRaceSnapshot.js";
  * hooks never carry the raw server DTO next to the runtime; the snapshot
  * itself goes through the shared applyRaceSnapshot. Pure logic — no HTTP,
  * no React, no navigation.
+ *
+ * Presentation identity (C1-06A): response.player is the server's
+ * authoritative presentation truth (StudentRacePlayerPresentationResponse) —
+ * never derived from sessionStorage/joinData. Vehicle/color keys stay opaque
+ * strings here; the server owns that vocabulary, the asset manifest (C1-06B)
+ * resolves them.
  */
+
+const PRESENTATION_STRING_FIELDS = [
+  "displayName",
+  "vehicleTypeKey",
+  "vehicleColorKey",
+  "vehicleAssetKey",
+];
+
+function assertValidPresentation(player) {
+  if (player == null || typeof player !== "object") {
+    throw new ApiContractError(
+      "Race state response is missing player presentation identity",
+    );
+  }
+
+  for (const field of ["racePlayerId", "laneNumber"]) {
+    if (!Number.isSafeInteger(player[field]) || player[field] <= 0) {
+      throw new ApiContractError(
+        `Race state player field "${field}" is invalid`,
+      );
+    }
+  }
+
+  for (const field of PRESENTATION_STRING_FIELDS) {
+    if (typeof player[field] !== "string" || player[field].trim() === "") {
+      throw new ApiContractError(
+        `Race state player field "${field}" is invalid`,
+      );
+    }
+  }
+}
 export function mapRaceStateToRuntime(response) {
   if (
     response == null ||
@@ -20,6 +57,8 @@ export function mapRaceStateToRuntime(response) {
   ) {
     throw new ApiContractError("Race state response is missing race metadata");
   }
+
+  assertValidPresentation(response.player);
 
   const initialState = createInitialRaceRuntimeState();
 
@@ -34,7 +73,19 @@ export function mapRaceStateToRuntime(response) {
       startedAt: response.startedAt ?? null,
       finishedAt: response.finishedAt ?? null,
     },
+
+    player: {
+      ...initialState.player,
+      racePlayerId: response.player.racePlayerId,
+      displayName: response.player.displayName,
+      laneNumber: response.player.laneNumber,
+      vehicleTypeKey: response.player.vehicleTypeKey,
+      vehicleColorKey: response.player.vehicleColorKey,
+      vehicleAssetKey: response.player.vehicleAssetKey,
+    },
   };
 
+  // applyRaceSnapshot spreads previousState.player, so the identity above
+  // survives this and every later snapshot application.
   return applyRaceSnapshot(withRaceMetadata, response.snapshot);
 }

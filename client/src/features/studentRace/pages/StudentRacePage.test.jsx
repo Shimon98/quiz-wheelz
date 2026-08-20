@@ -41,6 +41,14 @@ function waitingRaceStateResponse() {
     raceId: 7,
     raceTitle: "Jungle Cup",
     roomCode: "ABC123",
+    player: {
+      racePlayerId: 91,
+      displayName: "Noa",
+      laneNumber: 3,
+      vehicleTypeKey: "TOY_CAR",
+      vehicleColorKey: "GREEN",
+      vehicleAssetKey: "TOY_CAR_GREEN",
+    },
     snapshot: {
       raceStatus: "WAITING_FOR_PLAYERS",
       playerStatus: "WAITING",

@@ -20,8 +20,12 @@ import { STUDENT_RACE_FEEDBACK } from "./studentRaceRuntimeConstants.js";
  * @property {boolean} playerFinished Authoritative server flag — never derived locally
  * @property {boolean} raceFinished   Authoritative server flag — never derived locally
  * @property {?number} totalDistance  Track length in server units (null until known)
- * @property {{position: number, speed: number, score: number, streak: number,
+ * @property {{racePlayerId: ?number, displayName: string, laneNumber: ?number,
+ *   vehicleTypeKey: ?string, vehicleColorKey: ?string, vehicleAssetKey: ?string,
+ *   position: number, speed: number, score: number, streak: number,
  *   highestStreak: number, currentDifficulty: ?string}} player
+ *   Identity fields are the server's presentation truth (race-state.player) —
+ *   null/empty until known, never defaulted client-side
  * @property {{questionId: ?number, questionText: string, timeLimitSeconds: number,
  *   expiresAt: ?string, choices: Array<Object>}} question
  * @property {{isSubmitting: boolean, selectedChoiceId: ?number, correct: ?boolean,
@@ -54,6 +58,13 @@ export function createInitialRaceRuntimeState() {
     totalDistance: null,
 
     player: {
+      racePlayerId: null,
+      displayName: "",
+      laneNumber: null,
+      vehicleTypeKey: null,
+      vehicleColorKey: null,
+      vehicleAssetKey: null,
+
       position: 0,
       speed: 0,
       score: 0,
