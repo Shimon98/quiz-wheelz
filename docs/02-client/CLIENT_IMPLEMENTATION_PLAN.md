@@ -401,7 +401,15 @@ vehicle rendering; it must use this server truth, never `sessionStorage`.
   `mapRaceStateToRuntime` validates and maps `race-state.player` into
   `runtimeState.player` (keys stay opaque strings — no client enum copy);
   `applyRaceSnapshot`'s player spread preserves identity across snapshots.
-- **C1-06B — asset manifest/loader/resolver — NEXT.**
+- **C1-06B — asset manifest/loader/resolver — DONE.**
+  `pixi/assets/studentRaceVehicleManifest.js` maps `vehicleAssetKey` → client
+  art (explicit entries; never path construction from the server key);
+  `studentRaceVehicleAssets.js` resolves one key and loads ONLY that vehicle's
+  `idleFrames` (1 frame now, the 4-frame idle set later, same loader).
+  Unknown/malformed/unloadable art → explicit fallback result — C1-06C keeps
+  the existing Graphics placeholder, never another vehicle's art. Production
+  manifest stays empty until the approved GREEN MASTER lands.
+- **C1-06C — integrate the approved GREEN MASTER static sprite — NEXT.**
 
 - asset manifest keys
 - metadata-driven props
