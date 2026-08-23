@@ -160,6 +160,16 @@ Implemented A–G:
 - leave stays deliberately unwired — refresh/unmount/pagehide never mutate
   the server session.
 
+### Student vehicle art (C1-06A–C — done 2026-08-23)
+
+- `race-state.player` identity (`vehicleAssetKey` etc.) mapped into
+  `runtimeState.player`, preserved across snapshots
+- `studentRaceVehicleManifest` maps the server key to client art; the loader
+  loads only that vehicle's idle frames and never throws (explicit fallback)
+- `PlayerKartLayer` shows the real `TOY_CAR_GREEN` static sprite; unknown
+  key / malformed entry / load failure keep the Graphics placeholder
+- other colors still render the placeholder until their art lands.
+
 ## Missing integration
 - opponent vehicles
 - teacher live page

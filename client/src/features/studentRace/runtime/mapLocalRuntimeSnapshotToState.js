@@ -5,7 +5,7 @@
  * the authoritative server one; swapping the movement source is a mapper
  * swap, not a screen change.
  *
- * Only movement/status fields update. question/answer/score/streak/
+ * Only movement/status/vehicle-art fields update. question/answer/score/streak/
  * difficulty belong to REAL server responses and pass through untouched —
  * the local runtime has no authority over them.
  */
@@ -21,6 +21,7 @@ export function mapLocalRuntimeSnapshotToState(previousState, snapshot) {
       ...previousState.player,
       position: snapshot.position,
       speed: snapshot.speed,
+      vehicleAssetKey: snapshot.vehicleAssetKey,
     },
 
     visual: {

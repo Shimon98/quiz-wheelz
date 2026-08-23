@@ -409,15 +409,26 @@ vehicle rendering; it must use this server truth, never `sessionStorage`.
   Unknown/malformed/unloadable art → explicit fallback result — C1-06C keeps
   the existing Graphics placeholder, never another vehicle's art. Production
   manifest stays empty until the approved GREEN MASTER lands.
-- **C1-06C — integrate the approved GREEN MASTER static sprite — IN PROGRESS.**
-  C1-06C-PREP done: `runtimeState.player.vehicleAssetKey` flows from
+- **C1-06C — integrate the approved GREEN MASTER static sprite — DONE
+  (2026-08-23).** `runtimeState.player.vehicleAssetKey` flows from
   `StudentRaceRenderer.updateRuntimeState` (never per frame) into
   `PlayerKartLayer`'s async art lifecycle — same-key loads dedupe, stale and
-  post-destroy results never apply, fallbacks keep the Graphics placeholder,
-  and a successful load prepares only the first texture (no Sprite yet).
-  Remaining: real GREEN MASTER asset + `TOY_CAR_GREEN` manifest entry, static
-  Sprite creation and anchor/baseScale/placement calibration under user
-  visual inspection (desktop/mobile/refresh).
+  post-destroy results never apply, fallbacks keep the Graphics placeholder.
+  The real art lives at `assets/game/studentRace/hoverKarts/` (WebP, the
+  master center-cropped to 1046px and scaled to 768px — every later idle
+  frame must use the same box); `TOY_CAR_GREEN` is the first manifest entry
+  (anchor 0.5/0.96, baseScale 1.08). A successful load shows exactly one
+  static `Sprite` inside the bobbed kart container (placeholder hidden, not
+  removed); any fallback destroys the sprite and shows the placeholder again.
+  Textures stay owned by the Pixi Assets cache. Calibrated on 360×640,
+  390×844, 520×800 and desktop; the dev preview runtime carries the key so
+  `/dev/race` shows the real art. Server fact: colors are lane-driven
+  (lane 1 PURPLE, 2 RED, 3 BLUE, 4 GREEN …), so until the other colors get
+  art, lanes 1–3 keep the placeholder by contract.
+- **C1-06D — aligned idle loop — NEXT.** Replace the single frame with the
+  prepared aligned idle frames (same crop box and pivot), played as an
+  `AnimatedSprite` inside the same kart container; no shaking, no frame
+  switching in `tick()` beyond Pixi's own playback.
 
 - asset manifest keys
 - metadata-driven props

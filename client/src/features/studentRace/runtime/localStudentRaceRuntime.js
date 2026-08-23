@@ -19,6 +19,7 @@ const LOCAL_TICK_MS = 500; // matches the planned 24E snapshot cadence
 const DEV_TOTAL_DISTANCE = 1000;
 const DEV_SPEED = 1.2; // server speed units
 const DEV_UNITS_PER_SECOND_AT_SPEED_1 = 30; // dev movement feel; tune freely
+const DEV_VEHICLE_ASSET_KEY = "TOY_CAR_GREEN"; // the one real art entry, for calibration
 
 export function createLocalStudentRaceRuntime() {
   let position = 0;
@@ -32,6 +33,7 @@ export function createLocalStudentRaceRuntime() {
     totalDistance: DEV_TOTAL_DISTANCE,
     position,
     speed,
+    vehicleAssetKey: DEV_VEHICLE_ASSET_KEY,
   });
 
   const tick = () => {

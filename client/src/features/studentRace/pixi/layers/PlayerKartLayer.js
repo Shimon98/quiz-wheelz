@@ -1,4 +1,4 @@
-import { Container, Graphics } from "pixi.js";
+import { Container, Graphics, Sprite } from "pixi.js";
 
 import {
   loadStudentRaceVehicleAssets,
@@ -23,6 +23,8 @@ const SHADOW_COLOR = 0x1d3557;
 // Unit-size drawing base (scaled to the configured width ratio per frame).
 const UNIT_WIDTH = 100;
 const UNIT_HEIGHT = 64;
+// Ground line in unit space: the shadow sits here and the real art's anchor lands on it.
+const GROUND_Y = UNIT_HEIGHT * 0.92;
 // Cosmetic bob: subtle, speed-driven.
 const BOB_FREQUENCY_MS = 95;
 const BOB_MAX_PX = 2.5;
@@ -32,24 +34,27 @@ export class PlayerKartLayer {
     this.elapsedMs = 0;
 
     // Vehicle art lifecycle (C1-06C): the layer owns which key is displayed.
-    // loadedVehicleArt stays null until a load succeeds — the Graphics
-    // placeholder below is the initial and fallback surface either way.
+    // artSprite stays null until a load succeeds — the Graphics placeholder
+    // below is the initial and fallback surface either way.
     this.loadVehicleAssets = loadVehicleAssets;
     this.requestedVehicleAssetKey = null;
     this.assetRequestId = 0;
     this.destroyed = false;
-    this.loadedVehicleArt = null;
+    this.artSprite = null;
 
     this.root = new Container();
     container.addChild(this.root);
 
     // Shadow under the kart — separate so the bob doesn't move it.
     this.shadow = new Graphics()
-      .ellipse(UNIT_WIDTH / 2, UNIT_HEIGHT * 0.92, UNIT_WIDTH * 0.52, 9)
+      .ellipse(UNIT_WIDTH / 2, GROUND_Y, UNIT_WIDTH * 0.52, 9)
       .fill({ color: SHADOW_COLOR, alpha: 0.25 });
 
-    this.kart = new Graphics();
-    this.drawKart(this.kart);
+    // Bobbed as one unit: the placeholder, or the real art once loaded.
+    this.kart = new Container();
+    this.placeholder = new Graphics();
+    this.drawKart(this.placeholder);
+    this.kart.addChild(this.placeholder);
 
     this.root.addChild(this.shadow, this.kart);
   }
@@ -111,12 +116,31 @@ export class PlayerKartLayer {
       return;
     }
 
-    // Prepared only (C1-06C-PREP): the first texture is the future static
-    // art; Sprite creation and anchor/scale land with the real GREEN MASTER.
-    this.loadedVehicleArt =
-      result.status === VEHICLE_ASSET_STATUS.LOADED
-        ? { texture: result.textures[0], definition: result.definition }
-        : null;
+    this.showVehicleArt(
+      result.status === VEHICLE_ASSET_STATUS.LOADED ? result : null,
+    );
+  }
+
+  // Exactly one art sprite at a time; textures belong to the Assets cache
+  // and are never destroyed here.
+  showVehicleArt(loadedResult) {
+    this.artSprite?.destroy();
+    this.artSprite =
+      loadedResult == null
+        ? null
+        : this.createArtSprite(loadedResult.textures[0], loadedResult.definition);
+    if (this.artSprite != null) {
+      this.kart.addChild(this.artSprite);
+    }
+    this.placeholder.visible = this.artSprite == null;
+  }
+
+  createArtSprite(texture, { anchorX, anchorY, baseScale }) {
+    const sprite = new Sprite(texture);
+    sprite.anchor.set(anchorX, anchorY);
+    sprite.scale.set((UNIT_WIDTH * baseScale) / texture.width);
+    sprite.position.set(UNIT_WIDTH / 2, GROUND_Y);
+    return sprite;
   }
 
   update(frameState) {

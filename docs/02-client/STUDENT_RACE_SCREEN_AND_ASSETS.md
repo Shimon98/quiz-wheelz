@@ -25,13 +25,14 @@ UI-10G layout contract
 ```
 
 Done: C1-01 bootstrap, C1-02 question panel/timer, C1-03 answer loop,
-C1-03M continuous authoritative movement, C1-04 HUD, C1-05 presence/reconnect.
+C1-03M continuous authoritative movement, C1-04 HUD, C1-05 presence/reconnect,
+C1-06A–C vehicle identity + manifest/loader + real GREEN static sprite.
 
 Next:
 
 ```text
-C1-06 assets/polish
-C2    opponents
+C1-06D idle loop, effects overlays
+C2     opponents
 ```
 
 The old “H is blocked” note is stale because the server race-state endpoint is now
@@ -255,6 +256,11 @@ lateral    → slight side tilt
 
 Server owns `vehicleTypeKey` and `vehicleColorKey`. Client maps keys to
 whole-asset art (opponents follow the same composite concept later).
+
+Vehicle frame processing (C1-06C): the 1254px master is center-cropped to
+1046px and scaled to 768px WebP (`hoverKarts/hover-kart-<color>-idle-NN.webp`).
+Every idle frame of a vehicle goes through the exact same box, never a
+per-frame auto-trim — otherwise the shared anchor drifts between frames.
 
 ## Continuous world flow (C1-03M)
 

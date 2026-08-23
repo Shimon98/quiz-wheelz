@@ -1,3 +1,5 @@
+import hoverKartGreenIdle01 from "../../../../assets/game/studentRace/hoverKarts/hover-kart-green-idle-01.webp";
+
 /*
  * Client-owned art per server vehicleAssetKey (runtime.player.vehicleAssetKey).
  * The key is opaque server data — this manifest is the ONLY place it becomes
@@ -14,5 +16,12 @@
  *   }
  */
 export const STUDENT_RACE_VEHICLE_MANIFEST = Object.freeze({
-  // Empty until the first approved GREEN MASTER lands (C1-06C).
+  // Frames are the 1254px master center-cropped to 1046px and scaled to
+  // 768px — every later idle frame must use the exact same box (alignment).
+  TOY_CAR_GREEN: Object.freeze({
+    idleFrames: [hoverKartGreenIdle01],
+    anchorX: 0.5,
+    anchorY: 0.96,
+    baseScale: 1.08, // art spans 92% of its canvas → fills the layout box
+  }),
 });

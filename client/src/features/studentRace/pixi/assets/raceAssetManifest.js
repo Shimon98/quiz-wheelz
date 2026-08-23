@@ -69,8 +69,10 @@ export const STUDENT_RACE_ASSET_MANIFEST = Object.freeze({
 
   [KEYS.PLAYER_KART]: Object.freeze({
     key: KEYS.PLAYER_KART,
-    description: "The student's kart, fixed near the bottom of the screen.",
-    expectedPath: "client/src/assets/game/studentRace/karts/player-kart.webp",
+    description:
+      "The student's kart, fixed near the bottom of the screen — per-vehicle " +
+      "art is owned by studentRaceVehicleManifest (server vehicleAssetKey).",
+    expectedPath: "client/src/assets/game/studentRace/hoverKarts/",
     required: true,
     fallback: ASSET_PLACEHOLDER.GRAPHICS,
   }),

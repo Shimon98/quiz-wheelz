@@ -6,6 +6,7 @@ import {
   VEHICLE_ASSET_FALLBACK_REASON,
   VEHICLE_ASSET_STATUS,
 } from "./studentRaceVehicleAssets";
+import { STUDENT_RACE_VEHICLE_MANIFEST } from "./studentRaceVehicleManifest";
 
 // C1-06B foundation — synthetic manifest + injected loader; no image files
 // and no real Pixi Assets calls are needed.
@@ -61,6 +62,19 @@ describe("resolveStudentRaceVehicleAsset", () => {
 });
 
 describe("loadStudentRaceVehicleAssets", () => {
+  it("loads the real TOY_CAR_GREEN manifest entry as one static frame", async () => {
+    const loadTexture = vi.fn(async (frameUrl) => ({ frameUrl }));
+
+    const result = await loadStudentRaceVehicleAssets("TOY_CAR_GREEN", {
+      manifest: STUDENT_RACE_VEHICLE_MANIFEST,
+      loadTexture,
+    });
+
+    expect(result.status).toBe(VEHICLE_ASSET_STATUS.LOADED);
+    expect(result.textures).toHaveLength(1);
+    expect(loadTexture.mock.calls[0][0]).toMatch(/hover-kart-green-idle-01\.webp$/);
+  });
+
   it("loads ONLY the requested vehicle's frames", async () => {
     const loadTexture = vi.fn(async (frameUrl) => ({ frameUrl }));
 
