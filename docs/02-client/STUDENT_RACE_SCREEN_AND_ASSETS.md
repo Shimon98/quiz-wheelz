@@ -31,7 +31,7 @@ C1-06A–C vehicle identity + manifest/loader + real GREEN static sprite.
 Next:
 
 ```text
-C1-06D idle loop, effects overlays
+C1-06E effects overlays (C1-06D idle animation deferred — optional polish)
 C2     opponents
 ```
 
@@ -237,10 +237,11 @@ driver/vehicle from separate coded parts (head sprite + tail sprite + kart
 body...), and never redraw the final art with Graphics/CSS — the current
 Graphics kart is a placeholder that the real asset replaces wholesale.
 
-Future idle animation (C1-06) = 3–4 COMPLETE aligned frame textures looped
-(same canvas size, same pivot, near-identical silhouette; only the tail,
-scarf, hover glow and tiny body posture vary between frames). Tail/scarf
-motion is baked into those frames, not rigged.
+Optional future idle animation (deferred 2026-08-23) = a few COMPLETE
+aligned frame textures looped (same canvas size, same pivot, near-identical
+silhouette; only the tail, scarf, hover glow and tiny body posture vary
+between frames). Tail/scarf motion is baked into those frames, not rigged.
+Today the player art is the static composite plus Pixi bob/tilt.
 
 Separate Pixi overlays remain allowed on top of the composite sprite:
 shadow, hover shockwave rings, trail, boost glow, mud splash, correct/wrong

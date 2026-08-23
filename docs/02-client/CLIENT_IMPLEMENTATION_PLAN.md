@@ -425,10 +425,17 @@ vehicle rendering; it must use this server truth, never `sessionStorage`.
   `/dev/race` shows the real art. Server fact: colors are lane-driven
   (lane 1 PURPLE, 2 RED, 3 BLUE, 4 GREEN …), so until the other colors get
   art, lanes 1–3 keep the placeholder by contract.
-- **C1-06D — aligned idle loop — NEXT.** Replace the single frame with the
-  prepared aligned idle frames (same crop box and pivot), played as an
-  `AnimatedSprite` inside the same kart container; no shaking, no frame
-  switching in `tick()` beyond Pixi's own playback.
+- **C1-06D — character idle animation — DEFERRED (optional polish,
+  2026-08-23).** Static GREEN MASTER retained. Experimental full-frame and
+  tail-layer idle loops were not accepted visually and are not part of the
+  production implementation. Player art currently uses the approved static
+  composite asset plus Pixi bob/tilt; character-part animation may be
+  revisited as optional polish after the core race presentation is complete.
+  Not a blocker for the C1 gate.
+- **C1-06E — server-driven correct/wrong/boost/finish visual feedback —
+  NEXT.** Effects overlays on top of the static sprite (EffectsLayer
+  `playEffect` entry point); then C1-06F world polish (road/jungle/depth/
+  movement) and C1-06G QA/responsive/performance.
 
 - asset manifest keys
 - metadata-driven props
