@@ -51,4 +51,5 @@ export const SERVER_ERROR_NAMES = Object.freeze({
   // C1-05: reconnect grace expired — thrown by heartbeat (reconnect RETURNS
   // it as an outcome). Terminal lifecycle, never a session error.
   RACE_PLAYER_RECONNECT_WINDOW_EXPIRED: "RACE_PLAYER_RECONNECT_WINDOW_EXPIRED",
+  RACE_PLAYER_RECONNECT_REQUIRED: "RACE_PLAYER_RECONNECT_REQUIRED",
 });

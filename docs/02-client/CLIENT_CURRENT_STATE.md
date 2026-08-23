@@ -144,14 +144,26 @@ Implemented A–G:
 
 - one shared lifecycle owner (`useRacePlayerRuntimeSession`) for BOTH the
   waiting and race pages: reconnect-first route entry (gameplay hooks mount
-  only after the server resolves the lifecycle), 15s heartbeat while
-  CONNECTED + visible + online (single-flight), immediate reconnect on
-  browser online / hidden→visible / manual retry, ONE conservative 5s retry
+  only after the server resolves the lifecycle), 15s heartbeat while visible,
+  CONNECTED and online (single-flight), immediate reconnect on browser online /
+  hidden→visible / manual retry, ONE conservative 5s retry
   for transient failures
 - degraded connection keeps the last-known screen: polling/questions pause,
   answers lock, shared `RacePlayerConnectionNotice` shows OFFLINE/
   RECONNECTING; every reconnect resolution triggers an authoritative
   race-state resync (`authoritativeResync` supersedes in-flight requests)
+- semantic `RACE_PLAYER_RECONNECT_REQUIRED` from race-state, current-question or
+  answer immediately closes gameplay readiness and calls the same runtime-session
+  reconnect owner; success performs the existing authoritative resync, while the
+  rejected answer POST is never replayed automatically
+- hidden is temporary gameplay absence: heartbeat, polling and question requests
+  stop, answers lock and gameplay-ready is false. The server question wall clock
+  continues and movement freezes at the latest trusted activity. Returning visible
+  stays closed until reconnect and authoritative resync complete
+- the heartbeat callback also checks current document visibility directly, so an
+  already-queued timer cannot send a hidden-document heartbeat
+- the current ACTIVE question and original deadline survive hidden/reload/reconnect;
+  the client never requests a replacement merely because visibility changed
 - server truth boundaries: local offline never invents DISCONNECTED;
   terminal outcomes (finished/already-disconnected/window-expired) stop the
   heartbeat and let race-state decide the view; window expiry is lifecycle,

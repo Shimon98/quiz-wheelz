@@ -13,20 +13,6 @@ import java.time.ZoneId;
 import java.util.Objects;
 import java.util.TimeZone;
 
-/**
- * The single owner of application time: one configured {@link ZoneId} and one
- * shared {@link Clock} bean. Correctness-sensitive services inject the Clock
- * instead of creating {@code Clock.systemDefaultZone()} themselves, so tests
- * can pin time with {@code Clock.fixed(...)} and every service agrees on
- * "now".
- *
- * The durable MySQL model still stores zone-less LocalDateTime values that
- * were always written in local Israel time (the dev JDBC URL already pins
- * serverTimezone=Asia/Jerusalem), so the application zone defaults to
- * Asia/Jerusalem rather than silently reinterpreting existing rows as UTC.
- * A future migration of the DB model to Instant/UTC is separate production
- * work.
- */
 @Configuration
 public class TimeConfig {
 
@@ -54,13 +40,6 @@ public class TimeConfig {
             );
         }
 
-        /*
-         * Compatibility bridge: legacy code (BaseEntity callbacks, static
-         * ApiResponse/ErrorResponse factories) still calls LocalDateTime.now()
-         * directly. Aligning the JVM default zone keeps those calls
-         * deterministic across Windows/Linux/Docker hosts. New
-         * correctness-sensitive services must use the injected Clock.
-         */
         TimeZone.setDefault(TimeZone.getTimeZone(applicationZoneId));
     }
 

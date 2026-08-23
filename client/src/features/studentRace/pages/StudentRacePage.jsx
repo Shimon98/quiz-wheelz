@@ -53,8 +53,10 @@ function ResolvedStudentRacePage({ runtimeSession }) {
   useStudentRaceRecoverySync({
     view,
     stopPresence: runtimeSession.stopPresence,
+    raceError,
     questionError,
     answerError,
+    reconnectNow: runtimeSession.reconnectNow,
     raceRetry,
     resyncToken: runtimeSession.resyncToken,
     authoritativeResync,

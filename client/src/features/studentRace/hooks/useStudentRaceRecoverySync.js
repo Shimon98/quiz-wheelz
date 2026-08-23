@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import {
   isQuestionExpiredError,
   isRaceLifecycleConflictError,
+  isRacePlayerReconnectRequiredError,
   isRacePlayerSessionError,
 } from "../../../errors/errorChecks";
 import { FINAL_RACE_VIEWS } from "../../../shared/racePlayer/getRaceView";
@@ -16,8 +17,10 @@ import useRuntimeSessionResync from "../../../shared/racePlayer/useRuntimeSessio
 export default function useStudentRaceRecoverySync({
   view,
   stopPresence,
+  raceError,
   questionError,
   answerError,
+  reconnectNow,
   raceRetry,
   resyncToken,
   authoritativeResync,
@@ -29,6 +32,20 @@ export default function useStudentRaceRecoverySync({
       stopPresence();
     }
   }, [view, stopPresence]);
+
+  const reconnectRequiredHandledRef = useRef(null);
+  const reconnectRequiredError = [raceError, questionError, answerError].find(
+    isRacePlayerReconnectRequiredError,
+  );
+  useEffect(() => {
+    if (
+      reconnectRequiredError &&
+      reconnectRequiredHandledRef.current !== reconnectRequiredError
+    ) {
+      reconnectRequiredHandledRef.current = reconnectRequiredError;
+      reconnectNow();
+    }
+  }, [reconnectRequiredError, reconnectNow]);
 
   const conflictHandledRef = useRef(null);
   useEffect(() => {
@@ -47,6 +64,7 @@ export default function useStudentRaceRecoverySync({
       answerError &&
       !isRacePlayerSessionError(answerError) &&
       !isQuestionExpiredError(answerError) &&
+      !isRacePlayerReconnectRequiredError(answerError) &&
       answerResyncHandledRef.current !== answerError
     ) {
       answerResyncHandledRef.current = answerError;

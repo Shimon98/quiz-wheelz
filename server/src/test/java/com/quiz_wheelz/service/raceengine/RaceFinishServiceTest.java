@@ -132,6 +132,23 @@ class RaceFinishServiceTest {
     }
 
     @Test
+    void lockedFinalizationShouldRejectAnyActiveStatusPlayer() {
+        RaceFinishService raceFinishService = new RaceFinishService(
+                racePlayerRepository,
+                java.time.Clock.systemUTC()
+        );
+        Race race = race(100);
+        RacePlayer finished = player(RacePlayerStatus.FINISHED, 100.0, 0.0, race);
+        RacePlayer absent = player(RacePlayerStatus.RACING, 80.0, 1.0, race);
+
+        assertFalse(raceFinishService.finishRaceIfAllPlayersTerminal(
+                race,
+                List.of(finished, absent)
+        ));
+        assertEquals(RaceStatus.IN_PROGRESS, race.getStatus());
+    }
+
+    @Test
     void shouldNotFinishRaceWhenPlayerIsWaiting() {
         RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         Race race = race(100);

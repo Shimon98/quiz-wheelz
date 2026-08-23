@@ -44,7 +44,7 @@ public class RacePlayerReconnectPolicy {
     }
 
     public boolean isReconnectWindowExpired(
-            Optional<LocalDateTime> lastHeartbeatAt,
+            Optional<LocalDateTime> lastGameplayActivityAt,
             LocalDateTime durableLastSeenAt,
             LocalDateTime raceStartedAt,
             LocalDateTime now
@@ -53,8 +53,8 @@ public class RacePlayerReconnectPolicy {
             return false;
         }
 
-        LocalDateTime activityReferenceAt = laterOfNullable(
-                lastHeartbeatAt.orElse(null),
+        LocalDateTime activityReferenceAt = resolveLatestActivityReference(
+                lastGameplayActivityAt.orElse(null),
                 durableLastSeenAt,
                 raceStartedAt
         );
@@ -66,8 +66,14 @@ public class RacePlayerReconnectPolicy {
         return !isActivityReferenceInsideGrace(
                 activityReferenceAt,
                 now,
-                lastHeartbeatAt.isEmpty()
+                lastGameplayActivityAt.isEmpty()
         );
+    }
+
+    public LocalDateTime resolveLatestActivityReference(
+            LocalDateTime... timestamps
+    ) {
+        return laterOfNullable(timestamps);
     }
 
     private LocalDateTime laterOfNullable(LocalDateTime... timestamps) {

@@ -92,13 +92,6 @@ public class RaceEngineService {
         );
     }
 
-    /*
-     * Timeout gameplay impact (C1-03M): no score, no progress bonus — only a
-     * stronger speed penalty plus the same failure progression as a wrong
-     * answer (streak reset, wrongAnswers++, difficulty failure streak). The
-     * caller (QuestionTimeoutService) settles movement around the expiry
-     * instant; position is never touched here.
-     */
     @Transactional
     public void applyTimeoutResult(RacePlayer racePlayer) {
         validateRacePlayerCanReceiveAnswerImpact(racePlayer);
