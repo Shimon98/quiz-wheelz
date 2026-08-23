@@ -145,13 +145,16 @@ Implemented A–G:
 - one shared lifecycle owner (`useRacePlayerRuntimeSession`) for BOTH the
   waiting and race pages: reconnect-first route entry (gameplay hooks mount
   only after the server resolves the lifecycle), 15s heartbeat while
-  CONNECTED + visible + online (single-flight), immediate reconnect on
+  CONNECTED + online even when the document is hidden (single-flight), immediate reconnect on
   browser online / hidden→visible / manual retry, ONE conservative 5s retry
   for transient failures
 - degraded connection keeps the last-known screen: polling/questions pause,
   answers lock, shared `RacePlayerConnectionNotice` shows OFFLINE/
   RECONNECTING; every reconnect resolution triggers an authoritative
   race-state resync (`authoritativeResync` supersedes in-flight requests)
+- hidden remains not gameplay-ready, so polling/questions/answers pause, but the
+  presence heartbeat and server-owned movement/question clock continue; returning
+  visible still reconnects and resyncs
 - server truth boundaries: local offline never invents DISCONNECTED;
   terminal outcomes (finished/already-disconnected/window-expired) stop the
   heartbeat and let race-state decide the view; window expiry is lifecycle,

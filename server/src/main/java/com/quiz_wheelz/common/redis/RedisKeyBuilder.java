@@ -25,15 +25,19 @@ public class RedisKeyBuilder {
         );
     }
 
-    public String presenceLastHeartbeatKey(Long raceId, Long racePlayerId) {
+    public String presenceLastGameplayActivityKey(Long raceId, Long racePlayerId) {
         return join(
                 RedisKeyNamespace.PRESENCE.getValue(),
-                RedisKeyPart.LAST_HEARTBEAT.getValue(),
+                RedisKeyPart.LAST_GAMEPLAY_ACTIVITY.getValue(),
                 RedisKeyPart.RACE.getValue(),
                 requirePositiveId(raceId),
                 RedisKeyPart.PLAYER.getValue(),
                 requirePositiveId(racePlayerId)
         );
+    }
+
+    public String presenceLastHeartbeatKey(Long raceId, Long racePlayerId) {
+        return presenceLastGameplayActivityKey(raceId, racePlayerId);
     }
 
     public String presenceLastSeenDbSyncKey(Long raceId, Long racePlayerId) {

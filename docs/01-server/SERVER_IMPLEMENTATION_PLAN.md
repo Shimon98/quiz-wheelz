@@ -142,6 +142,23 @@ lifecycle is outside S0-02 and does not block it.
   `ddl-auto=update` mechanism (verified locally; Diana's DEV DB gets it the
   same way) — production migrations remain Phase 6 debt.
 
+### S1-01B — Freeze movement during real absence
+
+**Status:** `DONE (2026-08-20)`
+
+- one monotonic latest-trusted-gameplay-activity concept; only heartbeat,
+  race-state, current-question, answer and reconnect record activity
+- absent settlement is capped at that activity, repeated sweeps cannot move it,
+  and reconnect re-anchors without catch-up
+- question deadlines are never shifted: `QuestionTimeoutService` processes an
+  overdue ACTIVE question exactly once against wall-clock time while using an
+  independent movement cutoff
+- 45s presence loss permits race completion to ignore an absent RACING player;
+  the unchanged 5-minute grace remains a return window and expiry durably becomes
+  DISCONNECTED if the race is still active
+- Redis outage fails open for movement/presence and cannot mass-freeze,
+  mass-disconnect, or subtract previously awarded movement
+
 ### S1-02 — Authoritative rank and nearby-player snapshot
 
 **Status:** `PLANNED`

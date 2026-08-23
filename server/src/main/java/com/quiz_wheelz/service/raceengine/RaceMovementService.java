@@ -16,20 +16,6 @@ import java.time.Clock;
 import java.util.Objects;
 import java.util.Optional;
 
-/**
- * The ONE owner of authoritative time-based movement (C1-03M): settles a
- * RACING player's position from its movement anchor to a target instant
- * using the speed that was valid during that interval. Callers must hold
- * the RacePlayer PESSIMISTIC_WRITE lock; the advancing anchor makes
- * overlapping settlers (request + scheduler, two dev servers) idempotent —
- * the same elapsed time can never be counted twice.
- *
- * Chronology contract: settle FIRST, then change speed — the old speed owns
- * past time, a new boost/penalty owns only the future. Question/HTTP/score
- * logic never lives here; the only question concern is expiring a leftover
- * ACTIVE question when settlement itself crosses the finish line (no other
- * owner runs for a FINISHED player).
- */
 @Service
 public class RaceMovementService {
 
@@ -47,10 +33,6 @@ public class RaceMovementService {
         this.clock = Objects.requireNonNull(clock);
     }
 
-    /**
-     * @return true when THIS settlement crossed the finish line (the player
-     *         just became FINISHED); false for no-ops and ordinary movement.
-     */
     public boolean settleTo(RacePlayer racePlayer, long targetEpochMs) {
         if (racePlayer == null || racePlayer.getStatus() != RacePlayerStatus.RACING) {
             return false;
@@ -60,7 +42,6 @@ public class RaceMovementService {
         long anchorEpochMs = resolveAnchor(racePlayer, targetEpochMs);
 
         if (targetEpochMs <= anchorEpochMs) {
-            // Backward/zero time is never movement — keep the later anchor.
             return false;
         }
 
@@ -83,6 +64,18 @@ public class RaceMovementService {
         return finishedNow;
     }
 
+    public void reanchorAt(RacePlayer racePlayer, long anchorEpochMs) {
+        if (racePlayer == null || racePlayer.getStatus() != RacePlayerStatus.RACING) {
+            return;
+        }
+
+        Long currentAnchor = racePlayer.getMovementUpdatedAtEpochMs();
+
+        if (currentAnchor == null || anchorEpochMs > currentAnchor) {
+            racePlayer.setMovementUpdatedAtEpochMs(anchorEpochMs);
+        }
+    }
+
     private long resolveAnchor(RacePlayer racePlayer, long targetEpochMs) {
         Long anchorEpochMs = racePlayer.getMovementUpdatedAtEpochMs();
 
@@ -90,9 +83,6 @@ public class RaceMovementService {
             return anchorEpochMs;
         }
 
-        // Legacy RACING row from before the anchor existed: startedAt is the
-        // honest start of movement; with no trustworthy start, anchor at the
-        // target — never invent a huge historical elapsed interval.
         long bootstrapAnchor = racePlayer.getStartedAt() != null
                 ? DateTimeUtils.toEpochMilli(racePlayer.getStartedAt(), clock.getZone())
                 : targetEpochMs;
@@ -102,11 +92,6 @@ public class RaceMovementService {
         return bootstrapAnchor;
     }
 
-    /*
-     * A player finished by pure time movement still owns an ACTIVE question
-     * row; no delivery/answer path will ever touch it again (both reject
-     * non-RACING players), so it would live forever without this.
-     */
     private void expireLeftoverActiveQuestion(RacePlayer racePlayer) {
         Optional<PlayerQuestion> activeQuestion = playerQuestionRepository
                 .findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(

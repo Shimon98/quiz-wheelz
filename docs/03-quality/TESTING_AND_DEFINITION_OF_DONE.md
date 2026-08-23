@@ -52,7 +52,12 @@ Required gameplay tests:
 - score/progress/streak/difficulty
 - player/race finish
 - heartbeat/leave/reconnect
+- trusted-activity monotonicity and absence movement cutoff
+- repeated absent sweeps and reconnect-without-catch-up
+- question wall-clock timeout during absence, exactly once, without deadline extension
+- absent-player race completion and terminal grace expiry
 - Redis loss with DB fallback
+- Redis-loss fail-open movement/no mass disconnect
 - live-state ownership
 - SSE reconnect/recovery
 - event fairness boundaries.
@@ -102,6 +107,7 @@ Check:
 - loading/error/empty/disabled
 - repeated-click prevention
 - refresh/back/reconnect
+- hidden document: gameplay disabled while heartbeat continues; no automatic leave
 - production bundle contains no dev race tools.
 
 ## Core end-to-end demo
@@ -144,4 +150,9 @@ Reject when:
 - cache is only source of truth
 - fake data is presented as real
 - unrelated refactor bloats the PR
-- tests were skipped without explanation.
+- tests were skipped without explanation
+- an added or modified `.java`, `.js` or `.jsx` file contains comments or
+  exceeds 500 lines
+- a touched service or test combines multiple responsibilities that have clear
+  independent owners
+- logger templates or repeated operation labels remain inline at call sites.

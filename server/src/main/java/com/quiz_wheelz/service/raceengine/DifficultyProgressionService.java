@@ -109,8 +109,7 @@ public class DifficultyProgressionService {
 
         return switch (currentDifficulty) {
             case HARD -> Difficulty.MEDIUM;
-            case MEDIUM -> Difficulty.EASY;
-            case EASY -> Difficulty.EASY;
+            case MEDIUM, EASY -> Difficulty.EASY;
         };
     }
 

@@ -76,15 +76,16 @@ describe("browser connectivity", () => {
 });
 
 describe("document visibility", () => {
-  it("a hidden document pauses the heartbeat cadence without any server call", async () => {
+  it("a hidden document keeps the presence heartbeat running", async () => {
     await renderResolvedActiveSession(reconnectRacePlayer);
+    heartbeatRacePlayer.mockResolvedValue({});
 
     await act(async () => {
       setDocumentVisibility("hidden");
     });
 
     await advance(heartbeatIntervalMs * 3);
-    expect(heartbeatRacePlayer).not.toHaveBeenCalled();
+    expect(heartbeatRacePlayer).toHaveBeenCalledTimes(3);
     expect(reconnectRacePlayer).toHaveBeenCalledTimes(1);
   });
 
@@ -192,7 +193,6 @@ describe("cleanup and leave safety", () => {
     document.dispatchEvent(new Event("visibilitychange"));
     await advance(heartbeatIntervalMs);
 
-    // No timer/listener survived unmount; leave has no client wrapper at all.
     expect(reconnectRacePlayer).toHaveBeenCalledTimes(reconnectCalls);
     expect(heartbeatRacePlayer).toHaveBeenCalledTimes(heartbeatCalls);
   });

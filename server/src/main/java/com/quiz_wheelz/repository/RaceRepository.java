@@ -22,13 +22,6 @@ public interface RaceRepository extends JpaRepository<Race, Long> {
     @Query("select r from Race r where r.id = :raceId")
     Optional<Race> findLockedById(@Param("raceId") Long raceId);
 
-    /*
-     * Race-finish reconciliation (C1-03M): candidate races whose players all
-     * left the active statuses. Two players finishing in concurrent worker
-     * transactions can each still see the other as RACING, so the per-answer
-     * finishRaceIfNeeded alone can strand a race IN_PROGRESS forever — the
-     * scheduler re-checks these under a race lock.
-     */
     @Query("""
             select race.id
             from Race race

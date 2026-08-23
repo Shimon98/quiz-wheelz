@@ -57,10 +57,12 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - lane and vehicle assignment
 - race-state with refresh-safe current-player presentation identity and the shared
   runtime snapshot
-- Redis-first heartbeat and presence with 45-second presence TTL.
+- Redis-first heartbeat and presence with 45-second presence TTL; heartbeat,
+  race-state, current-question, answer and reconnect are trusted player activity,
+  while schedulers never refresh activity.
 - 30-second Redis-gated durable `lastSeenAt` checkpoints and direct MySQL fallback
   during runtime Redis outages.
-- reconnect using the freshest Redis heartbeat, durable `lastSeenAt` and race start,
+- reconnect using the freshest trusted gameplay activity, durable `lastSeenAt` and race start,
   with a 5-minute grace period and a 30-second DB-only fallback margin.
 - leave/disconnect persistence that remains authoritative when Redis cleanup fails.
 
@@ -110,23 +112,28 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 ### Race engine
 
 - score delta
-- progress bonus (correct answers only) + CONTINUOUS authoritative movement
-  (C1-03M): while RACING, `position` advances by
+- progress bonus (correct answers only) + presence-bounded CONTINUOUS authoritative
+  movement (C1-03M/S1-01B): while RACING and trustworthy presence is active,
+  `position` advances by
   `elapsed x speed x BASE_MOVEMENT_UNITS_PER_SECOND` from the
   `movementUpdatedAtEpochMs` anchor (`RaceMovementService`, epoch-ms math —
   DST-proof; old speed owns past time, boosts/penalties own only the
-  future). Every RACING player eventually finishes even with zero answers.
+  future). Real absence caps settlement at the last trusted activity; reconnect
+  re-anchors at now and never awards the offline interval.
 - speed: bounded cumulative model — race start grants `MIN_RACING_SPEED`
   (0.5) + the movement anchor; correct answers ADD +0.20/+0.30/+0.40 by
   difficulty up to MAX 2.0; wrong −0.20 and timeout −0.40 floor at the
   minimum; FINISHED returns to 0
 - timeout is a real gameplay event with ONE exactly-once owner
   (`QuestionTimeoutService`): settle to the deadline at the old speed,
-  ACTIVE→EXPIRED, penalty + wrong/failure progression, settle the remainder
-- safety settlement scheduler (5s) + per-player locked worker: movement,
-  overdue timeouts and guaranteed finish need NO client request; a
-  race-finish reconciliation pass finalizes IN_PROGRESS races with no
-  WAITING/RACING players under a race lock
+  ACTIVE→EXPIRED, penalty + wrong/failure progression, settle the remainder;
+  its wall clock continues while absent even though movement stays capped
+- safety settlement scheduler (5s) + per-player locked worker: connected movement,
+  overdue timeouts, grace-expiry DISCONNECTED and race finish need no gameplay
+  request; reconciliation can ignore RACING players after the short presence-loss
+  boundary, so reconnect grace does not block the class; before persisting race
+  FINISHED it normalizes every absent non-blocking active-status player, preventing
+  a finished race from retaining WAITING/RACING rows
 - GET race-state settles the locked player to one decision instant before
   mapping (safe state-read materialization — repeated reads award nothing);
   RACING→DISCONNECTED settles first, FINISHED wins over DISCONNECTED
@@ -138,6 +145,10 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - player finish
 - basic race finish
 - answer response with reusable runtime snapshot.
+
+Redis infrastructure failure is not absence: gameplay presence fails open, no racer
+is frozen or disconnected en masse, durable `lastSeenAt` remains available, and
+recovery never subtracts movement awarded in degraded mode.
 
 ## Partial or missing
 

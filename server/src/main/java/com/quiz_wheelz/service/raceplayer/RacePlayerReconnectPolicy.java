@@ -53,7 +53,7 @@ public class RacePlayerReconnectPolicy {
             return false;
         }
 
-        LocalDateTime activityReferenceAt = laterOfNullable(
+        LocalDateTime activityReferenceAt = resolveLatestActivityReference(
                 lastHeartbeatAt.orElse(null),
                 durableLastSeenAt,
                 raceStartedAt
@@ -68,6 +68,12 @@ public class RacePlayerReconnectPolicy {
                 now,
                 lastHeartbeatAt.isEmpty()
         );
+    }
+
+    public LocalDateTime resolveLatestActivityReference(
+            LocalDateTime... timestamps
+    ) {
+        return laterOfNullable(timestamps);
     }
 
     private LocalDateTime laterOfNullable(LocalDateTime... timestamps) {

@@ -91,8 +91,11 @@ public final class ErrorMessages {
     public static final String REDIS_PRESENCE_IDS_MISSING =
             "Redis presence race id and race player id are required";
 
+    public static final String REDIS_GAMEPLAY_ACTIVITY_TIMESTAMP_MISSING =
+            "Redis gameplay activity timestamp is required";
+
     public static final String REDIS_HEARTBEAT_TIMESTAMP_MISSING =
-            "Redis heartbeat timestamp is required";
+            REDIS_GAMEPLAY_ACTIVITY_TIMESTAMP_MISSING;
 
     public static final String RACE_PLAYER_SESSION_IDENTITY_MISSING =
             "Race player session identity is missing";

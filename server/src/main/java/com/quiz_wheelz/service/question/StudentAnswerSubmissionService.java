@@ -9,14 +9,16 @@ import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.entitys.PlayerQuestionChoice;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
+import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
-import com.quiz_wheelz.service.raceengine.RaceMovementService;
+import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
+import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,19 +36,18 @@ public class StudentAnswerSubmissionService {
     private final PlayerQuestionChoiceRepository playerQuestionChoiceRepository;
     private final RacePlayerRepository racePlayerRepository;
     private final RaceEngineService raceEngineService;
-    private final RaceMovementService raceMovementService;
-    private final QuestionTimeoutService questionTimeoutService;
+    private final RacePlayerGameplayPresenceService gameplayPresenceService;
+    private final RacePlayerGameplayTimelineService gameplayTimelineService;
     private final StudentRaceRuntimeSnapshotMapper snapshotMapper;
     private final Clock clock;
 
-    // Shared application Clock (TimeConfig) — injected, never self-created.
     public StudentAnswerSubmissionService(
             PlayerQuestionRepository playerQuestionRepository,
             PlayerQuestionChoiceRepository playerQuestionChoiceRepository,
             RacePlayerRepository racePlayerRepository,
             RaceEngineService raceEngineService,
-            RaceMovementService raceMovementService,
-            QuestionTimeoutService questionTimeoutService,
+            RacePlayerGameplayPresenceService gameplayPresenceService,
+            RacePlayerGameplayTimelineService gameplayTimelineService,
             StudentRaceRuntimeSnapshotMapper snapshotMapper,
             Clock clock
     ) {
@@ -54,15 +55,12 @@ public class StudentAnswerSubmissionService {
         this.playerQuestionChoiceRepository = Objects.requireNonNull(playerQuestionChoiceRepository);
         this.racePlayerRepository = Objects.requireNonNull(racePlayerRepository);
         this.raceEngineService = Objects.requireNonNull(raceEngineService);
-        this.raceMovementService = Objects.requireNonNull(raceMovementService);
-        this.questionTimeoutService = Objects.requireNonNull(questionTimeoutService);
+        this.gameplayPresenceService = Objects.requireNonNull(gameplayPresenceService);
+        this.gameplayTimelineService = Objects.requireNonNull(gameplayTimelineService);
         this.snapshotMapper = Objects.requireNonNull(snapshotMapper);
         this.clock = Objects.requireNonNull(clock);
     }
 
-    // noRollbackFor is deliberate for the timeout path too: a late answer's
-    // QUESTION_EXPIRED must still COMMIT the settled movement, the EXPIRED
-    // transition and the timeout penalty.
     @Transactional(noRollbackFor = ApiException.class)
     public SubmitAnswerResponse submitAnswer(
             RacePlayer racePlayer,
@@ -72,8 +70,6 @@ public class StudentAnswerSubmissionService {
 
         RacePlayer lockedRacePlayer = findLockedRacePlayer(racePlayer);
 
-        // ONE decision instant: expiry, answeredAt, movement settlement and
-        // the snapshot timestamp all describe the same moment.
         Instant decisionInstant = clock.instant();
         LocalDateTime now = DateTimeUtils.toLocalDateTime(decisionInstant, clock.getZone());
         long decisionEpochMs = decisionInstant.toEpochMilli();
@@ -85,27 +81,27 @@ public class StudentAnswerSubmissionService {
 
         validateQuestionIsActive(question);
 
-        if (DateTimeUtils.isExpired(question.getExpiresAt(), now)) {
-            // Timeout is a gameplay event with ONE owner — it settles the
-            // pre/post-deadline intervals at the right speeds and penalizes
-            // exactly once.
-            questionTimeoutService.processExpiredActiveQuestion(
+        RacePlayerGameplayPresenceService.GameplayPresenceDecision presenceDecision =
+                gameplayPresenceService.resolve(lockedRacePlayer, decisionInstant);
+        boolean disconnected = gameplayTimelineService.settlePlayerActivity(
+                lockedRacePlayer,
+                decisionInstant,
+                presenceDecision
+        );
+        if (disconnected) {
+            gameplayPresenceService.markOffline(lockedRacePlayer);
+        } else {
+            gameplayPresenceService.recordPlayerActivity(
                     lockedRacePlayer,
-                    question,
-                    decisionEpochMs
+                    decisionInstant
             );
+        }
 
+        if (question.getStatus() == PlayerQuestionStatus.EXPIRED) {
             throw new ApiException(ErrorCode.QUESTION_EXPIRED);
         }
 
-        // The elapsed interval up to this answer belongs to the OLD speed —
-        // settle it before any boost/penalty may change the speed.
-        boolean finishedByMovement =
-                raceMovementService.settleTo(lockedRacePlayer, decisionEpochMs);
-
-        if (finishedByMovement) {
-            // Finish wins chronologically: the player crossed the line before
-            // the answer was applied, so no answer impact after the finish.
+        if (lockedRacePlayer.getStatus() != RacePlayerStatus.RACING) {
             throw new ApiException(ErrorCode.RACE_PLAYER_NOT_RACING);
         }
 
@@ -135,8 +131,6 @@ public class StudentAnswerSubmissionService {
 
         PlayerQuestion savedQuestion = playerQuestionRepository.save(question);
 
-        // Public timing contract is absolute epoch ms — the durable
-        // LocalDateTime stays internal, converted with the shared Clock zone.
         return new SubmitAnswerResponse(
                 savedQuestion.getId(),
                 selectedChoice.getId(),

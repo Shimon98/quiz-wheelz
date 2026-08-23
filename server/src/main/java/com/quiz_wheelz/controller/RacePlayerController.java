@@ -137,12 +137,6 @@ public class RacePlayerController {
         );
     }
 
-    /*
-     * POST, not GET (C1-02K): this operation is "ensure/resolve the current
-     * question" — it can expire the old question and create a new one, so it
-     * is not a safe read. Same path, no body. The delivery service builds the
-     * QuestionPlan itself, under the RacePlayer lock.
-     */
     @PostMapping(ApiPaths.CURRENT_QUESTION)
     public ResponseEntity<ApiResponse<StudentQuestionResponse>> getCurrentQuestion(
             HttpServletRequest request

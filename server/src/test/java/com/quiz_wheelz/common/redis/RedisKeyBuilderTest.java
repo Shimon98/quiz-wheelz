@@ -32,10 +32,13 @@ class RedisKeyBuilderTest {
     }
 
     @Test
-    void presenceLastHeartbeatKeyShouldUseSharedPrefixAndExpectedFormat() {
-        String key = redisKeyBuilder.presenceLastHeartbeatKey(14L, 8L);
+    void presenceLastGameplayActivityKeyShouldUseSharedPrefixAndExpectedFormat() {
+        String key = redisKeyBuilder.presenceLastGameplayActivityKey(14L, 8L);
 
-        assertEquals("quizwheelz:test:presence:last-heartbeat:race:14:player:8", key);
+        assertEquals(
+                "quizwheelz:test:presence:last-gameplay-activity:race:14:player:8",
+                key
+        );
     }
 
     @Test

@@ -53,11 +53,14 @@ Owns durable data:
 Owns temporary acceleration/runtime state:
 
 - online presence TTL
-- last heartbeat cache
+- latest trusted gameplay-activity cache (player-originated requests only)
 - future live snapshots/leaderboard cache
 - future active-question lookup cache when useful.
 
 Redis loss must degrade performance or online indicators, not corrupt game truth.
+Gameplay presence fails open during a Redis outage: movement remains available,
+players are not mass-disconnected, and durable `lastSeenAt` checkpoints remain the
+fallback.
 
 ### Client
 
@@ -189,9 +192,14 @@ WRONG   → no answer-derived progress bonus + speed penalty
 TIMEOUT → no answer-derived progress bonus + stronger speed penalty
 ```
 
-Baseline server-authoritative movement continues after wrong answers and timeouts,
-so every race still finishes. Reconnect remains a focused command: when continuation
-is possible, the client follows it with `GET race-state` to rebuild the latest state.
+Baseline server-authoritative movement continues after wrong answers and timeouts
+while trustworthy gameplay presence is active. Real absence freezes position at the
+latest trusted player-originated activity, but question wall-clock deadlines and
+exactly-once timeout penalties continue. Reconnect grants no catch-up movement: it
+re-anchors at reconnect time. The 5-minute grace is a right to return while the race
+is active, not a right for an absent player to block race completion. Reconnect
+remains a focused command: when continuation is possible, the client follows it with
+`GET race-state` to rebuild the latest state.
 Future SSE data must reuse the snapshot vocabulary instead of inventing a parallel
 runtime model.
 

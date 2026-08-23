@@ -42,8 +42,6 @@ class RaceMovementServiceTest {
     @Mock
     private PlayerQuestionRepository playerQuestionRepository;
 
-    // Real RaceFinishService on purpose: finishPlayerIfNeeded touches only
-    // the entity, so movement + finish are exercised together.
     private RaceMovementService service() {
         return new RaceMovementService(
                 new RaceFinishService(
@@ -61,7 +59,6 @@ class RaceMovementServiceTest {
 
         boolean finished = service().settleTo(player, afterSeconds(10));
 
-        // 10s x 0.5 x BASE 4.0 = 20 units.
         assertFalse(finished);
         assertEquals(120.0, player.getPosition(), 1e-9);
         assertEquals(afterSeconds(10), player.getMovementUpdatedAtEpochMs());
@@ -73,7 +70,6 @@ class RaceMovementServiceTest {
 
         service().settleTo(player, afterSeconds(10));
 
-        // 10s x 2.0 x BASE 4.0 = 80 units.
         assertEquals(180.0, player.getPosition(), 1e-9);
     }
 
@@ -85,7 +81,6 @@ class RaceMovementServiceTest {
         assertFalse(service().settleTo(player, ANCHOR_EPOCH_MS - 5_000));
 
         assertEquals(100.0, player.getPosition(), 1e-9);
-        // The anchor never moves backward.
         assertEquals(ANCHOR_EPOCH_MS, player.getMovementUpdatedAtEpochMs());
     }
 
@@ -115,15 +110,12 @@ class RaceMovementServiceTest {
                 PlayerQuestionStatus.ACTIVE
         )).thenReturn(Optional.of(leftoverActiveQuestion));
 
-        // 60s at min speed = +120, far past the 10 remaining units.
         boolean finished = service().settleTo(player, afterSeconds(60));
 
         assertTrue(finished);
         assertEquals(1000.0, player.getPosition(), 1e-9);
         assertEquals(RacePlayerStatus.FINISHED, player.getStatus());
         assertEquals(0.0, player.getSpeed());
-        // No owner ever touches a finished player's question again — the
-        // leftover ACTIVE row is expired here.
         assertEquals(PlayerQuestionStatus.EXPIRED, leftoverActiveQuestion.getStatus());
         verify(playerQuestionRepository).save(leftoverActiveQuestion);
     }
@@ -137,7 +129,6 @@ class RaceMovementServiceTest {
 
         service().settleTo(player, afterSeconds(10));
 
-        // The legacy row still earns its 10 honest seconds of movement.
         assertEquals(20.0, player.getPosition(), 1e-9);
         assertEquals(afterSeconds(10), player.getMovementUpdatedAtEpochMs());
     }
@@ -148,7 +139,6 @@ class RaceMovementServiceTest {
 
         boolean finished = service().settleTo(player, afterSeconds(10));
 
-        // Never invent a historical elapsed interval.
         assertFalse(finished);
         assertEquals(0.0, player.getPosition(), 1e-9);
         assertEquals(afterSeconds(10), player.getMovementUpdatedAtEpochMs());
@@ -172,9 +162,6 @@ class RaceMovementServiceTest {
         RacePlayer player = racingPlayer(0.0, 0.5, ANCHOR_EPOCH_MS);
         RaceMovementService movementService = service();
 
-        // A REGULAR 1000-unit race at the 0.5 floor = 2 units/sec → 500
-        // simulated seconds. Sweep in 5s scheduler steps; the loop bound
-        // proves finiteness, the Clock advances instead of real waiting.
         boolean finished = false;
         for (int sweep = 1; sweep <= 120 && !finished; sweep++) {
             finished = movementService.settleTo(player, afterSeconds(sweep * 5L));
@@ -184,6 +171,26 @@ class RaceMovementServiceTest {
         assertEquals(RacePlayerStatus.FINISHED, player.getStatus());
         assertEquals(1000.0, player.getPosition(), 1e-9);
         assertEquals(0.0, player.getSpeed());
+    }
+
+    @Test
+    void shouldReanchorWithoutAwardingElapsedMovement() {
+        RacePlayer player = racingPlayer(100.0, 1.0, ANCHOR_EPOCH_MS);
+
+        service().reanchorAt(player, afterSeconds(60));
+
+        assertEquals(100.0, player.getPosition(), 1e-9);
+        assertEquals(afterSeconds(60), player.getMovementUpdatedAtEpochMs());
+    }
+
+    @Test
+    void shouldNeverMoveAnchorBackwardWhenReanchoring() {
+        RacePlayer player = racingPlayer(100.0, 1.0, afterSeconds(60));
+
+        service().reanchorAt(player, ANCHOR_EPOCH_MS);
+
+        assertEquals(100.0, player.getPosition(), 1e-9);
+        assertEquals(afterSeconds(60), player.getMovementUpdatedAtEpochMs());
     }
 
     private RacePlayer racingPlayer(

@@ -26,6 +26,8 @@ import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceMovementService;
+import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
+import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,12 +50,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class StudentQuestionDeliveryServiceTest {
+class StudentQuestionDeliveryExistingQuestionTest {
 
     private static final Instant FIXED_INSTANT = Instant.parse("2026-06-30T10:00:00Z");
     private static final ZoneId FIXED_ZONE = ZoneId.of("UTC");
@@ -87,6 +90,12 @@ class StudentQuestionDeliveryServiceTest {
     @Mock
     private QuestionTimeoutService questionTimeoutService;
 
+    @Mock
+    private RacePlayerGameplayPresenceService gameplayPresenceService;
+
+    @Mock
+    private RacePlayerGameplayTimelineService gameplayTimelineService;
+
     private StudentQuestionDeliveryService studentQuestionDeliveryService;
 
     @BeforeEach
@@ -101,8 +110,8 @@ class StudentQuestionDeliveryServiceTest {
                 questionGenerationService,
                 playerQuestionPersistenceService,
                 studentQuestionResponseMapper,
-                raceMovementService,
-                questionTimeoutService,
+                gameplayPresenceService,
+                gameplayTimelineService,
                 fixedClock
         );
     }
@@ -138,8 +147,15 @@ class StudentQuestionDeliveryServiceTest {
 
         assertSame(expectedResponse, result);
 
-        // Continuous movement is settled on every resolve (C1-03M).
-        verify(raceMovementService).settleTo(lockedRacePlayer, FIXED_INSTANT.toEpochMilli());
+        verify(gameplayTimelineService).settlePlayerActivity(
+                lockedRacePlayer,
+                FIXED_INSTANT,
+                null
+        );
+        verify(gameplayPresenceService).recordPlayerActivity(
+                lockedRacePlayer,
+                FIXED_INSTANT
+        );
         verify(racePlayerQuestionPlanService, never()).buildQuestionPlan(any());
         verify(questionGenerationService, never()).generate(any(QuestionPlan.class));
         verify(playerQuestionPersistenceService, never()).persistGeneratedQuestion(any(), any());
@@ -211,11 +227,6 @@ class StudentQuestionDeliveryServiceTest {
 
     @Test
     void shouldUseOneDecisionInstantForExpiryAndServerTime() {
-        // A clock that advances 5ms per read: if the service read the clock
-        // once for the expiry decision and AGAIN for serverTimeEpochMs, the
-        // mapper would receive a later time than the decision moment — and a
-        // returned ACTIVE question could claim a server time at/after its own
-        // deadline. One decision instant makes that impossible.
         Clock steppingClock = new Clock() {
             private long reads = 0;
 
@@ -243,8 +254,8 @@ class StudentQuestionDeliveryServiceTest {
                 questionGenerationService,
                 playerQuestionPersistenceService,
                 studentQuestionResponseMapper,
-                raceMovementService,
-                questionTimeoutService,
+                gameplayPresenceService,
+                gameplayTimelineService,
                 steppingClock
         );
 
@@ -270,207 +281,12 @@ class StudentQuestionDeliveryServiceTest {
 
         steppingService.getOrCreateCurrentQuestion(racePlayer);
 
-        // serverTimeEpochMs is EXACTLY the first (decision) clock read.
         verify(studentQuestionResponseMapper).toResponse(
                 activeQuestion,
                 choices,
                 FIXED_INSTANT.toEpochMilli(),
                 DateTimeUtils.toEpochMilli(expiresAt, FIXED_ZONE)
         );
-    }
-
-    @Test
-    void shouldGenerateAndPersistQuestionWhenNoActiveQuestionExists() {
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer = createRacePlayer();
-        QuestionPlan questionPlan = createQuestionPlan();
-        InternalGeneratedQuestion generatedQuestion = createGeneratedQuestion();
-        PlayerQuestion persistedQuestion = createPlayerQuestion(
-                PlayerQuestionStatus.ACTIVE,
-                now().plusSeconds(QuestionRules.DEFAULT_TIME_LIMIT_SECONDS)
-        );
-        List<PlayerQuestionChoice> choices = createPlayerQuestionChoices(persistedQuestion);
-        StudentQuestionResponse expectedResponse = createStudentQuestionResponse();
-
-        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.of(lockedRacePlayer));
-        when(playerQuestionRepository.findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(
-                lockedRacePlayer,
-                PlayerQuestionStatus.ACTIVE
-        )).thenReturn(Optional.empty());
-        when(racePlayerQuestionPlanService.buildQuestionPlan(lockedRacePlayer))
-                .thenReturn(questionPlan);
-        when(questionGenerationService.generate(questionPlan)).thenReturn(generatedQuestion);
-        when(playerQuestionPersistenceService.persistGeneratedQuestion(lockedRacePlayer, generatedQuestion))
-                .thenReturn(persistedQuestion);
-        when(playerQuestionChoiceRepository.findByPlayerQuestionOrderByDisplayOrderAsc(persistedQuestion))
-                .thenReturn(choices);
-        when(studentQuestionResponseMapper.toResponse(
-                eq(persistedQuestion),
-                eq(choices),
-                anyLong(),
-                anyLong()
-        )).thenReturn(expectedResponse);
-
-        StudentQuestionResponse result =
-                studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer);
-
-        assertSame(expectedResponse, result);
-
-        // The plan is built AFTER the lock, from the LOCKED player.
-        InOrder planAfterLock = inOrder(racePlayerRepository, racePlayerQuestionPlanService);
-        planAfterLock.verify(racePlayerRepository)
-                .findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
-        planAfterLock.verify(racePlayerQuestionPlanService)
-                .buildQuestionPlan(lockedRacePlayer);
-
-        verify(questionGenerationService).generate(questionPlan);
-        verify(playerQuestionPersistenceService)
-                .persistGeneratedQuestion(lockedRacePlayer, generatedQuestion);
-    }
-
-    @Test
-    void shouldExpireExistingQuestionAndGenerateNewOneWhenQuestionExpired() {
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer = createRacePlayer();
-        QuestionPlan questionPlan = createQuestionPlan();
-        PlayerQuestion expiredActiveQuestion = createPlayerQuestion(
-                PlayerQuestionStatus.ACTIVE,
-                now().minusSeconds(1)
-        );
-        InternalGeneratedQuestion generatedQuestion = createGeneratedQuestion();
-        PlayerQuestion persistedQuestion = createPlayerQuestion(
-                PlayerQuestionStatus.ACTIVE,
-                now().plusSeconds(QuestionRules.DEFAULT_TIME_LIMIT_SECONDS)
-        );
-        List<PlayerQuestionChoice> choices = createPlayerQuestionChoices(persistedQuestion);
-        StudentQuestionResponse expectedResponse = createStudentQuestionResponse();
-
-        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.of(lockedRacePlayer));
-        when(playerQuestionRepository.findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(
-                lockedRacePlayer,
-                PlayerQuestionStatus.ACTIVE
-        )).thenReturn(Optional.of(expiredActiveQuestion));
-        when(racePlayerQuestionPlanService.buildQuestionPlan(lockedRacePlayer))
-                .thenReturn(questionPlan);
-        when(questionGenerationService.generate(questionPlan)).thenReturn(generatedQuestion);
-        when(playerQuestionPersistenceService.persistGeneratedQuestion(lockedRacePlayer, generatedQuestion))
-                .thenReturn(persistedQuestion);
-        when(playerQuestionChoiceRepository.findByPlayerQuestionOrderByDisplayOrderAsc(persistedQuestion))
-                .thenReturn(choices);
-        when(studentQuestionResponseMapper.toResponse(
-                eq(persistedQuestion),
-                eq(choices),
-                anyLong(),
-                anyLong()
-        )).thenReturn(expectedResponse);
-
-        StudentQuestionResponse result =
-                studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer);
-
-        assertSame(expectedResponse, result);
-
-        // Timeout gameplay (settle-to-deadline, EXPIRED transition, penalty)
-        // has ONE owner — delivery only routes to it, then generates next.
-        verify(questionTimeoutService).processExpiredActiveQuestion(
-                lockedRacePlayer,
-                expiredActiveQuestion,
-                FIXED_INSTANT.toEpochMilli()
-        );
-        verify(questionGenerationService).generate(questionPlan);
-        verify(playerQuestionPersistenceService)
-                .persistGeneratedQuestion(lockedRacePlayer, generatedQuestion);
-    }
-
-    @Test
-    void shouldTreatQuestionExpiringNowAsExpired() {
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer = createRacePlayer();
-        PlayerQuestion activeQuestion = createPlayerQuestion(
-                PlayerQuestionStatus.ACTIVE,
-                now()
-        );
-        PlayerQuestion persistedQuestion = createPlayerQuestion(
-                PlayerQuestionStatus.ACTIVE,
-                now().plusSeconds(QuestionRules.DEFAULT_TIME_LIMIT_SECONDS)
-        );
-
-        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.of(lockedRacePlayer));
-        when(playerQuestionRepository.findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(
-                lockedRacePlayer,
-                PlayerQuestionStatus.ACTIVE
-        )).thenReturn(Optional.of(activeQuestion));
-        when(racePlayerQuestionPlanService.buildQuestionPlan(lockedRacePlayer))
-                .thenReturn(createQuestionPlan());
-        when(questionGenerationService.generate(any(QuestionPlan.class)))
-                .thenReturn(createGeneratedQuestion());
-        when(playerQuestionPersistenceService.persistGeneratedQuestion(any(), any()))
-                .thenReturn(persistedQuestion);
-        when(playerQuestionChoiceRepository.findByPlayerQuestionOrderByDisplayOrderAsc(persistedQuestion))
-                .thenReturn(createPlayerQuestionChoices(persistedQuestion));
-        when(studentQuestionResponseMapper.toResponse(any(), any(), anyLong(), anyLong()))
-                .thenReturn(createStudentQuestionResponse());
-
-        studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer);
-
-        verify(questionTimeoutService).processExpiredActiveQuestion(
-                lockedRacePlayer,
-                activeQuestion,
-                FIXED_INSTANT.toEpochMilli()
-        );
-    }
-
-    @Test
-    void shouldRejectLockedPlayerThatFinishedWhileWaitingForTheLock() {
-        // TOCTOU: the pre-lock check saw RACING, but a concurrent answer
-        // finished the player before this request acquired the row lock.
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer =
-                createRacePlayer(RacePlayerStatus.FINISHED, RaceStatus.IN_PROGRESS);
-
-        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.of(lockedRacePlayer));
-
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer)
-        );
-
-        assertEquals(ErrorCode.RACE_PLAYER_NOT_RACING, exception.getErrorCode());
-
-        // A finished player must never receive or create gameplay state.
-        // (The ACTIVE lookup itself may run — C1-03M settles movement/timeout
-        // before the lifecycle re-check — but nothing is generated/returned.)
-        verify(racePlayerQuestionPlanService, never()).buildQuestionPlan(any());
-        verify(questionGenerationService, never()).generate(any(QuestionPlan.class));
-        verify(playerQuestionPersistenceService, never()).persistGeneratedQuestion(any(), any());
-        verify(studentQuestionResponseMapper, never())
-                .toResponse(any(), any(), anyLong(), anyLong());
-    }
-
-    @Test
-    void shouldRejectLockedPlayerWhoseRaceEndedWhileWaitingForTheLock() {
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer =
-                createRacePlayer(RacePlayerStatus.RACING, RaceStatus.FINISHED);
-
-        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.of(lockedRacePlayer));
-
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer)
-        );
-
-        assertEquals(ErrorCode.RACE_NOT_IN_PROGRESS, exception.getErrorCode());
-
-        verify(racePlayerQuestionPlanService, never()).buildQuestionPlan(any());
-        verify(questionGenerationService, never()).generate(any(QuestionPlan.class));
-        verify(playerQuestionPersistenceService, never()).persistGeneratedQuestion(any(), any());
-        verify(studentQuestionResponseMapper, never())
-                .toResponse(any(), any(), anyLong(), anyLong());
     }
 
     @Test
@@ -498,29 +314,6 @@ class StudentQuestionDeliveryServiceTest {
         assertEquals(ErrorCode.RACE_PLAYER_NOT_FOUND, exception.getErrorCode());
     }
 
-    @Test
-    void shouldRejectExistingActiveQuestionWithoutExpiresAt() {
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer = createRacePlayer();
-        PlayerQuestion activeQuestion = createPlayerQuestion(
-                PlayerQuestionStatus.ACTIVE,
-                null
-        );
-
-        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.of(lockedRacePlayer));
-        when(playerQuestionRepository.findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(
-                lockedRacePlayer,
-                PlayerQuestionStatus.ACTIVE
-        )).thenReturn(Optional.of(activeQuestion));
-
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer)
-        );
-
-        assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
-    }
 
     private RacePlayer createRacePlayer() {
         return createRacePlayer(RacePlayerStatus.RACING, RaceStatus.IN_PROGRESS);
@@ -655,3 +448,5 @@ class StudentQuestionDeliveryServiceTest {
         return LocalDateTime.ofInstant(FIXED_INSTANT, FIXED_ZONE);
     }
 }
+
+

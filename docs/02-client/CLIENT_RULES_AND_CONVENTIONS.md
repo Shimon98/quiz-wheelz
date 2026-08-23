@@ -238,3 +238,14 @@ build replacement
 → delete zero-import code
 → lint/build
 ```
+
+## Code quality limits
+
+- Added or modified `.js` and `.jsx` files contain no comments. Prefer named
+  helpers, explicit state and focused hooks/components.
+- Added or modified code and test files stay at or below 500 lines. Split by
+  lifecycle, controller, rendering or contract responsibility before extending
+  a near-limit file.
+- Logger templates and repeated operation labels use focused constants rather
+  than inline explanatory strings.
+- Record unrelated legacy violations as backlog instead of expanding the task.

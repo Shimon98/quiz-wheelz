@@ -18,6 +18,8 @@ import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
 import com.quiz_wheelz.service.raceengine.RaceMovementService;
+import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
+import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,12 +45,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class StudentAnswerSubmissionServiceTest {
+class StudentAnswerSubmissionBehaviorTest {
 
     private static final Instant FIXED_INSTANT = Instant.parse("2026-06-30T10:00:00Z");
     private static final ZoneId FIXED_ZONE = ZoneId.of("UTC");
@@ -76,6 +79,12 @@ class StudentAnswerSubmissionServiceTest {
     @Mock
     private QuestionTimeoutService questionTimeoutService;
 
+    @Mock
+    private RacePlayerGameplayPresenceService gameplayPresenceService;
+
+    @Mock
+    private RacePlayerGameplayTimelineService gameplayTimelineService;
+
     private StudentAnswerSubmissionService studentAnswerSubmissionService;
 
     @BeforeEach
@@ -87,8 +96,8 @@ class StudentAnswerSubmissionServiceTest {
                 playerQuestionChoiceRepository,
                 racePlayerRepository,
                 raceEngineService,
-                raceMovementService,
-                questionTimeoutService,
+                gameplayPresenceService,
+                gameplayTimelineService,
                 new StudentRaceRuntimeSnapshotMapper(),
                 fixedClock
         );
@@ -153,8 +162,11 @@ class StudentAnswerSubmissionServiceTest {
 
         verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
         verify(playerQuestionRepository).findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer);
-        // The elapsed interval settles at the OLD speed before the boost.
-        verify(raceMovementService).settleTo(lockedRacePlayer, epochOf(now()));
+        verify(gameplayTimelineService).settlePlayerActivity(
+                lockedRacePlayer,
+                FIXED_INSTANT,
+                null
+        );
         verify(raceEngineService).applyAnswerResult(lockedRacePlayer, true);
         verify(playerQuestionRepository).save(question);
         verify(playerQuestionChoiceRepository, never())
@@ -169,9 +181,10 @@ class StudentAnswerSubmissionServiceTest {
 
         when(playerQuestionRepository.findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer))
                 .thenReturn(Optional.of(question));
-        // Time-based movement crossed the finish line before this answer.
-        when(raceMovementService.settleTo(lockedRacePlayer, epochOf(now())))
-                .thenReturn(true);
+        doAnswer(invocation -> {
+            lockedRacePlayer.setStatus(RacePlayerStatus.FINISHED);
+            return false;
+        }).when(gameplayTimelineService).settlePlayerActivity(any(), any(), any());
 
         ApiException exception = assertThrows(
                 ApiException.class,
@@ -233,140 +246,6 @@ class StudentAnswerSubmissionServiceTest {
     }
 
     @Test
-    void shouldRejectMissingRacePlayer() {
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> studentAnswerSubmissionService.submitAnswer(
-                        null,
-                        createRequest(QUESTION_ID, CORRECT_CHOICE_ID)
-                )
-        );
-
-        assertEquals(ErrorCode.INVALID_ANSWER_SUBMISSION, exception.getErrorCode());
-        verify(raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
-    }
-
-    @Test
-    void shouldRejectMissingRequest() {
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> studentAnswerSubmissionService.submitAnswer(createRacePlayer(), null)
-        );
-
-        assertEquals(ErrorCode.INVALID_ANSWER_SUBMISSION, exception.getErrorCode());
-        verify(raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
-    }
-
-    @Test
-    void shouldRejectMissingQuestionId() {
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> studentAnswerSubmissionService.submitAnswer(
-                        createRacePlayer(),
-                        createRequest(null, CORRECT_CHOICE_ID)
-                )
-        );
-
-        assertEquals(ErrorCode.INVALID_ANSWER_SUBMISSION, exception.getErrorCode());
-        verify(raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
-    }
-
-    @Test
-    void shouldRejectMissingChoiceId() {
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> studentAnswerSubmissionService.submitAnswer(
-                        createRacePlayer(),
-                        createRequest(QUESTION_ID, null)
-                )
-        );
-
-        assertEquals(ErrorCode.INVALID_ANSWER_SUBMISSION, exception.getErrorCode());
-        verify(raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
-    }
-
-    @Test
-    void shouldRejectRacePlayerWithoutIdentity() {
-        RacePlayer racePlayer = new RacePlayer();
-
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> studentAnswerSubmissionService.submitAnswer(
-                        racePlayer,
-                        createRequest(QUESTION_ID, CORRECT_CHOICE_ID)
-                )
-        );
-
-        assertEquals(ErrorCode.INVALID_ANSWER_SUBMISSION, exception.getErrorCode());
-        verify(raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
-    }
-
-    @Test
-    void shouldRejectRacePlayerThatCannotBeLocked() {
-        RacePlayer racePlayer = createRacePlayer();
-
-        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.empty());
-
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> studentAnswerSubmissionService.submitAnswer(
-                        racePlayer,
-                        createRequest(QUESTION_ID, CORRECT_CHOICE_ID)
-                )
-        );
-
-        assertEquals(ErrorCode.RACE_PLAYER_NOT_FOUND, exception.getErrorCode());
-
-        verify(playerQuestionRepository, never())
-                .findLockedByIdAndRacePlayer(any(), any());
-        verify(raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
-    }
-
-    @Test
-    void shouldRejectQuestionThatDoesNotBelongToPlayer() {
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer = mockLockedRacePlayer(racePlayer);
-
-        when(playerQuestionRepository.findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer))
-                .thenReturn(Optional.empty());
-
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> studentAnswerSubmissionService.submitAnswer(
-                        racePlayer,
-                        createRequest(QUESTION_ID, CORRECT_CHOICE_ID)
-                )
-        );
-
-        assertEquals(ErrorCode.QUESTION_NOT_FOUND_FOR_PLAYER, exception.getErrorCode());
-        verify(raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
-    }
-
-    @Test
-    void shouldRejectQuestionThatIsNotActive() {
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer = mockLockedRacePlayer(racePlayer);
-        PlayerQuestion question = createQuestion(PlayerQuestionStatus.ANSWERED, now().plusSeconds(30));
-
-        when(playerQuestionRepository.findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer))
-                .thenReturn(Optional.of(question));
-
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> studentAnswerSubmissionService.submitAnswer(
-                        racePlayer,
-                        createRequest(QUESTION_ID, CORRECT_CHOICE_ID)
-                )
-        );
-
-        assertEquals(ErrorCode.QUESTION_NOT_ACTIVE, exception.getErrorCode());
-        verify(playerQuestionChoiceRepository, never())
-                .findByIdAndPlayerQuestion(CORRECT_CHOICE_ID, question);
-        verify(raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
-    }
-
-    @Test
     void shouldDelegateExpiredSubmissionToTimeoutOwner() {
         RacePlayer racePlayer = createRacePlayer();
         RacePlayer lockedRacePlayer = mockLockedRacePlayer(racePlayer);
@@ -374,6 +253,11 @@ class StudentAnswerSubmissionServiceTest {
 
         when(playerQuestionRepository.findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer))
                 .thenReturn(Optional.of(question));
+
+        doAnswer(invocation -> {
+            question.setStatus(PlayerQuestionStatus.EXPIRED);
+            return false;
+        }).when(gameplayTimelineService).settlePlayerActivity(any(), any(), any());
 
         ApiException exception = assertThrows(
                 ApiException.class,
@@ -384,12 +268,10 @@ class StudentAnswerSubmissionServiceTest {
         );
 
         assertEquals(ErrorCode.QUESTION_EXPIRED, exception.getErrorCode());
-        // Timeout gameplay (settle-to-deadline, EXPIRED transition, penalty)
-        // has ONE owner — this service only routes to it.
-        verify(questionTimeoutService).processExpiredActiveQuestion(
+        verify(gameplayTimelineService).settlePlayerActivity(
                 lockedRacePlayer,
-                question,
-                epochOf(now())
+                FIXED_INSTANT,
+                null
         );
         verify(playerQuestionChoiceRepository, never())
                 .findByIdAndPlayerQuestion(CORRECT_CHOICE_ID, question);
@@ -404,6 +286,10 @@ class StudentAnswerSubmissionServiceTest {
 
         when(playerQuestionRepository.findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer))
                 .thenReturn(Optional.of(question));
+        doAnswer(invocation -> {
+            question.setStatus(PlayerQuestionStatus.EXPIRED);
+            return false;
+        }).when(gameplayTimelineService).settlePlayerActivity(any(), any(), any());
 
         ApiException exception = assertThrows(
                 ApiException.class,
@@ -414,35 +300,11 @@ class StudentAnswerSubmissionServiceTest {
         );
 
         assertEquals(ErrorCode.QUESTION_EXPIRED, exception.getErrorCode());
-        verify(questionTimeoutService).processExpiredActiveQuestion(
+        verify(gameplayTimelineService).settlePlayerActivity(
                 lockedRacePlayer,
-                question,
-                epochOf(now())
+                FIXED_INSTANT,
+                null
         );
-        verify(raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
-    }
-
-    @Test
-    void shouldRejectChoiceThatDoesNotBelongToQuestion() {
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer = mockLockedRacePlayer(racePlayer);
-        PlayerQuestion question = createActiveQuestion(now().plusSeconds(30));
-
-        when(playerQuestionRepository.findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer))
-                .thenReturn(Optional.of(question));
-        when(playerQuestionChoiceRepository.findByIdAndPlayerQuestion(WRONG_CHOICE_ID, question))
-                .thenReturn(Optional.empty());
-
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> studentAnswerSubmissionService.submitAnswer(
-                        racePlayer,
-                        createRequest(QUESTION_ID, WRONG_CHOICE_ID)
-                )
-        );
-
-        assertEquals(ErrorCode.QUESTION_CHOICE_NOT_FOUND, exception.getErrorCode());
-        verify(playerQuestionRepository, never()).save(question);
         verify(raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
     }
 
@@ -516,6 +378,7 @@ class StudentAnswerSubmissionServiceTest {
 
         assertTrue(Arrays.asList(transactional.noRollbackFor()).contains(ApiException.class));
     }
+
 
     private SubmitAnswerRequest createRequest(Long questionId, Long choiceId) {
         SubmitAnswerRequest request = new SubmitAnswerRequest();
@@ -626,3 +489,5 @@ class StudentAnswerSubmissionServiceTest {
         return localDateTime.atZone(FIXED_ZONE).toInstant().toEpochMilli();
     }
 }
+
+

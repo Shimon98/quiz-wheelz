@@ -4,17 +4,6 @@ import lombok.Getter;
 
 import java.util.List;
 
-/**
- * Safe student question contract. Timing is absolute Unix epoch
- * milliseconds (C1-02K):
- *
- * expiresAtEpochMs — the authoritative question deadline.
- * serverTimeEpochMs — the server clock at response construction, so the
- * client can calibrate a device clock that is slightly wrong.
- *
- * Never expose a zone-less LocalDateTime here and never any correctness
- * data — the server alone judges answers and expiry.
- */
 @Getter
 public class StudentQuestionResponse {
 

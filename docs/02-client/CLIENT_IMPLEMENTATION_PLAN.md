@@ -354,14 +354,15 @@ lifecycle owner, consumed by both the waiting page and the race page:
 route entry / browser online / hidden→visible / manual retry
   → POST reconnect (server resolves the lifecycle FIRST)
 active outcome (RECONNECTED / WAITING_FOR_RACE)
-  → CONNECTED + heartbeat every 15s (single-flight, visible+online only)
+  → CONNECTED + heartbeat every 15s (single-flight, online; visibility-independent)
 terminal outcome (PLAYER_FINISHED / RACE_FINISHED / ALREADY_DISCONNECTED /
 RECONNECT_WINDOW_EXPIRED — returned by reconnect, thrown by heartbeat)
   → heartbeat stops + race-state resync decides the final view
 authoritative final view (FINISHED / CANCELLED / DISCONNECTED)
   → stopPresence(): heartbeat + automatic reconnect triggers stop
 hidden document
-  → not gameplay-ready: heartbeat, race-state polling and questions pause
+  → not gameplay-ready: race-state polling, questions and answers pause
+  → heartbeat continues; server movement and question wall clock continue
 transient failure while online+visible
   → ONE conservative 5s reconnect retry (no hot loop)
 ```
@@ -384,6 +385,9 @@ transient failure while online+visible
 - **Leave is deliberately unwired**: no client wrapper, and nothing fires on
   refresh/unmount/pagehide/hidden — refresh must never equal quitting; a
   wrapper appears only with a real explicit "leave race" action.
+- S1-01B visibility hardening keeps `isDocumentVisible` out of heartbeat cadence
+  while retaining it in `isGameplayConnectionReady`; hidden→visible still performs
+  reconnect/resync and visibility is never sent as authoritative server truth.
 - Focused tests cover the mapper, the full hook lifecycle (fake timers,
   StrictMode, single-flight, offline/online/visibility, retry, terminal
   outcomes, cleanup, no-leave), page-level session-first gating and the

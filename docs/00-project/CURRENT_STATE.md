@@ -19,11 +19,13 @@ machines.
 QuizWheelz is not an early prototype. Most backend gameplay foundations and the
 teacher/student pre-race client flows exist, and the core student race loop is
 playable against the server (question → answer → feedback → authoritative
-snapshot → next question), with CONTINUOUS server-authoritative movement
-(C1-03M): every racing student advances with time, correct answers boost
-speed and add progress bonuses, timeouts slow more than wrong answers, and
-every race is guaranteed to end — even for a student who never touches the
-phone. The main missing product slices are opponents, real assets, and the
+snapshot → next question), with presence-bounded continuous
+server-authoritative movement (C1-03M/S1-01B): connected students advance
+with time, correct answers boost speed and add progress bonuses, and timeouts
+slow more than wrong answers. Real absence freezes position without pausing
+question deadlines; reconnect never awards offline catch-up, and absent
+players do not keep the class race open. The main missing product slices are
+opponents, real assets, and the
 teacher live race/SSE screen and results.
 
 ## Product status board
@@ -70,7 +72,8 @@ teacher live race/SSE screen and results.
 - Answer validation, expiry handling and duplicate-submit protection.
 - Race engine for score, progress, speed, streak, difficulty and finish state.
 - Shared runtime snapshot and race-state endpoint.
-- Redis-based presence, heartbeat, leave and reconnect grace.
+- Redis-based presence, monotonic trusted gameplay activity, heartbeat, leave and
+  reconnect grace; Redis failure is explicitly fail-open.
 
 ## Client implemented
 

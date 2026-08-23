@@ -11,6 +11,7 @@ import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.question.QuestionTimeoutService;
 import com.quiz_wheelz.service.raceengine.RaceFinishService;
+import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,6 +55,12 @@ class StudentRaceStateServiceTest {
     private QuestionTimeoutService questionTimeoutService;
 
     @Mock
+    private RacePlayerGameplayPresenceService gameplayPresenceService;
+
+    @Mock
+    private RacePlayerGameplayTimelineService gameplayTimelineService;
+
+    @Mock
     private RaceFinishService raceFinishService;
 
     @Mock
@@ -87,16 +94,15 @@ class StudentRaceStateServiceTest {
                 FIXED_INSTANT.toEpochMilli(),
                 response.getSnapshot().getSnapshotAtEpochMs()
         );
-        // speed 1.2 x BASE_MOVEMENT_UNITS_PER_SECOND 4.0
         assertEquals(4.8, response.getSnapshot().getMovementUnitsPerSecond());
 
-        // The snapshot describes SETTLED movement — locked + settled first.
         verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
-        verify(questionTimeoutService).settleWithOverdueTimeout(
+        verify(gameplayTimelineService).settlePlayerActivity(
                 racePlayer,
-                LocalDateTime.ofInstant(FIXED_INSTANT, FIXED_ZONE),
-                FIXED_INSTANT.toEpochMilli()
+                FIXED_INSTANT,
+                null
         );
+        verify(gameplayPresenceService).recordPlayerActivity(racePlayer, FIXED_INSTANT);
         verify(raceFinishService, never()).finishRaceIfNeeded(any());
         verify(currentRacePlayerService, never()).resolveCurrentRacePlayer(request);
     }
@@ -130,7 +136,6 @@ class StudentRaceStateServiceTest {
         assertEquals(RaceStatus.FINISHED, response.getSnapshot().getRaceStatus());
         assertTrue(response.getSnapshot().isPlayerFinished());
         assertTrue(response.getSnapshot().isRaceFinished());
-        // Already-finished before this read — no race finalization attempt.
         verify(raceFinishService, never()).finishRaceIfNeeded(any());
     }
 
@@ -141,14 +146,13 @@ class StudentRaceStateServiceTest {
                 RaceStatus.IN_PROGRESS
         );
 
-        // The settlement crosses the finish line during this read.
         doAnswer(invocation -> {
             racePlayer.setStatus(RacePlayerStatus.FINISHED);
-            return null;
-        }).when(questionTimeoutService).settleWithOverdueTimeout(
+            return false;
+        }).when(gameplayTimelineService).settlePlayerActivity(
                 any(),
                 any(),
-                org.mockito.ArgumentMatchers.anyLong()
+                any()
         );
 
         StudentRaceStateResponse response = createService().getRaceState(request);
@@ -180,7 +184,8 @@ class StudentRaceStateServiceTest {
         return new StudentRaceStateService(
                 currentRacePlayerService,
                 racePlayerRepository,
-                questionTimeoutService,
+                gameplayPresenceService,
+                gameplayTimelineService,
                 raceFinishService,
                 new StudentRaceRuntimeSnapshotMapper(),
                 Clock.fixed(FIXED_INSTANT, FIXED_ZONE)

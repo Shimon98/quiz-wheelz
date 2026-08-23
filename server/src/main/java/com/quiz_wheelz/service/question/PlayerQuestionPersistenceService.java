@@ -23,7 +23,6 @@ public class PlayerQuestionPersistenceService {
     private final PlayerQuestionRepository playerQuestionRepository;
     private final Clock clock;
 
-    // Shared application Clock (TimeConfig) — injected, never self-created.
     public PlayerQuestionPersistenceService(
             PlayerQuestionRepository playerQuestionRepository,
             Clock clock
