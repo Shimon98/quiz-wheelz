@@ -1,8 +1,8 @@
 # Testing and Definition of Done
 
 **Status:** Canonical  
-**Audit date:** 2026-07-30  
-**Code baseline:** `main@47fe75fa763af2ecc4deb4e8bc972f564ee73b15`  
+**Audit date:** 2026-08-23
+**Code baseline:** `main@8cb2ac7ce716c5be0f6bc6a8e5810242c4d71679`
 **This document owns:** the complete automated/manual quality bar for every feature and phase
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -54,6 +54,14 @@ Required gameplay tests:
 - score/progress/streak/difficulty
 - player/race finish
 - heartbeat/leave/reconnect
+- repeated WAITING/online-RACING/FINISHED/DISCONNECTED/finished-race refresh, including
+  stable identity/status, no duplicate RacePlayer and no terminal presence requirement
+- consecutive valid heartbeats without reconnect, settlement, re-anchor or illegal
+  transition; terminal/disconnected heartbeat cannot resurrect a player
+- duplicate reconnect: one absent-player resume re-anchor, then no second re-anchor;
+  repeated WAITING/FINISHED/DISCONNECTED/finished-race outcomes remain stable
+- duplicate leave: first active leave settles and persists once; repeated
+  DISCONNECTED leave performs only best-effort offline cleanup; FINISHED stays FINISHED
 - heartbeat with a missing lease settles to the trusted cutoff, performs no reconnect
   settlement/re-anchor or lease recreation, and requires explicit reconnect
 - trusted-activity monotonicity and absence movement cutoff
@@ -72,6 +80,10 @@ Required gameplay tests:
 - race-state and submit-answer serialize the same non-null rank/player-count/nearby
   vocabulary after current-request mutation, with exact-field nearby no-leak coverage
 - question wall-clock timeout during absence, exactly once, without deadline extension
+- expired-current-question reload applies timeout and generation once; the next
+  current-question repeat returns the same ACTIVE identity and original deadline
+- answers after DISCONNECTED, player FINISHED or race FINISHED leave question and
+  gameplay state unchanged; duplicate ANSWERED submit cannot invoke the engine twice
 - absent-player race completion and terminal grace expiry
 - Redis loss with DB fallback
 - Redis-loss fail-open movement/no mass disconnect

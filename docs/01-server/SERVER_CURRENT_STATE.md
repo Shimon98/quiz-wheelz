@@ -1,8 +1,8 @@
 # Server Current State
 
 **Status:** Canonical  
-**Audit date:** 2026-08-19
-**Code baseline:** `main@74402e6a8d702ca0299568e2130ce88dcb7a3917`
+**Audit date:** 2026-08-23
+**Code baseline:** `main@8cb2ac7ce716c5be0f6bc6a8e5810242c4d71679`
 **This document owns:** the implemented backend capabilities, gaps and stale assumptions
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -75,7 +75,13 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
   during runtime Redis outages.
 - reconnect using the freshest trusted gameplay activity, durable `lastSeenAt` and race start,
   with a 5-minute grace period and a 30-second DB-only fallback margin.
-- leave/disconnect persistence that remains authoritative when Redis cleanup fails.
+- core runtime actions have a frozen repeat policy: race-state and heartbeat are
+  repeat-safe; reconnect re-anchors only a real resume; duplicate leave is
+  state-idempotent; current-question preserves the same ACTIVE identity/deadline;
+  duplicate answer never applies gameplay mutation twice.
+- leave/disconnect persistence remains authoritative when Redis cleanup fails;
+  repeated leave after DISCONNECTED skips settlement, activity and duplicate save
+  while retaining best-effort offline cleanup. FINISHED remains FINISHED.
 
 ### Server time policy (C1-02K)
 
@@ -118,7 +124,9 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - frozen ObjectMapper serialization/no-leak coverage for the public race-state,
   current-question, submit-answer, heartbeat, leave and reconnect contracts
 - answer validation and persistence
-- duplicate-submit protection.
+- duplicate-submit and terminal-state answer protection: DISCONNECTED, FINISHED-player
+  and FINISHED-race submissions cannot mutate the question or invoke engine policies;
+  an already-ANSWERED question cannot apply a second gameplay effect.
 - ACTIVE question ownership and the original `expiresAt` survive hidden, reload and
   reconnect transitions. An overdue ACTIVE question becomes EXPIRED exactly once
   before a next question can be created; reconnect itself never creates a question.
