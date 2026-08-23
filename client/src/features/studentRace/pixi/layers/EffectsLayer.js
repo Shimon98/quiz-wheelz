@@ -1,52 +1,98 @@
 import { Graphics } from "pixi.js";
 
-/*
- * One-shot and ambient visual effects. F scope: dust puffs behind the kart,
- * intensity driven by visualSpeed. The playEffect(effectName) signature is
- * fixed NOW (names = STUDENT_RACE_EFFECT from the runtime constants) so the
- * answer flow (UI-10H) plugs in without changing this layer's API — the
- * correct/wrong/boost/finish implementations land there.
- */
+import { STUDENT_RACE_ANIMATION_CONFIG } from "../../config/raceAnimationConfig";
+import { STUDENT_RACE_EFFECT } from "../../runtime/studentRaceRuntimeConstants";
+import { detectRuntimeEffectTriggers } from "../effects/detectRuntimeEffectTriggers";
+import { drawFeedbackEffect } from "../effects/drawFeedbackEffect";
+
 const DUST_COLOR = 0xd9c39a;
 const MAX_PUFFS = 36;
 const PUFF_LIFE_MS = 700;
-// New puffs per second at visualSpeed 1 (placeholder feel; tune freely).
 const SPAWN_RATE_PER_SPEED = 9;
+
+const { effects: EFFECT_CONFIG } = STUDENT_RACE_ANIMATION_CONFIG;
+const EFFECT_DURATIONS_MS = Object.freeze({
+  [STUDENT_RACE_EFFECT.CORRECT]: EFFECT_CONFIG.correctEffectDurationMs,
+  [STUDENT_RACE_EFFECT.WRONG]: EFFECT_CONFIG.wrongEffectDurationMs,
+  [STUDENT_RACE_EFFECT.BOOST]: EFFECT_CONFIG.boostEffectDurationMs,
+  [STUDENT_RACE_EFFECT.FINISH]: EFFECT_CONFIG.finishEffectDurationMs,
+});
 
 export class EffectsLayer {
   constructor(container) {
     this.puffs = [];
     this.spawnAccumulator = 0;
+    this.activeEffects = new Map();
+    this.observedRuntime = null;
 
     this.graphics = new Graphics();
-    container.addChild(this.graphics);
+    this.feedbackGraphics = new Graphics();
+    container.addChild(this.graphics, this.feedbackGraphics);
   }
 
-  /*
-   * Future one-shot effects entry point (UI-10H wires this to
-   * visual.activeEffect). Accepts a STUDENT_RACE_EFFECT name; unknown or
-   * not-yet-implemented effects are deliberately ignored.
-   */
-  // eslint-disable-next-line no-unused-vars
   playEffect(effectName) {
-    // Implemented in UI-10H (correct/wrong/boost/finish).
+    if (!Object.hasOwn(EFFECT_DURATIONS_MS, effectName)) {
+      return;
+    }
+
+    const isFinish = effectName === STUDENT_RACE_EFFECT.FINISH;
+    if (isFinish) {
+      this.activeEffects.clear();
+    } else if (this.activeEffects.has(STUDENT_RACE_EFFECT.FINISH)) {
+      return;
+    }
+
+    this.activeEffects.set(effectName, {
+      elapsedMs: 0,
+      durationMs: EFFECT_DURATIONS_MS[effectName],
+    });
   }
 
-  resize() {
-    // Placement derives from frameState width/height on the next update.
-  }
+  resize() {}
 
   update(frameState) {
-    const { width, visualSpeed, deltaMs, layout } = frameState;
+    const { width, visualSpeed, deltaMs, layout, runtimeState } = frameState;
+    const { anchorX, anchorY, maxWidth, dustOriginY } = layout.playerKart;
 
-    // Kart rear — dust origin from the SAME layout anchors the kart uses
-    // (layout contract, G) — the two can never drift apart.
-    const originX = layout.playerKart.anchorX;
-    const originY = layout.playerKart.dustOriginY;
-
-    this.spawnPuffs(originX, originY, visualSpeed, deltaMs, width);
+    this.observeRuntime(runtimeState);
+    this.spawnPuffs(anchorX, dustOriginY, visualSpeed, deltaMs, width);
     this.agePuffs(deltaMs);
     this.drawPuffs(width);
+    this.ageEffects(deltaMs);
+    this.drawEffects({
+      x: anchorX,
+      y: anchorY,
+      groundY: dustOriginY,
+      bottomY: layout.world.bottomY,
+      size: maxWidth,
+      width,
+    });
+  }
+
+  observeRuntime(runtimeState) {
+    const { observed, effects } = detectRuntimeEffectTriggers(
+      this.observedRuntime,
+      runtimeState,
+    );
+    this.observedRuntime = observed;
+    effects.forEach((effect) => this.playEffect(effect));
+  }
+
+  ageEffects(deltaMs) {
+    for (const [effect, state] of this.activeEffects) {
+      state.elapsedMs += deltaMs;
+      if (state.elapsedMs >= state.durationMs) {
+        this.activeEffects.delete(effect);
+      }
+    }
+  }
+
+  drawEffects(geometry) {
+    const g = this.feedbackGraphics;
+    g.clear();
+    for (const [effect, state] of this.activeEffects) {
+      drawFeedbackEffect(g, effect, state.elapsedMs / state.durationMs, geometry);
+    }
   }
 
   spawnPuffs(originX, originY, visualSpeed, deltaMs, width) {
@@ -91,5 +137,6 @@ export class EffectsLayer {
 
   destroy() {
     this.graphics.destroy();
+    this.feedbackGraphics.destroy();
   }
 }

@@ -26,12 +26,13 @@ UI-10G layout contract
 
 Done: C1-01 bootstrap, C1-02 question panel/timer, C1-03 answer loop,
 C1-03M continuous authoritative movement, C1-04 HUD, C1-05 presence/reconnect,
-C1-06A–C vehicle identity + manifest/loader + real GREEN static sprite.
+C1-06A–C vehicle identity + manifest/loader + real GREEN static sprite,
+C1-06E server-driven correct/wrong/boost/finish Pixi feedback.
 
 Next:
 
 ```text
-C1-06E effects overlays (C1-06D idle animation deferred — optional polish)
+C1-06F world/road/jungle/depth polish (C1-06E effects done; C1-06D deferred)
 C2     opponents
 ```
 

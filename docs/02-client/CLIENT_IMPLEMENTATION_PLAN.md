@@ -450,16 +450,42 @@ vehicle rendering; it must use this server truth, never `sessionStorage`.
   revisited as optional polish after the core race presentation is complete.
   Not a blocker for the C1 gate.
 - **C1-06E — server-driven correct/wrong/boost/finish visual feedback —
-  NEXT.** Effects overlays on top of the static sprite (EffectsLayer
-  `playEffect` entry point); then C1-06F world polish (road/jungle/depth/
-  movement) and C1-06G QA/responsive/performance.
+  DONE (2026-08-23).** Procedural Pixi one-shots in `EffectsLayer` (no image
+  assets, no text), each owned by one authoritative source:
+  CORRECT/WRONG ← the accepted submit-answer feedback state only
+  (`StudentRaceScreen` memoizes a presentation runtime whose
+  `visual.activeEffect` comes from `resolveStudentRaceFeedbackEffect`;
+  IDLE/EXPIRED/ERROR and a finished player map to null, so a
+  reconnect-required or failed POST never draws correctness); BOOST ← the
+  authoritative `visual.targetSpeed` rising between runtime samples (first
+  sample remembers only, equal/lower never fires, no copied server rule);
+  FINISH ← `playerFinished` false→true only (never position/totalDistance),
+  dominant: it clears shorter one-shots and blocks new ones while playing.
+  `detectRuntimeEffectTriggers` (pure) spots the edges inside the layer's
+  `update(frameState)`; effects age on `deltaMs` with the existing
+  `raceAnimationConfig.effects` durations (700/500/900/1200 ms); geometry is
+  deterministic (fixed angle arrays); BOOST streaks clamp to the visible
+  world bottom so phones keep them above the panel. Pixi ticker owns effect
+  timing/drawing; React only supplies runtime changes; the server stays the
+  gameplay truth. Live E2E (8081): correct → CORRECT+BOOST (0.5→0.7), wrong →
+  WRONG only (0.7→0.5); poll-driven finish → FINISH during a held screen,
+  then the final view. Real vehicle art is blank while an approved asset
+  loads; the Graphics fallback appears only after a definitive asset
+  fallback result (unknown key / malformed entry / load failure), preventing
+  refresh-time placeholder flashes — the master fades in over 120 ms on the
+  frame clock. The race canvas is retained for the authoritative finish
+  presentation window (`useStudentRaceFinishMoment`, PLAYING→FINISHED,
+  `finishEffectDurationMs`, composed with the answer dwell, no remount) so
+  the FINISH one-shot completes before the final status view.
+- **C1-06F — world / road / jungle / depth / movement polish — NEXT.** Then
+  C1-06G QA/responsive/performance.
 
 - asset manifest keys
 - metadata-driven props
 - ONE composite monkey+hover-kart sprite per vehicle identity (LOCKED
   2026-08-19 — never body parts assembled in code; idle animation = 3-4
   complete aligned frames; see STUDENT_RACE_SCREEN_AND_ASSETS)
-- correct/wrong/boost effects as separate Pixi overlays
+- correct/wrong/boost/finish effects as separate Pixi overlays (C1-06E)
 - no wheel animation.
 
 **C1 gate:** complete real single-player race flow including refresh/reconnect.

@@ -1,26 +1,20 @@
+import { useMemo } from "react";
+
 import { STUDENT_RACE_VISUAL_CONFIG } from "../config/raceVisualConfig";
 import PixiStudentRaceCanvas from "../pixi/PixiStudentRaceCanvas";
+import { applyFeedbackEffectToRuntime } from "../runtime/resolveStudentRaceFeedbackEffect";
 import StudentRaceOverlay from "./StudentRaceOverlay";
 
-/*
- * The student race screen composition (layout contract, G):
- *
- *   game frame (phone: edge-to-edge; wide screens: centered, gameFrame cap)
- *   └── Pixi canvas — FULL area, absolute, the world continues behind the panel
- *   └── React overlay — HUD safe area on top, persistent question panel below
- *
- * Pure composition: no API, no error classification, no navigation — the
- * page/hooks own those. runtimeState is shared read-only with the Pixi
- * canvas and the overlay's HUD (C1-04); question state goes to the overlay
- * untouched.
- */
 export default function StudentRaceScreen({
   runtimeState = null,
-  // Everything the overlay's question panel/timer needs (page-owned policy;
-  // see StudentRaceOverlay for the full prop list).
   ...overlayProps
 }) {
   const { gameFrame } = STUDENT_RACE_VISUAL_CONFIG;
+  const { feedbackState } = overlayProps;
+  const presentationRuntimeState = useMemo(
+    () => applyFeedbackEffectToRuntime(runtimeState, feedbackState),
+    [runtimeState, feedbackState],
+  );
 
   return (
     <div className="flex h-dvh w-full justify-center bg-[var(--qw-bg)]">
@@ -29,7 +23,7 @@ export default function StudentRaceScreen({
         style={{ maxWidth: gameFrame.maxWidth }}
       >
         <PixiStudentRaceCanvas
-          runtimeState={runtimeState}
+          runtimeState={presentationRuntimeState}
           className="absolute inset-0"
         />
         <StudentRaceOverlay runtimeState={runtimeState} {...overlayProps} />

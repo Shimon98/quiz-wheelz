@@ -178,9 +178,23 @@ Implemented A–G:
   `runtimeState.player`, preserved across snapshots
 - `studentRaceVehicleManifest` maps the server key to client art; the loader
   loads only that vehicle's idle frames and never throws (explicit fallback)
-- `PlayerKartLayer` shows the real `TOY_CAR_GREEN` static sprite; unknown
-  key / malformed entry / load failure keep the Graphics placeholder
+- `PlayerKartLayer` shows the real `TOY_CAR_GREEN` static sprite; the kart
+  area stays empty while art loads and the Graphics placeholder appears only
+  after a definitive fallback (unknown key / malformed entry / load failure)
 - other colors still render the placeholder until their art lands.
+
+### Student race visual feedback (C1-06E — done 2026-08-23)
+
+- `EffectsLayer` plays procedural one-shots on the Pixi ticker: CORRECT /
+  WRONG from the accepted answer feedback only, BOOST from an authoritative
+  `targetSpeed` increase only, FINISH from `playerFinished` false→true only
+- `StudentRaceScreen` hands the canvas a memoized presentation runtime
+  (`visual.activeEffect`); HUD/overlay keep the authoritative runtime
+- no effect from clicks, errors, reconnect-required or expiry; durations
+  come from `raceAnimationConfig.effects`; ambient dust unchanged
+- `StudentRaceContent` keeps the race canvas mounted through PLAYING→FINISHED
+  for the finish effect duration (poll- or answer-driven) before the final
+  status view.
 
 ## Missing integration
 - opponent vehicles
@@ -196,6 +210,6 @@ Implemented A–G:
 ## Immediate client priority
 
 ```text
-real assets/opponents (C1-06/C2)
+C1-06F world/road/jungle polish → C1-06G QA → opponents/rank after the S1-02 handoff (C2)
 → teacher live/SSE (C3)
 ```
