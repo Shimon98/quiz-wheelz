@@ -28,6 +28,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -84,7 +85,10 @@ class RacePlayerControllerSubmitAnswerTest {
                         false,
                         false,
                         1_787_045_370_000L,
-                        3.2
+                        3.2,
+                        1,
+                        1,
+                        List.of()
                 )
         );
         SubmitAnswerResponse answerResponse = new SubmitAnswerResponse(

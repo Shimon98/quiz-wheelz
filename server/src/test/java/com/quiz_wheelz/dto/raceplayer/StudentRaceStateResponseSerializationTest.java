@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -52,7 +53,19 @@ class StudentRaceStateResponseSerializationTest {
                         false,
                         false,
                         1_787_148_000_000L,
-                        4.8
+                        4.8,
+                        2,
+                        5,
+                        List.of(new NearbyRacePlayerResponse(
+                                92L,
+                                "Avi",
+                                4,
+                                "HOVER_KART",
+                                "BLUE",
+                                420.0,
+                                1.3,
+                                RacePlayerStatus.DISCONNECTED
+                        ))
                 )
         );
 
@@ -104,7 +117,10 @@ class StudentRaceStateResponseSerializationTest {
                         "playerFinished",
                         "raceFinished",
                         "snapshotAtEpochMs",
-                        "movementUnitsPerSecond"
+                        "movementUnitsPerSecond",
+                        "rank",
+                        "playerCount",
+                        "nearbyPlayers"
                 ),
                 fieldNames(snapshot)
         );
@@ -113,6 +129,29 @@ class StudentRaceStateResponseSerializationTest {
         assertEquals("IN_PROGRESS", snapshot.get("raceStatus").asText());
         assertEquals(1_787_148_000_000L, snapshot.get("snapshotAtEpochMs").asLong());
         assertEquals(4.8, snapshot.get("movementUnitsPerSecond").asDouble());
+        assertEquals(2, snapshot.get("rank").asInt());
+        assertEquals(5, snapshot.get("playerCount").asInt());
+
+        JsonNode nearbyPlayer = snapshot.get("nearbyPlayers").get(0);
+        assertEquals(
+                Set.of(
+                        "racePlayerId",
+                        "displayName",
+                        "laneNumber",
+                        "vehicleTypeKey",
+                        "vehicleColorKey",
+                        "position",
+                        "speed",
+                        "status"
+                ),
+                fieldNames(nearbyPlayer)
+        );
+        assertEquals("DISCONNECTED", nearbyPlayer.get("status").asText());
+        assertFalse(nearbyPlayer.has("score"));
+        assertFalse(nearbyPlayer.has("streak"));
+        assertFalse(nearbyPlayer.has("lastSeenAt"));
+        assertFalse(nearbyPlayer.has("movementUpdatedAtEpochMs"));
+        assertFalse(nearbyPlayer.has("finishedAt"));
     }
 
     private Set<String> fieldNames(JsonNode node) {

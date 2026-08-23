@@ -173,7 +173,7 @@ lifecycle is outside S0-02 and does not block it.
 
 ### S1-02 — Authoritative rank and nearby-player snapshot
 
-**Status:** `PLANNED`
+**Status:** `DONE (2026-08-23)`
 
 Define only fields the client truly needs:
 
@@ -196,13 +196,20 @@ Define only fields the client truly needs:
 }
 ```
 
-Rules:
+Implemented rules:
 
-- rank comes from server ordering
-- lane is not rank
-- nearby selection must never change authoritative depth
-- omit sensitive/internal fields
-- test ties and finished players.
+- `StudentRaceStandingService` performs one existing RacePlayer list read and owns the
+  in-memory standing/window calculation for races capped at 8 players
+- all joined players count; FINISHED precedes non-finished and earlier `finishedAt`
+  wins; active/waiting/disconnected players rank by stored authoritative position
+- exact finish-time or position ties use competition rank; deterministic ID/lane
+  ordering affects response order only and never changes public rank
+- nearby selection excludes self, returns at most 4, prefers 2 ahead + 2 behind and
+  fills from the available side without changing authoritative depth
+- race-state and submit-answer map the same extended runtime snapshot after their
+  authoritative in-transaction mutation; the mapper remains repository-free
+- the safe nearby DTO exposes only identity, lane/vehicle, position, speed and status;
+  exact-field serialization tests prevent sensitive/internal leakage.
 
 **Blocks:** opponent layer and rank HUD.
 

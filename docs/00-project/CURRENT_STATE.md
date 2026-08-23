@@ -49,7 +49,7 @@ teacher live race/SSE screen and results.
 | Heartbeat/leave/reconnect | DONE | heartbeat + reconnect lifecycle DONE (C1-05); leave deliberately unwired | DONE |
 | Student Pixi race foundation | N/A | UI-10A–G DONE | PARTIAL feature |
 | Student question panel/HUD | server data exists | panel + timer DONE (C1-02); HUD stats DONE (C1-04) | DONE |
-| Opponent vehicles/nearby players | missing contract | planned renderer | PLANNED |
+| Opponent vehicles/nearby players | DONE authoritative snapshot contract | planned renderer | PARTIAL |
 | Teacher live-state query | PLANNED | route constant only | PLANNED |
 | Teacher SSE | PLANNED | PLANNED | PLANNED |
 | Results | basic finish logic exists | route constant only | PLANNED |
@@ -71,7 +71,9 @@ teacher live race/SSE screen and results.
 - Safe question DTOs without correct-answer leakage.
 - Answer validation, expiry handling and duplicate-submit protection.
 - Race engine for score, progress, speed, streak, difficulty and finish state.
-- Shared runtime snapshot and race-state endpoint.
+- Shared runtime snapshot and race-state endpoint, including server-owned competition
+  rank, joined-player count and a safe deterministic max-4 nearby-player window shared
+  with submit-answer responses.
 - Redis-based presence, monotonic trusted gameplay activity, heartbeat, leave and
   reconnect grace; only heartbeat/reconnect renew the 45-second presence lease,
   active `RACING + IN_PROGRESS` gameplay queries/actions record activity, absent

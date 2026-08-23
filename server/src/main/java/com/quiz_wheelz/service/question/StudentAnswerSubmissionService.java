@@ -18,6 +18,8 @@ import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
+import com.quiz_wheelz.service.raceplayer.StudentRaceStandingResult;
+import com.quiz_wheelz.service.raceplayer.StudentRaceStandingService;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +38,7 @@ public class StudentAnswerSubmissionService {
     private final RacePlayerRepository racePlayerRepository;
     private final RaceEngineService raceEngineService;
     private final RacePlayerGameplayRequestGuard gameplayRequestGuard;
+    private final StudentRaceStandingService standingService;
     private final StudentRaceRuntimeSnapshotMapper snapshotMapper;
     private final Clock clock;
 
@@ -45,6 +48,7 @@ public class StudentAnswerSubmissionService {
             RacePlayerRepository racePlayerRepository,
             RaceEngineService raceEngineService,
             RacePlayerGameplayRequestGuard gameplayRequestGuard,
+            StudentRaceStandingService standingService,
             StudentRaceRuntimeSnapshotMapper snapshotMapper,
             Clock clock
     ) {
@@ -53,6 +57,7 @@ public class StudentAnswerSubmissionService {
         this.racePlayerRepository = Objects.requireNonNull(racePlayerRepository);
         this.raceEngineService = Objects.requireNonNull(raceEngineService);
         this.gameplayRequestGuard = Objects.requireNonNull(gameplayRequestGuard);
+        this.standingService = Objects.requireNonNull(standingService);
         this.snapshotMapper = Objects.requireNonNull(snapshotMapper);
         this.clock = Objects.requireNonNull(clock);
     }
@@ -104,10 +109,13 @@ public class StudentAnswerSubmissionService {
         AnswerRaceImpact answerRaceImpact =
                 raceEngineService.applyAnswerResult(lockedRacePlayer, correct);
 
+        StudentRaceStandingResult standing = standingService.calculate(lockedRacePlayer);
+
         StudentRaceRuntimeSnapshotResponse snapshot =
                 snapshotMapper.fromAnswerRaceImpact(
                         answerRaceImpact,
                         lockedRacePlayer.getRace(),
+                        standing,
                         decisionEpochMs
                 );
 
