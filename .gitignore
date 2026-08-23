@@ -6,6 +6,8 @@ Thumbs.db
 !.env.example
 AGENTS.md
 CLAUDE.md
+QuizWheelzApplication.run.xml
+.run
 
 # Java / Maven
 target/
