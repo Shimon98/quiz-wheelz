@@ -205,7 +205,18 @@ start Docker Compose.
 
 Full workflow: `docs/03-quality/ISSUE_PR_AND_AI_WORKFLOW.md`.
 
-## 12. Definition of done
+## 12. Code quality limits
+
+- Added or modified `.java`, `.js` and `.jsx` files contain no comments or
+  Javadocs. Use focused types, small methods and explicit names instead.
+- An added or modified code or test file must not exceed 500 lines. Split by
+  responsibility before extending a file that is already near the limit.
+- Logger templates and repeated operation labels belong to focused constants,
+  not inline call-site strings.
+- Record out-of-scope legacy violations as backlog; do not enlarge an unrelated
+  change to clean the repository globally.
+
+## 13. Definition of done
 
 A feature is not done because a page renders or a happy-path request returns 200.
 It is done only when its contract, validation, authorization, error/loading/empty

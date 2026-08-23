@@ -4,12 +4,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
-/**
- * Pure date/time conversions and comparisons. This class never decides what
- * "now" is — the caller supplies every timestamp (services get theirs from
- * the shared application Clock, see TimeConfig). That keeps a single time
- * source and lets tests pin exact instants.
- */
 public final class DateTimeUtils {
 
     private DateTimeUtils() {
@@ -42,9 +36,6 @@ public final class DateTimeUtils {
         return LocalDateTime.ofInstant(instant, zoneId);
     }
 
-    /**
-     * A deadline exactly equal to "now" counts as expired.
-     */
     public static boolean isExpired(LocalDateTime expiresAt, LocalDateTime now) {
         if (expiresAt == null || now == null) {
             return false;

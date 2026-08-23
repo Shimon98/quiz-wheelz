@@ -30,12 +30,6 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
-/*
- * Deliberately wired with the REAL movement/engine services (repositories
- * mocked): the chronology contract — old speed owns pre-deadline time, the
- * penalized speed owns post-deadline time — is exactly the interaction these
- * pieces must get right together.
- */
 @ExtendWith(MockitoExtension.class)
 class QuestionTimeoutServiceTest {
 
@@ -76,7 +70,6 @@ class QuestionTimeoutServiceTest {
 
     @Test
     void shouldSettleAroundDeadlineWithChronologicallyCorrectSpeeds() {
-        // Expires 40s after the anchor, processed 45s after it.
         RacePlayer player = racingPlayer(0.0, 1.5);
         PlayerQuestion question = activeQuestionExpiringAfterSeconds(40);
 
@@ -86,13 +79,10 @@ class QuestionTimeoutServiceTest {
                 afterSeconds(45)
         );
 
-        // 40s x 1.5 x 4 = 240 at the OLD speed, then the timeout penalty
-        // (1.5 - 0.4 = 1.1), then 5s x 1.1 x 4 = 22 at the NEW speed.
         assertEquals(262.0, player.getPosition(), 1e-6);
         assertEquals(1.1, player.getSpeed(), 1e-9);
         assertEquals(PlayerQuestionStatus.EXPIRED, question.getStatus());
         assertEquals(afterSeconds(45), player.getMovementUpdatedAtEpochMs());
-        // Timeout counts as a failure: streak reset + wrong counter.
         assertEquals(0, player.getStreak());
         assertEquals(1, player.getWrongAnswers());
     }
@@ -107,8 +97,6 @@ class QuestionTimeoutServiceTest {
                 question,
                 afterSeconds(45)
         );
-        // A second discoverer (concurrent resolve / late answer) sees the
-        // EXPIRED transition and must not penalize again.
         questionTimeoutService.processExpiredActiveQuestion(
                 player,
                 question,
@@ -121,8 +109,6 @@ class QuestionTimeoutServiceTest {
 
     @Test
     void shouldLetFinishWinOverTimeoutPenalty() {
-        // 40s at 1.5 = 240 units — far past the 10 remaining: the player
-        // crosses the line BEFORE the deadline penalty could apply.
         RacePlayer player = racingPlayer(990.0, 1.5);
         PlayerQuestion question = activeQuestionExpiringAfterSeconds(40);
 
@@ -135,7 +121,6 @@ class QuestionTimeoutServiceTest {
         assertEquals(RacePlayerStatus.FINISHED, player.getStatus());
         assertEquals(1000.0, player.getPosition(), 1e-9);
         assertEquals(0.0, player.getSpeed());
-        // No penalty after the finish line.
         assertEquals(0, player.getWrongAnswers());
         assertEquals(PlayerQuestionStatus.EXPIRED, question.getStatus());
     }
@@ -156,7 +141,6 @@ class QuestionTimeoutServiceTest {
                 afterSeconds(10)
         );
 
-        // Unexpired question → plain settlement, no penalty.
         assertEquals(40.0, player.getPosition(), 1e-9);
         assertEquals(1.0, player.getSpeed(), 1e-9);
         assertEquals(PlayerQuestionStatus.ACTIVE, question.getStatus());
@@ -178,10 +162,41 @@ class QuestionTimeoutServiceTest {
                 afterSeconds(20)
         );
 
-        // 10s x 1.0 x 4 = 40, penalty (1.0 - 0.4 = 0.6), 10s x 0.6 x 4 = 24.
         assertEquals(64.0, player.getPosition(), 1e-6);
         assertEquals(0.6, player.getSpeed(), 1e-9);
         assertEquals(PlayerQuestionStatus.EXPIRED, question.getStatus());
+    }
+
+    @Test
+    void absentPlayerTimeoutShouldUseWallClockButRespectMovementCutoffExactlyOnce() {
+        RacePlayer player = racingPlayer(25.0, 1.0);
+        PlayerQuestion question = activeQuestionExpiringAfterSeconds(10);
+        LocalDateTime originalExpiresAt = question.getExpiresAt();
+
+        when(playerQuestionRepository.findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(
+                player,
+                PlayerQuestionStatus.ACTIVE
+        )).thenReturn(Optional.of(question));
+
+        questionTimeoutService.settleWithOverdueTimeout(
+                player,
+                localTimeAfterSeconds(30),
+                afterSeconds(30),
+                ANCHOR_EPOCH_MS
+        );
+        questionTimeoutService.settleWithOverdueTimeout(
+                player,
+                localTimeAfterSeconds(31),
+                afterSeconds(31),
+                ANCHOR_EPOCH_MS
+        );
+
+        assertEquals(25.0, player.getPosition(), 1e-9);
+        assertEquals(0.6, player.getSpeed(), 1e-9);
+        assertEquals(1, player.getWrongAnswers());
+        assertEquals(PlayerQuestionStatus.EXPIRED, question.getStatus());
+        assertEquals(originalExpiresAt, question.getExpiresAt());
+        assertEquals(ANCHOR_EPOCH_MS, player.getMovementUpdatedAtEpochMs());
     }
 
     private RacePlayer racingPlayer(double position, double speed) {

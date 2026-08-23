@@ -65,6 +65,10 @@ export function isReconnectWindowExpiredError(error) {
   );
 }
 
+export function isRacePlayerReconnectRequiredError(error) {
+  return error?.errorName === SERVER_ERROR_NAMES.RACE_PLAYER_RECONNECT_REQUIRED;
+}
+
 export function isApiContractError(error) {
   return error?.category === ERROR_CATEGORIES.API_CONTRACT;
 }

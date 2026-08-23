@@ -24,7 +24,6 @@ public class PlayerQuestionCleanupService {
     private final PlayerQuestionRepository playerQuestionRepository;
     private final Clock clock;
 
-    // Shared application Clock (TimeConfig) — injected, never self-created.
     public PlayerQuestionCleanupService(
             PlayerQuestionRepository playerQuestionRepository,
             Clock clock

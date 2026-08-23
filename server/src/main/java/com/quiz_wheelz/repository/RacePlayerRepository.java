@@ -17,11 +17,6 @@ import java.util.Optional;
 
 public interface RacePlayerRepository extends JpaRepository<RacePlayer, Long> {
 
-    /*
-     * Lightweight id pairs for the movement settlement sweep (C1-03M) — the
-     * worker re-loads and LOCKS each player in its own transaction, so full
-     * unlocked entities here would only be stale bait.
-     */
     interface RacePlayerMovementCandidate {
         Long getPlayerId();
 
@@ -58,18 +53,29 @@ public interface RacePlayerRepository extends JpaRepository<RacePlayer, Long> {
             Long raceId
     );
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select racePlayer
+            from RacePlayer racePlayer
+            where racePlayer.race.id = :raceId
+            order by racePlayer.id asc
+            """)
+    List<RacePlayer> findAllLockedByRaceIdOrderById(
+            @Param("raceId") Long raceId
+    );
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
             update RacePlayer racePlayer
-            set racePlayer.lastSeenAt = :heartbeatAt
+            set racePlayer.lastSeenAt = :checkpointAt
             where racePlayer.id = :racePlayerId
               and racePlayer.race.id = :raceId
-              and (racePlayer.lastSeenAt is null or racePlayer.lastSeenAt < :heartbeatAt)
+              and (racePlayer.lastSeenAt is null or racePlayer.lastSeenAt < :checkpointAt)
             """)
     int updateLastSeenAtIfOlder(
             @Param("racePlayerId") Long racePlayerId,
             @Param("raceId") Long raceId,
-            @Param("heartbeatAt") LocalDateTime heartbeatAt
+            @Param("checkpointAt") LocalDateTime checkpointAt
     );
 
     long countByRace(Race race);

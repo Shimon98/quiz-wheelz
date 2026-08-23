@@ -11,20 +11,19 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.Objects;
 
-/**
- * Safety settlement sweep (C1-03M): guarantees continuous authoritative
- * movement, overdue timeouts, and eventual race finish even when NO client
- * request arrives. Low frequency by design — not a game loop; the advancing
- * movement anchor plus per-player locks make overlap with requests (or a
- * second dev server instance) idempotent.
- */
 @Component
 public class RaceMovementSettlementScheduler {
 
     private static final Logger LOGGER =
             LoggerFactory.getLogger(RaceMovementSettlementScheduler.class);
+    private static final String PLAYER_SETTLEMENT_FAILURE_LOG =
+            "Movement settlement failed for racePlayerId={} raceId={}";
+    private static final String RACE_FINALIZATION_FAILURE_LOG =
+            "Race finish reconciliation failed for raceId={}";
 
     private final RacePlayerRepository racePlayerRepository;
     private final RaceRepository raceRepository;
@@ -42,16 +41,20 @@ public class RaceMovementSettlementScheduler {
 
     @Scheduled(fixedDelay = RaceProgressRules.MOVEMENT_SETTLEMENT_INTERVAL_MS)
     public void runSettlementSweep() {
-        for (RacePlayerRepository.RacePlayerMovementCandidate candidate
-                : racePlayerRepository.findMovementSettlementCandidates(
+        List<RacePlayerRepository.RacePlayerMovementCandidate> candidates =
+                racePlayerRepository.findMovementSettlementCandidates(
                         RacePlayerStatus.RACING,
                         RaceStatus.IN_PROGRESS
-                )) {
+                );
+        Set<Long> raceIdsToReconcile = new LinkedHashSet<>();
+
+        for (RacePlayerRepository.RacePlayerMovementCandidate candidate : candidates) {
+            raceIdsToReconcile.add(candidate.getRaceId());
             try {
                 worker.settlePlayer(candidate.getPlayerId(), candidate.getRaceId());
             } catch (Exception exception) {
                 LOGGER.warn(
-                        "Movement settlement failed for racePlayerId={} raceId={}",
+                        PLAYER_SETTLEMENT_FAILURE_LOG,
                         candidate.getPlayerId(),
                         candidate.getRaceId(),
                         exception
@@ -59,18 +62,18 @@ public class RaceMovementSettlementScheduler {
             }
         }
 
-        // Reconciliation pass: once no player is WAITING/RACING anymore, the
-        // per-answer finish check has no future trigger — this one does.
-        List<Long> finishableRaceIds = raceRepository.findRaceIdsWithoutPlayersInStatuses(
-                RaceStatus.IN_PROGRESS,
-                List.of(RacePlayerStatus.WAITING, RacePlayerStatus.RACING)
+        raceIdsToReconcile.addAll(
+                raceRepository.findRaceIdsWithoutPlayersInStatuses(
+                        RaceStatus.IN_PROGRESS,
+                        List.of(RacePlayerStatus.WAITING, RacePlayerStatus.RACING)
+                )
         );
 
-        for (Long raceId : finishableRaceIds) {
+        for (Long raceId : raceIdsToReconcile) {
             try {
                 worker.finalizeRaceIfComplete(raceId);
             } catch (Exception exception) {
-                LOGGER.warn("Race finish reconciliation failed for raceId={}", raceId, exception);
+                LOGGER.warn(RACE_FINALIZATION_FAILURE_LOG, raceId, exception);
             }
         }
     }

@@ -11,12 +11,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 
-/*
- * snapshotAtEpochMs is the SAME decision instant the producing service used
- * for expiry/settlement — one clock read per decision; the mapper never reads
- * time itself. movementUnitsPerSecond is server-owned so the client predicts
- * visual motion without duplicating speed x base-rate.
- */
 @Component
 public class StudentRaceRuntimeSnapshotMapper {
 

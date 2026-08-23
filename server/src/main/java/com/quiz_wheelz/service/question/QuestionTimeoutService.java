@@ -17,17 +17,6 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 
-/**
- * The ONE owner of timeout gameplay (C1-03M). Every path that can discover
- * an expired ACTIVE question — current-question resolve, a late answer
- * submission, race-state settlement and the safety scheduler — routes here,
- * so the penalty can never be applied twice: callers hold the RacePlayer
- * lock, and the ACTIVE→EXPIRED transition is the exactly-once gate.
- *
- * Chronology: the pre-timeout speed owns time up to the deadline, the
- * penalized speed owns everything after it (never settle the whole interval
- * at the old speed and then penalize).
- */
 @Service
 public class QuestionTimeoutService {
 
@@ -53,8 +42,21 @@ public class QuestionTimeoutService {
             PlayerQuestion question,
             long decisionEpochMs
     ) {
+        processExpiredActiveQuestion(
+                lockedRacePlayer,
+                question,
+                decisionEpochMs,
+                decisionEpochMs
+        );
+    }
+
+    public void processExpiredActiveQuestion(
+            RacePlayer lockedRacePlayer,
+            PlayerQuestion question,
+            long decisionEpochMs,
+            long movementCutoffEpochMs
+    ) {
         if (question == null || question.getStatus() != PlayerQuestionStatus.ACTIVE) {
-            // Already processed by an earlier discoverer — exactly once.
             return;
         }
 
@@ -63,10 +65,10 @@ public class QuestionTimeoutService {
                 clock.getZone()
         );
 
-        // The pre-timeout speed owns the interval up to the deadline. This
-        // settlement itself may cross the finish line — then FINISHED wins
-        // and no penalty applies.
-        raceMovementService.settleTo(lockedRacePlayer, expiryEpochMs);
+        raceMovementService.settleTo(
+                lockedRacePlayer,
+                Math.min(expiryEpochMs, movementCutoffEpochMs)
+        );
 
         question.setStatus(PlayerQuestionStatus.EXPIRED);
         playerQuestionRepository.save(question);
@@ -75,19 +77,30 @@ public class QuestionTimeoutService {
             raceEngineService.applyTimeoutResult(lockedRacePlayer);
         }
 
-        // The penalized speed owns the time after the deadline.
-        raceMovementService.settleTo(lockedRacePlayer, decisionEpochMs);
+        raceMovementService.settleTo(
+                lockedRacePlayer,
+                Math.min(decisionEpochMs, movementCutoffEpochMs)
+        );
     }
 
-    /**
-     * Shared settlement orchestration for touchpoints that only need "bring
-     * this player's movement to now, honoring an overdue timeout first"
-     * (race-state reads, the safety scheduler).
-     */
     public void settleWithOverdueTimeout(
             RacePlayer lockedRacePlayer,
             LocalDateTime decisionNow,
             long decisionEpochMs
+    ) {
+        settleWithOverdueTimeout(
+                lockedRacePlayer,
+                decisionNow,
+                decisionEpochMs,
+                decisionEpochMs
+        );
+    }
+
+    public void settleWithOverdueTimeout(
+            RacePlayer lockedRacePlayer,
+            LocalDateTime decisionNow,
+            long decisionEpochMs,
+            long movementCutoffEpochMs
     ) {
         Optional<PlayerQuestion> activeQuestion = playerQuestionRepository
                 .findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(
@@ -103,12 +116,13 @@ public class QuestionTimeoutService {
             processExpiredActiveQuestion(
                     lockedRacePlayer,
                     activeQuestion.get(),
-                    decisionEpochMs
+                    decisionEpochMs,
+                    movementCutoffEpochMs
             );
             return;
         }
 
-        raceMovementService.settleTo(lockedRacePlayer, decisionEpochMs);
+        raceMovementService.settleTo(lockedRacePlayer, movementCutoffEpochMs);
     }
 
     private boolean isActivelyRacing(RacePlayer racePlayer) {

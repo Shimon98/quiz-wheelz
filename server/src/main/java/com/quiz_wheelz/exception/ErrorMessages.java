@@ -18,6 +18,8 @@ public final class ErrorMessages {
 
     public static final String RACE_PLAYER_RECONNECT_WINDOW_EXPIRED =
             "Race player reconnect window has expired";
+    public static final String RACE_PLAYER_RECONNECT_REQUIRED =
+            "Race player must reconnect before gameplay can continue";
 
     public static final String QUESTION_TEMPLATE_NOT_FOUND =
             "Active question template not found";
@@ -91,8 +93,11 @@ public final class ErrorMessages {
     public static final String REDIS_PRESENCE_IDS_MISSING =
             "Redis presence race id and race player id are required";
 
+    public static final String REDIS_GAMEPLAY_ACTIVITY_TIMESTAMP_MISSING =
+            "Redis gameplay activity timestamp is required";
+
     public static final String REDIS_HEARTBEAT_TIMESTAMP_MISSING =
-            "Redis heartbeat timestamp is required";
+            REDIS_GAMEPLAY_ACTIVITY_TIMESTAMP_MISSING;
 
     public static final String RACE_PLAYER_SESSION_IDENTITY_MISSING =
             "Race player session identity is missing";

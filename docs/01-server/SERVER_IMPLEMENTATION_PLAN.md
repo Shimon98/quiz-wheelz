@@ -142,6 +142,35 @@ lifecycle is outside S0-02 and does not block it.
   `ddl-auto=update` mechanism (verified locally; Diana's DEV DB gets it the
   same way) — production migrations remain Phase 6 debt.
 
+### S1-01B — Freeze movement during real absence
+
+**Status:** `DONE (2026-08-20)`
+
+- one monotonic latest-trusted-gameplay-activity concept; heartbeat/reconnect and
+  online race-state/current-question/answer requests record activity
+- presence lease ownership is separate: only heartbeat and reconnect create or
+  renew the 45-second lease when semantically valid; heartbeat may renew an existing
+  lease but a missing lease returns `RACE_PLAYER_RECONNECT_REQUIRED` without
+  reconnect settlement, re-anchor or lease recreation
+- one gameplay-request access guard enforces presence only for active
+  `RACING + IN_PROGRESS` race-state/current-question/answer calls and rejects absent
+  active calls with `RACE_PLAYER_RECONNECT_REQUIRED`; terminal/non-playable
+  race-state remains readable without presence or activity writes, and only explicit
+  reconnect may re-anchor the timeline. Terminal state reached during settlement
+  wins over the request's older reconnect-required/window-expired decision
+- absent settlement is capped at that activity, repeated sweeps cannot move it,
+  and reconnect re-anchors without catch-up
+- question deadlines are never shifted: `QuestionTimeoutService` processes an
+  overdue ACTIVE question exactly once against wall-clock time while using an
+  independent movement cutoff
+- ACTIVE question ownership survives hidden, reload and reconnect; reconnect never
+  generates a replacement question, so lifecycle changes cannot enable fishing
+- 45s presence loss permits race completion to ignore an absent RACING player;
+  the unchanged 5-minute grace remains a return window and expiry durably becomes
+  DISCONNECTED if the race is still active
+- Redis outage fails open for movement/presence and cannot mass-freeze,
+  mass-disconnect, or subtract previously awarded movement
+
 ### S1-02 — Authoritative rank and nearby-player snapshot
 
 **Status:** `PLANNED`
@@ -186,6 +215,39 @@ Rules:
 - test expired question followed by reload
 - test answer after disconnect/finish
 - verify idempotent outcomes where appropriate.
+
+#### S1-03A — Focus integrity foundation
+
+**Status:** `PLANNED`
+
+- add server-owned focus-loss count, last focus-loss time, active-question
+  association, idempotent focus-event handling and focus-violation policy
+- accept future client transitions such as `TAB_HIDDEN` and `TAB_VISIBLE`; no focus
+  endpoint, event, DTO or schema is part of S1-01B
+- expose focus warnings, violations and question forfeits to later teacher live/SSE
+  contracts only when that contract is designed
+
+#### S1-03B — Strict focus policy
+
+**Status:** `PLANNED`
+
+```text
+first focus loss
+→ warning
+
+second repeated focus loss
+→ stronger warning / integrity violation
+
+third repeated focus loss
+→ ACTIVE question may be forfeited as timeout
+```
+
+Ordinary focus loss does not automatically remove a player from the race. The
+teacher-selected future policy is `OFF` for normal absence/reconnect behavior,
+`WARN` for tracking and warnings, or `STRICT` for repeated-loss question
+forfeiture. Exact thresholds remain an S1-03 implementation decision. S1-01B owns
+neutral absence/return correctness; S1-03 owns intentional abuse detection and
+consequences. Complete this foundation before teacher live/SSE work.
 
 ## S2 — Teacher live race and SSE
 

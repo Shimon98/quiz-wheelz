@@ -15,17 +15,17 @@ class RacePlayerReconnectPolicyTest {
     private final RacePlayerReconnectPolicy policy = new RacePlayerReconnectPolicy();
 
     @Test
-    void redisHeartbeatAtFiveMinuteBoundaryShouldRemainInsideGrace() {
+    void gameplayActivityAtFiveMinuteBoundaryShouldRemainInsideGrace() {
         assertFalse(expired(Optional.of(NOW.minusMinutes(5)), null, null));
     }
 
     @Test
-    void redisHeartbeatBeyondFiveMinutesShouldExpireWithoutFallbackMargin() {
+    void gameplayActivityBeyondFiveMinutesShouldExpireWithoutFallbackMargin() {
         assertTrue(expired(Optional.of(NOW.minusMinutes(5).minusSeconds(1)), null, null));
     }
 
     @Test
-    void missingRedisHeartbeatShouldUseRecentDurableLastSeen() {
+    void missingRedisActivityShouldUseRecentDurableLastSeen() {
         assertFalse(expired(Optional.empty(), NOW.minusMinutes(5), null));
     }
 
@@ -78,12 +78,12 @@ class RacePlayerReconnectPolicyTest {
     }
 
     private boolean expired(
-            Optional<LocalDateTime> redisHeartbeatAt,
+            Optional<LocalDateTime> gameplayActivityAt,
             LocalDateTime durableLastSeenAt,
             LocalDateTime raceStartedAt
     ) {
         return policy.isReconnectWindowExpired(
-                redisHeartbeatAt,
+                gameplayActivityAt,
                 durableLastSeenAt,
                 raceStartedAt,
                 NOW

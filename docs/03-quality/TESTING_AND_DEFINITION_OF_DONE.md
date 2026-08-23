@@ -48,11 +48,27 @@ Required gameplay tests:
 - exactly four unique choices
 - no correct-answer leak
 - question ownership/expiry
+- question identity and original deadline survive hidden/reload/reconnect
+- no question fishing through repeated reconnect or current-question requests
 - duplicate answer rejection
 - score/progress/streak/difficulty
 - player/race finish
 - heartbeat/leave/reconnect
+- heartbeat with a missing lease settles to the trusted cutoff, performs no reconnect
+  settlement/re-anchor or lease recreation, and requires explicit reconnect
+- trusted-activity monotonicity and absence movement cutoff
+- repeated absent sweeps and reconnect-without-catch-up
+- online, absent-inside-grace, grace-expired and Redis-unavailable gameplay-request
+  guard paths, plus race-state/current-question/answer guard delegation
+- finished/disconnected/terminal-race race-state remains readable without presence
+  or gameplay-activity writes; active race-state still requires reconnect
+- terminal state reached during gameplay-request settlement wins over the older
+  reconnect-required/window-expired presence decision
+- only explicit reconnect may re-anchor; direct gameplay requests must not
+- question wall-clock timeout during absence, exactly once, without deadline extension
+- absent-player race completion and terminal grace expiry
 - Redis loss with DB fallback
+- Redis-loss fail-open movement/no mass disconnect
 - live-state ownership
 - SSE reconnect/recovery
 - event fairness boundaries.
@@ -102,6 +118,12 @@ Check:
 - loading/error/empty/disabled
 - repeated-click prevention
 - refresh/back/reconnect
+- hidden document: heartbeat and gameplay calls stop; gameplay-ready is false;
+  no automatic leave
+- visible return: reconnect and authoritative resync complete before gameplay resumes
+- semantic reconnect-required from race-state/question/answer uses the one runtime
+  reconnect owner; reconnect-window expiry stays terminal and answer POST is never
+  automatically retried
 - production bundle contains no dev race tools.
 
 ## Core end-to-end demo
@@ -144,4 +166,9 @@ Reject when:
 - cache is only source of truth
 - fake data is presented as real
 - unrelated refactor bloats the PR
-- tests were skipped without explanation.
+- tests were skipped without explanation
+- an added or modified `.java`, `.js` or `.jsx` file contains comments or
+  exceeds 500 lines
+- a touched service or test combines multiple responsibilities that have clear
+  independent owners
+- logger templates or repeated operation labels remain inline at call sites.

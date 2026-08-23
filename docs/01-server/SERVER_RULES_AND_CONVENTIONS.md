@@ -130,6 +130,17 @@ The orchestrator may call these policies; it should not contain every formula in
   rule, not automatic Redis truth.
 - Do not cache entities as mutable shared objects.
 - Do not use Redis as a substitute for missing persistence.
+- Treat the presence lease and trusted gameplay activity as separate values.
+- Only heartbeat and reconnect may create or renew the presence lease.
+- Heartbeat may renew an existing lease but never performs reconnect settlement or
+  re-anchors movement. A missing lease requires explicit reconnect before renewal.
+- Active `RACING + IN_PROGRESS` race-state, current-question and answer may record
+  valid gameplay activity. When presence is absent they settle only to the trusted
+  cutoff, record nothing, and require explicit reconnect; only reconnect may
+  re-anchor the timeline. Terminal/non-playable race-state bypasses presence and
+  activity recording so authoritative final state remains readable; terminal state
+  reached during settlement also takes precedence over the older presence decision.
+- Hidden/reconnect never changes ACTIVE question ownership or `expiresAt`.
 
 ## Security
 
@@ -161,3 +172,16 @@ Test business decisions at the service/policy level. Add integration tests when
 security, transactions, locking, Redis or serialization are the risk.
 
 Every rejected state deserves a test, not only the successful state.
+
+## Code quality limits
+
+- Added or modified Java files, including tests, contain no comments or
+  Javadocs. Structure and names must carry the explanation.
+- Added or modified Java files stay at or below 500 lines. Split services and
+  tests by one coherent responsibility before adding more behavior.
+- Transactional operation owners stay focused; a facade delegates and does not
+  absorb heartbeat, reconnect, disconnect and leave rules into one service.
+- Logger templates and repeated operation labels use focused constants. Do not
+  pass explanatory string literals directly from logger call sites.
+- Legacy violations outside the task are documented as backlog and remain out
+  of scope unless they block the change.

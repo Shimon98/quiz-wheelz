@@ -9,8 +9,8 @@ import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
-import com.quiz_wheelz.service.question.QuestionTimeoutService;
 import com.quiz_wheelz.service.raceengine.RaceFinishService;
+import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +32,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -51,7 +52,13 @@ class StudentRaceStateServiceTest {
     private RacePlayerRepository racePlayerRepository;
 
     @Mock
-    private QuestionTimeoutService questionTimeoutService;
+    private RacePlayerGameplayRequestGuard gameplayRequestGuard;
+
+    @Mock
+    private RacePlayerGameplayPresenceService gameplayPresenceService;
+
+    @Mock
+    private RacePlayerGameplayTimelineService gameplayTimelineService;
 
     @Mock
     private RaceFinishService raceFinishService;
@@ -87,16 +94,10 @@ class StudentRaceStateServiceTest {
                 FIXED_INSTANT.toEpochMilli(),
                 response.getSnapshot().getSnapshotAtEpochMs()
         );
-        // speed 1.2 x BASE_MOVEMENT_UNITS_PER_SECOND 4.0
         assertEquals(4.8, response.getSnapshot().getMovementUnitsPerSecond());
 
-        // The snapshot describes SETTLED movement — locked + settled first.
         verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
-        verify(questionTimeoutService).settleWithOverdueTimeout(
-                racePlayer,
-                LocalDateTime.ofInstant(FIXED_INSTANT, FIXED_ZONE),
-                FIXED_INSTANT.toEpochMilli()
-        );
+        verify(gameplayRequestGuard).requireGameplayAccess(racePlayer, FIXED_INSTANT);
         verify(raceFinishService, never()).finishRaceIfNeeded(any());
         verify(currentRacePlayerService, never()).resolveCurrentRacePlayer(request);
     }
@@ -130,7 +131,6 @@ class StudentRaceStateServiceTest {
         assertEquals(RaceStatus.FINISHED, response.getSnapshot().getRaceStatus());
         assertTrue(response.getSnapshot().isPlayerFinished());
         assertTrue(response.getSnapshot().isRaceFinished());
-        // Already-finished before this read — no race finalization attempt.
         verify(raceFinishService, never()).finishRaceIfNeeded(any());
     }
 
@@ -141,15 +141,10 @@ class StudentRaceStateServiceTest {
                 RaceStatus.IN_PROGRESS
         );
 
-        // The settlement crosses the finish line during this read.
         doAnswer(invocation -> {
             racePlayer.setStatus(RacePlayerStatus.FINISHED);
             return null;
-        }).when(questionTimeoutService).settleWithOverdueTimeout(
-                any(),
-                any(),
-                org.mockito.ArgumentMatchers.anyLong()
-        );
+        }).when(gameplayRequestGuard).requireGameplayAccess(any(), any());
 
         StudentRaceStateResponse response = createService().getRaceState(request);
 
@@ -176,14 +171,113 @@ class StudentRaceStateServiceTest {
         assertEquals(ErrorCode.RACE_PLAYER_NOT_FOUND, exception.getErrorCode());
     }
 
+    @Test
+    void activePlayerRaceStateShouldRequireReconnectWithoutPresence() {
+        RacePlayer racePlayer = mockResolvedAndLocked(
+                RacePlayerStatus.RACING,
+                RaceStatus.IN_PROGRESS
+        );
+        RacePlayerGameplayPresenceService.GameplayPresenceDecision presenceDecision =
+                new RacePlayerGameplayPresenceService.GameplayPresenceDecision(
+                        true,
+                        false,
+                        false,
+                        FIXED_INSTANT.minusSeconds(1).toEpochMilli()
+                );
+        when(gameplayPresenceService.resolve(racePlayer, FIXED_INSTANT))
+                .thenReturn(presenceDecision);
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> createService(createRealGameplayRequestGuard()).getRaceState(request)
+        );
+
+        assertEquals(ErrorCode.RACE_PLAYER_RECONNECT_REQUIRED, exception.getErrorCode());
+        verify(gameplayTimelineService).settleGameplayRequest(
+                racePlayer,
+                FIXED_INSTANT,
+                presenceDecision
+        );
+        verify(gameplayPresenceService, never()).recordGameplayActivity(
+                racePlayer,
+                FIXED_INSTANT
+        );
+        verify(raceFinishService, never()).finishRaceIfNeeded(any());
+    }
+
+    @Test
+    void finishedPlayerRaceStateShouldRemainReadableWithoutPresence() {
+        mockResolvedAndLocked(
+                RacePlayerStatus.FINISHED,
+                RaceStatus.IN_PROGRESS
+        );
+
+        StudentRaceStateResponse response = createService(
+                createRealGameplayRequestGuard()
+        ).getRaceState(request);
+
+        assertEquals(RacePlayerStatus.FINISHED, response.getSnapshot().getPlayerStatus());
+        assertEquals(RaceStatus.IN_PROGRESS, response.getSnapshot().getRaceStatus());
+        verifyNoInteractions(gameplayPresenceService, gameplayTimelineService);
+    }
+
+    @Test
+    void disconnectedPlayerRaceStateShouldRemainReadableWithoutPresence() {
+        mockResolvedAndLocked(
+                RacePlayerStatus.DISCONNECTED,
+                RaceStatus.IN_PROGRESS
+        );
+
+        StudentRaceStateResponse response = createService(
+                createRealGameplayRequestGuard()
+        ).getRaceState(request);
+
+        assertEquals(
+                RacePlayerStatus.DISCONNECTED,
+                response.getSnapshot().getPlayerStatus()
+        );
+        verifyNoInteractions(gameplayPresenceService, gameplayTimelineService);
+    }
+
+    @Test
+    void terminalRaceStateShouldRemainReadableWithoutPresence() {
+        mockResolvedAndLocked(
+                RacePlayerStatus.RACING,
+                RaceStatus.FINISHED
+        );
+
+        StudentRaceStateResponse response = createService(
+                createRealGameplayRequestGuard()
+        ).getRaceState(request);
+
+        assertEquals(RacePlayerStatus.RACING, response.getSnapshot().getPlayerStatus());
+        assertEquals(RaceStatus.FINISHED, response.getSnapshot().getRaceStatus());
+        assertTrue(response.getSnapshot().isRaceFinished());
+        verifyNoInteractions(gameplayPresenceService, gameplayTimelineService);
+    }
+
     private StudentRaceStateService createService() {
+        return createService(gameplayRequestGuard);
+    }
+
+    private StudentRaceStateService createService(
+            RacePlayerGameplayRequestGuard requestGuard
+    ) {
         return new StudentRaceStateService(
                 currentRacePlayerService,
                 racePlayerRepository,
-                questionTimeoutService,
+                requestGuard,
                 raceFinishService,
                 new StudentRaceRuntimeSnapshotMapper(),
                 Clock.fixed(FIXED_INSTANT, FIXED_ZONE)
+        );
+    }
+
+    private RacePlayerGameplayRequestGuard createRealGameplayRequestGuard() {
+        return new RacePlayerGameplayRequestGuard(
+                gameplayPresenceService,
+                gameplayTimelineService,
+                racePlayerRepository
         );
     }
 

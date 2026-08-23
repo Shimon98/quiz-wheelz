@@ -354,14 +354,17 @@ lifecycle owner, consumed by both the waiting page and the race page:
 route entry / browser online / hidden→visible / manual retry
   → POST reconnect (server resolves the lifecycle FIRST)
 active outcome (RECONNECTED / WAITING_FOR_RACE)
-  → CONNECTED + heartbeat every 15s (single-flight, visible+online only)
+  → CONNECTED + heartbeat every 15s (single-flight, online, visible)
 terminal outcome (PLAYER_FINISHED / RACE_FINISHED / ALREADY_DISCONNECTED /
 RECONNECT_WINDOW_EXPIRED — returned by reconnect, thrown by heartbeat)
   → heartbeat stops + race-state resync decides the final view
 authoritative final view (FINISHED / CANCELLED / DISCONNECTED)
   → stopPresence(): heartbeat + automatic reconnect triggers stop
 hidden document
-  → not gameplay-ready: heartbeat, race-state polling and questions pause
+  → heartbeat, race-state polling and question requests stop; answers lock
+  → not gameplay-ready; movement freezes while question wall clock continues
+visible return
+  → reconnect first → authoritative resync → resume gameplay calls
 transient failure while online+visible
   → ONE conservative 5s reconnect retry (no hot loop)
 ```
@@ -381,9 +384,23 @@ transient failure while online+visible
   browser OFFLINE never invents `DISCONNECTED`; reconnect-window expiry is
   terminal lifecycle (never a `/join` redirect); the authoritative
   DISCONNECTED view lost its misleading retry button.
+- Race-state, current-question and answer errors are normalized by semantic name.
+  `RACE_PLAYER_RECONNECT_REQUIRED` closes gameplay readiness and invokes the same
+  runtime-session reconnect command; success advances `resyncToken` for the existing
+  authoritative recovery path. It is distinct from terminal
+  `RACE_PLAYER_RECONNECT_WINDOW_EXPIRED`, and an answer POST is never retried.
 - **Leave is deliberately unwired**: no client wrapper, and nothing fires on
   refresh/unmount/pagehide/hidden — refresh must never equal quitting; a
   wrapper appears only with a real explicit "leave race" action.
+- S1-01B visibility hardening gates both heartbeat cadence and
+  `isGameplayConnectionReady` on `isDocumentVisible`; hidden→visible performs
+  reconnect/resync before gameplay resumes and visibility is never sent as
+  authoritative server truth.
+- `runHeartbeat` performs a direct hidden-document early exit in addition to the
+  interval gate, covering timer callbacks that were already queued.
+- ACTIVE question identity and `expiresAt` survive hidden/reload/reconnect. The
+  wall clock never pauses, overdue timeout applies exactly once, and visibility
+  changes never request a replacement question by themselves.
 - Focused tests cover the mapper, the full hook lifecycle (fake timers,
   StrictMode, single-flight, offline/online/visibility, retry, terminal
   outcomes, cleanup, no-leave), page-level session-first gating and the

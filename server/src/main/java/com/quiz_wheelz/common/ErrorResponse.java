@@ -15,24 +15,18 @@ public class ErrorResponse {
 
     private boolean success;
 
-    // numeric internal error code, for example: 1000, 2000, 3000
     private int code;
 
-    // enum name, for example: USER_NOT_FOUND
     private String error;
 
-    // readable message for the client
     private String message;
 
-    // HTTP status code, for example: 404
     private int status;
 
-    // request path, for example: /api/users/5
     private String path;
 
     private LocalDateTime timestamp;
 
-    // only used for validation errors
     private Map<String, String> validationErrors;
 
 

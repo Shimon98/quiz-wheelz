@@ -41,12 +41,6 @@ public class RaceProgressService {
         return Math.min(newPosition, totalDistance.doubleValue());
     }
 
-    /*
-     * Bounded cumulative speed model (C1-03M): correct answers ADD a
-     * difficulty boost (repeated success keeps accelerating up to the max);
-     * wrong answers subtract a penalty down to the racing minimum — a RACING
-     * player never reaches zero speed.
-     */
     public double calculateNewSpeed(
             RacePlayer racePlayer,
             Difficulty answeredDifficulty,
@@ -73,10 +67,6 @@ public class RaceProgressService {
         );
     }
 
-    /*
-     * No answer at all is a stronger failure than a wrong attempt — a larger
-     * penalty, but still floored at the racing minimum.
-     */
     public double calculateTimeoutSpeed(RacePlayer racePlayer) {
         if (isFinished(racePlayer)) {
             return RaceProgressRules.FINISHED_SPEED;
@@ -94,10 +84,8 @@ public class RaceProgressService {
     }
 
     private double clampToRacingBounds(double speed) {
-        return Math.max(
-                RaceProgressRules.MIN_RACING_SPEED,
-                Math.min(RaceProgressRules.MAX_RACING_SPEED, speed)
-        );
+        return Math.clamp(speed,
+                RaceProgressRules.MIN_RACING_SPEED, RaceProgressRules.MAX_RACING_SPEED);
     }
 
     private Difficulty difficultyOrDefault(Difficulty difficulty) {

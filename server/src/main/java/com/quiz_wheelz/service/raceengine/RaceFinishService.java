@@ -63,7 +63,19 @@ public class RaceFinishService {
 
         List<RacePlayer> players = racePlayerRepository.findByRaceOrderByLaneNumberAsc(race);
 
-        if (players.isEmpty() || players.stream().anyMatch(this::isStillActive)) {
+        return finishRaceIfAllPlayersTerminal(race, players);
+    }
+
+    public boolean finishRaceIfAllPlayersTerminal(
+            Race race,
+            List<RacePlayer> authoritativePlayers
+    ) {
+        if (race == null || race.getStatus() == RaceStatus.FINISHED) {
+            return false;
+        }
+
+        if (authoritativePlayers.isEmpty()
+                || authoritativePlayers.stream().anyMatch(this::isStillActive)) {
             return false;
         }
 
