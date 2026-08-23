@@ -1,5 +1,10 @@
 import { Container, Graphics } from "pixi.js";
 
+import {
+  loadStudentRaceVehicleAssets,
+  VEHICLE_ASSET_STATUS,
+} from "../assets/studentRaceVehicleAssets";
+
 /*
  * The student's kart — SCREEN-FIXED at the anchors from
  * frameState.layout.playerKart (layout contract, G): anchored inside the
@@ -23,8 +28,17 @@ const BOB_FREQUENCY_MS = 95;
 const BOB_MAX_PX = 2.5;
 
 export class PlayerKartLayer {
-  constructor(container) {
+  constructor(container, { loadVehicleAssets = loadStudentRaceVehicleAssets } = {}) {
     this.elapsedMs = 0;
+
+    // Vehicle art lifecycle (C1-06C): the layer owns which key is displayed.
+    // loadedVehicleArt stays null until a load succeeds — the Graphics
+    // placeholder below is the initial and fallback surface either way.
+    this.loadVehicleAssets = loadVehicleAssets;
+    this.requestedVehicleAssetKey = null;
+    this.assetRequestId = 0;
+    this.destroyed = false;
+    this.loadedVehicleArt = null;
 
     this.root = new Container();
     container.addChild(this.root);
@@ -74,6 +88,37 @@ export class PlayerKartLayer {
     // Placement derives from frameState width/height on the next update.
   }
 
+  // Called from the renderer's runtime-update boundary only, never per frame.
+  setVehicleAssetKey(nextKey) {
+    if (typeof nextKey !== "string" || nextKey === "") {
+      return;
+    }
+    if (nextKey === this.requestedVehicleAssetKey) {
+      return;
+    }
+
+    this.requestedVehicleAssetKey = nextKey;
+    this.requestVehicleArt(nextKey);
+  }
+
+  async requestVehicleArt(vehicleAssetKey) {
+    const requestId = ++this.assetRequestId;
+    const result = await this.loadVehicleAssets(vehicleAssetKey);
+
+    // A stale result must never replace a newer requested key, and a late
+    // result must never mutate a destroyed layer.
+    if (this.destroyed || requestId !== this.assetRequestId) {
+      return;
+    }
+
+    // Prepared only (C1-06C-PREP): the first texture is the future static
+    // art; Sprite creation and anchor/scale land with the real GREEN MASTER.
+    this.loadedVehicleArt =
+      result.status === VEHICLE_ASSET_STATUS.LOADED
+        ? { texture: result.textures[0], definition: result.definition }
+        : null;
+  }
+
   update(frameState) {
     const { visualSpeed, deltaMs, layout } = frameState;
     this.elapsedMs += deltaMs;
@@ -95,6 +140,7 @@ export class PlayerKartLayer {
   }
 
   destroy() {
+    this.destroyed = true;
     this.root.destroy({ children: true });
   }
 }

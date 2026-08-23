@@ -409,7 +409,15 @@ vehicle rendering; it must use this server truth, never `sessionStorage`.
   Unknown/malformed/unloadable art → explicit fallback result — C1-06C keeps
   the existing Graphics placeholder, never another vehicle's art. Production
   manifest stays empty until the approved GREEN MASTER lands.
-- **C1-06C — integrate the approved GREEN MASTER static sprite — NEXT.**
+- **C1-06C — integrate the approved GREEN MASTER static sprite — IN PROGRESS.**
+  C1-06C-PREP done: `runtimeState.player.vehicleAssetKey` flows from
+  `StudentRaceRenderer.updateRuntimeState` (never per frame) into
+  `PlayerKartLayer`'s async art lifecycle — same-key loads dedupe, stale and
+  post-destroy results never apply, fallbacks keep the Graphics placeholder,
+  and a successful load prepares only the first texture (no Sprite yet).
+  Remaining: real GREEN MASTER asset + `TOY_CAR_GREEN` manifest entry, static
+  Sprite creation and anchor/baseScale/placement calibration under user
+  visual inspection (desktop/mobile/refresh).
 
 - asset manifest keys
 - metadata-driven props

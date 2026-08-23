@@ -138,6 +138,10 @@ describe("loadStudentRaceVehicleAssets", () => {
     ["non-array idleFrames", { idleFrames: "green-01.webp" }],
     ["empty frame url", { idleFrames: [""] }],
     ["non-finite anchor", { anchorY: NaN }],
+    ["anchorX below 0", { anchorX: -0.1 }],
+    ["anchorX above 1", { anchorX: 1.1 }],
+    ["anchorY below 0", { anchorY: -0.1 }],
+    ["anchorY above 1", { anchorY: 1.1 }],
     ["non-positive baseScale", { baseScale: 0 }],
   ])("falls back safely on a malformed entry: %s", async (_label, overrides) => {
     const loadTexture = vi.fn();

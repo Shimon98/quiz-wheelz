@@ -143,6 +143,10 @@ export class StudentRaceRenderer {
   updateRuntimeState(nextState) {
     this.runtimeState = nextState;
 
+    // Vehicle art selection happens at this runtime-update boundary, never
+    // in tick() — the layer dedups repeated keys itself.
+    this.playerKartLayer.setVehicleAssetKey(nextState?.player?.vehicleAssetKey);
+
     // A NEW authoritative snapshot re-bases the prediction (an answer bonus
     // jumps it forward; a fresh poll corrects small prediction drift — the
     // lerp below absorbs the correction smoothly, no visual snap). Identity

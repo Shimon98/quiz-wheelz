@@ -44,7 +44,11 @@ function isUsableDefinition(definition) {
       (frameUrl) => typeof frameUrl === "string" && frameUrl !== "",
     ) &&
     Number.isFinite(definition.anchorX) &&
+    definition.anchorX >= 0 &&
+    definition.anchorX <= 1 &&
     Number.isFinite(definition.anchorY) &&
+    definition.anchorY >= 0 &&
+    definition.anchorY <= 1 &&
     Number.isFinite(definition.baseScale) &&
     definition.baseScale > 0
   );
