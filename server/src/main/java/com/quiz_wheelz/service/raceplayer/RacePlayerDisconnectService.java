@@ -50,7 +50,7 @@ public class RacePlayerDisconnectService {
                     gameplayPresenceService.resolve(racePlayer, decisionInstant);
 
             if (playerActivity) {
-                gameplayTimelineService.settlePlayerActivity(
+                gameplayTimelineService.settleGameplayRequest(
                         racePlayer,
                         decisionInstant,
                         presenceDecision
@@ -65,7 +65,7 @@ public class RacePlayerDisconnectService {
 
             if (racePlayer.getStatus() != RacePlayerStatus.FINISHED) {
                 if (playerActivity) {
-                    gameplayPresenceService.recordPlayerActivity(
+                    gameplayPresenceService.recordGameplayActivity(
                             racePlayer,
                             decisionInstant
                     );

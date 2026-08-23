@@ -55,7 +55,7 @@ public class RacePlayerReconnectService {
 
         if (race.getStatus() != RaceStatus.IN_PROGRESS
                 || racePlayer.getStatus() != RacePlayerStatus.RACING) {
-            gameplayPresenceService.recordPlayerActivity(racePlayer, nowInstant);
+            gameplayPresenceService.renewPresenceLease(racePlayer, nowInstant);
             return buildResponse(
                     race,
                     racePlayer,
@@ -81,7 +81,7 @@ public class RacePlayerReconnectService {
             );
         }
 
-        gameplayTimelineService.settlePlayerActivity(
+        gameplayTimelineService.settleReconnect(
                 racePlayer,
                 nowInstant,
                 presenceDecision
@@ -99,7 +99,7 @@ public class RacePlayerReconnectService {
             );
         }
 
-        gameplayPresenceService.recordPlayerActivity(racePlayer, nowInstant);
+        gameplayPresenceService.renewPresenceLease(racePlayer, nowInstant);
         return buildResponse(
                 race,
                 racePlayer,

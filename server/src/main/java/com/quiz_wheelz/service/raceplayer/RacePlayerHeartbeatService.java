@@ -62,109 +62,203 @@ public class RacePlayerHeartbeatService {
     @Transactional(noRollbackFor = ApiException.class)
     public RacePlayerHeartbeatResponse heartbeat(HttpServletRequest request) {
         RacePlayerSessionIdentity identity = sessionLockService.resolveIdentity(request);
-        Instant nowInstant = clock.instant();
-        LocalDateTime now = DateTimeUtils.toLocalDateTime(nowInstant, clock.getZone());
-        RedisHeartbeatLookup redisHeartbeatLookup = readRedisHeartbeat(
-                identity.raceId(),
-                identity.racePlayerId(),
-                RacePlayerRuntimeLogMessages.READ_HEARTBEAT
+        Instant decisionInstant = clock.instant();
+        LocalDateTime decisionNow = DateTimeUtils.toLocalDateTime(
+                decisionInstant,
+                clock.getZone()
         );
-        Optional<RacePlayer> expiredRacePlayer = findExpiredRacePlayer(
-                identity,
-                redisHeartbeatLookup.lastHeartbeatAt(),
-                now
-        );
+        GameplayActivityLookup activityLookup = readGameplayActivity(identity);
 
-        if (expiredRacePlayer.isPresent()) {
-            disconnectService.disconnectForBackgroundExpiry(
-                    expiredRacePlayer.get(),
-                    nowInstant
+        if (canRenewPresenceWithoutDurableLock(activityLookup, decisionNow)) {
+            PresenceLeaseRenewal renewal = renewExistingPresenceLease(
+                    identity,
+                    decisionInstant
             );
+            if (renewal == PresenceLeaseRenewal.RENEWED) {
+                checkpointThroughGate(identity, decisionNow);
+                return heartbeatResponse(identity, decisionNow);
+            }
+            activityLookup = activityLookup.withOnline(false);
+        }
+
+        return heartbeatWithDurableLock(
+                identity,
+                activityLookup,
+                decisionInstant,
+                decisionNow
+        );
+    }
+
+    private RacePlayerHeartbeatResponse heartbeatWithDurableLock(
+            RacePlayerSessionIdentity identity,
+            GameplayActivityLookup activityLookup,
+            Instant decisionInstant,
+            LocalDateTime decisionNow
+    ) {
+        RacePlayer racePlayer = sessionLockService.lock(identity);
+        validateHeartbeatAllowed(racePlayer);
+
+        if (isReconnectWindowExpired(
+                racePlayer,
+                activityLookup.lastGameplayActivityAt(),
+                decisionNow
+        )) {
+            disconnectService.disconnectForBackgroundExpiry(racePlayer, decisionInstant);
             throw new ApiException(ErrorCode.RACE_PLAYER_RECONNECT_WINDOW_EXPIRED);
         }
 
-        if (!redisHeartbeatLookup.available()) {
-            checkpointLastSeen(identity, now);
-            return heartbeatResponse(identity, now);
+        if (!activityLookup.available()) {
+            checkpointLastSeen(identity, decisionNow);
+            return heartbeatResponse(identity, decisionNow);
         }
 
-        if (!redisHeartbeatLookup.online()) {
-            RacePlayer racePlayer = sessionLockService.lock(identity);
-            RacePlayerGameplayPresenceService.GameplayPresenceDecision presenceDecision =
-                    gameplayPresenceService.resolve(racePlayer, nowInstant);
-            gameplayTimelineService.settlePlayerActivity(
-                    racePlayer,
-                    nowInstant,
-                    presenceDecision
-            );
-            gameplayPresenceService.recordPlayerActivity(racePlayer, nowInstant);
-            return heartbeatResponse(identity, now);
+        RacePlayerGameplayPresenceService.GameplayPresenceDecision presenceDecision =
+                gameplayPresenceService.resolve(racePlayer, decisionInstant);
+        boolean disconnected = gameplayTimelineService.settleGameplayRequest(
+                racePlayer,
+                decisionInstant,
+                presenceDecision
+        );
+
+        if (disconnected) {
+            gameplayPresenceService.markOffline(racePlayer);
+            throw new ApiException(ErrorCode.RACE_PLAYER_RECONNECT_WINDOW_EXPIRED);
         }
 
-        if (!refreshHeartbeat(identity, nowInstant)) {
-            checkpointLastSeen(identity, now);
-            return heartbeatResponse(identity, now);
+        if (!presenceDecision.online()) {
+            throw new ApiException(ErrorCode.RACE_PLAYER_RECONNECT_REQUIRED);
         }
 
-        Optional<Boolean> checkpointGate = acquireCheckpointGate(identity);
-        if (checkpointGate.isEmpty()) {
-            checkpointLastSeen(identity, now);
-        } else if (checkpointGate.get()) {
-            checkpointLastSeenWithGateReleaseOnFailure(identity, now);
+        gameplayPresenceService.renewPresenceLease(racePlayer, decisionInstant);
+
+        if (activityLookup.online()) {
+            checkpointThroughGate(identity, decisionNow);
         }
 
-        return heartbeatResponse(identity, now);
+        return heartbeatResponse(identity, decisionNow);
     }
 
-    private Optional<RacePlayer> findExpiredRacePlayer(
-            RacePlayerSessionIdentity identity,
-            Optional<LocalDateTime> lastHeartbeatAt,
-            LocalDateTime now
-    ) {
-        if (lastHeartbeatAt.isPresent()
-                && reconnectPolicy.isActivityReferenceInsideGrace(
-                        lastHeartbeatAt.get(),
-                        now
-                )) {
-            return Optional.empty();
+    private void validateHeartbeatAllowed(RacePlayer racePlayer) {
+        Race race = racePlayer.getRace();
+        RacePlayerStatus playerStatus = racePlayer.getStatus();
+        RaceStatus raceStatus = race == null ? null : race.getStatus();
+
+        boolean waiting = playerStatus == RacePlayerStatus.WAITING
+                && (raceStatus == RaceStatus.WAITING_FOR_PLAYERS
+                || raceStatus == RaceStatus.READY);
+        boolean racing = playerStatus == RacePlayerStatus.RACING
+                && raceStatus == RaceStatus.IN_PROGRESS;
+
+        if (waiting || racing) {
+            return;
         }
 
-        RacePlayer racePlayer = sessionLockService.lock(identity);
-        Race race = racePlayer.getRace();
+        gameplayPresenceService.markOffline(racePlayer);
 
+        if (playerStatus == RacePlayerStatus.DISCONNECTED) {
+            throw new ApiException(ErrorCode.RACE_PLAYER_RECONNECT_WINDOW_EXPIRED);
+        }
+        if (raceStatus != RaceStatus.WAITING_FOR_PLAYERS
+                && raceStatus != RaceStatus.READY
+                && raceStatus != RaceStatus.IN_PROGRESS) {
+            throw new ApiException(ErrorCode.RACE_NOT_IN_PROGRESS);
+        }
+        throw new ApiException(ErrorCode.RACE_PLAYER_NOT_RACING);
+    }
+
+    private boolean canRenewPresenceWithoutDurableLock(
+            GameplayActivityLookup activityLookup,
+            LocalDateTime decisionNow
+    ) {
+        return activityLookup.available()
+                && activityLookup.online()
+                && activityLookup.lastGameplayActivityAt().isPresent()
+                && reconnectPolicy.isActivityReferenceInsideGrace(
+                        activityLookup.lastGameplayActivityAt().get(),
+                        decisionNow
+                );
+    }
+
+    private boolean isReconnectWindowExpired(
+            RacePlayer racePlayer,
+            Optional<LocalDateTime> lastGameplayActivityAt,
+            LocalDateTime decisionNow
+    ) {
+        Race race = racePlayer.getRace();
         if (race == null
                 || race.getStatus() != RaceStatus.IN_PROGRESS
                 || racePlayer.getStatus() != RacePlayerStatus.RACING) {
-            return Optional.empty();
+            return false;
         }
 
-        boolean expired = reconnectPolicy.isReconnectWindowExpired(
-                lastHeartbeatAt,
+        return reconnectPolicy.isReconnectWindowExpired(
+                lastGameplayActivityAt,
                 racePlayer.getLastSeenAt(),
                 race.getStartedAt(),
-                now
+                decisionNow
         );
-        return expired ? Optional.of(racePlayer) : Optional.empty();
     }
 
-    private boolean refreshHeartbeat(
-            RacePlayerSessionIdentity identity,
-            Instant nowInstant
+    private GameplayActivityLookup readGameplayActivity(
+            RacePlayerSessionIdentity identity
     ) {
         try {
-            redisPresenceService.markOnline(
-                    identity.raceId(),
-                    identity.racePlayerId(),
-                    nowInstant
+            return GameplayActivityLookup.available(
+                    redisPresenceService.isOnline(
+                            identity.raceId(),
+                            identity.racePlayerId()
+                    ),
+                    redisPresenceService.findLastGameplayActivityAt(
+                                    identity.raceId(),
+                                    identity.racePlayerId()
+                            )
+                            .map(activity -> DateTimeUtils.toLocalDateTime(
+                                    activity,
+                                    clock.getZone()
+                            ))
             );
-            return true;
         } catch (DataAccessException exception) {
             logRedisFailure(
-                    RacePlayerRuntimeLogMessages.REFRESH_HEARTBEAT,
+                    RacePlayerRuntimeLogMessages.READ_GAMEPLAY_ACTIVITY,
                     identity,
                     exception
             );
-            return false;
+            return GameplayActivityLookup.unavailable();
+        }
+    }
+
+    private PresenceLeaseRenewal renewExistingPresenceLease(
+            RacePlayerSessionIdentity identity,
+            Instant decisionInstant
+    ) {
+        try {
+            boolean refreshed = redisPresenceService.renewExistingPresenceLease(
+                    identity.raceId(),
+                    identity.racePlayerId(),
+                    decisionInstant
+            );
+            return refreshed
+                    ? PresenceLeaseRenewal.RENEWED
+                    : PresenceLeaseRenewal.MISSING;
+        } catch (DataAccessException exception) {
+            logRedisFailure(
+                    RacePlayerRuntimeLogMessages.RENEW_PRESENCE_LEASE,
+                    identity,
+                    exception
+            );
+            return PresenceLeaseRenewal.UNAVAILABLE;
+        }
+    }
+
+    private void checkpointThroughGate(
+            RacePlayerSessionIdentity identity,
+            LocalDateTime decisionNow
+    ) {
+        Optional<Boolean> checkpointGate = acquireCheckpointGate(identity);
+        if (checkpointGate.isEmpty()) {
+            checkpointLastSeen(identity, decisionNow);
+        } else if (checkpointGate.get()) {
+            checkpointLastSeenWithGateReleaseOnFailure(identity, decisionNow);
         }
     }
 
@@ -186,10 +280,10 @@ public class RacePlayerHeartbeatService {
 
     private void checkpointLastSeenWithGateReleaseOnFailure(
             RacePlayerSessionIdentity identity,
-            LocalDateTime now
+            LocalDateTime decisionNow
     ) {
         try {
-            checkpointLastSeen(identity, now);
+            checkpointLastSeen(identity, decisionNow);
         } catch (DataAccessException exception) {
             try {
                 redisPresenceService.releaseLastSeenDbSyncGate(
@@ -208,51 +302,25 @@ public class RacePlayerHeartbeatService {
         }
     }
 
-    private RedisHeartbeatLookup readRedisHeartbeat(
-            Long raceId,
-            Long racePlayerId,
-            String operation
-    ) {
-        try {
-            return RedisHeartbeatLookup.available(
-                    redisPresenceService.isOnline(raceId, racePlayerId),
-                    redisPresenceService.findLastHeartbeatAt(raceId, racePlayerId)
-                            .map(heartbeatInstant -> DateTimeUtils.toLocalDateTime(
-                                    heartbeatInstant,
-                                    clock.getZone()
-                            ))
-            );
-        } catch (DataAccessException exception) {
-            LOGGER.warn(
-                    RacePlayerRuntimeLogMessages.REDIS_DURABLE_FALLBACK,
-                    operation,
-                    raceId,
-                    racePlayerId,
-                    exception
-            );
-            return RedisHeartbeatLookup.unavailable();
-        }
-    }
-
     private void checkpointLastSeen(
             RacePlayerSessionIdentity identity,
-            LocalDateTime now
+            LocalDateTime decisionNow
     ) {
         racePlayerRepository.updateLastSeenAtIfOlder(
                 identity.racePlayerId(),
                 identity.raceId(),
-                now
+                decisionNow
         );
     }
 
     private RacePlayerHeartbeatResponse heartbeatResponse(
             RacePlayerSessionIdentity identity,
-            LocalDateTime now
+            LocalDateTime decisionNow
     ) {
         return new RacePlayerHeartbeatResponse(
                 identity.raceId(),
                 identity.racePlayerId(),
-                now
+                decisionNow
         );
     }
 
@@ -270,25 +338,39 @@ public class RacePlayerHeartbeatService {
         );
     }
 
-    private record RedisHeartbeatLookup(
+    private enum PresenceLeaseRenewal {
+        RENEWED,
+        MISSING,
+        UNAVAILABLE
+    }
+
+    private record GameplayActivityLookup(
             boolean available,
             boolean online,
-            Optional<LocalDateTime> lastHeartbeatAt
+            Optional<LocalDateTime> lastGameplayActivityAt
     ) {
 
-        private static RedisHeartbeatLookup available(
+        private static GameplayActivityLookup available(
                 boolean online,
-                Optional<LocalDateTime> lastHeartbeatAt
+                Optional<LocalDateTime> lastGameplayActivityAt
         ) {
-            return new RedisHeartbeatLookup(
+            return new GameplayActivityLookup(
                     true,
                     online,
-                    Objects.requireNonNull(lastHeartbeatAt)
+                    Objects.requireNonNull(lastGameplayActivityAt)
             );
         }
 
-        private static RedisHeartbeatLookup unavailable() {
-            return new RedisHeartbeatLookup(false, true, Optional.empty());
+        private static GameplayActivityLookup unavailable() {
+            return new GameplayActivityLookup(false, true, Optional.empty());
+        }
+
+        private GameplayActivityLookup withOnline(boolean nextOnline) {
+            return new GameplayActivityLookup(
+                    available,
+                    nextOnline,
+                    lastGameplayActivityAt
+            );
         }
     }
 }

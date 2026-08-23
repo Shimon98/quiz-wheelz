@@ -69,11 +69,12 @@ class RacePlayerLeaveServiceTest {
         RacePlayerReconnectPolicy reconnectPolicy = new RacePlayerReconnectPolicy();
         lenient().when(redisPresenceService.isOnline(RACE_ID, RACE_PLAYER_ID))
                 .thenReturn(true);
-        lenient().when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
+        lenient().when(redisPresenceService.findLastGameplayActivityAt(RACE_ID, RACE_PLAYER_ID))
                 .thenReturn(Optional.empty());
         RacePlayerGameplayPresenceService presenceService =
                 new RacePlayerGameplayPresenceService(
                         redisPresenceService,
+                        racePlayerRepository,
                         reconnectPolicy,
                         fixedClock
                 );
@@ -116,7 +117,7 @@ class RacePlayerLeaveServiceTest {
         assertEquals(now(), response.getLeftAt());
         assertEquals(RacePlayerStatus.DISCONNECTED, response.getPlayerStatus());
         assertEquals(RacePlayerStatus.DISCONNECTED, lockedRacePlayer.getStatus());
-        assertEquals(now(), lockedRacePlayer.getLastSeenAt());
+        assertNull(lockedRacePlayer.getLastSeenAt());
 
         verify(currentRacePlayerService).resolveCurrentRacePlayerSession(request);
         verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
@@ -204,4 +205,3 @@ class RacePlayerLeaveServiceTest {
         return localDateTime.atZone(FIXED_ZONE).toInstant();
     }
 }
-

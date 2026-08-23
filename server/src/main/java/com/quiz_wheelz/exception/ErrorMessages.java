@@ -18,6 +18,8 @@ public final class ErrorMessages {
 
     public static final String RACE_PLAYER_RECONNECT_WINDOW_EXPIRED =
             "Race player reconnect window has expired";
+    public static final String RACE_PLAYER_RECONNECT_REQUIRED =
+            "Race player must reconnect before gameplay can continue";
 
     public static final String QUESTION_TEMPLATE_NOT_FOUND =
             "Active question template not found";

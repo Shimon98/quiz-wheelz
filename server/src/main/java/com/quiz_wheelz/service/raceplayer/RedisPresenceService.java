@@ -16,7 +16,7 @@ import java.util.Optional;
 @Service
 public class RedisPresenceService {
 
-    private static final DefaultRedisScript<Long> MARK_ONLINE_SCRIPT =
+    private static final DefaultRedisScript<Long> RENEW_PRESENCE_LEASE_SCRIPT =
             new DefaultRedisScript<>("""
                     local incoming = tonumber(ARGV[1])
                     local currentRaw = redis.call('GET', KEYS[2])
@@ -27,6 +27,34 @@ public class RedisPresenceService {
                         redis.call('PEXPIRE', KEYS[2], ARGV[3])
                     end
                     redis.call('SET', KEYS[1], ARGV[4], 'PX', ARGV[2])
+                    return 1
+                    """, Long.class);
+    private static final DefaultRedisScript<Long> RENEW_EXISTING_PRESENCE_LEASE_SCRIPT =
+            new DefaultRedisScript<>("""
+                    if redis.call('EXISTS', KEYS[1]) == 0 then
+                        return 0
+                    end
+                    local incoming = tonumber(ARGV[1])
+                    local currentRaw = redis.call('GET', KEYS[2])
+                    local current = tonumber(currentRaw)
+                    if (not current) or incoming > current then
+                        redis.call('SET', KEYS[2], ARGV[1], 'PX', ARGV[3])
+                    else
+                        redis.call('PEXPIRE', KEYS[2], ARGV[3])
+                    end
+                    redis.call('PEXPIRE', KEYS[1], ARGV[2])
+                    return 1
+                    """, Long.class);
+    private static final DefaultRedisScript<Long> RECORD_GAMEPLAY_ACTIVITY_SCRIPT =
+            new DefaultRedisScript<>("""
+                    local incoming = tonumber(ARGV[1])
+                    local currentRaw = redis.call('GET', KEYS[1])
+                    local current = tonumber(currentRaw)
+                    if (not current) or incoming > current then
+                        redis.call('SET', KEYS[1], ARGV[1], 'PX', ARGV[2])
+                    else
+                        redis.call('PEXPIRE', KEYS[1], ARGV[2])
+                    end
                     return 1
                     """, Long.class);
 
@@ -41,7 +69,7 @@ public class RedisPresenceService {
         this.redisKeyBuilder = Objects.requireNonNull(redisKeyBuilder);
     }
 
-    public void markOnline(
+    public void renewPresenceLease(
             Long raceId,
             Long racePlayerId,
             Instant activityAt
@@ -55,7 +83,7 @@ public class RedisPresenceService {
         }
 
         redisTemplate.execute(
-                MARK_ONLINE_SCRIPT,
+                RENEW_PRESENCE_LEASE_SCRIPT,
                 List.of(
                         buildPresenceKey(raceId, racePlayerId),
                         buildLastGameplayActivityKey(raceId, racePlayerId)
@@ -64,6 +92,54 @@ public class RedisPresenceService {
                 Long.toString(RacePlayerRuntimeRules.PRESENCE_TTL.toMillis()),
                 Long.toString(RacePlayerRuntimeRules.LAST_GAMEPLAY_ACTIVITY_TTL.toMillis()),
                 RacePlayerRuntimeRules.REDIS_PRESENCE_VALUE
+        );
+    }
+
+    public boolean renewExistingPresenceLease(
+            Long raceId,
+            Long racePlayerId,
+            Instant activityAt
+    ) {
+        validateIds(raceId, racePlayerId);
+
+        if (activityAt == null) {
+            throw new IllegalArgumentException(
+                    ErrorMessages.REDIS_GAMEPLAY_ACTIVITY_TIMESTAMP_MISSING
+            );
+        }
+
+        Long refreshed = redisTemplate.execute(
+                RENEW_EXISTING_PRESENCE_LEASE_SCRIPT,
+                List.of(
+                        buildPresenceKey(raceId, racePlayerId),
+                        buildLastGameplayActivityKey(raceId, racePlayerId)
+                ),
+                Long.toString(activityAt.toEpochMilli()),
+                Long.toString(RacePlayerRuntimeRules.PRESENCE_TTL.toMillis()),
+                Long.toString(RacePlayerRuntimeRules.LAST_GAMEPLAY_ACTIVITY_TTL.toMillis())
+        );
+
+        return Long.valueOf(1L).equals(refreshed);
+    }
+
+    public void recordGameplayActivity(
+            Long raceId,
+            Long racePlayerId,
+            Instant activityAt
+    ) {
+        validateIds(raceId, racePlayerId);
+
+        if (activityAt == null) {
+            throw new IllegalArgumentException(
+                    ErrorMessages.REDIS_GAMEPLAY_ACTIVITY_TIMESTAMP_MISSING
+            );
+        }
+
+        redisTemplate.execute(
+                RECORD_GAMEPLAY_ACTIVITY_SCRIPT,
+                List.of(buildLastGameplayActivityKey(raceId, racePlayerId)),
+                Long.toString(activityAt.toEpochMilli()),
+                Long.toString(RacePlayerRuntimeRules.LAST_GAMEPLAY_ACTIVITY_TTL.toMillis())
         );
     }
 
@@ -105,13 +181,6 @@ public class RedisPresenceService {
         }
     }
 
-    public Optional<Instant> findLastHeartbeatAt(
-            Long raceId,
-            Long racePlayerId
-    ) {
-        return findLastGameplayActivityAt(raceId, racePlayerId);
-    }
-
     public boolean tryAcquireLastSeenDbSyncGate(Long raceId, Long racePlayerId) {
         validateIds(raceId, racePlayerId);
 
@@ -139,10 +208,6 @@ public class RedisPresenceService {
         validateIds(raceId, racePlayerId);
 
         return redisKeyBuilder.presenceLastGameplayActivityKey(raceId, racePlayerId);
-    }
-
-    String buildLastHeartbeatKey(Long raceId, Long racePlayerId) {
-        return buildLastGameplayActivityKey(raceId, racePlayerId);
     }
 
     String buildLastSeenDbSyncKey(Long raceId, Long racePlayerId) {

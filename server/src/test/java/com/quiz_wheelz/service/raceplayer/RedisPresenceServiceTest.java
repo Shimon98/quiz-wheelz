@@ -37,7 +37,7 @@ class RedisPresenceServiceTest {
             "quizwheelz:test:presence:last-gameplay-activity:race:1:player:12";
     private static final String LAST_SEEN_DB_SYNC_KEY =
             "quizwheelz:test:presence:race:1:player:12:last-seen-db-sync";
-    private static final Instant HEARTBEAT_AT =
+    private static final Instant GAMEPLAY_ACTIVITY_AT =
             Instant.parse("2026-07-06T13:20:00Z");
 
     private StringRedisTemplate redisTemplate;
@@ -56,13 +56,13 @@ class RedisPresenceServiceTest {
     }
 
     @Test
-    void markOnlineShouldStorePresenceValueWithTtl() {
-        redisPresenceService.markOnline(RACE_ID, RACE_PLAYER_ID, HEARTBEAT_AT);
+    void renewPresenceLeaseShouldStorePresenceValueWithTtl() {
+        redisPresenceService.renewPresenceLease(RACE_ID, RACE_PLAYER_ID, GAMEPLAY_ACTIVITY_AT);
 
         verify(redisTemplate).execute(
                 any(DefaultRedisScript.class),
                 eq(List.of(PRESENCE_KEY, LAST_GAMEPLAY_ACTIVITY_KEY)),
-                eq(Long.toString(HEARTBEAT_AT.toEpochMilli())),
+                eq(Long.toString(GAMEPLAY_ACTIVITY_AT.toEpochMilli())),
                 eq(Long.toString(RacePlayerRuntimeRules.PRESENCE_TTL.toMillis())),
                 eq(Long.toString(
                         RacePlayerRuntimeRules.LAST_GAMEPLAY_ACTIVITY_TTL.toMillis()
@@ -72,13 +72,13 @@ class RedisPresenceServiceTest {
     }
 
     @Test
-    void markOnlineShouldStoreLastHeartbeatKeyWithLongTtl() {
-        redisPresenceService.markOnline(RACE_ID, RACE_PLAYER_ID, HEARTBEAT_AT);
+    void renewPresenceLeaseShouldStoreLastGameplayActivityKeyWithLongTtl() {
+        redisPresenceService.renewPresenceLease(RACE_ID, RACE_PLAYER_ID, GAMEPLAY_ACTIVITY_AT);
 
         verify(redisTemplate).execute(
                 any(DefaultRedisScript.class),
                 eq(List.of(PRESENCE_KEY, LAST_GAMEPLAY_ACTIVITY_KEY)),
-                eq(Long.toString(HEARTBEAT_AT.toEpochMilli())),
+                eq(Long.toString(GAMEPLAY_ACTIVITY_AT.toEpochMilli())),
                 eq(Long.toString(RacePlayerRuntimeRules.PRESENCE_TTL.toMillis())),
                 eq(Long.toString(
                         RacePlayerRuntimeRules.LAST_GAMEPLAY_ACTIVITY_TTL.toMillis()
@@ -88,60 +88,120 @@ class RedisPresenceServiceTest {
     }
 
     @Test
-    void findLastHeartbeatAtShouldReturnParsedTimestamp() {
+    void renewExistingPresenceLeaseShouldRefreshExistingPresenceAtomically() {
+        when(redisTemplate.execute(
+                any(DefaultRedisScript.class),
+                eq(List.of(PRESENCE_KEY, LAST_GAMEPLAY_ACTIVITY_KEY)),
+                eq(Long.toString(GAMEPLAY_ACTIVITY_AT.toEpochMilli())),
+                eq(Long.toString(RacePlayerRuntimeRules.PRESENCE_TTL.toMillis())),
+                eq(Long.toString(
+                        RacePlayerRuntimeRules.LAST_GAMEPLAY_ACTIVITY_TTL.toMillis()
+                ))
+        )).thenReturn(1L);
+
+        boolean refreshed = redisPresenceService.renewExistingPresenceLease(
+                RACE_ID,
+                RACE_PLAYER_ID,
+                GAMEPLAY_ACTIVITY_AT
+        );
+
+        assertTrue(refreshed);
+    }
+
+    @Test
+    void renewExistingPresenceLeaseShouldNotRecreateMissingPresence() {
+        when(redisTemplate.execute(
+                any(DefaultRedisScript.class),
+                eq(List.of(PRESENCE_KEY, LAST_GAMEPLAY_ACTIVITY_KEY)),
+                eq(Long.toString(GAMEPLAY_ACTIVITY_AT.toEpochMilli())),
+                eq(Long.toString(RacePlayerRuntimeRules.PRESENCE_TTL.toMillis())),
+                eq(Long.toString(
+                        RacePlayerRuntimeRules.LAST_GAMEPLAY_ACTIVITY_TTL.toMillis()
+                ))
+        )).thenReturn(0L);
+
+        boolean refreshed = redisPresenceService.renewExistingPresenceLease(
+                RACE_ID,
+                RACE_PLAYER_ID,
+                GAMEPLAY_ACTIVITY_AT
+        );
+
+        assertFalse(refreshed);
+    }
+
+    @Test
+    void recordGameplayActivityShouldWriteOnlyTheActivityKey() {
+        redisPresenceService.recordGameplayActivity(
+                RACE_ID,
+                RACE_PLAYER_ID,
+                GAMEPLAY_ACTIVITY_AT
+        );
+
+        verify(redisTemplate).execute(
+                any(DefaultRedisScript.class),
+                eq(List.of(LAST_GAMEPLAY_ACTIVITY_KEY)),
+                eq(Long.toString(GAMEPLAY_ACTIVITY_AT.toEpochMilli())),
+                eq(Long.toString(
+                        RacePlayerRuntimeRules.LAST_GAMEPLAY_ACTIVITY_TTL.toMillis()
+                ))
+        );
+    }
+
+    @Test
+    void findLastGameplayActivityAtShouldReturnParsedTimestamp() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get(LAST_GAMEPLAY_ACTIVITY_KEY))
-                .thenReturn(Long.toString(HEARTBEAT_AT.toEpochMilli()));
+                .thenReturn(Long.toString(GAMEPLAY_ACTIVITY_AT.toEpochMilli()));
 
-        Optional<Instant> heartbeatAt =
-                redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
+        Optional<Instant> gameplayActivityAt =
+                redisPresenceService.findLastGameplayActivityAt(RACE_ID, RACE_PLAYER_ID);
 
-        assertTrue(heartbeatAt.isPresent());
-        assertEquals(HEARTBEAT_AT, heartbeatAt.get());
+        assertTrue(gameplayActivityAt.isPresent());
+        assertEquals(GAMEPLAY_ACTIVITY_AT, gameplayActivityAt.get());
     }
 
     @Test
-    void findLastHeartbeatAtShouldReturnEmptyWhenKeyIsMissing() {
+    void findLastGameplayActivityAtShouldReturnEmptyWhenKeyIsMissing() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get(LAST_GAMEPLAY_ACTIVITY_KEY)).thenReturn(null);
 
-        Optional<Instant> heartbeatAt =
-                redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
+        Optional<Instant> gameplayActivityAt =
+                redisPresenceService.findLastGameplayActivityAt(RACE_ID, RACE_PLAYER_ID);
 
-        assertTrue(heartbeatAt.isEmpty());
+        assertTrue(gameplayActivityAt.isEmpty());
     }
 
     @Test
-    void findLastHeartbeatAtShouldReturnEmptyWhenValueIsInvalid() {
+    void findLastGameplayActivityAtShouldReturnEmptyWhenValueIsInvalid() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get(LAST_GAMEPLAY_ACTIVITY_KEY)).thenReturn("not-a-number");
 
-        Optional<Instant> heartbeatAt =
-                redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
+        Optional<Instant> gameplayActivityAt =
+                redisPresenceService.findLastGameplayActivityAt(RACE_ID, RACE_PLAYER_ID);
 
-        assertTrue(heartbeatAt.isEmpty());
+        assertTrue(gameplayActivityAt.isEmpty());
     }
 
     @Test
-    void findLastHeartbeatAtShouldTreatLegacyIsoValueAsUnusable() {
+    void findLastGameplayActivityAtShouldTreatLegacyIsoValueAsUnusable() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get(LAST_GAMEPLAY_ACTIVITY_KEY)).thenReturn("2026-07-06T13:20:00");
 
-        Optional<Instant> heartbeatAt =
-                redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
+        Optional<Instant> gameplayActivityAt =
+                redisPresenceService.findLastGameplayActivityAt(RACE_ID, RACE_PLAYER_ID);
 
-        assertTrue(heartbeatAt.isEmpty());
+        assertTrue(gameplayActivityAt.isEmpty());
     }
 
     @Test
-    void findLastHeartbeatAtShouldRejectNonPositiveEpoch() {
+    void findLastGameplayActivityAtShouldRejectNonPositiveEpoch() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get(LAST_GAMEPLAY_ACTIVITY_KEY)).thenReturn("0");
 
-        Optional<Instant> heartbeatAt =
-                redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
+        Optional<Instant> gameplayActivityAt =
+                redisPresenceService.findLastGameplayActivityAt(RACE_ID, RACE_PLAYER_ID);
 
-        assertTrue(heartbeatAt.isEmpty());
+        assertTrue(gameplayActivityAt.isEmpty());
     }
 
     @Test
@@ -211,7 +271,11 @@ class RedisPresenceServiceTest {
     void nullRaceIdShouldThrowConstantErrorMessage() {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> redisPresenceService.markOnline(null, RACE_PLAYER_ID, HEARTBEAT_AT)
+                () -> redisPresenceService.renewPresenceLease(
+                        null,
+                        RACE_PLAYER_ID,
+                        GAMEPLAY_ACTIVITY_AT
+                )
         );
 
         assertEquals(ErrorMessages.REDIS_PRESENCE_IDS_MISSING, exception.getMessage());
@@ -221,17 +285,21 @@ class RedisPresenceServiceTest {
     void nullRacePlayerIdShouldThrowConstantErrorMessage() {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> redisPresenceService.markOnline(RACE_ID, null, HEARTBEAT_AT)
+                () -> redisPresenceService.renewPresenceLease(
+                        RACE_ID,
+                        null,
+                        GAMEPLAY_ACTIVITY_AT
+                )
         );
 
         assertEquals(ErrorMessages.REDIS_PRESENCE_IDS_MISSING, exception.getMessage());
     }
 
     @Test
-    void nullHeartbeatTimestampShouldThrowConstantErrorMessage() {
+    void nullGameplayActivityTimestampShouldThrowConstantErrorMessage() {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> redisPresenceService.markOnline(
+                () -> redisPresenceService.renewPresenceLease(
                         RACE_ID,
                         RACE_PLAYER_ID,
                         null
@@ -252,8 +320,11 @@ class RedisPresenceServiceTest {
     }
 
     @Test
-    void buildLastHeartbeatKeyShouldUseSharedRedisKeyBuilderConvention() {
-        String key = redisPresenceService.buildLastHeartbeatKey(RACE_ID, RACE_PLAYER_ID);
+    void buildLastGameplayActivityKeyShouldUseSharedRedisKeyBuilderConvention() {
+        String key = redisPresenceService.buildLastGameplayActivityKey(
+                RACE_ID,
+                RACE_PLAYER_ID
+        );
 
         assertEquals(LAST_GAMEPLAY_ACTIVITY_KEY, key);
     }

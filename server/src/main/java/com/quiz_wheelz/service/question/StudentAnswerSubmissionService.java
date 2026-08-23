@@ -16,9 +16,8 @@ import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
-import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
+import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
-import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,8 +35,7 @@ public class StudentAnswerSubmissionService {
     private final PlayerQuestionChoiceRepository playerQuestionChoiceRepository;
     private final RacePlayerRepository racePlayerRepository;
     private final RaceEngineService raceEngineService;
-    private final RacePlayerGameplayPresenceService gameplayPresenceService;
-    private final RacePlayerGameplayTimelineService gameplayTimelineService;
+    private final RacePlayerGameplayRequestGuard gameplayRequestGuard;
     private final StudentRaceRuntimeSnapshotMapper snapshotMapper;
     private final Clock clock;
 
@@ -46,8 +44,7 @@ public class StudentAnswerSubmissionService {
             PlayerQuestionChoiceRepository playerQuestionChoiceRepository,
             RacePlayerRepository racePlayerRepository,
             RaceEngineService raceEngineService,
-            RacePlayerGameplayPresenceService gameplayPresenceService,
-            RacePlayerGameplayTimelineService gameplayTimelineService,
+            RacePlayerGameplayRequestGuard gameplayRequestGuard,
             StudentRaceRuntimeSnapshotMapper snapshotMapper,
             Clock clock
     ) {
@@ -55,8 +52,7 @@ public class StudentAnswerSubmissionService {
         this.playerQuestionChoiceRepository = Objects.requireNonNull(playerQuestionChoiceRepository);
         this.racePlayerRepository = Objects.requireNonNull(racePlayerRepository);
         this.raceEngineService = Objects.requireNonNull(raceEngineService);
-        this.gameplayPresenceService = Objects.requireNonNull(gameplayPresenceService);
-        this.gameplayTimelineService = Objects.requireNonNull(gameplayTimelineService);
+        this.gameplayRequestGuard = Objects.requireNonNull(gameplayRequestGuard);
         this.snapshotMapper = Objects.requireNonNull(snapshotMapper);
         this.clock = Objects.requireNonNull(clock);
     }
@@ -81,21 +77,10 @@ public class StudentAnswerSubmissionService {
 
         validateQuestionIsActive(question);
 
-        RacePlayerGameplayPresenceService.GameplayPresenceDecision presenceDecision =
-                gameplayPresenceService.resolve(lockedRacePlayer, decisionInstant);
-        boolean disconnected = gameplayTimelineService.settlePlayerActivity(
+        gameplayRequestGuard.requireGameplayAccess(
                 lockedRacePlayer,
-                decisionInstant,
-                presenceDecision
+                decisionInstant
         );
-        if (disconnected) {
-            gameplayPresenceService.markOffline(lockedRacePlayer);
-        } else {
-            gameplayPresenceService.recordPlayerActivity(
-                    lockedRacePlayer,
-                    decisionInstant
-            );
-        }
 
         if (question.getStatus() == PlayerQuestionStatus.EXPIRED) {
             throw new ApiException(ErrorCode.QUESTION_EXPIRED);

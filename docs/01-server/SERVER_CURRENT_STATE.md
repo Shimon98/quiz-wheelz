@@ -57,9 +57,16 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - lane and vehicle assignment
 - race-state with refresh-safe current-player presentation identity and the shared
   runtime snapshot
-- Redis-first heartbeat and presence with 45-second presence TTL; heartbeat,
-  race-state, current-question, answer and reconnect are trusted player activity,
-  while schedulers never refresh activity.
+- Redis-first heartbeat and presence with 45-second presence TTL; only heartbeat
+  and reconnect create or renew the lease. Active `RACING + IN_PROGRESS`
+  race-state, current-question and answer requests record trusted gameplay activity.
+  Absent active requests settle to the trusted cutoff and return
+  `RACE_PLAYER_RECONNECT_REQUIRED` without activity or re-anchor. Finished,
+  disconnected and terminal-race race-state remains readable without consulting
+  presence or writing activity; terminal state reached during request settlement
+  also wins over the older presence decision. Heartbeat renews an existing lease but
+  a missing lease requires explicit reconnect and cannot trigger reconnect settlement
+  or re-anchor; schedulers never refresh activity.
 - 30-second Redis-gated durable `lastSeenAt` checkpoints and direct MySQL fallback
   during runtime Redis outages.
 - reconnect using the freshest trusted gameplay activity, durable `lastSeenAt` and race start,
@@ -108,6 +115,9 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
   current-question, submit-answer, heartbeat, leave and reconnect contracts
 - answer validation and persistence
 - duplicate-submit protection.
+- ACTIVE question ownership and the original `expiresAt` survive hidden, reload and
+  reconnect transitions. An overdue ACTIVE question becomes EXPIRED exactly once
+  before a next question can be created; reconnect itself never creates a question.
 
 ### Race engine
 

@@ -42,20 +42,29 @@ public class RacePlayerGameplayTimelineService {
         return disconnectWhenGraceExpired(lockedRacePlayer, presenceDecision);
     }
 
-    public boolean settlePlayerActivity(
+    public boolean settleGameplayRequest(
             RacePlayer lockedRacePlayer,
             Instant decisionInstant,
             GameplayPresenceDecision presenceDecision
     ) {
-        long movementCutoffEpochMs = presenceDecision.requiresResume()
-                ? presenceDecision.movementCutoffEpochMs()
-                : decisionInstant.toEpochMilli();
+        settle(
+                lockedRacePlayer,
+                decisionInstant,
+                resolvePlayerRequestCutoff(decisionInstant, presenceDecision)
+        );
+        return disconnectWhenGraceExpired(lockedRacePlayer, presenceDecision);
+    }
 
-        if (presenceDecision.graceExpired()) {
-            movementCutoffEpochMs = presenceDecision.movementCutoffEpochMs();
-        }
-
-        settle(lockedRacePlayer, decisionInstant, movementCutoffEpochMs);
+    public boolean settleReconnect(
+            RacePlayer lockedRacePlayer,
+            Instant decisionInstant,
+            GameplayPresenceDecision presenceDecision
+    ) {
+        settle(
+                lockedRacePlayer,
+                decisionInstant,
+                resolvePlayerRequestCutoff(decisionInstant, presenceDecision)
+        );
 
         if (!presenceDecision.graceExpired()
                 && presenceDecision.requiresResume()
@@ -99,6 +108,15 @@ public class RacePlayerGameplayTimelineService {
 
         racePlayer.setStatus(RacePlayerStatus.DISCONNECTED);
         return true;
+    }
+
+    private long resolvePlayerRequestCutoff(
+            Instant decisionInstant,
+            GameplayPresenceDecision presenceDecision
+    ) {
+        return presenceDecision.requiresResume() || presenceDecision.graceExpired()
+                ? presenceDecision.movementCutoffEpochMs()
+                : decisionInstant.toEpochMilli();
     }
 
     private void settle(

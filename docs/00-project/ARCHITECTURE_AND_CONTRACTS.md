@@ -62,6 +62,22 @@ Gameplay presence fails open during a Redis outage: movement remains available,
 players are not mass-disconnected, and durable `lastSeenAt` checkpoints remain the
 fallback.
 
+Presence lease and trusted gameplay activity are separate runtime concepts. Only
+heartbeat and reconnect create or renew the 45-second presence lease. Active
+`RACING + IN_PROGRESS` race-state, current-question and answer requests may record
+monotonic trusted activity, but an absent active player must complete explicit
+reconnect first. An absent active gameplay request settles only to the trusted
+cutoff, never re-anchors, records no activity, and returns
+`RACE_PLAYER_RECONNECT_REQUIRED`; terminal/non-playable race-state remains readable
+without presence and records no activity. Grace expiry durably becomes DISCONNECTED.
+Durable `lastSeenAt` changes only through the 30-second heartbeat checkpoint gate or
+direct Redis-failure fallback.
+
+Heartbeat renews only an existing valid presence lease. If the lease is missing
+inside grace, heartbeat settles to the trusted cutoff without reconnect re-anchoring
+or lease recreation and returns `RACE_PLAYER_RECONNECT_REQUIRED`; only the explicit
+reconnect command may call reconnect settlement and restore presence.
+
 ### Client
 
 Owns presentation-only state:
@@ -200,6 +216,24 @@ re-anchors at reconnect time. The 5-minute grace is a right to return while the 
 is active, not a right for an absent player to block race completion. Reconnect
 remains a focused command: when continuation is possible, the client follows it with
 `GET race-state` to rebuild the latest state.
+
+A hidden student document is temporary gameplay absence, not an immediate durable
+disconnect. Hidden stops heartbeat, race-state polling, current-question requests
+and answer submission. Returning visible runs reconnect first and performs an
+authoritative resync before gameplay resumes. Presence expiry is expected during a
+long hidden interval; movement still stops at the latest trusted activity rather
+than waiting for the presence TTL.
+
+The same runtime-session owner handles semantic `RACE_PLAYER_RECONNECT_REQUIRED`
+failures from race-state, current-question and answer. It closes gameplay readiness,
+reconnects, then uses the existing resync token to rebuild authoritative state;
+answer submission is never replayed automatically.
+
+An ACTIVE question remains owned by its RacePlayer across hidden, reload,
+disconnect and reconnect transitions until it becomes ANSWERED or EXPIRED. Its
+`expiresAt` never shifts. An overdue question is processed as EXPIRED exactly once
+before another question may be delivered, so lifecycle transitions cannot be used
+to fish for questions.
 Future SSE data must reuse the snapshot vocabulary instead of inventing a parallel
 runtime model.
 

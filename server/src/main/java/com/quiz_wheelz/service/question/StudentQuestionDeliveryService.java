@@ -15,8 +15,7 @@ import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
-import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
-import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService;
+import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,8 +36,7 @@ public class StudentQuestionDeliveryService {
     private final QuestionGenerationService questionGenerationService;
     private final PlayerQuestionPersistenceService playerQuestionPersistenceService;
     private final StudentQuestionResponseMapper studentQuestionResponseMapper;
-    private final RacePlayerGameplayPresenceService gameplayPresenceService;
-    private final RacePlayerGameplayTimelineService gameplayTimelineService;
+    private final RacePlayerGameplayRequestGuard gameplayRequestGuard;
     private final Clock clock;
 
     public StudentQuestionDeliveryService(
@@ -49,8 +47,7 @@ public class StudentQuestionDeliveryService {
             QuestionGenerationService questionGenerationService,
             PlayerQuestionPersistenceService playerQuestionPersistenceService,
             StudentQuestionResponseMapper studentQuestionResponseMapper,
-            RacePlayerGameplayPresenceService gameplayPresenceService,
-            RacePlayerGameplayTimelineService gameplayTimelineService,
+            RacePlayerGameplayRequestGuard gameplayRequestGuard,
             Clock clock
     ) {
         this.racePlayerRepository = Objects.requireNonNull(racePlayerRepository);
@@ -60,8 +57,7 @@ public class StudentQuestionDeliveryService {
         this.questionGenerationService = Objects.requireNonNull(questionGenerationService);
         this.playerQuestionPersistenceService = Objects.requireNonNull(playerQuestionPersistenceService);
         this.studentQuestionResponseMapper = Objects.requireNonNull(studentQuestionResponseMapper);
-        this.gameplayPresenceService = Objects.requireNonNull(gameplayPresenceService);
-        this.gameplayTimelineService = Objects.requireNonNull(gameplayTimelineService);
+        this.gameplayRequestGuard = Objects.requireNonNull(gameplayRequestGuard);
         this.clock = Objects.requireNonNull(clock);
     }
 
@@ -72,21 +68,10 @@ public class StudentQuestionDeliveryService {
         Instant decisionInstant = clock.instant();
         long decisionEpochMs = decisionInstant.toEpochMilli();
 
-        RacePlayerGameplayPresenceService.GameplayPresenceDecision presenceDecision =
-                gameplayPresenceService.resolve(lockedRacePlayer, decisionInstant);
-        boolean disconnected = gameplayTimelineService.settlePlayerActivity(
+        gameplayRequestGuard.requireGameplayAccess(
                 lockedRacePlayer,
-                decisionInstant,
-                presenceDecision
+                decisionInstant
         );
-        if (disconnected) {
-            gameplayPresenceService.markOffline(lockedRacePlayer);
-        } else {
-            gameplayPresenceService.recordPlayerActivity(
-                    lockedRacePlayer,
-                    decisionInstant
-            );
-        }
         validateLockedRacePlayerCanReceiveQuestion(lockedRacePlayer);
 
         Optional<PlayerQuestion> active = playerQuestionRepository

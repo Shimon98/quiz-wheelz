@@ -44,7 +44,7 @@ public class RacePlayerReconnectPolicy {
     }
 
     public boolean isReconnectWindowExpired(
-            Optional<LocalDateTime> lastHeartbeatAt,
+            Optional<LocalDateTime> lastGameplayActivityAt,
             LocalDateTime durableLastSeenAt,
             LocalDateTime raceStartedAt,
             LocalDateTime now
@@ -54,7 +54,7 @@ public class RacePlayerReconnectPolicy {
         }
 
         LocalDateTime activityReferenceAt = resolveLatestActivityReference(
-                lastHeartbeatAt.orElse(null),
+                lastGameplayActivityAt.orElse(null),
                 durableLastSeenAt,
                 raceStartedAt
         );
@@ -66,7 +66,7 @@ public class RacePlayerReconnectPolicy {
         return !isActivityReferenceInsideGrace(
                 activityReferenceAt,
                 now,
-                lastHeartbeatAt.isEmpty()
+                lastGameplayActivityAt.isEmpty()
         );
     }
 

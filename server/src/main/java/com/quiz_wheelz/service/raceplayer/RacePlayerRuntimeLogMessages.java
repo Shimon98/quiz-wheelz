@@ -8,10 +8,12 @@ final class RacePlayerRuntimeLogMessages {
             "Unable to resolve gameplay presence in Redis for raceId={} racePlayerId={}; failing open";
     static final String RECORD_ACTIVITY_FAILED =
             "Unable to record gameplay activity in Redis for raceId={} racePlayerId={}; durable activity remains authoritative";
+    static final String RENEW_PRESENCE_LEASE_FAILED =
+            "Unable to renew presence lease in Redis for raceId={} racePlayerId={}; durable activity remains authoritative";
     static final String MARK_OFFLINE_FAILED =
             "Unable to clear gameplay presence in Redis for raceId={} racePlayerId={}; durable status remains authoritative";
-    static final String READ_HEARTBEAT = "read heartbeat";
-    static final String REFRESH_HEARTBEAT = "refresh heartbeat";
+    static final String READ_GAMEPLAY_ACTIVITY = "read gameplay activity";
+    static final String RENEW_PRESENCE_LEASE = "renew presence lease";
     static final String ACQUIRE_CHECKPOINT_GATE = "acquire checkpoint gate";
     static final String RELEASE_CHECKPOINT_GATE = "release failed checkpoint gate";
 

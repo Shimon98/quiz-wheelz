@@ -76,8 +76,27 @@ describe("browser connectivity", () => {
 });
 
 describe("document visibility", () => {
-  it("a hidden document keeps the presence heartbeat running", async () => {
-    await renderResolvedActiveSession(reconnectRacePlayer);
+  it("an initially hidden document waits for visible before reconnecting", async () => {
+    setDocumentVisibility("hidden");
+    const { result } = renderHook(() => useRacePlayerRuntimeSession());
+    await flush();
+
+    expect(reconnectRacePlayer).not.toHaveBeenCalled();
+    expect(result.current.hasResolvedSession).toBe(false);
+    expect(result.current.isGameplayConnectionReady).toBe(false);
+
+    reconnectRacePlayer.mockResolvedValueOnce(activeReconnectResponse());
+    await act(async () => {
+      setDocumentVisibility("visible");
+    });
+    await flush();
+
+    expect(reconnectRacePlayer).toHaveBeenCalledTimes(1);
+    expect(result.current.isGameplayConnectionReady).toBe(true);
+  });
+
+  it("a hidden document stops heartbeat scheduling", async () => {
+    const { result } = await renderResolvedActiveSession(reconnectRacePlayer);
     heartbeatRacePlayer.mockResolvedValue({});
 
     await act(async () => {
@@ -85,7 +104,38 @@ describe("document visibility", () => {
     });
 
     await advance(heartbeatIntervalMs * 3);
-    expect(heartbeatRacePlayer).toHaveBeenCalledTimes(3);
+    expect(heartbeatRacePlayer).not.toHaveBeenCalled();
+    expect(reconnectRacePlayer).toHaveBeenCalledTimes(1);
+    expect(result.current.isGameplayConnectionReady).toBe(false);
+  });
+
+  it("a queued heartbeat callback exits when the document is already hidden", async () => {
+    await renderResolvedActiveSession(reconnectRacePlayer);
+    heartbeatRacePlayer.mockResolvedValue({});
+
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      get: () => "hidden",
+    });
+
+    await advance(heartbeatIntervalMs);
+
+    expect(heartbeatRacePlayer).not.toHaveBeenCalled();
+  });
+
+  it("a heartbeat failure that settles while hidden does not reconnect", async () => {
+    await renderResolvedActiveSession(reconnectRacePlayer);
+    const pendingHeartbeat = deferred();
+    heartbeatRacePlayer.mockReturnValueOnce(pendingHeartbeat.promise);
+
+    await advance(heartbeatIntervalMs);
+    await act(async () => {
+      setDocumentVisibility("hidden");
+      pendingHeartbeat.reject(networkFailure());
+    });
+    await flush();
+
+    expect(heartbeatRacePlayer).toHaveBeenCalledTimes(1);
     expect(reconnectRacePlayer).toHaveBeenCalledTimes(1);
   });
 

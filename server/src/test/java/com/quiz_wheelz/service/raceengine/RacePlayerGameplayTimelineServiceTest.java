@@ -84,7 +84,7 @@ class RacePlayerGameplayTimelineServiceTest {
                 CUTOFF
         );
 
-        assertFalse(service.settlePlayerActivity(player, NOW, absentInsideGrace));
+        assertFalse(service.settleReconnect(player, NOW, absentInsideGrace));
 
         verify(questionTimeoutService).settleWithOverdueTimeout(
                 player,
@@ -96,6 +96,26 @@ class RacePlayerGameplayTimelineServiceTest {
     }
 
     @Test
+    void absentGameplayRequestShouldSettleToCutoffWithoutReanchor() {
+        GameplayPresenceDecision absentInsideGrace = new GameplayPresenceDecision(
+                true,
+                false,
+                false,
+                CUTOFF
+        );
+
+        assertFalse(service.settleGameplayRequest(player, NOW, absentInsideGrace));
+
+        verify(questionTimeoutService).settleWithOverdueTimeout(
+                player,
+                NOW.atZone(ZoneOffset.UTC).toLocalDateTime(),
+                NOW.toEpochMilli(),
+                CUTOFF
+        );
+        verify(raceMovementService, never()).reanchorAt(player, NOW.toEpochMilli());
+    }
+
+    @Test
     void connectedActivityShouldSettleNormallyWithoutReanchor() {
         GameplayPresenceDecision connected = new GameplayPresenceDecision(
                 true,
@@ -104,7 +124,7 @@ class RacePlayerGameplayTimelineServiceTest {
                 CUTOFF
         );
 
-        service.settlePlayerActivity(player, NOW, connected);
+        service.settleGameplayRequest(player, NOW, connected);
 
         verify(questionTimeoutService).settleWithOverdueTimeout(
                 player,

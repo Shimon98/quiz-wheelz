@@ -67,15 +67,15 @@ public interface RacePlayerRepository extends JpaRepository<RacePlayer, Long> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
             update RacePlayer racePlayer
-            set racePlayer.lastSeenAt = :heartbeatAt
+            set racePlayer.lastSeenAt = :checkpointAt
             where racePlayer.id = :racePlayerId
               and racePlayer.race.id = :raceId
-              and (racePlayer.lastSeenAt is null or racePlayer.lastSeenAt < :heartbeatAt)
+              and (racePlayer.lastSeenAt is null or racePlayer.lastSeenAt < :checkpointAt)
             """)
     int updateLastSeenAtIfOlder(
             @Param("racePlayerId") Long racePlayerId,
             @Param("raceId") Long raceId,
-            @Param("heartbeatAt") LocalDateTime heartbeatAt
+            @Param("checkpointAt") LocalDateTime checkpointAt
     );
 
     long countByRace(Race race);

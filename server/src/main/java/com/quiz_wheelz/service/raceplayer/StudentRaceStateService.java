@@ -10,7 +10,6 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceFinishService;
-import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,8 +23,7 @@ public class StudentRaceStateService {
 
     private final CurrentRacePlayerService currentRacePlayerService;
     private final RacePlayerRepository racePlayerRepository;
-    private final RacePlayerGameplayPresenceService gameplayPresenceService;
-    private final RacePlayerGameplayTimelineService gameplayTimelineService;
+    private final RacePlayerGameplayRequestGuard gameplayRequestGuard;
     private final RaceFinishService raceFinishService;
     private final StudentRaceRuntimeSnapshotMapper snapshotMapper;
     private final Clock clock;
@@ -33,22 +31,20 @@ public class StudentRaceStateService {
     public StudentRaceStateService(
             CurrentRacePlayerService currentRacePlayerService,
             RacePlayerRepository racePlayerRepository,
-            RacePlayerGameplayPresenceService gameplayPresenceService,
-            RacePlayerGameplayTimelineService gameplayTimelineService,
+            RacePlayerGameplayRequestGuard gameplayRequestGuard,
             RaceFinishService raceFinishService,
             StudentRaceRuntimeSnapshotMapper snapshotMapper,
             Clock clock
     ) {
         this.currentRacePlayerService = Objects.requireNonNull(currentRacePlayerService);
         this.racePlayerRepository = Objects.requireNonNull(racePlayerRepository);
-        this.gameplayPresenceService = Objects.requireNonNull(gameplayPresenceService);
-        this.gameplayTimelineService = Objects.requireNonNull(gameplayTimelineService);
+        this.gameplayRequestGuard = Objects.requireNonNull(gameplayRequestGuard);
         this.raceFinishService = Objects.requireNonNull(raceFinishService);
         this.snapshotMapper = Objects.requireNonNull(snapshotMapper);
         this.clock = Objects.requireNonNull(clock);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = ApiException.class)
     public StudentRaceStateResponse getRaceState(HttpServletRequest request) {
         RacePlayer sessionRacePlayer =
                 currentRacePlayerService.resolveCurrentRacePlayerSession(request);
@@ -67,18 +63,7 @@ public class StudentRaceStateService {
 
         boolean wasRacing = racePlayer.getStatus() == RacePlayerStatus.RACING;
 
-        RacePlayerGameplayPresenceService.GameplayPresenceDecision presenceDecision =
-                gameplayPresenceService.resolve(racePlayer, decisionInstant);
-        boolean disconnected = gameplayTimelineService.settlePlayerActivity(
-                racePlayer,
-                decisionInstant,
-                presenceDecision
-        );
-        if (disconnected) {
-            gameplayPresenceService.markOffline(racePlayer);
-        } else {
-            gameplayPresenceService.recordPlayerActivity(racePlayer, decisionInstant);
-        }
+        gameplayRequestGuard.requireGameplayAccess(racePlayer, decisionInstant);
 
         if (wasRacing && racePlayer.getStatus() == RacePlayerStatus.FINISHED) {
             raceFinishService.finishRaceIfNeeded(race);

@@ -91,7 +91,7 @@ class RaceMovementSettlementWorkerTest {
                 FIXED_INSTANT,
                 presenceDecision
         );
-        verify(gameplayPresenceService, never()).recordPlayerActivity(any(), any());
+        verify(gameplayPresenceService, never()).recordGameplayActivity(any(), any());
     }
 
     @Test

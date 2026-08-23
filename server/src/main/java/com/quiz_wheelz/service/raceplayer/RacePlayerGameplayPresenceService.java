@@ -4,6 +4,7 @@ import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
+import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,15 +24,18 @@ public class RacePlayerGameplayPresenceService {
             LoggerFactory.getLogger(RacePlayerGameplayPresenceService.class);
 
     private final RedisPresenceService redisPresenceService;
+    private final RacePlayerRepository racePlayerRepository;
     private final RacePlayerReconnectPolicy reconnectPolicy;
     private final Clock clock;
 
     public RacePlayerGameplayPresenceService(
             RedisPresenceService redisPresenceService,
+            RacePlayerRepository racePlayerRepository,
             RacePlayerReconnectPolicy reconnectPolicy,
             Clock clock
     ) {
         this.redisPresenceService = Objects.requireNonNull(redisPresenceService);
+        this.racePlayerRepository = Objects.requireNonNull(racePlayerRepository);
         this.reconnectPolicy = Objects.requireNonNull(reconnectPolicy);
         this.clock = Objects.requireNonNull(clock);
     }
@@ -55,7 +59,7 @@ public class RacePlayerGameplayPresenceService {
                     racePlayer.getId()
             );
             Optional<Instant> redisActivity =
-                    redisPresenceService.findLastHeartbeatAt(
+                    redisPresenceService.findLastGameplayActivityAt(
                             race.getId(),
                             racePlayer.getId()
                     );
@@ -96,7 +100,7 @@ public class RacePlayerGameplayPresenceService {
         }
     }
 
-    public void recordPlayerActivity(
+    public void recordGameplayActivity(
             RacePlayer racePlayer,
             Instant activityInstant
     ) {
@@ -104,6 +108,52 @@ public class RacePlayerGameplayPresenceService {
         Objects.requireNonNull(activityInstant);
 
         Race race = Objects.requireNonNull(racePlayer.getRace());
+        try {
+            redisPresenceService.recordGameplayActivity(
+                    race.getId(),
+                    racePlayer.getId(),
+                    activityInstant
+            );
+        } catch (DataAccessException exception) {
+            recordDurableFallback(racePlayer, activityInstant);
+            LOGGER.warn(
+                    RacePlayerRuntimeLogMessages.RECORD_ACTIVITY_FAILED,
+                    race.getId(),
+                    racePlayer.getId(),
+                    exception
+            );
+        }
+    }
+
+    public void renewPresenceLease(
+            RacePlayer racePlayer,
+            Instant activityInstant
+    ) {
+        Objects.requireNonNull(racePlayer);
+        Objects.requireNonNull(activityInstant);
+
+        Race race = Objects.requireNonNull(racePlayer.getRace());
+        try {
+            redisPresenceService.renewPresenceLease(
+                    race.getId(),
+                    racePlayer.getId(),
+                    activityInstant
+            );
+        } catch (DataAccessException exception) {
+            recordDurableFallback(racePlayer, activityInstant);
+            LOGGER.warn(
+                    RacePlayerRuntimeLogMessages.RENEW_PRESENCE_LEASE_FAILED,
+                    race.getId(),
+                    racePlayer.getId(),
+                    exception
+            );
+        }
+    }
+
+    private void recordDurableFallback(
+            RacePlayer racePlayer,
+            Instant activityInstant
+    ) {
         LocalDateTime activityAt = DateTimeUtils.toLocalDateTime(
                 activityInstant,
                 clock.getZone()
@@ -112,21 +162,7 @@ public class RacePlayerGameplayPresenceService {
         if (racePlayer.getLastSeenAt() == null
                 || racePlayer.getLastSeenAt().isBefore(activityAt)) {
             racePlayer.setLastSeenAt(activityAt);
-        }
-
-        try {
-            redisPresenceService.markOnline(
-                    race.getId(),
-                    racePlayer.getId(),
-                    activityInstant
-            );
-        } catch (DataAccessException exception) {
-            LOGGER.warn(
-                    RacePlayerRuntimeLogMessages.RECORD_ACTIVITY_FAILED,
-                    race.getId(),
-                    racePlayer.getId(),
-                    exception
-            );
+            racePlayerRepository.save(racePlayer);
         }
     }
 

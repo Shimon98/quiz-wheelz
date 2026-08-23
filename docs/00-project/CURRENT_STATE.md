@@ -73,7 +73,11 @@ teacher live race/SSE screen and results.
 - Race engine for score, progress, speed, streak, difficulty and finish state.
 - Shared runtime snapshot and race-state endpoint.
 - Redis-based presence, monotonic trusted gameplay activity, heartbeat, leave and
-  reconnect grace; Redis failure is explicitly fail-open.
+  reconnect grace; only heartbeat/reconnect renew the 45-second presence lease,
+  active `RACING + IN_PROGRESS` gameplay queries/actions record activity, absent
+  active requests require explicit reconnect without re-anchoring, terminal
+  race-state remains readable without presence, and Redis failure is explicitly
+  fail-open.
 
 ## Client implemented
 
@@ -93,6 +97,13 @@ teacher live race/SSE screen and results.
   - perspective world layers
   - continuous road model
   - layout contract and question-panel shell.
+- Runtime-session visibility handling: hidden stops heartbeat and gameplay calls;
+  visible return is reconnect-first and authoritatively resyncs before play resumes.
+- Semantic `RACE_PLAYER_RECONNECT_REQUIRED` failures from race-state, question or
+  answer hand recovery to the existing runtime-session reconnect owner; answer POSTs
+  are never retried automatically.
+- ACTIVE question identity and deadline survive hidden/reload/reconnect; timeout
+  remains wall-clock and exactly once, preventing question fishing.
 
 ## Known stale code/document comments
 

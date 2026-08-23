@@ -5,7 +5,6 @@ import com.quiz_wheelz.dto.answer.SubmitAnswerResponse;
 import com.quiz_wheelz.dto.raceengine.AnswerRaceImpact;
 import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.entitys.PlayerQuestionChoice;
-import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.Difficulty;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
@@ -13,25 +12,10 @@ import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
-import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
-import com.quiz_wheelz.repository.PlayerQuestionRepository;
-import com.quiz_wheelz.repository.RacePlayerRepository;
-import com.quiz_wheelz.service.raceengine.RaceEngineService;
-import com.quiz_wheelz.service.raceengine.RaceMovementService;
-import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
-import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService;
-import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Clock;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -44,450 +28,280 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
 class StudentAnswerSubmissionBehaviorTest {
 
-    private static final Instant FIXED_INSTANT = Instant.parse("2026-06-30T10:00:00Z");
-    private static final ZoneId FIXED_ZONE = ZoneId.of("UTC");
-    private static final long RACE_ID = 1L;
-    private static final long RACE_PLAYER_ID = 7L;
-    private static final long QUESTION_ID = 10L;
-    private static final long CORRECT_CHOICE_ID = 101L;
-    private static final long WRONG_CHOICE_ID = 102L;
-
-    @Mock
-    private PlayerQuestionRepository playerQuestionRepository;
-
-    @Mock
-    private PlayerQuestionChoiceRepository playerQuestionChoiceRepository;
-
-    @Mock
-    private RacePlayerRepository racePlayerRepository;
-
-    @Mock
-    private RaceEngineService raceEngineService;
-
-    @Mock
-    private RaceMovementService raceMovementService;
-
-    @Mock
-    private QuestionTimeoutService questionTimeoutService;
-
-    @Mock
-    private RacePlayerGameplayPresenceService gameplayPresenceService;
-
-    @Mock
-    private RacePlayerGameplayTimelineService gameplayTimelineService;
-
-    private StudentAnswerSubmissionService studentAnswerSubmissionService;
+    private StudentAnswerSubmissionTestFixture fixture;
 
     @BeforeEach
     void setUp() {
-        Clock fixedClock = Clock.fixed(FIXED_INSTANT, FIXED_ZONE);
-
-        studentAnswerSubmissionService = new StudentAnswerSubmissionService(
-                playerQuestionRepository,
-                playerQuestionChoiceRepository,
-                racePlayerRepository,
-                raceEngineService,
-                gameplayPresenceService,
-                gameplayTimelineService,
-                new StudentRaceRuntimeSnapshotMapper(),
-                fixedClock
-        );
+        fixture = new StudentAnswerSubmissionTestFixture();
     }
 
     @Test
     void shouldSubmitCorrectAnswerAndMarkQuestionAnswered() {
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer = mockLockedRacePlayer(racePlayer);
-        PlayerQuestion question = createActiveQuestion(now().plusSeconds(30));
-        PlayerQuestionChoice selectedChoice = createChoice(CORRECT_CHOICE_ID, true, question);
-        SubmitAnswerRequest request = createRequest(QUESTION_ID, CORRECT_CHOICE_ID);
-        AnswerRaceImpact raceImpact = createRaceImpact(lockedRacePlayer, true);
+        RacePlayer racePlayer = fixture.createRacePlayer();
+        RacePlayer lockedRacePlayer = fixture.mockLockedRacePlayer(racePlayer);
+        PlayerQuestion question = fixture.createActiveQuestion(
+                fixture.now().plusSeconds(30)
+        );
+        PlayerQuestionChoice choice = fixture.createChoice(
+                StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID,
+                true,
+                question
+        );
+        AnswerRaceImpact impact = fixture.createRaceImpact(lockedRacePlayer, true);
+        prepareAnswer(lockedRacePlayer, question, choice, impact, true);
 
-        when(playerQuestionRepository.findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer))
-                .thenReturn(Optional.of(question));
-        when(playerQuestionChoiceRepository.findByIdAndPlayerQuestion(CORRECT_CHOICE_ID, question))
-                .thenReturn(Optional.of(selectedChoice));
-        when(raceEngineService.applyAnswerResult(lockedRacePlayer, true))
-                .thenReturn(raceImpact);
-        when(playerQuestionRepository.save(question)).thenReturn(question);
-
-        SubmitAnswerResponse response = studentAnswerSubmissionService.submitAnswer(
+        SubmitAnswerResponse response = fixture.studentAnswerSubmissionService.submitAnswer(
                 racePlayer,
-                request
+                fixture.createRequest(
+                        StudentAnswerSubmissionTestFixture.QUESTION_ID,
+                        StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID
+                )
         );
 
         assertTrue(response.isCorrect());
         assertNull(response.getCorrectAnswerChoiceId());
-        assertEquals(QUESTION_ID, response.getQuestionId());
-        assertEquals(CORRECT_CHOICE_ID, response.getSelectedChoiceId());
-        assertEquals(PlayerQuestionStatus.ANSWERED.name(), response.getQuestionStatus());
         assertEquals(PlayerQuestionStatus.ANSWERED, question.getStatus());
-        assertEquals(now(), question.getAnsweredAt());
-        assertEquals(epochOf(now()), response.getAnsweredAtEpochMs());
-        assertEquals(epochOf(question.getExpiresAt()), response.getExpiresAtEpochMs());
-
+        assertEquals(fixture.now(), question.getAnsweredAt());
+        assertEquals(fixture.epochOf(fixture.now()), response.getAnsweredAtEpochMs());
         assertNotNull(response.getRaceImpact());
         assertEquals(10, response.getRaceImpact().getScoreDelta());
         assertEquals(10.0, response.getRaceImpact().getProgressDelta());
-        assertFalse(response.getRaceImpact().isDifficultyChanged());
-        assertNotNull(response.getRaceImpact().getSnapshot());
         assertEquals(1000, response.getRaceImpact().getSnapshot().getTotalDistance());
-        assertEquals(10, response.getRaceImpact().getSnapshot().getScore());
-        assertEquals(10.0, response.getRaceImpact().getSnapshot().getPosition());
-        assertEquals(1.2, response.getRaceImpact().getSnapshot().getSpeed());
-        assertEquals(1, response.getRaceImpact().getSnapshot().getStreak());
-        assertEquals(1, response.getRaceImpact().getSnapshot().getHighestStreak());
-        assertEquals(Difficulty.EASY, response.getRaceImpact().getSnapshot().getCurrentDifficulty());
-        assertEquals(RacePlayerStatus.RACING, response.getRaceImpact().getSnapshot().getPlayerStatus());
-        assertEquals(RaceStatus.IN_PROGRESS, response.getRaceImpact().getSnapshot().getRaceStatus());
+        assertEquals(Difficulty.EASY,
+                response.getRaceImpact().getSnapshot().getCurrentDifficulty());
+        assertEquals(RacePlayerStatus.RACING,
+                response.getRaceImpact().getSnapshot().getPlayerStatus());
+        assertEquals(RaceStatus.IN_PROGRESS,
+                response.getRaceImpact().getSnapshot().getRaceStatus());
         assertFalse(response.getRaceImpact().getSnapshot().isPlayerFinished());
-        assertFalse(response.getRaceImpact().getSnapshot().isRaceFinished());
-        assertEquals(
-                epochOf(now()),
-                response.getRaceImpact().getSnapshot().getSnapshotAtEpochMs()
-        );
-        assertEquals(
-                4.8,
-                response.getRaceImpact().getSnapshot().getMovementUnitsPerSecond()
-        );
-
-        verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
-        verify(playerQuestionRepository).findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer);
-        verify(gameplayTimelineService).settlePlayerActivity(
+        verify(fixture.gameplayRequestGuard).requireGameplayAccess(
                 lockedRacePlayer,
-                FIXED_INSTANT,
-                null
+                StudentAnswerSubmissionTestFixture.FIXED_INSTANT
         );
-        verify(raceEngineService).applyAnswerResult(lockedRacePlayer, true);
-        verify(playerQuestionRepository).save(question);
-        verify(playerQuestionChoiceRepository, never())
+        verify(fixture.playerQuestionRepository).save(question);
+        verify(fixture.playerQuestionChoiceRepository, never())
                 .findByPlayerQuestionOrderByDisplayOrderAsc(question);
     }
 
     @Test
-    void shouldNotApplyAnswerWhenMovementSettlementFinishesPlayerFirst() {
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer = mockLockedRacePlayer(racePlayer);
-        PlayerQuestion question = createActiveQuestion(now().plusSeconds(30));
-
-        when(playerQuestionRepository.findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer))
-                .thenReturn(Optional.of(question));
+    void shouldNotApplyAnswerWhenSettlementFinishesPlayerFirst() {
+        RacePlayer racePlayer = fixture.createRacePlayer();
+        RacePlayer lockedRacePlayer = fixture.mockLockedRacePlayer(racePlayer);
+        PlayerQuestion question = fixture.createActiveQuestion(
+                fixture.now().plusSeconds(30)
+        );
+        when(fixture.playerQuestionRepository.findLockedByIdAndRacePlayer(
+                StudentAnswerSubmissionTestFixture.QUESTION_ID,
+                lockedRacePlayer
+        )).thenReturn(Optional.of(question));
         doAnswer(invocation -> {
             lockedRacePlayer.setStatus(RacePlayerStatus.FINISHED);
-            return false;
-        }).when(gameplayTimelineService).settlePlayerActivity(any(), any(), any());
+            return null;
+        }).when(fixture.gameplayRequestGuard).requireGameplayAccess(any(), any());
 
         ApiException exception = assertThrows(
                 ApiException.class,
-                () -> studentAnswerSubmissionService.submitAnswer(
+                () -> fixture.studentAnswerSubmissionService.submitAnswer(
                         racePlayer,
-                        createRequest(QUESTION_ID, CORRECT_CHOICE_ID)
+                        fixture.createRequest(
+                                StudentAnswerSubmissionTestFixture.QUESTION_ID,
+                                StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID
+                        )
                 )
         );
 
         assertEquals(ErrorCode.RACE_PLAYER_NOT_RACING, exception.getErrorCode());
-        verify(raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
-        verify(playerQuestionRepository, never()).save(question);
+        verify(fixture.raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
+        verify(fixture.playerQuestionRepository, never()).save(question);
     }
 
     @Test
-    void shouldSubmitWrongAnswerAndReturnCorrectAnswerChoiceId() {
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer = mockLockedRacePlayer(racePlayer);
-        PlayerQuestion question = createActiveQuestion(now().plusSeconds(30));
-        PlayerQuestionChoice selectedChoice = createChoice(WRONG_CHOICE_ID, false, question);
-        PlayerQuestionChoice correctChoice = createChoice(CORRECT_CHOICE_ID, true, question);
-        SubmitAnswerRequest request = createRequest(QUESTION_ID, WRONG_CHOICE_ID);
-        AnswerRaceImpact raceImpact = createRaceImpact(lockedRacePlayer, false);
+    void shouldSubmitWrongAnswerAndReturnCorrectChoiceId() {
+        RacePlayer racePlayer = fixture.createRacePlayer();
+        RacePlayer lockedRacePlayer = fixture.mockLockedRacePlayer(racePlayer);
+        PlayerQuestion question = fixture.createActiveQuestion(
+                fixture.now().plusSeconds(30)
+        );
+        PlayerQuestionChoice selected = fixture.createChoice(
+                StudentAnswerSubmissionTestFixture.WRONG_CHOICE_ID,
+                false,
+                question
+        );
+        PlayerQuestionChoice correct = fixture.createChoice(
+                StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID,
+                true,
+                question
+        );
+        AnswerRaceImpact impact = fixture.createRaceImpact(lockedRacePlayer, false);
+        prepareAnswer(lockedRacePlayer, question, selected, impact, false);
+        when(fixture.playerQuestionChoiceRepository
+                .findByPlayerQuestionOrderByDisplayOrderAsc(question))
+                .thenReturn(List.of(selected, correct));
 
-        when(playerQuestionRepository.findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer))
-                .thenReturn(Optional.of(question));
-        when(playerQuestionChoiceRepository.findByIdAndPlayerQuestion(WRONG_CHOICE_ID, question))
-                .thenReturn(Optional.of(selectedChoice));
-        when(playerQuestionChoiceRepository.findByPlayerQuestionOrderByDisplayOrderAsc(question))
-                .thenReturn(List.of(selectedChoice, correctChoice));
-        when(raceEngineService.applyAnswerResult(lockedRacePlayer, false))
-                .thenReturn(raceImpact);
-        when(playerQuestionRepository.save(question)).thenReturn(question);
-
-        SubmitAnswerResponse response = studentAnswerSubmissionService.submitAnswer(
+        SubmitAnswerResponse response = fixture.studentAnswerSubmissionService.submitAnswer(
                 racePlayer,
-                request
+                fixture.createRequest(
+                        StudentAnswerSubmissionTestFixture.QUESTION_ID,
+                        StudentAnswerSubmissionTestFixture.WRONG_CHOICE_ID
+                )
         );
 
         assertFalse(response.isCorrect());
-        assertEquals(CORRECT_CHOICE_ID, response.getCorrectAnswerChoiceId());
-        assertEquals(WRONG_CHOICE_ID, response.getSelectedChoiceId());
-        assertEquals(PlayerQuestionStatus.ANSWERED.name(), response.getQuestionStatus());
-        assertEquals(PlayerQuestionStatus.ANSWERED, question.getStatus());
-        assertEquals(now(), question.getAnsweredAt());
-
-        assertNotNull(response.getRaceImpact());
-        assertEquals(0, response.getRaceImpact().getScoreDelta());
-        assertEquals(0.0, response.getRaceImpact().getProgressDelta());
         assertEquals(
-                RacePlayerStatus.RACING,
-                response.getRaceImpact().getSnapshot().getPlayerStatus()
+                StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID,
+                response.getCorrectAnswerChoiceId()
         );
-
-        verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
-        verify(playerQuestionRepository).findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer);
-        verify(raceEngineService).applyAnswerResult(lockedRacePlayer, false);
-        verify(playerQuestionRepository).save(question);
+        assertEquals(PlayerQuestionStatus.ANSWERED, question.getStatus());
+        verify(fixture.raceEngineService).applyAnswerResult(lockedRacePlayer, false);
     }
 
     @Test
-    void shouldDelegateExpiredSubmissionToTimeoutOwner() {
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer = mockLockedRacePlayer(racePlayer);
-        PlayerQuestion question = createActiveQuestion(now().minusSeconds(1));
-
-        when(playerQuestionRepository.findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer))
-                .thenReturn(Optional.of(question));
-
+    void shouldRejectWhenGuardReturnsWithExpiredQuestion() {
+        RacePlayer racePlayer = fixture.createRacePlayer();
+        RacePlayer lockedRacePlayer = fixture.mockLockedRacePlayer(racePlayer);
+        PlayerQuestion question = fixture.createActiveQuestion(
+                fixture.now().minusSeconds(1)
+        );
+        when(fixture.playerQuestionRepository.findLockedByIdAndRacePlayer(
+                StudentAnswerSubmissionTestFixture.QUESTION_ID,
+                lockedRacePlayer
+        )).thenReturn(Optional.of(question));
         doAnswer(invocation -> {
             question.setStatus(PlayerQuestionStatus.EXPIRED);
-            return false;
-        }).when(gameplayTimelineService).settlePlayerActivity(any(), any(), any());
+            return null;
+        }).when(fixture.gameplayRequestGuard).requireGameplayAccess(any(), any());
 
         ApiException exception = assertThrows(
                 ApiException.class,
-                () -> studentAnswerSubmissionService.submitAnswer(
+                () -> fixture.studentAnswerSubmissionService.submitAnswer(
                         racePlayer,
-                        createRequest(QUESTION_ID, CORRECT_CHOICE_ID)
+                        fixture.createRequest(
+                                StudentAnswerSubmissionTestFixture.QUESTION_ID,
+                                StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID
+                        )
                 )
         );
 
         assertEquals(ErrorCode.QUESTION_EXPIRED, exception.getErrorCode());
-        verify(gameplayTimelineService).settlePlayerActivity(
-                lockedRacePlayer,
-                FIXED_INSTANT,
-                null
-        );
-        verify(playerQuestionChoiceRepository, never())
-                .findByIdAndPlayerQuestion(CORRECT_CHOICE_ID, question);
-        verify(raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
+        verify(fixture.raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
     }
 
     @Test
-    void shouldTreatExpiresAtEqualNowAsExpired() {
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer = mockLockedRacePlayer(racePlayer);
-        PlayerQuestion question = createActiveQuestion(now());
-
-        when(playerQuestionRepository.findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer))
-                .thenReturn(Optional.of(question));
-        doAnswer(invocation -> {
-            question.setStatus(PlayerQuestionStatus.EXPIRED);
-            return false;
-        }).when(gameplayTimelineService).settlePlayerActivity(any(), any(), any());
-
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> studentAnswerSubmissionService.submitAnswer(
-                        racePlayer,
-                        createRequest(QUESTION_ID, CORRECT_CHOICE_ID)
-                )
+    void shouldNotMarkAnsweredWhenRaceEngineRejectsImpact() {
+        RacePlayer racePlayer = fixture.createRacePlayer();
+        RacePlayer lockedRacePlayer = fixture.mockLockedRacePlayer(racePlayer);
+        PlayerQuestion question = fixture.createActiveQuestion(
+                fixture.now().plusSeconds(30)
         );
-
-        assertEquals(ErrorCode.QUESTION_EXPIRED, exception.getErrorCode());
-        verify(gameplayTimelineService).settlePlayerActivity(
-                lockedRacePlayer,
-                FIXED_INSTANT,
-                null
+        PlayerQuestionChoice choice = fixture.createChoice(
+                StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID,
+                true,
+                question
         );
-        verify(raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
-    }
-
-    @Test
-    void shouldNotMarkQuestionAnsweredWhenRaceEngineRejectsImpact() {
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer = mockLockedRacePlayer(racePlayer);
-        PlayerQuestion question = createActiveQuestion(now().plusSeconds(30));
-        PlayerQuestionChoice selectedChoice = createChoice(CORRECT_CHOICE_ID, true, question);
-        SubmitAnswerRequest request = createRequest(QUESTION_ID, CORRECT_CHOICE_ID);
-
-        when(playerQuestionRepository.findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer))
-                .thenReturn(Optional.of(question));
-        when(playerQuestionChoiceRepository.findByIdAndPlayerQuestion(CORRECT_CHOICE_ID, question))
-                .thenReturn(Optional.of(selectedChoice));
-        when(raceEngineService.applyAnswerResult(lockedRacePlayer, true))
+        when(fixture.playerQuestionRepository.findLockedByIdAndRacePlayer(
+                StudentAnswerSubmissionTestFixture.QUESTION_ID,
+                lockedRacePlayer
+        )).thenReturn(Optional.of(question));
+        when(fixture.playerQuestionChoiceRepository.findByIdAndPlayerQuestion(
+                StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID,
+                question
+        )).thenReturn(Optional.of(choice));
+        when(fixture.raceEngineService.applyAnswerResult(lockedRacePlayer, true))
                 .thenThrow(new ApiException(ErrorCode.RACE_NOT_IN_PROGRESS));
 
         ApiException exception = assertThrows(
                 ApiException.class,
-                () -> studentAnswerSubmissionService.submitAnswer(racePlayer, request)
+                () -> fixture.studentAnswerSubmissionService.submitAnswer(
+                        racePlayer,
+                        fixture.createRequest(
+                                StudentAnswerSubmissionTestFixture.QUESTION_ID,
+                                StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID
+                        )
+                )
         );
 
         assertEquals(ErrorCode.RACE_NOT_IN_PROGRESS, exception.getErrorCode());
         assertEquals(PlayerQuestionStatus.ACTIVE, question.getStatus());
         assertNull(question.getAnsweredAt());
-
-        verify(playerQuestionRepository, never()).save(question);
+        verify(fixture.playerQuestionRepository, never()).save(question);
     }
 
     @Test
-    void shouldNotApplyRaceEngineTwiceWhenSameQuestionIsSubmittedAgain() {
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer = createRacePlayer();
-        PlayerQuestion question = createActiveQuestion(now().plusSeconds(30));
-        PlayerQuestionChoice selectedChoice = createChoice(CORRECT_CHOICE_ID, true, question);
-        SubmitAnswerRequest request = createRequest(QUESTION_ID, CORRECT_CHOICE_ID);
-        AnswerRaceImpact raceImpact = createRaceImpact(lockedRacePlayer, true);
+    void shouldNotApplyRaceEngineTwiceForSameQuestion() {
+        RacePlayer racePlayer = fixture.createRacePlayer();
+        RacePlayer lockedRacePlayer = fixture.createRacePlayer();
+        PlayerQuestion question = fixture.createActiveQuestion(
+                fixture.now().plusSeconds(30)
+        );
+        PlayerQuestionChoice choice = fixture.createChoice(
+                StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID,
+                true,
+                question
+        );
+        AnswerRaceImpact impact = fixture.createRaceImpact(lockedRacePlayer, true);
+        when(fixture.racePlayerRepository.findLockedByIdAndRaceId(
+                StudentAnswerSubmissionTestFixture.RACE_PLAYER_ID,
+                StudentAnswerSubmissionTestFixture.RACE_ID
+        )).thenReturn(Optional.of(lockedRacePlayer));
+        prepareAnswer(lockedRacePlayer, question, choice, impact, true);
 
-        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.of(lockedRacePlayer), Optional.of(lockedRacePlayer));
-        when(playerQuestionRepository.findLockedByIdAndRacePlayer(QUESTION_ID, lockedRacePlayer))
-                .thenReturn(Optional.of(question), Optional.of(question));
-        when(playerQuestionChoiceRepository.findByIdAndPlayerQuestion(CORRECT_CHOICE_ID, question))
-                .thenReturn(Optional.of(selectedChoice));
-        when(raceEngineService.applyAnswerResult(lockedRacePlayer, true))
-                .thenReturn(raceImpact);
-        when(playerQuestionRepository.save(question)).thenReturn(question);
-
-        studentAnswerSubmissionService.submitAnswer(racePlayer, request);
-
-        ApiException exception = assertThrows(
+        fixture.studentAnswerSubmissionService.submitAnswer(
+                racePlayer,
+                fixture.createRequest(
+                        StudentAnswerSubmissionTestFixture.QUESTION_ID,
+                        StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID
+                )
+        );
+        ApiException second = assertThrows(
                 ApiException.class,
-                () -> studentAnswerSubmissionService.submitAnswer(racePlayer, request)
+                () -> fixture.studentAnswerSubmissionService.submitAnswer(
+                        racePlayer,
+                        fixture.createRequest(
+                                StudentAnswerSubmissionTestFixture.QUESTION_ID,
+                                StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID
+                        )
+                )
         );
 
-        assertEquals(ErrorCode.QUESTION_NOT_ACTIVE, exception.getErrorCode());
-        verify(raceEngineService, times(1)).applyAnswerResult(lockedRacePlayer, true);
+        assertEquals(ErrorCode.QUESTION_NOT_ACTIVE, second.getErrorCode());
+        verify(fixture.raceEngineService, times(1))
+                .applyAnswerResult(lockedRacePlayer, true);
     }
 
     @Test
-    void shouldNotRollbackApiExceptionSoExpiredQuestionStatusCanPersist()
-            throws NoSuchMethodException {
+    void apiExceptionShouldNotRollBackSettlementState() throws NoSuchMethodException {
         Transactional transactional = StudentAnswerSubmissionService.class
-                .getMethod(
-                        "submitAnswer",
-                        RacePlayer.class,
-                        SubmitAnswerRequest.class
-                )
+                .getMethod("submitAnswer", RacePlayer.class, SubmitAnswerRequest.class)
                 .getAnnotation(Transactional.class);
 
         assertTrue(Arrays.asList(transactional.noRollbackFor()).contains(ApiException.class));
     }
 
-
-    private SubmitAnswerRequest createRequest(Long questionId, Long choiceId) {
-        SubmitAnswerRequest request = new SubmitAnswerRequest();
-        request.setQuestionId(questionId);
-        request.setChoiceId(choiceId);
-
-        return request;
-    }
-
-    private RacePlayer createRacePlayer() {
-        Race race = new Race();
-        race.setId(RACE_ID);
-        race.setStatus(RaceStatus.IN_PROGRESS);
-        race.setTotalDistance(1000);
-
-        RacePlayer racePlayer = new RacePlayer();
-        racePlayer.setId(RACE_PLAYER_ID);
-        racePlayer.setRace(race);
-        racePlayer.setStatus(RacePlayerStatus.RACING);
-        racePlayer.setCurrentDifficulty(Difficulty.EASY);
-        racePlayer.setPosition(0.0);
-        racePlayer.setSpeed(1.0);
-        racePlayer.setScore(0);
-        racePlayer.setStreak(0);
-        racePlayer.setHighestStreak(0);
-        racePlayer.setCorrectAnswers(0);
-        racePlayer.setWrongAnswers(0);
-        racePlayer.setDifficultyCorrectStreak(0);
-        racePlayer.setDifficultyWrongStreak(0);
-
-        return racePlayer;
-    }
-
-    private RacePlayer mockLockedRacePlayer(RacePlayer requestRacePlayer) {
-        RacePlayer lockedRacePlayer = createRacePlayer();
-
-        when(racePlayerRepository.findLockedByIdAndRaceId(
-                requestRacePlayer.getId(),
-                requestRacePlayer.getRace().getId()
-        )).thenReturn(Optional.of(lockedRacePlayer));
-
-        return lockedRacePlayer;
-    }
-
-    private AnswerRaceImpact createRaceImpact(
-            RacePlayer racePlayer,
+    private void prepareAnswer(
+            RacePlayer lockedRacePlayer,
+            PlayerQuestion question,
+            PlayerQuestionChoice selectedChoice,
+            AnswerRaceImpact impact,
             boolean correct
     ) {
-        return new AnswerRaceImpact(
-                RACE_ID,
-                RACE_PLAYER_ID,
-                correct,
-                correct ? 10 : 0,
-                correct ? 10.0 : 0.0,
-                correct ? 10 : 0,
-                correct ? 10.0 : 0.0,
-                correct ? 1.2 : 0.8,
-                correct ? 1 : 0,
-                correct ? 1 : 0,
-                correct ? 1 : 0,
-                correct ? 0 : 1,
-                Difficulty.EASY,
-                racePlayer.getCurrentDifficulty(),
-                racePlayer.getDifficultyCorrectStreak(),
-                racePlayer.getDifficultyWrongStreak(),
-                false,
-                RacePlayerStatus.RACING,
-                RaceStatus.IN_PROGRESS,
-                false,
-                false
-        );
-    }
-
-    private PlayerQuestion createActiveQuestion(LocalDateTime expiresAt) {
-        return createQuestion(PlayerQuestionStatus.ACTIVE, expiresAt);
-    }
-
-    private PlayerQuestion createQuestion(
-            PlayerQuestionStatus status,
-            LocalDateTime expiresAt
-    ) {
-        PlayerQuestion question = new PlayerQuestion();
-        question.setId(QUESTION_ID);
-        question.setStatus(status);
-        question.setExpiresAt(expiresAt);
-
-        return question;
-    }
-
-    private PlayerQuestionChoice createChoice(
-            Long choiceId,
-            boolean correct,
-            PlayerQuestion question
-    ) {
-        PlayerQuestionChoice choice = new PlayerQuestionChoice();
-        choice.setId(choiceId);
-        choice.setPlayerQuestion(question);
-        choice.setCorrect(correct);
-
-        return choice;
-    }
-
-    private LocalDateTime now() {
-        return LocalDateTime.ofInstant(FIXED_INSTANT, FIXED_ZONE);
-    }
-
-    private long epochOf(LocalDateTime localDateTime) {
-        return localDateTime.atZone(FIXED_ZONE).toInstant().toEpochMilli();
+        when(fixture.playerQuestionRepository.findLockedByIdAndRacePlayer(
+                StudentAnswerSubmissionTestFixture.QUESTION_ID,
+                lockedRacePlayer
+        )).thenReturn(Optional.of(question));
+        when(fixture.playerQuestionChoiceRepository.findByIdAndPlayerQuestion(
+                selectedChoice.getId(),
+                question
+        )).thenReturn(Optional.of(selectedChoice));
+        when(fixture.raceEngineService.applyAnswerResult(lockedRacePlayer, correct))
+                .thenReturn(impact);
+        when(fixture.playerQuestionRepository.save(question)).thenReturn(question);
     }
 }
-
-

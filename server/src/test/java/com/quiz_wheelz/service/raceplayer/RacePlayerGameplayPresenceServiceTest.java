@@ -4,6 +4,7 @@ import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
+import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService.GameplayPresenceDecision;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,12 +36,16 @@ class RacePlayerGameplayPresenceServiceTest {
     @Mock
     private RedisPresenceService redisPresenceService;
 
+    @Mock
+    private RacePlayerRepository racePlayerRepository;
+
     private RacePlayerGameplayPresenceService service;
 
     @BeforeEach
     void setUp() {
         service = new RacePlayerGameplayPresenceService(
                 redisPresenceService,
+                racePlayerRepository,
                 new RacePlayerReconnectPolicy(),
                 Clock.fixed(NOW, ZoneOffset.UTC)
         );
@@ -51,7 +56,7 @@ class RacePlayerGameplayPresenceServiceTest {
         RacePlayer player = racingPlayer(NOW.minusSeconds(90));
         Instant redisActivity = NOW.minusSeconds(30);
         when(redisPresenceService.isOnline(RACE_ID, PLAYER_ID)).thenReturn(false);
-        when(redisPresenceService.findLastHeartbeatAt(RACE_ID, PLAYER_ID))
+        when(redisPresenceService.findLastGameplayActivityAt(RACE_ID, PLAYER_ID))
                 .thenReturn(Optional.of(redisActivity));
 
         GameplayPresenceDecision decision = service.resolve(player, NOW);
@@ -67,14 +72,14 @@ class RacePlayerGameplayPresenceServiceTest {
     void shouldClassifyGraceExpiredWithoutUsingBackgroundWorkAsActivity() {
         RacePlayer player = racingPlayer(NOW.minusSeconds(400));
         when(redisPresenceService.isOnline(RACE_ID, PLAYER_ID)).thenReturn(false);
-        when(redisPresenceService.findLastHeartbeatAt(RACE_ID, PLAYER_ID))
+        when(redisPresenceService.findLastGameplayActivityAt(RACE_ID, PLAYER_ID))
                 .thenReturn(Optional.of(NOW.minusSeconds(400)));
 
         GameplayPresenceDecision decision = service.resolve(player, NOW);
 
         assertTrue(decision.graceExpired());
         assertFalse(decision.blocksRaceCompletion());
-        verify(redisPresenceService, never()).markOnline(RACE_ID, PLAYER_ID, NOW);
+        verify(redisPresenceService, never()).renewPresenceLease(RACE_ID, PLAYER_ID, NOW);
     }
 
     @Test
@@ -93,20 +98,78 @@ class RacePlayerGameplayPresenceServiceTest {
     }
 
     @Test
-    void recordActivityShouldKeepDurableTimestampMonotonic() {
+    void recordGameplayActivityShouldKeepDurableTimestampMonotonic() {
         RacePlayer player = racingPlayer(NOW.minusSeconds(10));
 
-        service.recordPlayerActivity(player, NOW.minusSeconds(20));
+        service.recordGameplayActivity(player, NOW.minusSeconds(20));
 
         assertEquals(
                 LocalDateTime.ofInstant(NOW.minusSeconds(10), ZoneOffset.UTC),
                 player.getLastSeenAt()
         );
-        verify(redisPresenceService).markOnline(
+        verify(redisPresenceService).recordGameplayActivity(
                 RACE_ID,
                 PLAYER_ID,
                 NOW.minusSeconds(20)
         );
+        verify(racePlayerRepository, never()).save(player);
+    }
+
+    @Test
+    void healthyRedisActivityShouldNotDirtyDurableLastSeen() {
+        RacePlayer player = racingPlayer(NOW.minusSeconds(30));
+
+        service.recordGameplayActivity(player, NOW);
+
+        assertEquals(
+                LocalDateTime.ofInstant(NOW.minusSeconds(30), ZoneOffset.UTC),
+                player.getLastSeenAt()
+        );
+        verify(redisPresenceService).recordGameplayActivity(RACE_ID, PLAYER_ID, NOW);
+        verify(redisPresenceService, never()).renewPresenceLease(RACE_ID, PLAYER_ID, NOW);
+        verify(racePlayerRepository, never()).save(player);
+    }
+
+    @Test
+    void renewPresenceLeaseShouldUseFocusedRedisOperation() {
+        RacePlayer player = racingPlayer(NOW.minusSeconds(30));
+
+        service.renewPresenceLease(player, NOW);
+
+        verify(redisPresenceService).renewPresenceLease(RACE_ID, PLAYER_ID, NOW);
+        verify(redisPresenceService, never()).recordGameplayActivity(RACE_ID, PLAYER_ID, NOW);
+        verify(racePlayerRepository, never()).save(player);
+    }
+
+    @Test
+    void redisWriteFailureShouldPersistNewerDurableFallback() {
+        RacePlayer player = racingPlayer(NOW.minusSeconds(30));
+        org.mockito.Mockito.doThrow(
+                        new DataAccessResourceFailureException("redis unavailable")
+                )
+                .when(redisPresenceService)
+                .recordGameplayActivity(RACE_ID, PLAYER_ID, NOW);
+
+        service.recordGameplayActivity(player, NOW);
+
+        assertEquals(LocalDateTime.ofInstant(NOW, ZoneOffset.UTC), player.getLastSeenAt());
+        verify(racePlayerRepository).save(player);
+    }
+
+    @Test
+    void redisWriteFailureShouldNotPersistOlderDurableFallback() {
+        RacePlayer player = racingPlayer(NOW);
+        Instant olderActivity = NOW.minusSeconds(30);
+        org.mockito.Mockito.doThrow(
+                        new DataAccessResourceFailureException("redis unavailable")
+                )
+                .when(redisPresenceService)
+                .recordGameplayActivity(RACE_ID, PLAYER_ID, olderActivity);
+
+        service.recordGameplayActivity(player, olderActivity);
+
+        assertEquals(LocalDateTime.ofInstant(NOW, ZoneOffset.UTC), player.getLastSeenAt());
+        verify(racePlayerRepository, never()).save(player);
     }
 
     private RacePlayer racingPlayer(Instant lastSeenAt) {

@@ -69,11 +69,12 @@ class RacePlayerReconnectServiceTest {
         RacePlayerReconnectPolicy reconnectPolicy = new RacePlayerReconnectPolicy();
         lenient().when(redisPresenceService.isOnline(RACE_ID, RACE_PLAYER_ID))
                 .thenReturn(true);
-        lenient().when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
+        lenient().when(redisPresenceService.findLastGameplayActivityAt(RACE_ID, RACE_PLAYER_ID))
                 .thenReturn(Optional.empty());
         RacePlayerGameplayPresenceService presenceService =
                 new RacePlayerGameplayPresenceService(
                         redisPresenceService,
+                        racePlayerRepository,
                         reconnectPolicy,
                         fixedClock
                 );
@@ -96,7 +97,7 @@ class RacePlayerReconnectServiceTest {
     }
 
     @Test
-    void reconnectWaitingPlayerShouldMarkOnlineAndReturnWaitingForRace() {
+    void reconnectWaitingPlayerShouldRenewPresenceLeaseAndReturnWaitingForRace() {
         RacePlayer sessionRacePlayer = createRacePlayer(
                 RaceStatus.WAITING_FOR_PLAYERS,
                 RacePlayerStatus.WAITING,
@@ -123,14 +124,14 @@ class RacePlayerReconnectServiceTest {
                 RaceStatus.WAITING_FOR_PLAYERS
         );
 
-        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
-        verify(redisPresenceService, never()).findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
+        verify(redisPresenceService).renewPresenceLease(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
+        verify(redisPresenceService, never()).findLastGameplayActivityAt(RACE_ID, RACE_PLAYER_ID);
         verify(racePlayerRepository, never()).save(any());
     }
 
 
     @Test
-    void reconnectReadyRaceShouldNotReadLastHeartbeatAndReturnWaitingForRace() {
+    void reconnectReadyRaceShouldNotReadGameplayActivityAndReturnWaitingForRace() {
         RacePlayer sessionRacePlayer = createRacePlayer(
                 RaceStatus.READY,
                 RacePlayerStatus.WAITING,
@@ -158,8 +159,8 @@ class RacePlayerReconnectServiceTest {
                 RaceStatus.READY
         );
 
-        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
-        verify(redisPresenceService, never()).findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID);
+        verify(redisPresenceService).renewPresenceLease(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
+        verify(redisPresenceService, never()).findLastGameplayActivityAt(RACE_ID, RACE_PLAYER_ID);
         verify(racePlayerRepository, never()).save(any());
     }
 
@@ -180,8 +181,9 @@ class RacePlayerReconnectServiceTest {
                 .thenReturn(sessionRacePlayer);
         when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
                 .thenReturn(Optional.of(lockedRacePlayer));
-        when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
+        when(redisPresenceService.findLastGameplayActivityAt(RACE_ID, RACE_PLAYER_ID))
                 .thenReturn(Optional.of(instantOf(now().minusMinutes(1))));
+        when(redisPresenceService.isOnline(RACE_ID, RACE_PLAYER_ID)).thenReturn(false);
 
         RacePlayerReconnectResponse response = service.reconnect(request);
 
@@ -194,7 +196,12 @@ class RacePlayerReconnectServiceTest {
                 RaceStatus.IN_PROGRESS
         );
 
-        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
+        verify(gameplayTimelineService).settleReconnect(
+                org.mockito.ArgumentMatchers.eq(lockedRacePlayer),
+                org.mockito.ArgumentMatchers.eq(FIXED_INSTANT),
+                any()
+        );
+        verify(redisPresenceService).renewPresenceLease(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
         verify(racePlayerRepository, never()).save(any());
     }
 
@@ -215,7 +222,7 @@ class RacePlayerReconnectServiceTest {
                 .thenReturn(sessionRacePlayer);
         when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
                 .thenReturn(Optional.of(lockedRacePlayer));
-        when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
+        when(redisPresenceService.findLastGameplayActivityAt(RACE_ID, RACE_PLAYER_ID))
                 .thenReturn(Optional.of(instantOf(now().minusMinutes(6))));
 
         RacePlayerReconnectResponse response = service.reconnect(request);
@@ -264,7 +271,7 @@ class RacePlayerReconnectServiceTest {
         );
 
         verify(redisPresenceService).markOffline(RACE_ID, RACE_PLAYER_ID);
-        verify(redisPresenceService, never()).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
+        verify(redisPresenceService, never()).renewPresenceLease(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
         verify(racePlayerRepository, never()).save(any());
     }
 
@@ -298,7 +305,7 @@ class RacePlayerReconnectServiceTest {
         );
 
         verify(redisPresenceService).markOffline(RACE_ID, RACE_PLAYER_ID);
-        verify(redisPresenceService, never()).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
+        verify(redisPresenceService, never()).renewPresenceLease(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
         verify(racePlayerRepository, never()).save(any());
     }
 
@@ -332,7 +339,7 @@ class RacePlayerReconnectServiceTest {
         );
 
         verify(redisPresenceService).markOffline(RACE_ID, RACE_PLAYER_ID);
-        verify(redisPresenceService, never()).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
+        verify(redisPresenceService, never()).renewPresenceLease(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
         verify(racePlayerRepository, never()).save(any());
     }
 
@@ -354,10 +361,10 @@ class RacePlayerReconnectServiceTest {
                 .thenReturn(sessionRacePlayer);
         when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
                 .thenReturn(Optional.of(lockedRacePlayer));
-        when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
+        when(redisPresenceService.findLastGameplayActivityAt(RACE_ID, RACE_PLAYER_ID))
                 .thenThrow(new RedisConnectionFailureException("down"));
         org.mockito.Mockito.doThrow(new RedisConnectionFailureException("down"))
-                .when(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
+                .when(redisPresenceService).renewPresenceLease(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
 
         RacePlayerReconnectResponse response = service.reconnect(request);
 
@@ -367,7 +374,7 @@ class RacePlayerReconnectServiceTest {
 
 
     @Test
-    void reconnectWithRecoveredRedisAndMissingHeartbeatShouldRehydrateRedis() {
+    void reconnectWithRecoveredRedisAndMissingActivityShouldRehydrateRedis() {
         RacePlayer sessionRacePlayer = createRacePlayer(
                 RaceStatus.IN_PROGRESS,
                 RacePlayerStatus.RACING,
@@ -383,19 +390,19 @@ class RacePlayerReconnectServiceTest {
                 .thenReturn(sessionRacePlayer);
         when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
                 .thenReturn(Optional.of(lockedRacePlayer));
-        when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
+        when(redisPresenceService.findLastGameplayActivityAt(RACE_ID, RACE_PLAYER_ID))
                 .thenReturn(Optional.empty());
 
         RacePlayerReconnectResponse response = service.reconnect(request);
 
         assertEquals(RacePlayerReconnectOutcome.RECONNECTED, response.getOutcome());
-        assertEquals(now(), lockedRacePlayer.getLastSeenAt());
-        verify(redisPresenceService).markOnline(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
+        assertEquals(now().minusMinutes(1), lockedRacePlayer.getLastSeenAt());
+        verify(redisPresenceService).renewPresenceLease(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
     }
 
 
     @Test
-    void expiredReconnectWithRecoveredRedisAndMissingHeartbeatShouldStayOffline() {
+    void expiredReconnectWithRecoveredRedisAndMissingActivityShouldStayOffline() {
         RacePlayer sessionRacePlayer = createRacePlayer(
                 RaceStatus.IN_PROGRESS,
                 RacePlayerStatus.RACING,
@@ -411,13 +418,13 @@ class RacePlayerReconnectServiceTest {
                 .thenReturn(sessionRacePlayer);
         when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
                 .thenReturn(Optional.of(lockedRacePlayer));
-        when(redisPresenceService.findLastHeartbeatAt(RACE_ID, RACE_PLAYER_ID))
+        when(redisPresenceService.findLastGameplayActivityAt(RACE_ID, RACE_PLAYER_ID))
                 .thenReturn(Optional.empty());
 
         RacePlayerReconnectResponse response = service.reconnect(request);
 
         assertEquals(RacePlayerReconnectOutcome.RECONNECT_WINDOW_EXPIRED, response.getOutcome());
-        verify(redisPresenceService, never()).markOnline(any(), any(), any());
+        verify(redisPresenceService, never()).renewPresenceLease(any(), any(), any());
         verify(redisPresenceService).markOffline(RACE_ID, RACE_PLAYER_ID);
     }
 
@@ -464,4 +471,3 @@ class RacePlayerReconnectServiceTest {
         return localDateTime.atZone(FIXED_ZONE).toInstant();
     }
 }
-

@@ -2,39 +2,17 @@ package com.quiz_wheelz.service.question;
 
 import com.quiz_wheelz.common.QuestionRules;
 import com.quiz_wheelz.dto.question.QuestionPlan;
-import com.quiz_wheelz.dto.question.internal.InternalGeneratedQuestion;
-import com.quiz_wheelz.dto.question.internal.InternalGeneratedQuestionChoice;
-import com.quiz_wheelz.dto.question.student.StudentQuestionChoiceResponse;
 import com.quiz_wheelz.dto.question.student.StudentQuestionResponse;
 import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.entitys.PlayerQuestionChoice;
-import com.quiz_wheelz.entitys.QuestionTemplate;
-import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
-import com.quiz_wheelz.entitys.Subject;
-import com.quiz_wheelz.enums.AdaptiveMode;
-import com.quiz_wheelz.enums.AssistanceLevel;
-import com.quiz_wheelz.enums.Difficulty;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
-import com.quiz_wheelz.enums.QuestionGenerationPattern;
-import com.quiz_wheelz.enums.QuestionType;
-import com.quiz_wheelz.enums.RacePlayerStatus;
-import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
-import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
-import com.quiz_wheelz.repository.PlayerQuestionRepository;
-import com.quiz_wheelz.repository.RacePlayerRepository;
-import com.quiz_wheelz.service.raceengine.RaceMovementService;
-import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
-import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -48,145 +26,105 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
 class StudentQuestionDeliveryExistingQuestionTest {
 
-    private static final Instant FIXED_INSTANT = Instant.parse("2026-06-30T10:00:00Z");
-    private static final ZoneId FIXED_ZONE = ZoneId.of("UTC");
-    private static final long RACE_ID = 3L;
-    private static final long RACE_PLAYER_ID = 17L;
-
-    @Mock
-    private RacePlayerRepository racePlayerRepository;
-
-    @Mock
-    private PlayerQuestionRepository playerQuestionRepository;
-
-    @Mock
-    private PlayerQuestionChoiceRepository playerQuestionChoiceRepository;
-
-    @Mock
-    private RacePlayerQuestionPlanService racePlayerQuestionPlanService;
-
-    @Mock
-    private QuestionGenerationService questionGenerationService;
-
-    @Mock
-    private PlayerQuestionPersistenceService playerQuestionPersistenceService;
-
-    @Mock
-    private StudentQuestionResponseMapper studentQuestionResponseMapper;
-
-    @Mock
-    private RaceMovementService raceMovementService;
-
-    @Mock
-    private QuestionTimeoutService questionTimeoutService;
-
-    @Mock
-    private RacePlayerGameplayPresenceService gameplayPresenceService;
-
-    @Mock
-    private RacePlayerGameplayTimelineService gameplayTimelineService;
-
-    private StudentQuestionDeliveryService studentQuestionDeliveryService;
+    private StudentQuestionDeliveryTestFixture fixture;
 
     @BeforeEach
     void setUp() {
-        Clock fixedClock = Clock.fixed(FIXED_INSTANT, FIXED_ZONE);
-
-        studentQuestionDeliveryService = new StudentQuestionDeliveryService(
-                racePlayerRepository,
-                playerQuestionRepository,
-                playerQuestionChoiceRepository,
-                racePlayerQuestionPlanService,
-                questionGenerationService,
-                playerQuestionPersistenceService,
-                studentQuestionResponseMapper,
-                gameplayPresenceService,
-                gameplayTimelineService,
-                fixedClock
-        );
+        fixture = new StudentQuestionDeliveryTestFixture();
     }
 
     @Test
     void shouldReturnExistingActiveQuestionWhenNotExpired() {
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer = createRacePlayer();
-        PlayerQuestion activeQuestion = createPlayerQuestion(
+        RacePlayer racePlayer = fixture.createRacePlayer();
+        RacePlayer lockedRacePlayer = fixture.createRacePlayer();
+        PlayerQuestion activeQuestion = fixture.createPlayerQuestion(
                 PlayerQuestionStatus.ACTIVE,
-                now().plusSeconds(QuestionRules.DEFAULT_TIME_LIMIT_SECONDS)
+                fixture.now().plusSeconds(QuestionRules.DEFAULT_TIME_LIMIT_SECONDS)
         );
-        List<PlayerQuestionChoice> choices = createPlayerQuestionChoices(activeQuestion);
-        StudentQuestionResponse expectedResponse = createStudentQuestionResponse();
+        List<PlayerQuestionChoice> choices = fixture.createPlayerQuestionChoices(activeQuestion);
+        StudentQuestionResponse expected = fixture.createStudentQuestionResponse();
+        prepareExistingQuestion(lockedRacePlayer, activeQuestion, choices, expected);
 
-        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.of(lockedRacePlayer));
-        when(playerQuestionRepository.findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(
+        StudentQuestionResponse result = fixture.studentQuestionDeliveryService
+                .getOrCreateCurrentQuestion(racePlayer);
+
+        assertSame(expected, result);
+        verify(fixture.gameplayRequestGuard).requireGameplayAccess(
                 lockedRacePlayer,
-                PlayerQuestionStatus.ACTIVE
-        )).thenReturn(Optional.of(activeQuestion));
-        when(playerQuestionChoiceRepository.findByPlayerQuestionOrderByDisplayOrderAsc(activeQuestion))
-                .thenReturn(choices);
-        when(studentQuestionResponseMapper.toResponse(
-                eq(activeQuestion),
-                eq(choices),
-                anyLong(),
-                anyLong()
-        )).thenReturn(expectedResponse);
-
-        StudentQuestionResponse result =
-                studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer);
-
-        assertSame(expectedResponse, result);
-
-        verify(gameplayTimelineService).settlePlayerActivity(
-                lockedRacePlayer,
-                FIXED_INSTANT,
-                null
+                StudentQuestionDeliveryTestFixture.FIXED_INSTANT
         );
-        verify(gameplayPresenceService).recordPlayerActivity(
-                lockedRacePlayer,
-                FIXED_INSTANT
+        verify(fixture.racePlayerQuestionPlanService, never()).buildQuestionPlan(any());
+        verify(fixture.questionGenerationService, never()).generate(any(QuestionPlan.class));
+        verify(fixture.playerQuestionPersistenceService, never())
+                .persistGeneratedQuestion(any(), any());
+    }
+
+    @Test
+    void repeatedRequestShouldKeepQuestionAndOriginalDeadline() {
+        RacePlayer racePlayer = fixture.createRacePlayer();
+        RacePlayer lockedRacePlayer = fixture.createRacePlayer();
+        LocalDateTime expiresAt = fixture.now().plusSeconds(
+                QuestionRules.DEFAULT_TIME_LIMIT_SECONDS
         );
-        verify(racePlayerQuestionPlanService, never()).buildQuestionPlan(any());
-        verify(questionGenerationService, never()).generate(any(QuestionPlan.class));
-        verify(playerQuestionPersistenceService, never()).persistGeneratedQuestion(any(), any());
+        PlayerQuestion activeQuestion = fixture.createPlayerQuestion(
+                PlayerQuestionStatus.ACTIVE,
+                expiresAt
+        );
+        List<PlayerQuestionChoice> choices = fixture.createPlayerQuestionChoices(activeQuestion);
+        StudentQuestionResponse expected = fixture.createStudentQuestionResponse();
+        prepareExistingQuestion(lockedRacePlayer, activeQuestion, choices, expected);
+
+        StudentQuestionResponse first = fixture.studentQuestionDeliveryService
+                .getOrCreateCurrentQuestion(racePlayer);
+        StudentQuestionResponse second = fixture.studentQuestionDeliveryService
+                .getOrCreateCurrentQuestion(racePlayer);
+
+        assertSame(expected, first);
+        assertSame(expected, second);
+        assertEquals(expiresAt, activeQuestion.getExpiresAt());
+        verify(fixture.studentQuestionResponseMapper, times(2)).toResponse(
+                activeQuestion,
+                choices,
+                StudentQuestionDeliveryTestFixture.FIXED_INSTANT.toEpochMilli(),
+                DateTimeUtils.toEpochMilli(
+                        expiresAt,
+                        StudentQuestionDeliveryTestFixture.FIXED_ZONE
+                )
+        );
     }
 
     @Test
     void shouldLockRacePlayerBeforeActiveQuestionLookup() {
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer = createRacePlayer();
-        PlayerQuestion activeQuestion = createPlayerQuestion(
+        RacePlayer racePlayer = fixture.createRacePlayer();
+        RacePlayer lockedRacePlayer = fixture.createRacePlayer();
+        PlayerQuestion question = fixture.createPlayerQuestion(
                 PlayerQuestionStatus.ACTIVE,
-                now().plusSeconds(QuestionRules.DEFAULT_TIME_LIMIT_SECONDS)
+                fixture.now().plusSeconds(QuestionRules.DEFAULT_TIME_LIMIT_SECONDS)
+        );
+        prepareExistingQuestion(
+                lockedRacePlayer,
+                question,
+                fixture.createPlayerQuestionChoices(question),
+                fixture.createStudentQuestionResponse()
         );
 
-        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.of(lockedRacePlayer));
-        when(playerQuestionRepository.findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(
-                lockedRacePlayer,
-                PlayerQuestionStatus.ACTIVE
-        )).thenReturn(Optional.of(activeQuestion));
-        when(playerQuestionChoiceRepository.findByPlayerQuestionOrderByDisplayOrderAsc(activeQuestion))
-                .thenReturn(createPlayerQuestionChoices(activeQuestion));
-        when(studentQuestionResponseMapper.toResponse(any(), any(), anyLong(), anyLong()))
-                .thenReturn(createStudentQuestionResponse());
+        fixture.studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer);
 
-        studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer);
-
-        InOrder lockBeforeLookup = inOrder(racePlayerRepository, playerQuestionRepository);
-        lockBeforeLookup.verify(racePlayerRepository)
-                .findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
-        lockBeforeLookup.verify(playerQuestionRepository)
+        InOrder order = inOrder(fixture.racePlayerRepository, fixture.playerQuestionRepository);
+        order.verify(fixture.racePlayerRepository).findLockedByIdAndRaceId(
+                StudentQuestionDeliveryTestFixture.RACE_PLAYER_ID,
+                StudentQuestionDeliveryTestFixture.RACE_ID
+        );
+        order.verify(fixture.playerQuestionRepository)
                 .findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(
                         lockedRacePlayer,
                         PlayerQuestionStatus.ACTIVE
@@ -194,45 +132,13 @@ class StudentQuestionDeliveryExistingQuestionTest {
     }
 
     @Test
-    void shouldExposeEpochTimingFromTheSharedClock() {
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer = createRacePlayer();
-        LocalDateTime expiresAt = now().plusSeconds(QuestionRules.DEFAULT_TIME_LIMIT_SECONDS);
-        PlayerQuestion activeQuestion = createPlayerQuestion(
-                PlayerQuestionStatus.ACTIVE,
-                expiresAt
-        );
-        List<PlayerQuestionChoice> choices = createPlayerQuestionChoices(activeQuestion);
-
-        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.of(lockedRacePlayer));
-        when(playerQuestionRepository.findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(
-                lockedRacePlayer,
-                PlayerQuestionStatus.ACTIVE
-        )).thenReturn(Optional.of(activeQuestion));
-        when(playerQuestionChoiceRepository.findByPlayerQuestionOrderByDisplayOrderAsc(activeQuestion))
-                .thenReturn(choices);
-        when(studentQuestionResponseMapper.toResponse(any(), any(), anyLong(), anyLong()))
-                .thenReturn(createStudentQuestionResponse());
-
-        studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer);
-
-        verify(studentQuestionResponseMapper).toResponse(
-                activeQuestion,
-                choices,
-                FIXED_INSTANT.toEpochMilli(),
-                DateTimeUtils.toEpochMilli(expiresAt, FIXED_ZONE)
-        );
-    }
-
-    @Test
-    void shouldUseOneDecisionInstantForExpiryAndServerTime() {
+    void shouldUseOneDecisionInstantForAccessAndServerTime() {
         Clock steppingClock = new Clock() {
-            private long reads = 0;
+            private long reads;
 
             @Override
             public ZoneId getZone() {
-                return FIXED_ZONE;
+                return StudentQuestionDeliveryTestFixture.FIXED_ZONE;
             }
 
             @Override
@@ -242,211 +148,125 @@ class StudentQuestionDeliveryExistingQuestionTest {
 
             @Override
             public Instant instant() {
-                return FIXED_INSTANT.plusMillis(5 * reads++);
+                return StudentQuestionDeliveryTestFixture.FIXED_INSTANT
+                        .plusMillis(5 * reads++);
             }
         };
-
-        StudentQuestionDeliveryService steppingService = new StudentQuestionDeliveryService(
-                racePlayerRepository,
-                playerQuestionRepository,
-                playerQuestionChoiceRepository,
-                racePlayerQuestionPlanService,
-                questionGenerationService,
-                playerQuestionPersistenceService,
-                studentQuestionResponseMapper,
-                gameplayPresenceService,
-                gameplayTimelineService,
+        StudentQuestionDeliveryService service = new StudentQuestionDeliveryService(
+                fixture.racePlayerRepository,
+                fixture.playerQuestionRepository,
+                fixture.playerQuestionChoiceRepository,
+                fixture.racePlayerQuestionPlanService,
+                fixture.questionGenerationService,
+                fixture.playerQuestionPersistenceService,
+                fixture.studentQuestionResponseMapper,
+                fixture.gameplayRequestGuard,
                 steppingClock
         );
-
-        RacePlayer racePlayer = createRacePlayer();
-        RacePlayer lockedRacePlayer = createRacePlayer();
-        LocalDateTime expiresAt = now().plusSeconds(QuestionRules.DEFAULT_TIME_LIMIT_SECONDS);
-        PlayerQuestion activeQuestion = createPlayerQuestion(
+        RacePlayer racePlayer = fixture.createRacePlayer();
+        RacePlayer lockedRacePlayer = fixture.createRacePlayer();
+        LocalDateTime expiresAt = fixture.now().plusSeconds(
+                QuestionRules.DEFAULT_TIME_LIMIT_SECONDS
+        );
+        PlayerQuestion question = fixture.createPlayerQuestion(
                 PlayerQuestionStatus.ACTIVE,
                 expiresAt
         );
-        List<PlayerQuestionChoice> choices = createPlayerQuestionChoices(activeQuestion);
-
-        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.of(lockedRacePlayer));
-        when(playerQuestionRepository.findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(
+        List<PlayerQuestionChoice> choices = fixture.createPlayerQuestionChoices(question);
+        prepareExistingQuestion(
                 lockedRacePlayer,
-                PlayerQuestionStatus.ACTIVE
-        )).thenReturn(Optional.of(activeQuestion));
-        when(playerQuestionChoiceRepository.findByPlayerQuestionOrderByDisplayOrderAsc(activeQuestion))
-                .thenReturn(choices);
-        when(studentQuestionResponseMapper.toResponse(any(), any(), anyLong(), anyLong()))
-                .thenReturn(createStudentQuestionResponse());
-
-        steppingService.getOrCreateCurrentQuestion(racePlayer);
-
-        verify(studentQuestionResponseMapper).toResponse(
-                activeQuestion,
+                question,
                 choices,
-                FIXED_INSTANT.toEpochMilli(),
-                DateTimeUtils.toEpochMilli(expiresAt, FIXED_ZONE)
-        );
-    }
-
-    @Test
-    void shouldRejectMissingRacePlayerIdentity() {
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> studentQuestionDeliveryService.getOrCreateCurrentQuestion(null)
+                fixture.createStudentQuestionResponse()
         );
 
-        assertEquals(ErrorCode.RACE_PLAYER_NOT_FOUND, exception.getErrorCode());
-    }
+        service.getOrCreateCurrentQuestion(racePlayer);
 
-    @Test
-    void shouldRejectRacePlayerThatCannotBeLocked() {
-        RacePlayer racePlayer = createRacePlayer();
-
-        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.empty());
-
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer)
+        verify(fixture.gameplayRequestGuard).requireGameplayAccess(
+                lockedRacePlayer,
+                StudentQuestionDeliveryTestFixture.FIXED_INSTANT
         );
-
-        assertEquals(ErrorCode.RACE_PLAYER_NOT_FOUND, exception.getErrorCode());
-    }
-
-
-    private RacePlayer createRacePlayer() {
-        return createRacePlayer(RacePlayerStatus.RACING, RaceStatus.IN_PROGRESS);
-    }
-
-    private RacePlayer createRacePlayer(
-            RacePlayerStatus playerStatus,
-            RaceStatus raceStatus
-    ) {
-        Race race = new Race();
-        race.setId(RACE_ID);
-        race.setStatus(raceStatus);
-
-        RacePlayer racePlayer = new RacePlayer();
-        racePlayer.setId(RACE_PLAYER_ID);
-        racePlayer.setRace(race);
-        racePlayer.setStatus(playerStatus);
-
-        return racePlayer;
-    }
-
-    private QuestionPlan createQuestionPlan() {
-        return new QuestionPlan(
-                createMathSubject(),
-                QuestionType.ADDITION,
-                Difficulty.EASY,
-                1,
-                10,
-                QuestionRules.DEFAULT_TIME_LIMIT_SECONDS,
-                QuestionRules.DEFAULT_CHOICES_COUNT,
-                QuestionGenerationPattern.BINARY_OPERATION,
-                AdaptiveMode.BASIC,
-                AssistanceLevel.NONE
-        );
-    }
-
-    private InternalGeneratedQuestion createGeneratedQuestion() {
-        return new InternalGeneratedQuestion(
-                createMathSubject(),
-                new QuestionTemplate(),
-                QuestionType.ADDITION,
-                Difficulty.EASY,
-                "6 + 6 = ?",
-                12,
-                QuestionRules.DEFAULT_TIME_LIMIT_SECONDS,
-                List.of(
-                        new InternalGeneratedQuestionChoice("12", 12, true, 1),
-                        new InternalGeneratedQuestionChoice("10", 10, false, 2),
-                        new InternalGeneratedQuestionChoice("14", 14, false, 3),
-                        new InternalGeneratedQuestionChoice("15", 15, false, 4)
+        verify(fixture.studentQuestionResponseMapper).toResponse(
+                question,
+                choices,
+                StudentQuestionDeliveryTestFixture.FIXED_INSTANT.toEpochMilli(),
+                DateTimeUtils.toEpochMilli(
+                        expiresAt,
+                        StudentQuestionDeliveryTestFixture.FIXED_ZONE
                 )
         );
     }
 
-    private PlayerQuestion createPlayerQuestion(
-            PlayerQuestionStatus status,
-            LocalDateTime expiresAt
-    ) {
-        PlayerQuestion playerQuestion = new PlayerQuestion();
-        playerQuestion.setQuestionTemplate(new QuestionTemplate());
-        playerQuestion.setQuestionText("6 + 6 = ?");
-        playerQuestion.setCorrectAnswerValue(12);
-        playerQuestion.setTimeLimitSeconds(QuestionRules.DEFAULT_TIME_LIMIT_SECONDS);
-        playerQuestion.setStatus(status);
-        playerQuestion.setExpiresAt(expiresAt);
-
-        return playerQuestion;
-    }
-
-    private List<PlayerQuestionChoice> createPlayerQuestionChoices(
-            PlayerQuestion playerQuestion
-    ) {
-        PlayerQuestionChoice firstChoice = createPlayerQuestionChoice(
-                playerQuestion,
-                "12",
-                12,
-                true,
-                1
+    @Test
+    void shouldRejectMissingOrUnknownRacePlayer() {
+        ApiException missing = assertThrows(
+                ApiException.class,
+                () -> fixture.studentQuestionDeliveryService.getOrCreateCurrentQuestion(null)
         );
-        PlayerQuestionChoice secondChoice = createPlayerQuestionChoice(
-                playerQuestion,
-                "10",
-                10,
-                false,
-                2
-        );
+        assertEquals(ErrorCode.RACE_PLAYER_NOT_FOUND, missing.getErrorCode());
 
-        return List.of(firstChoice, secondChoice);
+        RacePlayer racePlayer = fixture.createRacePlayer();
+        when(fixture.racePlayerRepository.findLockedByIdAndRaceId(
+                StudentQuestionDeliveryTestFixture.RACE_PLAYER_ID,
+                StudentQuestionDeliveryTestFixture.RACE_ID
+        )).thenReturn(Optional.empty());
+        ApiException unknown = assertThrows(
+                ApiException.class,
+                () -> fixture.studentQuestionDeliveryService
+                        .getOrCreateCurrentQuestion(racePlayer)
+        );
+        assertEquals(ErrorCode.RACE_PLAYER_NOT_FOUND, unknown.getErrorCode());
     }
 
-    private PlayerQuestionChoice createPlayerQuestionChoice(
-            PlayerQuestion playerQuestion,
-            String choiceText,
-            Integer answerValue,
-            boolean correct,
-            Integer displayOrder
+    @Test
+    void shouldRejectGameplayWhenGuardRequiresReconnect() {
+        RacePlayer racePlayer = fixture.createRacePlayer();
+        RacePlayer lockedRacePlayer = fixture.createRacePlayer();
+        when(fixture.racePlayerRepository.findLockedByIdAndRaceId(
+                StudentQuestionDeliveryTestFixture.RACE_PLAYER_ID,
+                StudentQuestionDeliveryTestFixture.RACE_ID
+        )).thenReturn(Optional.of(lockedRacePlayer));
+        doThrow(new ApiException(ErrorCode.RACE_PLAYER_RECONNECT_REQUIRED))
+                .when(fixture.gameplayRequestGuard)
+                .requireGameplayAccess(
+                        lockedRacePlayer,
+                        StudentQuestionDeliveryTestFixture.FIXED_INSTANT
+                );
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> fixture.studentQuestionDeliveryService
+                        .getOrCreateCurrentQuestion(racePlayer)
+        );
+
+        assertEquals(ErrorCode.RACE_PLAYER_RECONNECT_REQUIRED, exception.getErrorCode());
+        verify(fixture.playerQuestionRepository, never())
+                .findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(any(), any());
+    }
+
+    private void prepareExistingQuestion(
+            RacePlayer lockedRacePlayer,
+            PlayerQuestion question,
+            List<PlayerQuestionChoice> choices,
+            StudentQuestionResponse response
     ) {
-        PlayerQuestionChoice choice = new PlayerQuestionChoice();
-        choice.setPlayerQuestion(playerQuestion);
-        choice.setChoiceText(choiceText);
-        choice.setAnswerValue(answerValue);
-        choice.setCorrect(correct);
-        choice.setDisplayOrder(displayOrder);
-
-        return choice;
-    }
-
-    private StudentQuestionResponse createStudentQuestionResponse() {
-        return new StudentQuestionResponse(
-                1L,
-                "6 + 6 = ?",
-                QuestionRules.DEFAULT_TIME_LIMIT_SECONDS,
-                FIXED_INSTANT.toEpochMilli(),
-                FIXED_INSTANT.plusSeconds(QuestionRules.DEFAULT_TIME_LIMIT_SECONDS).toEpochMilli(),
-                List.of(
-                        new StudentQuestionChoiceResponse(1L, "12", 1),
-                        new StudentQuestionChoiceResponse(2L, "10", 2)
-                )
-        );
-    }
-
-    private Subject createMathSubject() {
-        Subject subject = new Subject();
-        subject.setCode(QuestionRules.DEFAULT_SUBJECT_CODE);
-        subject.setName("Math");
-        subject.setActive(true);
-
-        return subject;
-    }
-
-    private LocalDateTime now() {
-        return LocalDateTime.ofInstant(FIXED_INSTANT, FIXED_ZONE);
+        when(fixture.racePlayerRepository.findLockedByIdAndRaceId(
+                StudentQuestionDeliveryTestFixture.RACE_PLAYER_ID,
+                StudentQuestionDeliveryTestFixture.RACE_ID
+        )).thenReturn(Optional.of(lockedRacePlayer));
+        when(fixture.playerQuestionRepository
+                .findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(
+                        lockedRacePlayer,
+                        PlayerQuestionStatus.ACTIVE
+                )).thenReturn(Optional.of(question));
+        when(fixture.playerQuestionChoiceRepository
+                .findByPlayerQuestionOrderByDisplayOrderAsc(question))
+                .thenReturn(choices);
+        when(fixture.studentQuestionResponseMapper.toResponse(
+                any(),
+                any(),
+                anyLong(),
+                anyLong()
+        )).thenReturn(response);
     }
 }
-
-

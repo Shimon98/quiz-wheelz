@@ -92,7 +92,9 @@ export default function useRacePlayerRuntimeSession() {
 
     if (mountedRef.current && pendingReconnectRef.current) {
       pendingReconnectRef.current = false;
-      runReconnectRef.current();
+      if (!isDocumentHidden()) {
+        runReconnectRef.current();
+      }
     }
   }, []);
 
@@ -108,13 +110,23 @@ export default function useRacePlayerRuntimeSession() {
   }, [clearRetryTimer]);
 
   const runReconnect = useCallback(() => {
-    if (!mountedRef.current || presenceStoppedRef.current) {
+    if (
+      !mountedRef.current ||
+      presenceStoppedRef.current ||
+      isDocumentHidden()
+    ) {
       return;
     }
 
     if (operationRef.current === OPERATIONS.RECONNECT) {
       return;
     }
+
+    setConnectionState(
+      hasResolvedSessionRef.current
+        ? RACE_PLAYER_CONNECTION_STATES.RECONNECTING
+        : RACE_PLAYER_CONNECTION_STATES.CONNECTING,
+    );
 
     if (operationRef.current === OPERATIONS.HEARTBEAT) {
       pendingReconnectRef.current = true;
@@ -125,12 +137,6 @@ export default function useRacePlayerRuntimeSession() {
     clearRetryTimer();
 
     async function executeReconnect() {
-      setConnectionState(
-        hasResolvedSessionRef.current
-          ? RACE_PLAYER_CONNECTION_STATES.RECONNECTING
-          : RACE_PLAYER_CONNECTION_STATES.CONNECTING,
-      );
-
       try {
         const response = await reconnectRacePlayer();
         if (!mountedRef.current) {
@@ -185,6 +191,10 @@ export default function useRacePlayerRuntimeSession() {
   }, [runReconnect]);
 
   const runHeartbeat = useCallback(() => {
+    if (isDocumentHidden()) {
+      return;
+    }
+
     if (operationRef.current !== OPERATIONS.NONE) {
       return;
     }
@@ -235,6 +245,7 @@ export default function useRacePlayerRuntimeSession() {
       connectionState === RACE_PLAYER_CONNECTION_STATES.CONNECTED &&
       terminalOutcome == null &&
       error == null &&
+      isDocumentVisible &&
       !presenceStopped,
   );
 
@@ -257,6 +268,7 @@ export default function useRacePlayerRuntimeSession() {
   const handleDocumentVisible = useCallback(() => {
     setIsDocumentVisible(true);
     if (terminalOutcomeRef.current == null && !presenceStoppedRef.current) {
+      setConnectionState(RACE_PLAYER_CONNECTION_STATES.RECONNECTING);
       runReconnect();
     }
   }, [runReconnect]);
