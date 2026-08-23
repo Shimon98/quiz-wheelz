@@ -21,6 +21,9 @@ public final class ErrorMessages {
     public static final String RACE_PLAYER_RECONNECT_REQUIRED =
             "Race player must reconnect before gameplay can continue";
 
+    public static final String FOCUS_EVENT_REPLAY_CONFLICT =
+            "Focus event was already recorded with a different type";
+
     public static final String QUESTION_TEMPLATE_NOT_FOUND =
             "Active question template not found";
 

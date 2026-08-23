@@ -2,7 +2,7 @@
 
 **Status:** Canonical  
 **Audit date:** 2026-08-23
-**Code baseline:** `main@8cb2ac7ce716c5be0f6bc6a8e5810242c4d71679`
+**Code baseline:** `main@14f16e8d91c522a1f6d44129b1bf5e89e107f3a2`
 **This document owns:** the cross-system architecture, data ownership, API boundaries and runtime contracts
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -266,6 +266,33 @@ answer           → exactly-once gameplay mutation; duplicate submit is rejecte
 These guarantees use the existing per-RacePlayer lock and lifecycle owners. They add
 no replay-success protocol, request identifier, presence recreation, Redis state or
 public contract.
+
+Focus integrity foundation uses a separate server-only audit command:
+
+```text
+POST /api/race-players/me/focus-events
+request  → eventId, type = TAB_HIDDEN | TAB_VISIBLE
+response → eventId, type, outcome, focusLossCount, questionFocusLossCount,
+           activeQuestionId, recordedAtEpochMs
+```
+
+The RacePlayer session selects and locks the target; the client supplies no player,
+race, question or timestamp. MySQL stores the cumulative RacePlayer total and an
+immutable event row associated with the server-resolved ACTIVE question. Replaying
+the same event ID and type returns the stored historic result; a conflicting type is
+rejected. The first counted loss for one question is `WARNING`, and later counted
+losses for that question are `VIOLATION`; a new question starts its own count while
+the race total remains cumulative.
+
+The non-null RacePlayer focus summary columns carry database defaults of `0` and
+`VISIBLE`, allowing DEV `ddl-auto=update` to backfill existing rows safely. This is
+not a production migration; production migrations remain Phase 6 debt.
+
+Focus classification has no gameplay consequence in S1-03A. Focus events never
+renew presence, record gameplay activity, settle or re-anchor movement, reconnect,
+change a question deadline/status, or apply answer/timeout effects. `WARNING` and
+`VIOLATION` are durable detection only; forfeiture and configurable strict policy
+remain S1-03B.
 
 An ACTIVE question remains owned by its RacePlayer across hidden, reload,
 disconnect and reconnect transitions until it becomes ANSWERED or EXPIRED. Its

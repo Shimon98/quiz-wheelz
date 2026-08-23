@@ -2,7 +2,7 @@
 
 **Status:** Canonical  
 **Audit date:** 2026-08-23
-**Code baseline:** `main@8cb2ac7ce716c5be0f6bc6a8e5810242c4d71679`
+**Code baseline:** `main@14f16e8d91c522a1f6d44129b1bf5e89e107f3a2`
 **This document owns:** the implemented backend capabilities, gaps and stale assumptions
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -82,6 +82,21 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - leave/disconnect persistence remains authoritative when Redis cleanup fails;
   repeated leave after DISCONNECTED skips settlement, activity and duplicate save
   while retaining best-effort offline cleanup. FINISHED remains FINISHED.
+- `POST /api/race-players/me/focus-events` accepts only a UUID `eventId` and
+  `TAB_HIDDEN`/`TAB_VISIBLE`. The current RacePlayer is locked before idempotency
+  lookup; same-ID replay returns stored counters/outcome/time, while a conflicting
+  type returns `FOCUS_EVENT_REPLAY_CONFLICT`.
+- `RacePlayer.focusLossCount`, `lastFocusLossAt` and `focusState` own the durable race
+  summary. `race_player_focus_events` owns the immutable audit decision, optional
+  server-resolved PlayerQuestion association, counters-after and server time, with a
+  unique `(race_player_id, client_event_id)` constraint.
+- The new non-null RacePlayer summary columns declare database defaults of `0` and
+  `VISIBLE`, so DEV `ddl-auto=update` can backfill existing rows safely. No production
+  migration exists yet; that remains Phase 6 debt.
+- A visible→hidden transition counts only for an unexpired ACTIVE question during
+  `RACING + IN_PROGRESS`: first loss on that question is WARNING and second+ is
+  VIOLATION. Focus events do not touch presence, gameplay activity, movement,
+  reconnect, question status/deadline or race-engine effects.
 
 ### Server time policy (C1-02K)
 
