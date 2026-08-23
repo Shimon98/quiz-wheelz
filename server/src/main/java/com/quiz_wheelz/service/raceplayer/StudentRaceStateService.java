@@ -25,6 +25,7 @@ public class StudentRaceStateService {
     private final RacePlayerRepository racePlayerRepository;
     private final RacePlayerGameplayRequestGuard gameplayRequestGuard;
     private final RaceFinishService raceFinishService;
+    private final StudentRaceStandingService standingService;
     private final StudentRaceRuntimeSnapshotMapper snapshotMapper;
     private final Clock clock;
 
@@ -33,6 +34,7 @@ public class StudentRaceStateService {
             RacePlayerRepository racePlayerRepository,
             RacePlayerGameplayRequestGuard gameplayRequestGuard,
             RaceFinishService raceFinishService,
+            StudentRaceStandingService standingService,
             StudentRaceRuntimeSnapshotMapper snapshotMapper,
             Clock clock
     ) {
@@ -40,6 +42,7 @@ public class StudentRaceStateService {
         this.racePlayerRepository = Objects.requireNonNull(racePlayerRepository);
         this.gameplayRequestGuard = Objects.requireNonNull(gameplayRequestGuard);
         this.raceFinishService = Objects.requireNonNull(raceFinishService);
+        this.standingService = Objects.requireNonNull(standingService);
         this.snapshotMapper = Objects.requireNonNull(snapshotMapper);
         this.clock = Objects.requireNonNull(clock);
     }
@@ -69,8 +72,12 @@ public class StudentRaceStateService {
             raceFinishService.finishRaceIfNeeded(race);
         }
 
-        StudentRaceRuntimeSnapshotResponse snapshot =
-                snapshotMapper.fromRacePlayer(racePlayer, decisionEpochMs);
+        StudentRaceStandingResult standing = standingService.calculate(racePlayer);
+        StudentRaceRuntimeSnapshotResponse snapshot = snapshotMapper.fromRacePlayer(
+                racePlayer,
+                standing,
+                decisionEpochMs
+        );
 
         return new StudentRaceStateResponse(
                 race.getId(),

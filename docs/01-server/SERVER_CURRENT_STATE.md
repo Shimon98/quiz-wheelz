@@ -57,6 +57,10 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - lane and vehicle assignment
 - race-state with refresh-safe current-player presentation identity and the shared
   runtime snapshot
+- authoritative standings in the shared race-state and submit-answer snapshot:
+  competition rank, actual joined-player count and a deterministic max-4 safe nearby
+  window. FINISHED uses `finishedAt`; all other statuses, including DISCONNECTED, use
+  stored position. Lane/ID stabilize tied output only and never decide public rank
 - Redis-first heartbeat and presence with 45-second presence TTL; only heartbeat
   and reconnect create or renew the lease. Active `RACING + IN_PROGRESS`
   race-state, current-question and answer requests record trusted gameplay activity.
@@ -147,8 +151,10 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - GET race-state settles the locked player to one decision instant before
   mapping (safe state-read materialization — repeated reads award nothing);
   RACING→DISCONNECTED settles first, FINISHED wins over DISCONNECTED
-- runtime snapshot carries `snapshotAtEpochMs` (client freshness ordering)
-  and `movementUnitsPerSecond` (server-owned visual prediction rate)
+- runtime snapshot carries `snapshotAtEpochMs` (client freshness ordering),
+  `movementUnitsPerSecond` (server-owned visual prediction rate), `rank`,
+  `playerCount` and `nearbyPlayers`; one focused standings owner reads the at-most-8
+  RacePlayers once and computes rank/window in memory after the current request mutation
 - streak/highest streak
 - difficulty progression
 - correct/wrong counters
@@ -164,7 +170,6 @@ recovery never subtracts movement awarded in degraded mode.
 
 - Teacher live-state query.
 - Teacher SSE stream.
-- Nearby-player/rank data needed by student opponents/HUD.
 - Durable final-results query/model closure.
 - Event/effect system for junction/luck/announcements.
 - Catch-up-assistance policy.

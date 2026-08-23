@@ -21,6 +21,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -95,8 +97,12 @@ class StudentRaceStateServiceTest {
                 response.getSnapshot().getSnapshotAtEpochMs()
         );
         assertEquals(4.8, response.getSnapshot().getMovementUnitsPerSecond());
+        assertEquals(1, response.getSnapshot().getRank());
+        assertEquals(1, response.getSnapshot().getPlayerCount());
+        assertTrue(response.getSnapshot().getNearbyPlayers().isEmpty());
 
         verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
+        verify(racePlayerRepository).findByRaceOrderByLaneNumberAsc(racePlayer.getRace());
         verify(gameplayRequestGuard).requireGameplayAccess(racePlayer, FIXED_INSTANT);
         verify(raceFinishService, never()).finishRaceIfNeeded(any());
         verify(currentRacePlayerService, never()).resolveCurrentRacePlayer(request);
@@ -140,16 +146,59 @@ class StudentRaceStateServiceTest {
                 RacePlayerStatus.RACING,
                 RaceStatus.IN_PROGRESS
         );
+        RacePlayer laterFinisher = createOtherRacePlayer(
+                racePlayer.getRace(),
+                10L,
+                999.0,
+                RacePlayerStatus.FINISHED
+        );
+        laterFinisher.setFinishedAt(LocalDateTime.of(2026, 6, 30, 10, 0, 2));
+        when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(racePlayer.getRace()))
+                .thenReturn(List.of(laterFinisher, racePlayer));
 
         doAnswer(invocation -> {
+            racePlayer.setPosition(1000.0);
             racePlayer.setStatus(RacePlayerStatus.FINISHED);
+            racePlayer.setFinishedAt(LocalDateTime.of(2026, 6, 30, 10, 0, 1));
             return null;
         }).when(gameplayRequestGuard).requireGameplayAccess(any(), any());
 
         StudentRaceStateResponse response = createService().getRaceState(request);
 
         assertTrue(response.getSnapshot().isPlayerFinished());
+        assertEquals(1, response.getSnapshot().getRank());
+        assertEquals(2, response.getSnapshot().getPlayerCount());
+        assertEquals(
+                RacePlayerStatus.FINISHED,
+                response.getSnapshot().getNearbyPlayers().get(0).getStatus()
+        );
         verify(raceFinishService).finishRaceIfNeeded(racePlayer.getRace());
+    }
+
+    @Test
+    void getRaceStateShouldCalculateStandingAfterCurrentPlayerSettlement() {
+        RacePlayer racePlayer = mockResolvedAndLocked(
+                RacePlayerStatus.RACING,
+                RaceStatus.IN_PROGRESS
+        );
+        RacePlayer opponent = createOtherRacePlayer(
+                racePlayer.getRace(),
+                10L,
+                600.0,
+                RacePlayerStatus.RACING
+        );
+        when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(racePlayer.getRace()))
+                .thenReturn(List.of(opponent, racePlayer));
+        doAnswer(invocation -> {
+            racePlayer.setPosition(700.0);
+            return null;
+        }).when(gameplayRequestGuard).requireGameplayAccess(racePlayer, FIXED_INSTANT);
+
+        StudentRaceStateResponse response = createService().getRaceState(request);
+
+        assertEquals(700.0, response.getSnapshot().getPosition());
+        assertEquals(1, response.getSnapshot().getRank());
+        assertEquals(600.0, response.getSnapshot().getNearbyPlayers().get(0).getPosition());
     }
 
     @Test
@@ -268,6 +317,7 @@ class StudentRaceStateServiceTest {
                 racePlayerRepository,
                 requestGuard,
                 raceFinishService,
+                new StudentRaceStandingService(racePlayerRepository),
                 new StudentRaceRuntimeSnapshotMapper(),
                 Clock.fixed(FIXED_INSTANT, FIXED_ZONE)
         );
@@ -291,6 +341,8 @@ class StudentRaceStateServiceTest {
                 .thenReturn(racePlayer);
         when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
                 .thenReturn(Optional.of(racePlayer));
+        lenient().when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(racePlayer.getRace()))
+                .thenReturn(List.of(racePlayer));
 
         return racePlayer;
     }
@@ -327,6 +379,25 @@ class StudentRaceStateServiceTest {
         racePlayer.setHighestStreak(5);
         racePlayer.setCurrentDifficulty(Difficulty.EASY);
 
+        return racePlayer;
+    }
+
+    private RacePlayer createOtherRacePlayer(
+            Race race,
+            Long id,
+            Double position,
+            RacePlayerStatus status
+    ) {
+        RacePlayer racePlayer = new RacePlayer();
+        racePlayer.setId(id);
+        racePlayer.setRace(race);
+        racePlayer.setDisplayName("Player " + id);
+        racePlayer.setLaneNumber(4);
+        racePlayer.setVehicleTypeKey("HOVER_KART");
+        racePlayer.setVehicleColorKey("BLUE");
+        racePlayer.setStatus(status);
+        racePlayer.setPosition(position);
+        racePlayer.setSpeed(1.0);
         return racePlayer;
     }
 }

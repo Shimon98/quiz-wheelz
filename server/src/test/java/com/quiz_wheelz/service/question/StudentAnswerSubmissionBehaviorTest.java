@@ -92,6 +92,54 @@ class StudentAnswerSubmissionBehaviorTest {
     }
 
     @Test
+    void shouldCalculateRankFromAuthoritativePostAnswerPosition() {
+        RacePlayer racePlayer = fixture.createRacePlayer();
+        RacePlayer lockedRacePlayer = fixture.mockLockedRacePlayer(racePlayer);
+        RacePlayer opponent = fixture.createRacePlayer();
+        opponent.setId(8L);
+        opponent.setDisplayName("Avi");
+        opponent.setLaneNumber(2);
+        opponent.setVehicleTypeKey("HOVER_KART");
+        opponent.setVehicleColorKey("BLUE");
+        opponent.setPosition(9.0);
+        PlayerQuestion question = fixture.createActiveQuestion(
+                fixture.now().plusSeconds(30)
+        );
+        PlayerQuestionChoice selected = fixture.createChoice(
+                StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID,
+                true,
+                question
+        );
+        AnswerRaceImpact impact = fixture.createRaceImpact(lockedRacePlayer, true);
+        prepareAnswer(lockedRacePlayer, question, selected, impact, true);
+        when(fixture.raceEngineService.applyAnswerResult(lockedRacePlayer, true))
+                .thenAnswer(invocation -> {
+                    lockedRacePlayer.setPosition(impact.getNewPosition());
+                    lockedRacePlayer.setSpeed(impact.getNewSpeed());
+                    return impact;
+                });
+        when(fixture.racePlayerRepository.findByRaceOrderByLaneNumberAsc(
+                lockedRacePlayer.getRace()
+        )).thenReturn(List.of(opponent, lockedRacePlayer));
+
+        SubmitAnswerResponse response = fixture.studentAnswerSubmissionService.submitAnswer(
+                racePlayer,
+                fixture.createRequest(
+                        StudentAnswerSubmissionTestFixture.QUESTION_ID,
+                        StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID
+                )
+        );
+
+        assertEquals(10.0, response.getRaceImpact().getSnapshot().getPosition());
+        assertEquals(1, response.getRaceImpact().getSnapshot().getRank());
+        assertEquals(2, response.getRaceImpact().getSnapshot().getPlayerCount());
+        assertEquals(
+                8L,
+                response.getRaceImpact().getSnapshot().getNearbyPlayers().get(0).getRacePlayerId()
+        );
+    }
+
+    @Test
     void shouldNotApplyAnswerWhenSettlementFinishesPlayerFirst() {
         RacePlayer racePlayer = fixture.createRacePlayer();
         RacePlayer lockedRacePlayer = fixture.mockLockedRacePlayer(racePlayer);
@@ -161,6 +209,56 @@ class StudentAnswerSubmissionBehaviorTest {
         );
         assertEquals(PlayerQuestionStatus.ANSWERED, question.getStatus());
         verify(fixture.raceEngineService).applyAnswerResult(lockedRacePlayer, false);
+    }
+
+    @Test
+    void shouldReturnFinishedStandingFromAuthoritativePostAnswerState() {
+        RacePlayer racePlayer = fixture.createRacePlayer();
+        RacePlayer lockedRacePlayer = fixture.mockLockedRacePlayer(racePlayer);
+        RacePlayer opponent = fixture.createRacePlayer();
+        opponent.setId(8L);
+        opponent.setDisplayName("Avi");
+        opponent.setLaneNumber(2);
+        opponent.setVehicleTypeKey("HOVER_KART");
+        opponent.setVehicleColorKey("BLUE");
+        opponent.setPosition(999.0);
+        PlayerQuestion question = fixture.createActiveQuestion(
+                fixture.now().plusSeconds(30)
+        );
+        PlayerQuestionChoice selected = fixture.createChoice(
+                StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID,
+                true,
+                question
+        );
+        AnswerRaceImpact impact = fixture.createFinishedRaceImpact(lockedRacePlayer);
+        prepareAnswer(lockedRacePlayer, question, selected, impact, true);
+        when(fixture.raceEngineService.applyAnswerResult(lockedRacePlayer, true))
+                .thenAnswer(invocation -> {
+                    lockedRacePlayer.setPosition(1000.0);
+                    lockedRacePlayer.setSpeed(0.0);
+                    lockedRacePlayer.setStatus(RacePlayerStatus.FINISHED);
+                    lockedRacePlayer.setFinishedAt(fixture.now().plusSeconds(1));
+                    return impact;
+                });
+        when(fixture.racePlayerRepository.findByRaceOrderByLaneNumberAsc(
+                lockedRacePlayer.getRace()
+        )).thenReturn(List.of(opponent, lockedRacePlayer));
+
+        SubmitAnswerResponse response = fixture.studentAnswerSubmissionService.submitAnswer(
+                racePlayer,
+                fixture.createRequest(
+                        StudentAnswerSubmissionTestFixture.QUESTION_ID,
+                        StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID
+                )
+        );
+
+        assertTrue(response.getRaceImpact().getSnapshot().isPlayerFinished());
+        assertEquals(1, response.getRaceImpact().getSnapshot().getRank());
+        assertEquals(2, response.getRaceImpact().getSnapshot().getPlayerCount());
+        assertEquals(
+                999.0,
+                response.getRaceImpact().getSnapshot().getNearbyPlayers().get(0).getPosition()
+        );
     }
 
     @Test
@@ -303,5 +401,8 @@ class StudentAnswerSubmissionBehaviorTest {
         when(fixture.raceEngineService.applyAnswerResult(lockedRacePlayer, correct))
                 .thenReturn(impact);
         when(fixture.playerQuestionRepository.save(question)).thenReturn(question);
+        when(fixture.racePlayerRepository.findByRaceOrderByLaneNumberAsc(
+                lockedRacePlayer.getRace()
+        )).thenReturn(List.of(lockedRacePlayer));
     }
 }

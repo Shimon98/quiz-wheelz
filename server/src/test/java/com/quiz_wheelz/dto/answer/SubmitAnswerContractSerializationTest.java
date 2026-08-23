@@ -3,6 +3,7 @@ package com.quiz_wheelz.dto.answer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.quiz_wheelz.dto.raceplayer.NearbyRacePlayerResponse;
 import com.quiz_wheelz.dto.raceplayer.StudentRaceRuntimeSnapshotResponse;
 import com.quiz_wheelz.enums.Difficulty;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
@@ -11,6 +12,7 @@ import com.quiz_wheelz.enums.RaceStatus;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -110,10 +112,31 @@ class SubmitAnswerContractSerializationTest {
                         "playerFinished",
                         "raceFinished",
                         "snapshotAtEpochMs",
-                        "movementUnitsPerSecond"
+                        "movementUnitsPerSecond",
+                        "rank",
+                        "playerCount",
+                        "nearbyPlayers"
                 ),
                 fieldNames(raceImpact.get("snapshot"))
         );
+        JsonNode nearbyPlayer = raceImpact.get("snapshot").get("nearbyPlayers").get(0);
+        assertEquals(
+                Set.of(
+                        "racePlayerId",
+                        "displayName",
+                        "laneNumber",
+                        "vehicleTypeKey",
+                        "vehicleColorKey",
+                        "position",
+                        "speed",
+                        "status"
+                ),
+                fieldNames(nearbyPlayer)
+        );
+        assertFalse(nearbyPlayer.has("score"));
+        assertFalse(nearbyPlayer.has("correctAnswers"));
+        assertFalse(nearbyPlayer.has("difficulty"));
+        assertFalse(nearbyPlayer.has("lastSeenAt"));
     }
 
     private StudentRaceRuntimeSnapshotResponse createSnapshot() {
@@ -130,7 +153,19 @@ class SubmitAnswerContractSerializationTest {
                 false,
                 false,
                 1_787_148_010_000L,
-                4.8
+                4.8,
+                2,
+                5,
+                List.of(new NearbyRacePlayerResponse(
+                        92L,
+                        "Avi",
+                        4,
+                        "HOVER_KART",
+                        "BLUE",
+                        420.0,
+                        1.3,
+                        RacePlayerStatus.DISCONNECTED
+                ))
         );
     }
 

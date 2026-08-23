@@ -16,6 +16,7 @@ import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
+import com.quiz_wheelz.service.raceplayer.StudentRaceStandingService;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -50,6 +51,7 @@ final class StudentAnswerSubmissionTestFixture {
                     racePlayerRepository,
                     raceEngineService,
                     gameplayRequestGuard,
+                    new StudentRaceStandingService(racePlayerRepository),
                     new StudentRaceRuntimeSnapshotMapper(),
                     Clock.fixed(FIXED_INSTANT, FIXED_ZONE)
             );
@@ -115,6 +117,32 @@ final class StudentAnswerSubmissionTestFixture {
                 RacePlayerStatus.RACING,
                 RaceStatus.IN_PROGRESS,
                 false,
+                false
+        );
+    }
+
+    AnswerRaceImpact createFinishedRaceImpact(RacePlayer racePlayer) {
+        return new AnswerRaceImpact(
+                RACE_ID,
+                RACE_PLAYER_ID,
+                true,
+                10,
+                1000.0,
+                10,
+                1000.0,
+                0.0,
+                1,
+                1,
+                1,
+                0,
+                Difficulty.EASY,
+                racePlayer.getCurrentDifficulty(),
+                racePlayer.getDifficultyCorrectStreak(),
+                racePlayer.getDifficultyWrongStreak(),
+                false,
+                RacePlayerStatus.FINISHED,
+                RaceStatus.IN_PROGRESS,
+                true,
                 false
         );
     }
