@@ -1,8 +1,8 @@
 # Server Implementation Plan
 
 **Status:** Canonical  
-**Audit date:** 2026-08-19
-**Code baseline:** `main@74402e6a8d702ca0299568e2130ce88dcb7a3917`
+**Audit date:** 2026-08-23
+**Code baseline:** `main@8cb2ac7ce716c5be0f6bc6a8e5810242c4d71679`
 **This document owns:** the ordered backend task list with dependencies and integration outputs
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -215,13 +215,21 @@ Implemented rules:
 
 ### S1-03 — Runtime action hardening
 
-**Status:** `PLANNED`
+**Status:** `DONE (2026-08-23)`
 
-- test refresh during WAITING/RACING/FINISHED
-- test duplicate heartbeat/leave/reconnect
-- test expired question followed by reload
-- test answer after disconnect/finish
-- verify idempotent outcomes where appropriate.
+- race-state refresh is repeat-safe for waiting, active-online and terminal states;
+  an absent active player still requires explicit reconnect and refresh never creates
+  presence, re-anchors movement or creates another RacePlayer
+- heartbeat is repeat-safe and renews only an existing valid lease; duplicate
+  reconnect re-anchors only the real absent→resumed transition; repeated terminal
+  reconnect outcomes remain stable
+- leave is state-idempotent: an already-DISCONNECTED player skips settlement,
+  activity and duplicate persistence while best-effort offline cleanup remains allowed
+- current-question returns the same ACTIVE question with its original deadline;
+  an overdue ACTIVE question times out once and only then is one next question created
+- answer owns exactly-once gameplay mutation: terminal-state answers and a duplicate
+  submit for a no-longer-ACTIVE question are rejected without a second engine effect
+- no public endpoint, DTO, ErrorCode, schema or Redis contract changed.
 
 #### S1-03A — Focus integrity foundation
 

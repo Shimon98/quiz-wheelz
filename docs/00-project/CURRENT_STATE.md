@@ -1,8 +1,8 @@
 # Project Current State
 
 **Status:** Canonical  
-**Audit date:** 2026-07-30  
-**Code baseline:** `main@47fe75fa763af2ecc4deb4e8bc972f564ee73b15`  
+**Audit date:** 2026-08-23
+**Code baseline:** `main@8cb2ac7ce716c5be0f6bc6a8e5810242c4d71679`
 **This document owns:** the audited implementation status across the complete product
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -20,7 +20,8 @@ QuizWheelz is not an early prototype. Most backend gameplay foundations and the
 teacher/student pre-race client flows exist, and the core student race loop is
 playable against the server (question → answer → feedback → authoritative
 snapshot → next question), with presence-bounded continuous
-server-authoritative movement (C1-03M/S1-01B): connected students advance
+server-authoritative movement (C1-03M/S1-01B) and hardened repeat-action semantics
+(S1-03): connected students advance
 with time, correct answers boost speed and add progress bonuses, and timeouts
 slow more than wrong answers. Real absence freezes position without pausing
 question deadlines; reconnect never awards offline catch-up, and absent
@@ -80,6 +81,10 @@ teacher live race/SSE screen and results.
   active requests require explicit reconnect without re-anchoring, terminal
   race-state remains readable without presence, and Redis failure is explicitly
   fail-open.
+- Runtime repeat policy is verified across refresh, heartbeat, reconnect, leave,
+  current-question and answer: only a real reconnect resume may re-anchor, duplicate
+  leave has no repeated gameplay side effects, current-question preserves the ACTIVE
+  identity/deadline, and duplicate or terminal answers cannot apply engine effects.
 
 ## Client implemented
 

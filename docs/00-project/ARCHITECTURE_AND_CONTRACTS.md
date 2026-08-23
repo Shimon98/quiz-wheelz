@@ -1,8 +1,8 @@
 # Architecture and Contracts
 
 **Status:** Canonical  
-**Audit date:** 2026-08-19
-**Code baseline:** `main@74402e6a8d702ca0299568e2130ce88dcb7a3917`
+**Audit date:** 2026-08-23
+**Code baseline:** `main@8cb2ac7ce716c5be0f6bc6a8e5810242c4d71679`
 **This document owns:** the cross-system architecture, data ownership, API boundaries and runtime contracts
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -251,6 +251,21 @@ The same runtime-session owner handles semantic `RACE_PLAYER_RECONNECT_REQUIRED`
 failures from race-state, current-question and answer. It closes gameplay readiness,
 reconnects, then uses the existing resync token to rebuild authoritative state;
 answer submission is never replayed automatically.
+
+Core runtime repeat policy:
+
+```text
+race-state       → repeat-safe materialization; same-instant reads award nothing extra
+heartbeat        → repeat-safe; never reconnects or re-anchors
+reconnect        → repeat-safe for state/movement; only a real resume re-anchors
+leave            → state-idempotent; repeated DISCONNECTED leave has no gameplay effects
+current-question → repeat-safe for the same ACTIVE identity and original expiresAt
+answer           → exactly-once gameplay mutation; duplicate submit is rejected
+```
+
+These guarantees use the existing per-RacePlayer lock and lifecycle owners. They add
+no replay-success protocol, request identifier, presence recreation, Redis state or
+public contract.
 
 An ACTIVE question remains owned by its RacePlayer across hidden, reload,
 disconnect and reconnect transitions until it becomes ANSWERED or EXPIRED. Its
