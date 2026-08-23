@@ -65,6 +65,12 @@ Required gameplay tests:
 - terminal state reached during gameplay-request settlement wins over the older
   reconnect-required/window-expired presence decision
 - only explicit reconnect may re-anchor; direct gameplay requests must not
+- authoritative student standings count all joined players and rank FINISHED players
+  by finish time before position-ranked waiting/racing/disconnected players
+- standings use competition rank for exact ties, deterministic ordering without
+  lane/ID rank influence, and an immutable max-4 nearby window that excludes self
+- race-state and submit-answer serialize the same non-null rank/player-count/nearby
+  vocabulary after current-request mutation, with exact-field nearby no-leak coverage
 - question wall-clock timeout during absence, exactly once, without deadline extension
 - absent-player race completion and terminal grace expiry
 - Redis loss with DB fallback

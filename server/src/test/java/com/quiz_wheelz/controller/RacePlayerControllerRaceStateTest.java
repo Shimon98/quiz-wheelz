@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -141,7 +142,10 @@ class RacePlayerControllerRaceStateTest {
                         false,
                         false,
                         1_787_045_370_000L,
-                        4.8
+                        4.8,
+                        1,
+                        1,
+                        List.of()
                 )
         );
     }

@@ -191,7 +191,21 @@ Every student state source maps into one client runtime shape:
     "playerFinished": false,
     "raceFinished": false,
     "snapshotAtEpochMs": 1787148000000,
-    "movementUnitsPerSecond": 4.8
+    "movementUnitsPerSecond": 4.8,
+    "rank": 2,
+    "playerCount": 5,
+    "nearbyPlayers": [
+      {
+        "racePlayerId": 92,
+        "displayName": "Avi",
+        "laneNumber": 4,
+        "vehicleTypeKey": "HOVER_KART",
+        "vehicleColorKey": "BLUE",
+        "position": 420.0,
+        "speed": 1.3,
+        "status": "DISCONNECTED"
+      }
+    ]
   }
 }
 ```
@@ -199,6 +213,15 @@ Every student state source maps into one client runtime shape:
 The answer response contains deltas plus the same snapshot shape. The `player`
 block owns stable presentation identity only; `snapshot.playerStatus` remains the
 single owner of runtime player status.
+
+The shared race-state and submit-answer snapshot also owns authoritative standings.
+All joined RacePlayers count. FINISHED players precede non-finished players and are
+ordered by `finishedAt`; non-finished players, including DISCONNECTED, are ordered by
+stored position. Exact ties use competition rank, while ID/lane may stabilize output
+order only and never change rank. `nearbyPlayers` excludes the current player, exposes
+only safe presentation/movement fields, and contains at most four opponents in
+standing order, preferring two immediately ahead and two immediately behind and
+filling from the available side.
 
 Approved answer semantics:
 

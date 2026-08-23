@@ -5,6 +5,9 @@ import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NonNull;
+
+import java.util.List;
 
 @Getter
 @AllArgsConstructor
@@ -29,4 +32,13 @@ public class StudentRaceRuntimeSnapshotResponse {
 
     private Long snapshotAtEpochMs;
     private Double movementUnitsPerSecond;
+
+    @NonNull
+    private Integer rank;
+
+    @NonNull
+    private Integer playerCount;
+
+    @NonNull
+    private List<NearbyRacePlayerResponse> nearbyPlayers;
 }
