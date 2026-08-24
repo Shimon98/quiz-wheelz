@@ -2,7 +2,7 @@
 
 **Status:** Canonical  
 **Audit date:** 2026-08-24
-**Code baseline:** `main@a1cfa8faa716accccde9ddfd6119a64f33ca50d8`
+**Code baseline:** `main@3b095ac47c3d0b237ce50811e53d0a6720ad3847`
 **This document owns:** the cross-system architecture, data ownership, API boundaries and runtime contracts
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -134,18 +134,51 @@ GET  /api/teacher/dashboard
 GET  /api/teacher/races
 POST /api/teacher/races
 GET  /api/teacher/races/{raceId}/room
+GET  /api/teacher/races/{raceId}/live-state
 POST /api/teacher/races/{raceId}/start
 ```
 
 Planned:
 
 ```http
-GET /api/teacher/races/{raceId}/live-state
 GET /api/teacher/races/{raceId}/events
 GET /api/teacher/races/{raceId}/results
 ```
 
 SSE will use a dedicated teacher-owned stream path decided by the server plan.
+
+### Teacher live-state snapshot
+
+`GET /api/teacher/races/{raceId}/live-state` is the complete authoritative initial
+and recovery query for the future projector screen. It exposes exactly:
+
+```text
+raceId, title, roomCode, status, totalDistance, focusPolicy,
+serverTimeEpochMs, eventVersion, players
+```
+
+Each player exposes exactly:
+
+```text
+racePlayerId, displayName, laneNumber,
+vehicleTypeKey, vehicleColorKey, vehicleAssetKey,
+rank, position, speed, score, streak, status
+```
+
+Ownership follows the existing teacher room lookup and hides foreign Race existence
+as `RACE_NOT_FOUND`. All joined WAITING, RACING, FINISHED and DISCONNECTED players
+are included. The shared standing calculator places FINISHED players first by
+earlier `finishedAt`, then non-finished players by descending durable position;
+exact ties use competition rank and deterministic output order only.
+
+The response time is Unix epoch milliseconds from the shared injected `Clock`.
+`eventVersion` reads `Race.liveEventVersion`, persisted as non-null
+`live_event_version` with entity and DB default `0`. The GET never increments it;
+S2-02 owns future event vocabulary and increments, and S2-03 owns SSE delivery.
+The snapshot performs one player-list read and has no Redis, presence, activity,
+movement settlement, timeout, reconnect, re-anchor, save or publication behavior.
+The column is DEV `ddl-auto=update` safety, not a production migration; migrations
+remain Phase 6 debt.
 
 ### RacePlayer
 

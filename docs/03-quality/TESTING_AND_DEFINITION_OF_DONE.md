@@ -2,7 +2,7 @@
 
 **Status:** Canonical  
 **Audit date:** 2026-08-24
-**Code baseline:** `main@a1cfa8faa716accccde9ddfd6119a64f33ca50d8`
+**Code baseline:** `main@3b095ac47c3d0b237ce50811e53d0a6720ad3847`
 **This document owns:** the complete automated/manual quality bar for every feature and phase
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -107,7 +107,17 @@ Required gameplay tests:
 - absent-player race completion and terminal grace expiry
 - Redis loss with DB fallback
 - Redis-loss fail-open movement/no mass disconnect
-- live-state ownership
+- teacher live-state exact top-level/player serialization and no-leak field sets
+- live-state owner success plus identical `RACE_NOT_FOUND` for missing/foreign Race
+- fixed injected-Clock `serverTimeEpochMs`, every durable Race lifecycle state and
+  inclusion of WAITING/RACING/FINISHED/DISCONNECTED players
+- shared teacher/student ranking: FINISHED first by earlier finish time, active
+  descending position, null safety, competition ties and deterministic tied output
+- one owned Race lookup, one RacePlayer list fetch and no per-player standing query
+- repeated live-state reads never increment or persist `liveEventVersion`; non-zero
+  fixtures return exactly, and non-null `live_event_version` entity/DB defaults are 0
+- live-state read-only transaction and structural isolation from Redis/presence,
+  gameplay activity, movement, timeout, reconnect/re-anchor, save and publication
 - SSE reconnect/recovery
 - event fairness boundaries.
 

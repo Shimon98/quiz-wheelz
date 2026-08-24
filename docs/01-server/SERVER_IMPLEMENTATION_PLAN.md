@@ -2,7 +2,7 @@
 
 **Status:** Canonical  
 **Audit date:** 2026-08-24
-**Code baseline:** `main@a1cfa8faa716accccde9ddfd6119a64f33ca50d8`
+**Code baseline:** `main@3b095ac47c3d0b237ce50811e53d0a6720ad3847`
 **This document owns:** the ordered backend task list with dependencies and integration outputs
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -277,7 +277,9 @@ Implemented rules:
 
 ### S2-01 — Teacher live-state query
 
-Return a projector-ready initial state:
+**Status:** `DONE (2026-08-24)`
+
+Implemented a projector-ready initial/recovery state:
 
 ```text
 race details
@@ -290,6 +292,23 @@ event cursor/version
 ```
 
 Enforce teacher ownership.
+
+- dedicated `GET /api/teacher/races/{raceId}/live-state`; the lobby `/room` contract
+  remains unchanged
+- exact top-level and player DTO fields with `focusPolicy`, injected-clock
+  `serverTimeEpochMs`, and no internal/question/focus-audit/presence leakage
+- teacher ownership reuses the room lookup sequence and returns `RACE_NOT_FOUND` for
+  missing and foreign Races
+- one RacePlayer list fetch followed by one shared pure standing calculation used by
+  both teacher live-state and unchanged student standing/window behavior
+- all joined statuses are included; FINISHED/finish-time and non-finished/position
+  semantics use competition ties with deterministic output order
+- durable non-null `Race.liveEventVersion` / `live_event_version` defaults to `0` at
+  entity and DB levels; the GET reads without incrementing
+- query is read-only and has no Redis, presence, gameplay activity, movement,
+  timeout, reconnect, re-anchor, save or event-publication dependency
+- S2-02 owns future event vocabulary/version increments and S2-03 owns SSE; the new
+  column uses DEV `ddl-auto=update`, while production migrations remain Phase 6 debt.
 
 ### S2-02 — Live event model
 

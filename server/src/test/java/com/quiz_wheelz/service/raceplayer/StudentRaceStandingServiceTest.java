@@ -41,7 +41,10 @@ class StudentRaceStandingServiceTest {
         race.setStatus(RaceStatus.IN_PROGRESS);
         race.setTotalDistance(1000);
         race.setMaxPlayers(8);
-        standingService = new StudentRaceStandingService(racePlayerRepository);
+        standingService = new StudentRaceStandingService(
+                racePlayerRepository,
+                new RaceStandingCalculator()
+        );
     }
 
     @Test
