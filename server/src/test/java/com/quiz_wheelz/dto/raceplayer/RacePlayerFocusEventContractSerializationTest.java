@@ -42,7 +42,7 @@ class RacePlayerFocusEventContractSerializationTest {
         RacePlayerFocusEventResponse response = new RacePlayerFocusEventResponse(
                 EVENT_ID,
                 RacePlayerFocusEventType.TAB_HIDDEN,
-                RacePlayerFocusEventOutcome.WARNING,
+                RacePlayerFocusEventOutcome.FORFEITED,
                 3,
                 1,
                 42L,
@@ -63,7 +63,7 @@ class RacePlayerFocusEventContractSerializationTest {
                 ),
                 fieldNames(json)
         );
-        assertEquals("WARNING", json.get("outcome").asText());
+        assertEquals("FORFEITED", json.get("outcome").asText());
         assertFalse(json.has("racePlayer"));
         assertFalse(json.has("playerQuestion"));
         assertFalse(json.has("correctAnswerValue"));

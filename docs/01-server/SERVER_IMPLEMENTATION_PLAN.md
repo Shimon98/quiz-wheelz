@@ -1,8 +1,8 @@
 # Server Implementation Plan
 
 **Status:** Canonical  
-**Audit date:** 2026-08-23
-**Code baseline:** `main@14f16e8d91c522a1f6d44129b1bf5e89e107f3a2`
+**Audit date:** 2026-08-24
+**Code baseline:** `main@a1cfa8faa716accccde9ddfd6119a64f33ca50d8`
 **This document owns:** the ordered backend task list with dependencies and integration outputs
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -253,25 +253,25 @@ Implemented rules:
 
 #### S1-03B — Strict focus policy
 
-**Status:** `PLANNED`
+**Status:** `DONE (2026-08-24)`
 
-```text
-first focus loss
-→ warning
-
-second repeated focus loss
-→ stronger warning / integrity violation
-
-third repeated focus loss
-→ ACTIVE question may be forfeited as timeout
-```
-
-Ordinary focus loss does not automatically remove a player from the race. The
-teacher-selected future policy is `OFF` for normal absence/reconnect behavior,
-`WARN` for tracking and warnings, or `STRICT` for repeated-loss question
-forfeiture. Exact thresholds remain an S1-03 implementation decision. S1-01B owns
-neutral absence/return correctness; S1-03 owns intentional abuse detection and
-consequences. Complete this foundation before teacher live/SSE work.
+- added durable `RaceFocusPolicy` OFF/WARN/STRICT with explicit WARN service default
+  and DB default for existing-row DEV `ddl-auto=update` compatibility
+- race creation accepts optional `focusPolicy`; teacher race summary and room
+  responses expose the persisted policy
+- OFF persists ignored, uncounted focus audit results; WARN preserves S1-03A first
+  WARNING and second+ VIOLATION behavior without gameplay consequence
+- STRICT classifies loss 1 as WARNING, loss 2 as VIOLATION and loss 3 on the same
+  ACTIVE question as FORFEITED; a new question starts again at 1
+- strict forfeit reuses `QuestionTimeoutService` for ACTIVE→EXPIRED and timeout engine
+  impact exactly once, without generating the next question or removing the player
+- focus obtains a read-only trusted movement cutoff from the presence owner and never
+  records activity, renews presence, reconnects or re-anchors; durable fallback
+  prevents request-time absence catch-up during Redis outage
+- historic FORFEITED replay bypasses timeout/movement/engine mutation; conflicting
+  replay remains `FOCUS_EVENT_REPLAY_CONFLICT` 3028/409
+- production migration remains Phase 6 debt; client integration and teacher live/SSE
+  remain future work.
 
 ## S2 — Teacher live race and SSE
 

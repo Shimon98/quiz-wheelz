@@ -6,6 +6,8 @@ final class RacePlayerRuntimeLogMessages {
             "Unable to {} in Redis for raceId={} racePlayerId={}; using durable state";
     static final String RESOLVE_PRESENCE_FAILED =
             "Unable to resolve gameplay presence in Redis for raceId={} racePlayerId={}; failing open";
+    static final String RESOLVE_UNTRUSTED_CUTOFF_FAILED =
+            "Unable to resolve untrusted activity cutoff in Redis for raceId={} racePlayerId={}; using durable activity";
     static final String RECORD_ACTIVITY_FAILED =
             "Unable to record gameplay activity in Redis for raceId={} racePlayerId={}; durable activity remains authoritative";
     static final String RENEW_PRESENCE_LEASE_FAILED =

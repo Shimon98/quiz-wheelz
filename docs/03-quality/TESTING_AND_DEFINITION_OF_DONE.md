@@ -1,8 +1,8 @@
 # Testing and Definition of Done
 
 **Status:** Canonical  
-**Audit date:** 2026-08-23
-**Code baseline:** `main@14f16e8d91c522a1f6d44129b1bf5e89e107f3a2`
+**Audit date:** 2026-08-24
+**Code baseline:** `main@a1cfa8faa716accccde9ddfd6119a64f33ca50d8`
 **This document owns:** the complete automated/manual quality bar for every feature and phase
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -96,6 +96,14 @@ Required gameplay tests:
   ignores with no question, score, speed, position, streak or difficulty mutation
 - structural focus isolation from presence renewal/activity, movement settlement,
   reconnect/re-anchor and answer/timeout engine owners
+- race focus-policy OFF/WARN/STRICT creation, omitted-WARN default, DB default and
+  exact teacher summary/room serialization
+- OFF ignored/no-count behavior; WARN third-loss VIOLATION regression; STRICT same-
+  question WARNING→VIOLATION→FORFEITED and new-question local-count reset
+- strict forfeit delegates ACTIVE→EXPIRED and one timeout consequence to the existing
+  owner; replay/conflict bypass repeated timeout, movement and engine effects
+- strict absence movement cutoff does not use focus request time, renew presence,
+  record activity, reconnect or re-anchor; Redis outage uses durable cutoff fallback
 - absent-player race completion and terminal grace expiry
 - Redis loss with DB fallback
 - Redis-loss fail-open movement/no mass disconnect
