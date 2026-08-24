@@ -15,6 +15,7 @@ import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
+import com.quiz_wheelz.service.raceplayer.RaceStandingCalculator;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStandingService;
 
@@ -51,7 +52,10 @@ final class StudentAnswerSubmissionTestFixture {
                     racePlayerRepository,
                     raceEngineService,
                     gameplayRequestGuard,
-                    new StudentRaceStandingService(racePlayerRepository),
+                    new StudentRaceStandingService(
+                            racePlayerRepository,
+                            new RaceStandingCalculator()
+                    ),
                     new StudentRaceRuntimeSnapshotMapper(),
                     Clock.fixed(FIXED_INSTANT, FIXED_ZONE)
             );

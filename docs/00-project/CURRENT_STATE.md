@@ -2,7 +2,7 @@
 
 **Status:** Canonical  
 **Audit date:** 2026-08-24
-**Code baseline:** `main@a1cfa8faa716accccde9ddfd6119a64f33ca50d8`
+**Code baseline:** `main@3b095ac47c3d0b237ce50811e53d0a6720ad3847`
 **This document owns:** the audited implementation status across the complete product
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -51,7 +51,7 @@ teacher live race/SSE screen and results.
 | Student Pixi race foundation | N/A | UI-10A–G DONE | PARTIAL feature |
 | Student question panel/HUD | server data exists | panel + timer DONE (C1-02); HUD stats DONE (C1-04) | DONE |
 | Opponent vehicles/nearby players | DONE authoritative snapshot contract | planned renderer | PARTIAL |
-| Teacher live-state query | PLANNED | route constant only | PLANNED |
+| Teacher live-state query | DONE | route constant only | PARTIAL feature |
 | Teacher SSE | PLANNED | PLANNED | PLANNED |
 | Results | basic finish logic exists | route constant only | PLANNED |
 | Junction/highway/dirt road | PLANNED | PLANNED | REQUIRED |
@@ -92,6 +92,15 @@ teacher live race/SSE screen and results.
   owner without activity renewal, reconnect, catch-up movement, player removal or
   next-question creation. Focus and policy columns use DB defaults for safe existing-
   row DEV backfill; production migrations remain Phase 6 debt.
+- Teacher-owned `GET /api/teacher/races/{raceId}/live-state` returns a read-only,
+  projector-ready recovery snapshot with race details, focus policy, injected-clock
+  server time, durable event version and all RacePlayers in shared authoritative
+  competitive order. The query uses MySQL only, performs one owned Race lookup and
+  one player-list read, and never settles movement or mutates gameplay.
+- `Race.liveEventVersion` maps to non-null `live_event_version` with entity and DB
+  default `0` for DEV schema backfill. S2-01 only reads it; S2-02 owns future event
+  vocabulary and increments, while S2-03 owns the SSE stream. Production migration
+  remains Phase 6 debt.
 
 ## Client implemented
 
@@ -123,7 +132,7 @@ teacher live race/SSE screen and results.
 
 These must be corrected during the next client integration work:
 
-- Teacher live and results routes are constants only; they are not routed.
+- Teacher live and results client routes are constants only; they are not routed.
 - Old Stage B issue tables mark completed backend work as TODO.
 
 ## Immediate next product outcome

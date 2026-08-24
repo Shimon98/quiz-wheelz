@@ -317,7 +317,10 @@ class StudentRaceStateServiceTest {
                 racePlayerRepository,
                 requestGuard,
                 raceFinishService,
-                new StudentRaceStandingService(racePlayerRepository),
+                new StudentRaceStandingService(
+                        racePlayerRepository,
+                        new RaceStandingCalculator()
+                ),
                 new StudentRaceRuntimeSnapshotMapper(),
                 Clock.fixed(FIXED_INSTANT, FIXED_ZONE)
         );

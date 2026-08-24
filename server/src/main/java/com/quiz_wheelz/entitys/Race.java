@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -55,6 +56,12 @@ public class Race extends BaseEntity {
     @ColumnDefault("'WARN'")
     @Column(name = "focus_policy", nullable = false, length = 20)
     private RaceFocusPolicy focusPolicy = RaceFocusPolicy.WARN;
+
+    @NotNull
+    @PositiveOrZero
+    @ColumnDefault("0")
+    @Column(name = "live_event_version", nullable = false)
+    private Long liveEventVersion = 0L;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "teacher_id", nullable = false)

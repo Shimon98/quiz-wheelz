@@ -22,6 +22,7 @@ import com.quiz_wheelz.service.raceengine.RaceProgressService;
 import com.quiz_wheelz.service.raceengine.ScoringService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
+import com.quiz_wheelz.service.raceplayer.RaceStandingCalculator;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStandingService;
 import org.junit.jupiter.api.BeforeEach;
@@ -98,7 +99,10 @@ class StudentAnswerTerminalLifecycleTest {
                 difficultyProgressionService,
                 raceFinishService
         );
-        standingService = new StudentRaceStandingService(racePlayerRepository);
+        standingService = new StudentRaceStandingService(
+                racePlayerRepository,
+                new RaceStandingCalculator()
+        );
         answerService = new StudentAnswerSubmissionService(
                 playerQuestionRepository,
                 playerQuestionChoiceRepository,

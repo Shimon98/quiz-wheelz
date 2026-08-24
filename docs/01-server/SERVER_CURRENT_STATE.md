@@ -2,7 +2,7 @@
 
 **Status:** Canonical  
 **Audit date:** 2026-08-24
-**Code baseline:** `main@a1cfa8faa716accccde9ddfd6119a64f33ca50d8`
+**Code baseline:** `main@3b095ac47c3d0b237ce50811e53d0a6720ad3847`
 **This document owns:** the implemented backend capabilities, gaps and stale assumptions
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -47,6 +47,15 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - teacher-owned room data
 - real RacePlayers in waiting room
 - start-race command with validation and locking.
+- teacher-owned live-state GET with exact projector/recovery fields, injected-clock
+  epoch-millisecond server time, durable event version and every joined player in
+  shared authoritative competition order
+- live-state performs one owned Race lookup plus one RacePlayer list fetch and is
+  read-only: no Redis/presence/activity, movement settlement, timeout, reconnect,
+  re-anchor, persistence or event publication
+- `Race.liveEventVersion` persists as non-null `live_event_version` with entity and
+  database default `0`; S2-01 never increments it, S2-02 owns future increments and
+  S2-03 owns SSE. Production migration remains Phase 6 debt.
 
 ### RacePlayer flow
 
@@ -199,7 +208,6 @@ recovery never subtracts movement awarded in degraded mode.
 
 ## Partial or missing
 
-- Teacher live-state query.
 - Teacher SSE stream.
 - Durable final-results query/model closure.
 - Event/effect system for junction/luck/announcements.
