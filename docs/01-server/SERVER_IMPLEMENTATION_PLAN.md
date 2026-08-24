@@ -2,7 +2,7 @@
 
 **Status:** Canonical  
 **Audit date:** 2026-08-23
-**Code baseline:** `main@8cb2ac7ce716c5be0f6bc6a8e5810242c4d71679`
+**Code baseline:** `main@14f16e8d91c522a1f6d44129b1bf5e89e107f3a2`
 **This document owns:** the ordered backend task list with dependencies and integration outputs
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -233,14 +233,23 @@ Implemented rules:
 
 #### S1-03A — Focus integrity foundation
 
-**Status:** `PLANNED`
+**Status:** `DONE (2026-08-23)`
 
-- add server-owned focus-loss count, last focus-loss time, active-question
-  association, idempotent focus-event handling and focus-violation policy
-- accept future client transitions such as `TAB_HIDDEN` and `TAB_VISIBLE`; no focus
-  endpoint, event, DTO or schema is part of S1-01B
-- expose focus warnings, violations and question forfeits to later teacher live/SSE
-  contracts only when that contract is designed
+- added session-owned `POST /api/race-players/me/focus-events` with UUID event ID,
+  `TAB_HIDDEN`/`TAB_VISIBLE`, exact safe response fields and no target IDs/timestamps
+- persisted cumulative `focusLossCount`, `lastFocusLossAt`, `focusState`, and focused
+  audit rows with optional server-resolved ACTIVE-question association and unique
+  `(race_player_id, client_event_id)` replay protection
+- same ID/type returns the original stored result; conflicting type is rejected;
+  first counted loss per question is WARNING and second+ is VIOLATION while the race
+  total remains cumulative across questions
+- WAITING/terminal/non-playable/missing-or-expired-question hidden events are IGNORED;
+  repeated hidden/visible transitions are safe and auditable
+- focus detection is isolated from presence, activity, movement/re-anchor, reconnect,
+  question timeout/answer and every gameplay mutation
+- the non-null RacePlayer focus summary columns carry DB defaults (`0` / `VISIBLE`)
+  so DEV `ddl-auto=update` can backfill existing rows safely; production migration
+  remains Phase 6 debt, and no Redis focus state was added.
 
 #### S1-03B — Strict focus policy
 

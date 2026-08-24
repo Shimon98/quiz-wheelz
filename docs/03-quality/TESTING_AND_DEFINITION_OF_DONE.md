@@ -2,7 +2,7 @@
 
 **Status:** Canonical  
 **Audit date:** 2026-08-23
-**Code baseline:** `main@8cb2ac7ce716c5be0f6bc6a8e5810242c4d71679`
+**Code baseline:** `main@14f16e8d91c522a1f6d44129b1bf5e89e107f3a2`
 **This document owns:** the complete automated/manual quality bar for every feature and phase
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -84,6 +84,18 @@ Required gameplay tests:
   current-question repeat returns the same ACTIVE identity and original deadline
 - answers after DISCONNECTED, player FINISHED or race FINISHED leave question and
   gameplay state unchanged; duplicate ANSWERED submit cannot invoke the engine twice
+- focus-event exact request/response fields and enum vocabulary, current-session-only
+  targeting, server time and server-owned ACTIVE-question association
+- focus visible/hidden transitions, first-loss WARNING, second+ VIOLATION, cumulative
+  race total and question-local reset on a new ACTIVE question
+- focus same-ID historic replay, conflicting-type rejection, repeated hidden/visible
+  safety, unique DB constraint and same-event-ID allowance across different players
+- focus RacePlayer summary metadata declares non-null DB defaults of `0` and
+  `VISIBLE` for existing-row DEV `ddl-auto=update` compatibility
+- WAITING/FINISHED/DISCONNECTED/finished-race/no-question/expired-question focus
+  ignores with no question, score, speed, position, streak or difficulty mutation
+- structural focus isolation from presence renewal/activity, movement settlement,
+  reconnect/re-anchor and answer/timeout engine owners
 - absent-player race completion and terminal grace expiry
 - Redis loss with DB fallback
 - Redis-loss fail-open movement/no mass disconnect

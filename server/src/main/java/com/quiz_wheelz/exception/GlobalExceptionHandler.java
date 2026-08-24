@@ -3,6 +3,7 @@ package com.quiz_wheelz.exception;
 import com.quiz_wheelz.common.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -30,6 +31,16 @@ public class GlobalExceptionHandler {
         );
         ErrorCode errorCode = ErrorCode.VALIDATION_ERROR;
         ErrorResponse response = ErrorResponse.validation(errorCode, request.getRequestURI(), validationErrors);
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleUnreadableRequest(
+            HttpMessageNotReadableException ex,
+            HttpServletRequest request
+    ) {
+        ErrorCode errorCode = ErrorCode.BAD_REQUEST;
+        ErrorResponse response = ErrorResponse.from(errorCode, request.getRequestURI());
         return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 

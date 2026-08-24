@@ -2,7 +2,7 @@
 
 **Status:** Canonical  
 **Audit date:** 2026-08-23
-**Code baseline:** `main@8cb2ac7ce716c5be0f6bc6a8e5810242c4d71679`
+**Code baseline:** `main@14f16e8d91c522a1f6d44129b1bf5e89e107f3a2`
 **This document owns:** the audited implementation status across the complete product
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -85,6 +85,12 @@ teacher live race/SSE screen and results.
   current-question and answer: only a real reconnect resume may re-anchor, duplicate
   leave has no repeated gameplay side effects, current-question preserves the ACTIVE
   identity/deadline, and duplicate or terminal answers cannot apply engine effects.
+- Server focus-integrity foundation persists cumulative focus-loss state plus
+  idempotent per-event, per-question audit rows. TAB_HIDDEN/TAB_VISIBLE classification
+  is server-timed and session-scoped; WARNING/VIOLATION never changes gameplay,
+  presence, movement or question lifecycle. The non-null focus summary columns use
+  `0`/`VISIBLE` DB defaults for safe existing-row DEV backfill. Strict forfeiture
+  remains planned.
 
 ## Client implemented
 
