@@ -11,6 +11,7 @@ import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerFocusEventRepository;
+import com.quiz_wheelz.service.question.QuestionTimeoutService;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.time.Clock;
@@ -41,11 +42,17 @@ final class RacePlayerFocusEventTestFixture {
             mock(RacePlayerFocusEventRepository.class);
     final PlayerQuestionRepository playerQuestionRepository =
             mock(PlayerQuestionRepository.class);
+    final RacePlayerGameplayPresenceService gameplayPresenceService =
+            mock(RacePlayerGameplayPresenceService.class);
+    final QuestionTimeoutService questionTimeoutService =
+            mock(QuestionTimeoutService.class);
     final HttpServletRequest httpRequest = mock(HttpServletRequest.class);
     final RacePlayerFocusEventService service = new RacePlayerFocusEventService(
             sessionLockService,
             focusEventRepository,
             playerQuestionRepository,
+            gameplayPresenceService,
+            questionTimeoutService,
             Clock.fixed(NOW, ZONE)
     );
 

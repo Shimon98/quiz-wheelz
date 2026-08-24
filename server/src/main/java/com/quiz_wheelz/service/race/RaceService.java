@@ -5,6 +5,7 @@ import com.quiz_wheelz.dto.race.RaceSummaryResponse;
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.Subject;
 import com.quiz_wheelz.entitys.User;
+import com.quiz_wheelz.enums.RaceFocusPolicy;
 import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.repository.RaceRepository;
 import com.quiz_wheelz.service.auth.CurrentUserService;
@@ -51,6 +52,9 @@ public class RaceService {
         race.setStatus(RaceStatus.WAITING_FOR_PLAYERS);
         race.setMaxPlayers(request.getMaxPlayers());
         race.setTotalDistance(request.getTotalDistance());
+        race.setFocusPolicy(request.getFocusPolicy() == null
+                ? RaceFocusPolicy.WARN
+                : request.getFocusPolicy());
 
         Race savedRace = raceRepository.save(race);
 

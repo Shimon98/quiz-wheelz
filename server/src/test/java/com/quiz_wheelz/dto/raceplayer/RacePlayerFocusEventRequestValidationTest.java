@@ -30,13 +30,13 @@ class RacePlayerFocusEventRequestValidationTest {
     }
 
     @Test
-    void publicEnumsContainOnlyTheApprovedFoundationVocabulary() {
+    void publicEnumsContainOnlyTheApprovedFocusVocabulary() {
         assertEquals(
                 Set.of("TAB_HIDDEN", "TAB_VISIBLE"),
                 names(RacePlayerFocusEventType.values())
         );
         assertEquals(
-                Set.of("IGNORED", "VISIBLE", "WARNING", "VIOLATION"),
+                Set.of("IGNORED", "VISIBLE", "WARNING", "VIOLATION", "FORFEITED"),
                 names(RacePlayerFocusEventOutcome.values())
         );
     }

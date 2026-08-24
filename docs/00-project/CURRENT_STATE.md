@@ -1,8 +1,8 @@
 # Project Current State
 
 **Status:** Canonical  
-**Audit date:** 2026-08-23
-**Code baseline:** `main@14f16e8d91c522a1f6d44129b1bf5e89e107f3a2`
+**Audit date:** 2026-08-24
+**Code baseline:** `main@a1cfa8faa716accccde9ddfd6119a64f33ca50d8`
 **This document owns:** the audited implementation status across the complete product
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -87,10 +87,11 @@ teacher live race/SSE screen and results.
   identity/deadline, and duplicate or terminal answers cannot apply engine effects.
 - Server focus-integrity foundation persists cumulative focus-loss state plus
   idempotent per-event, per-question audit rows. TAB_HIDDEN/TAB_VISIBLE classification
-  is server-timed and session-scoped; WARNING/VIOLATION never changes gameplay,
-  presence, movement or question lifecycle. The non-null focus summary columns use
-  `0`/`VISIBLE` DB defaults for safe existing-row DEV backfill. Strict forfeiture
-  remains planned.
+  is server-timed and session-scoped. Race creation selects OFF/WARN/STRICT with WARN
+  default; STRICT forfeits the third same-question loss through the existing timeout
+  owner without activity renewal, reconnect, catch-up movement, player removal or
+  next-question creation. Focus and policy columns use DB defaults for safe existing-
+  row DEV backfill; production migrations remain Phase 6 debt.
 
 ## Client implemented
 

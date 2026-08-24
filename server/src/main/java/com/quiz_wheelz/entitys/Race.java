@@ -2,6 +2,7 @@ package com.quiz_wheelz.entitys;
 
 import com.quiz_wheelz.common.BaseEntity;
 import com.quiz_wheelz.common.RaceRules;
+import com.quiz_wheelz.enums.RaceFocusPolicy;
 import com.quiz_wheelz.enums.RaceStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
@@ -12,6 +13,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
@@ -47,6 +49,12 @@ public class Race extends BaseEntity {
     @Min(RaceRules.MIN_TOTAL_DISTANCE)
     @Column(name = "total_distance", nullable = false)
     private Integer totalDistance;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @ColumnDefault("'WARN'")
+    @Column(name = "focus_policy", nullable = false, length = 20)
+    private RaceFocusPolicy focusPolicy = RaceFocusPolicy.WARN;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "teacher_id", nullable = false)

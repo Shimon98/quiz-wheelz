@@ -1,8 +1,8 @@
 # Server Current State
 
 **Status:** Canonical  
-**Audit date:** 2026-08-23
-**Code baseline:** `main@14f16e8d91c522a1f6d44129b1bf5e89e107f3a2`
+**Audit date:** 2026-08-24
+**Code baseline:** `main@a1cfa8faa716accccde9ddfd6119a64f33ca50d8`
 **This document owns:** the implemented backend capabilities, gaps and stale assumptions
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -95,8 +95,16 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
   migration exists yet; that remains Phase 6 debt.
 - A visible→hidden transition counts only for an unexpired ACTIVE question during
   `RACING + IN_PROGRESS`: first loss on that question is WARNING and second+ is
-  VIOLATION. Focus events do not touch presence, gameplay activity, movement,
-  reconnect, question status/deadline or race-engine effects.
+  VIOLATION under WARN.
+- `Race.focusPolicy` persists OFF/WARN/STRICT with non-null DB default `WARN` and is
+  selected optionally during race creation; teacher summary and room responses expose
+  it. OFF ignores without counting. STRICT classifies the third counted loss on one
+  ACTIVE question as FORFEITED.
+- Strict forfeit delegates EXPIRED and the exactly-once timeout consequence to
+  `QuestionTimeoutService`, using a read-only trusted activity cutoff from the
+  presence owner. It records no activity, renews no lease, reconnects/re-anchors
+  nothing, creates no next question and does not remove the RACING player. Redis
+  outage uses durable lastSeen/race-start fallback. Teacher live/SSE remains future.
 
 ### Server time policy (C1-02K)
 

@@ -66,17 +66,11 @@ public class RacePlayerGameplayPresenceService {
             Optional<LocalDateTime> redisActivityLocal = redisActivity.map(
                     activity -> DateTimeUtils.toLocalDateTime(activity, clock.getZone())
             );
-            LocalDateTime latestActivity = reconnectPolicy.resolveLatestActivityReference(
-                    redisActivityLocal.orElse(null),
-                    racePlayer.getLastSeenAt(),
-                    race.getStartedAt()
+            long movementCutoffEpochMs = resolveMovementCutoffEpochMs(
+                    racePlayer,
+                    decisionInstant,
+                    redisActivityLocal.orElse(null)
             );
-            long movementCutoffEpochMs = latestActivity == null
-                    ? decisionInstant.toEpochMilli()
-                    : Math.min(
-                            decisionInstant.toEpochMilli(),
-                            DateTimeUtils.toEpochMilli(latestActivity, clock.getZone())
-                    );
             boolean graceExpired = isGraceExpired(
                     race,
                     racePlayer,
@@ -97,6 +91,44 @@ public class RacePlayerGameplayPresenceService {
                     exception
             );
             return GameplayPresenceDecision.degraded(decisionInstant.toEpochMilli());
+        }
+    }
+
+    public long resolveUntrustedActivityCutoff(
+            RacePlayer racePlayer,
+            Instant decisionInstant
+    ) {
+        Objects.requireNonNull(racePlayer);
+        Objects.requireNonNull(decisionInstant);
+
+        Race race = Objects.requireNonNull(racePlayer.getRace());
+
+        try {
+            LocalDateTime redisActivity = redisPresenceService
+                    .findLastGameplayActivityAt(race.getId(), racePlayer.getId())
+                    .map(activity -> DateTimeUtils.toLocalDateTime(
+                            activity,
+                            clock.getZone()
+                    ))
+                    .orElse(null);
+
+            return resolveMovementCutoffEpochMs(
+                    racePlayer,
+                    decisionInstant,
+                    redisActivity
+            );
+        } catch (DataAccessException exception) {
+            LOGGER.warn(
+                    RacePlayerRuntimeLogMessages.RESOLVE_UNTRUSTED_CUTOFF_FAILED,
+                    race.getId(),
+                    racePlayer.getId(),
+                    exception
+            );
+            return resolveMovementCutoffEpochMs(
+                    racePlayer,
+                    decisionInstant,
+                    null
+            );
         }
     }
 
@@ -164,6 +196,26 @@ public class RacePlayerGameplayPresenceService {
             racePlayer.setLastSeenAt(activityAt);
             racePlayerRepository.save(racePlayer);
         }
+    }
+
+    private long resolveMovementCutoffEpochMs(
+            RacePlayer racePlayer,
+            Instant decisionInstant,
+            LocalDateTime redisActivity
+    ) {
+        Race race = Objects.requireNonNull(racePlayer.getRace());
+        LocalDateTime latestActivity = reconnectPolicy.resolveLatestActivityReference(
+                redisActivity,
+                racePlayer.getLastSeenAt(),
+                race.getStartedAt()
+        );
+
+        return latestActivity == null
+                ? decisionInstant.toEpochMilli()
+                : Math.min(
+                        decisionInstant.toEpochMilli(),
+                        DateTimeUtils.toEpochMilli(latestActivity, clock.getZone())
+                );
     }
 
     public void markOffline(RacePlayer racePlayer) {

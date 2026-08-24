@@ -6,6 +6,7 @@ import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.entitys.RacePlayerFocusEvent;
 import com.quiz_wheelz.enums.Difficulty;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
+import com.quiz_wheelz.enums.RaceFocusPolicy;
 import com.quiz_wheelz.enums.RacePlayerFocusEventOutcome;
 import com.quiz_wheelz.enums.RacePlayerFocusEventType;
 import com.quiz_wheelz.enums.RacePlayerFocusState;
@@ -13,6 +14,7 @@ import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerFocusEventRepository;
+import com.quiz_wheelz.service.question.QuestionTimeoutService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -134,7 +136,7 @@ class RacePlayerFocusEventIgnoredLifecycleTest {
     }
 
     @Test
-    void focusServiceHasNoPresenceMovementTimelineReconnectOrEngineDependencies() {
+    void focusServiceUsesOnlySessionPersistenceCutoffAndTimeoutOwners() {
         Set<Class<?>> dependencyTypes = Arrays.stream(
                         RacePlayerFocusEventService.class.getDeclaredFields()
                 )
@@ -147,6 +149,8 @@ class RacePlayerFocusEventIgnoredLifecycleTest {
                         RacePlayerSessionLockService.class,
                         RacePlayerFocusEventRepository.class,
                         PlayerQuestionRepository.class,
+                        RacePlayerGameplayPresenceService.class,
+                        QuestionTimeoutService.class,
                         Clock.class
                 ),
                 dependencyTypes
@@ -157,6 +161,7 @@ class RacePlayerFocusEventIgnoredLifecycleTest {
             RacePlayer racePlayer,
             PlayerQuestion question
     ) {
+        racePlayer.getRace().setFocusPolicy(RaceFocusPolicy.STRICT);
         RacePlayerFocusEventResponse response = fixture.service.recordFocusEvent(
                 fixture.httpRequest,
                 fixture.request(

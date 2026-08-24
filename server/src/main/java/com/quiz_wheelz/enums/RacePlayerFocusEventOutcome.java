@@ -4,5 +4,6 @@ public enum RacePlayerFocusEventOutcome {
     IGNORED,
     VISIBLE,
     WARNING,
-    VIOLATION
+    VIOLATION,
+    FORFEITED
 }

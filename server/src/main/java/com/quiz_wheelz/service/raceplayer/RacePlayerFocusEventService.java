@@ -1,5 +1,6 @@
 package com.quiz_wheelz.service.raceplayer;
 
+import com.quiz_wheelz.common.RaceFocusRules;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerFocusEventRequest;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerFocusEventResponse;
 import com.quiz_wheelz.entitys.PlayerQuestion;
@@ -7,6 +8,7 @@ import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.entitys.RacePlayerFocusEvent;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
+import com.quiz_wheelz.enums.RaceFocusPolicy;
 import com.quiz_wheelz.enums.RacePlayerFocusEventOutcome;
 import com.quiz_wheelz.enums.RacePlayerFocusEventType;
 import com.quiz_wheelz.enums.RacePlayerFocusState;
@@ -16,6 +18,7 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerFocusEventRepository;
+import com.quiz_wheelz.service.question.QuestionTimeoutService;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
@@ -34,17 +37,23 @@ public class RacePlayerFocusEventService {
     private final RacePlayerSessionLockService sessionLockService;
     private final RacePlayerFocusEventRepository focusEventRepository;
     private final PlayerQuestionRepository playerQuestionRepository;
+    private final RacePlayerGameplayPresenceService gameplayPresenceService;
+    private final QuestionTimeoutService questionTimeoutService;
     private final Clock clock;
 
     public RacePlayerFocusEventService(
             RacePlayerSessionLockService sessionLockService,
             RacePlayerFocusEventRepository focusEventRepository,
             PlayerQuestionRepository playerQuestionRepository,
+            RacePlayerGameplayPresenceService gameplayPresenceService,
+            QuestionTimeoutService questionTimeoutService,
             Clock clock
     ) {
         this.sessionLockService = Objects.requireNonNull(sessionLockService);
         this.focusEventRepository = Objects.requireNonNull(focusEventRepository);
         this.playerQuestionRepository = Objects.requireNonNull(playerQuestionRepository);
+        this.gameplayPresenceService = Objects.requireNonNull(gameplayPresenceService);
+        this.questionTimeoutService = Objects.requireNonNull(questionTimeoutService);
         this.clock = Objects.requireNonNull(clock);
     }
 
@@ -68,11 +77,17 @@ public class RacePlayerFocusEventService {
                 decisionInstant,
                 clock.getZone()
         );
-        PlayerQuestion activeQuestion = resolveActiveQuestion(racePlayer, decisionTime);
+        RaceFocusPolicy focusPolicy = resolveFocusPolicy(racePlayer);
+        PlayerQuestion activeQuestion = request.getType() == RacePlayerFocusEventType.TAB_HIDDEN
+                && focusPolicy == RaceFocusPolicy.OFF
+                ? null
+                : resolveActiveQuestion(racePlayer, decisionTime);
         FocusDecision decision = applyFocusEvent(
                 racePlayer,
                 request.getType(),
+                focusPolicy,
                 activeQuestion,
+                decisionInstant,
                 decisionTime
         );
         RacePlayerFocusEvent event = persistEvent(
@@ -120,7 +135,9 @@ public class RacePlayerFocusEventService {
     private FocusDecision applyFocusEvent(
             RacePlayer racePlayer,
             RacePlayerFocusEventType type,
+            RaceFocusPolicy focusPolicy,
             PlayerQuestion activeQuestion,
+            Instant decisionInstant,
             LocalDateTime decisionTime
     ) {
         if (type == RacePlayerFocusEventType.TAB_VISIBLE) {
@@ -129,6 +146,15 @@ public class RacePlayerFocusEventService {
                     racePlayer,
                     activeQuestion,
                     RacePlayerFocusEventOutcome.VISIBLE
+            );
+        }
+
+        if (focusPolicy == RaceFocusPolicy.OFF) {
+            racePlayer.setFocusState(RacePlayerFocusState.HIDDEN);
+            return uncountedDecision(
+                    racePlayer,
+                    null,
+                    RacePlayerFocusEventOutcome.IGNORED
             );
         }
 
@@ -150,13 +176,25 @@ public class RacePlayerFocusEventService {
                         )
         ) + 1;
 
+        RacePlayerFocusEventOutcome outcome = resolveCountedOutcome(
+                focusPolicy,
+                questionFocusLossCountAfter
+        );
+
+        if (outcome == RacePlayerFocusEventOutcome.FORFEITED) {
+            long movementCutoffEpochMs = gameplayPresenceService
+                    .resolveUntrustedActivityCutoff(racePlayer, decisionInstant);
+            questionTimeoutService.forfeitActiveQuestionAsTimeout(
+                    racePlayer,
+                    activeQuestion,
+                    decisionInstant.toEpochMilli(),
+                    movementCutoffEpochMs
+            );
+        }
+
         racePlayer.setFocusState(RacePlayerFocusState.HIDDEN);
         racePlayer.setFocusLossCount(focusLossCountAfter);
         racePlayer.setLastFocusLossAt(decisionTime);
-
-        RacePlayerFocusEventOutcome outcome = questionFocusLossCountAfter == 1
-                ? RacePlayerFocusEventOutcome.WARNING
-                : RacePlayerFocusEventOutcome.VIOLATION;
 
         return new FocusDecision(
                 activeQuestion,
@@ -165,6 +203,23 @@ public class RacePlayerFocusEventService {
                 focusLossCountAfter,
                 questionFocusLossCountAfter
         );
+    }
+
+    private RacePlayerFocusEventOutcome resolveCountedOutcome(
+            RaceFocusPolicy focusPolicy,
+            int questionFocusLossCountAfter
+    ) {
+        if (questionFocusLossCountAfter == 1) {
+            return RacePlayerFocusEventOutcome.WARNING;
+        }
+
+        if (focusPolicy == RaceFocusPolicy.STRICT
+                && questionFocusLossCountAfter
+                == RaceFocusRules.STRICT_FORFEIT_THRESHOLD) {
+            return RacePlayerFocusEventOutcome.FORFEITED;
+        }
+
+        return RacePlayerFocusEventOutcome.VIOLATION;
     }
 
     private FocusDecision uncountedDecision(
@@ -232,6 +287,13 @@ public class RacePlayerFocusEventService {
         return racePlayer.getStatus() == RacePlayerStatus.RACING
                 && race != null
                 && race.getStatus() == RaceStatus.IN_PROGRESS;
+    }
+
+    private RaceFocusPolicy resolveFocusPolicy(RacePlayer racePlayer) {
+        Race race = racePlayer.getRace();
+        return race == null || race.getFocusPolicy() == null
+                ? RaceFocusPolicy.WARN
+                : race.getFocusPolicy();
     }
 
     private int currentFocusLossCount(RacePlayer racePlayer) {

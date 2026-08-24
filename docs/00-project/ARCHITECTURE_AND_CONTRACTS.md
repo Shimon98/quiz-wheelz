@@ -1,8 +1,8 @@
 # Architecture and Contracts
 
 **Status:** Canonical  
-**Audit date:** 2026-08-23
-**Code baseline:** `main@14f16e8d91c522a1f6d44129b1bf5e89e107f3a2`
+**Audit date:** 2026-08-24
+**Code baseline:** `main@a1cfa8faa716accccde9ddfd6119a64f33ca50d8`
 **This document owns:** the cross-system architecture, data ownership, API boundaries and runtime contracts
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -288,11 +288,18 @@ The non-null RacePlayer focus summary columns carry database defaults of `0` and
 `VISIBLE`, allowing DEV `ddl-auto=update` to backfill existing rows safely. This is
 not a production migration; production migrations remain Phase 6 debt.
 
-Focus classification has no gameplay consequence in S1-03A. Focus events never
-renew presence, record gameplay activity, settle or re-anchor movement, reconnect,
-change a question deadline/status, or apply answer/timeout effects. `WARNING` and
-`VIOLATION` are durable detection only; forfeiture and configurable strict policy
-remain S1-03B.
+Each Race durably selects `OFF`, `WARN` or `STRICT` through the optional teacher race
+creation field `focusPolicy`; omitted and existing rows default to `WARN`. Teacher
+race summary/room responses expose the configured value. OFF persists ignored audit
+events without counting. WARN retains warning/violation detection only. STRICT makes
+the third counted loss on the same ACTIVE question `FORFEITED`: the existing timeout
+owner expires the question and applies its gameplay consequence exactly once at the
+trusted activity cutoff. It does not remove the player or create the next question.
+
+Focus requests never renew presence, record gameplay activity, reconnect or re-anchor.
+Their request time is not a trusted activity timestamp. Redis outage uses the existing
+durable activity fallback, so strict consequence cannot award absence catch-up.
+Teacher live/SSE exposure remains future work.
 
 An ACTIVE question remains owned by its RacePlayer across hidden, reload,
 disconnect and reconnect transitions until it becomes ANSWERED or EXPIRED. Its
