@@ -75,6 +75,8 @@ class RacePlayerQuestionReconnectContinuityTest {
                 gameplayPresenceService,
                 gameplayTimelineService,
                 mock(RacePlayerDisconnectService.class),
+                mock(com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.class),
+                mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class),
                 clock
         );
     }

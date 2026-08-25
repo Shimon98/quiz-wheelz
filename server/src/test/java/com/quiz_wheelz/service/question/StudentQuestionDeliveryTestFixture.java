@@ -24,14 +24,20 @@ import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
+
+import static org.mockito.ArgumentMatchers.any;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 final class StudentQuestionDeliveryTestFixture {
 
@@ -54,6 +60,11 @@ final class StudentQuestionDeliveryTestFixture {
             mock(StudentQuestionResponseMapper.class);
     final RacePlayerGameplayRequestGuard gameplayRequestGuard =
             mock(RacePlayerGameplayRequestGuard.class);
+    final RaceLiveEventRecorder liveEventRecorder = mock(RaceLiveEventRecorder.class);
+    final RaceLiveEventChangeRecorder liveEventChangeRecorder =
+            new RaceLiveEventChangeRecorder(liveEventRecorder);
+    final com.quiz_wheelz.service.liveevent.RaceLiveMutationGate liveMutationGate =
+            mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class);
     final StudentQuestionDeliveryService studentQuestionDeliveryService =
             new StudentQuestionDeliveryService(
                     racePlayerRepository,
@@ -64,8 +75,16 @@ final class StudentQuestionDeliveryTestFixture {
                     playerQuestionPersistenceService,
                     studentQuestionResponseMapper,
                     gameplayRequestGuard,
+                    liveEventChangeRecorder,
+                    liveMutationGate,
                     Clock.fixed(FIXED_INSTANT, FIXED_ZONE)
             );
+
+    {
+        when(liveMutationGate.lockIfActive(any())).thenAnswer(invocation ->
+                Optional.of(invocation.<RacePlayer>getArgument(0).getRace())
+        );
+    }
 
     RacePlayer createRacePlayer() {
         return createRacePlayer(RacePlayerStatus.RACING, RaceStatus.IN_PROGRESS);

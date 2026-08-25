@@ -123,6 +123,8 @@ class RaceFinalizationHeartbeatConcurrencyTest {
                 presenceService,
                 gameplayTimelineService,
                 disconnectService,
+                mock(com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.class),
+                mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class),
                 clock
         );
         settlementWorker = new RaceMovementSettlementWorker(
@@ -131,6 +133,8 @@ class RaceFinalizationHeartbeatConcurrencyTest {
                 presenceService,
                 gameplayTimelineService,
                 new RaceFinishService(racePlayerRepository, clock),
+                mock(com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.class),
+                mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class),
                 clock
         );
 

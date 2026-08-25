@@ -2,7 +2,7 @@
 
 **Status:** Canonical  
 **Audit date:** 2026-08-24
-**Code baseline:** `main@3b095ac47c3d0b237ce50811e53d0a6720ad3847`
+**Code baseline:** `main@c32600870902bade6c21ecec0a80777c0840e0de`
 **This document owns:** the cross-system architecture, data ownership, API boundaries and runtime contracts
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -154,7 +154,7 @@ and recovery query for the future projector screen. It exposes exactly:
 
 ```text
 raceId, title, roomCode, status, totalDistance, focusPolicy,
-serverTimeEpochMs, eventVersion, players
+serverTimeEpochMs, baseMovementUnitsPerSecond, eventVersion, players
 ```
 
 Each player exposes exactly:
@@ -172,13 +172,64 @@ earlier `finishedAt`, then non-finished players by descending durable position;
 exact ties use competition rank and deterministic output order only.
 
 The response time is Unix epoch milliseconds from the shared injected `Clock`.
+`baseMovementUnitsPerSecond` is the shared server movement baseline from
+`RaceProgressRules.BASE_MOVEMENT_UNITS_PER_SECOND`; the student runtime field
+`movementUnitsPerSecond` remains the effective per-player rate (`speed` multiplied
+by that baseline).
 `eventVersion` reads `Race.liveEventVersion`, persisted as non-null
 `live_event_version` with entity and DB default `0`. The GET never increments it;
-S2-02 owns future event vocabulary and increments, and S2-03 owns SSE delivery.
+S2-02 event writes increment it atomically, and S2-03 owns future SSE delivery.
 The snapshot performs one player-list read and has no Redis, presence, activity,
 movement settlement, timeout, reconnect, re-anchor, save or publication behavior.
+Teacher live-state and full-player event payloads are authoritative durable state,
+but do not promise that every `position` shares `serverTimeEpochMs` or
+`occurredAtEpochMs` as its movement-settlement anchor. Players can have different
+durable anchors, and reconnect grace can temporarily freeze movement while status is
+still RACING. A teacher renderer may interpolate toward newly received authoritative
+positions; it must not calculate or advance authoritative gameplay progress from the
+baseline, player speed and an event/server timestamp.
 The column is DEV `ddl-auto=update` safety, not a production migration; migrations
 remain Phase 6 debt.
+
+### Durable teacher live events
+
+S2-02 persists `RaceLiveEvent` rows in `race_live_events`. Each row owns `race_id`,
+positive per-Race `version`, `type`, `occurred_at_epoch_ms` from the injected `Clock`
+and typed `payload_json`. `(race_id, version)` is unique and indexed for ascending
+cursor retrieval.
+
+The exact vocabulary is:
+
+```text
+PLAYER_JOINED
+RACE_STARTED
+QUESTION_ANSWERED
+PLAYER_PROGRESS_UPDATED
+PLAYER_FINISHED
+RACE_FINISHED
+```
+
+The authoritative mutation owner records the event in its existing transaction:
+
+```text
+domain mutation
+→ atomic database increment of Race.liveEventVersion
+→ typed RaceLiveEvent persistence
+→ one commit or one rollback
+```
+
+There is no JVM counter, Redis sequence, generic event bus, `REQUIRES_NEW` write or
+after-commit durable write. `PLAYER_PROGRESS_UPDATED`, `PLAYER_FINISHED`,
+`RACE_FINISHED` and `RACE_STARTED` carry a full ordered player snapshot produced by
+the shared `RaceStandingCalculator`; competition ties are preserved and the client
+does not recalculate affected ranks. `QUESTION_ANSWERED` exposes only
+`racePlayerId`, `questionId` and `correct`.
+
+The repository can read committed events after a version in ascending order, but
+S2-02 adds no event controller or stream. The live-state GET remains the complete
+initial/recovery snapshot. S2-03 will add teacher-owned SSE transport over committed
+events. Redis remains presence/runtime infrastructure only. DEV schema update can
+create the event table; the production migration remains Phase 6 debt.
 
 ### RacePlayer
 

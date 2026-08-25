@@ -1,5 +1,6 @@
 package com.quiz_wheelz.service.teacher;
 
+import com.quiz_wheelz.common.RaceProgressRules;
 import com.quiz_wheelz.dto.teacher.TeacherRaceLiveStateResponse;
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
@@ -71,8 +72,10 @@ class TeacherRaceLiveStateServiceTest {
                 currentUserService,
                 userService,
                 raceRepository,
-                racePlayerRepository,
-                new RaceStandingCalculator(),
+                new TeacherRaceLivePlayerSnapshotService(
+                        racePlayerRepository,
+                        new RaceStandingCalculator()
+                ),
                 Clock.fixed(NOW, ZoneOffset.UTC)
         );
     }
@@ -92,6 +95,10 @@ class TeacherRaceLiveStateServiceTest {
         assertEquals(race.getId(), response.getRaceId());
         assertEquals("IN_PROGRESS", response.getStatus());
         assertEquals(NOW.toEpochMilli(), response.getServerTimeEpochMs());
+        assertEquals(
+                RaceProgressRules.BASE_MOVEMENT_UNITS_PER_SECOND,
+                response.getBaseMovementUnitsPerSecond()
+        );
         assertEquals(7L, response.getEventVersion());
         assertEquals(
                 List.of("FINISHED", "RACING", "DISCONNECTED", "WAITING"),

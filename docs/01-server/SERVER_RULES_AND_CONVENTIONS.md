@@ -106,6 +106,20 @@ lock player/question
 
 Do not leak `isCorrect` on choices before submission.
 
+Live mutation ordering:
+
+```text
+lock authoritative RacePlayer
+→ lock the Race live-mutation gate
+→ read/settle/mutate active gameplay state
+→ build the full authoritative player snapshot
+→ allocate and persist the next event version
+```
+
+The Race gate is the serialization owner for active live mutations. WAITING lifecycle
+paths never acquire it; join/start keep Race-first locking and finalization keeps
+ordered RacePlayer locks before the Race lock.
+
 ## Race engine
 
 Keep separate focused owners for:

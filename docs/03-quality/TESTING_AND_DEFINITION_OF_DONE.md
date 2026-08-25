@@ -2,7 +2,7 @@
 
 **Status:** Canonical  
 **Audit date:** 2026-08-24
-**Code baseline:** `main@3b095ac47c3d0b237ce50811e53d0a6720ad3847`
+**Code baseline:** `main@c32600870902bade6c21ecec0a80777c0840e0de`
 **This document owns:** the complete automated/manual quality bar for every feature and phase
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -118,6 +118,29 @@ Required gameplay tests:
   fixtures return exactly, and non-null `live_event_version` entity/DB defaults are 0
 - live-state read-only transaction and structural isolation from Redis/presence,
   gameplay activity, movement, timeout, reconnect/re-anchor, save and publication
+- exact teacher live-state `baseMovementUnitsPerSecond` serialization, absence of the
+  student-only `movementUnitsPerSecond` field, and sourcing from
+  `RaceProgressRules.BASE_MOVEMENT_UNITS_PER_SECOND`
+- exact six-value durable live-event vocabulary, table/column/unique/index metadata
+  and ordered after-version repository retrieval
+- exact typed envelope/payload serialization; `QUESTION_ANSWERED` leaks no choice,
+  answer, question text or choices
+- fixed-Clock event timestamps, atomic independent per-Race version sequences and
+  real same-Race concurrent sequential allocation without sleeps or lost increments
+- real two-player/two-transaction live-mutation serialization through the production
+  Race gate: versions `[1, 2]`, Race cursor `2`, and the higher deserialized full-player
+  payload contains both committed mutations with authoritative ranks
+- interaction proofs place the Race gate immediately after active RacePlayer locking
+  and before settlement/question/snapshot reads; WAITING paths prove no Race gate lock
+- forced rollback removes the business mutation, version increment and flushed event
+  row together and permits reuse of the uncommitted version
+- committed `Race.liveEventVersion`, highest committed event version and teacher
+  live-state `eventVersion` remain equal
+- join/start success and rejection, answer event order, meaningful/no-op movement,
+  timeout terminal order, duplicate disconnect, reconnect no-op and exactly-once
+  player/race terminal transitions
+- event writer has no Redis/JVM sequence dependency and the S2-02 surface has no SSE,
+  event controller or stream registry
 - SSE reconnect/recovery
 - event fairness boundaries.
 

@@ -10,6 +10,10 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.PlayerLiveState;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.RaceLiveState;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationGate;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -37,6 +41,8 @@ public class RacePlayerHeartbeatService {
     private final RacePlayerGameplayPresenceService gameplayPresenceService;
     private final RacePlayerGameplayTimelineService gameplayTimelineService;
     private final RacePlayerDisconnectService disconnectService;
+    private final RaceLiveEventChangeRecorder liveEventChangeRecorder;
+    private final RaceLiveMutationGate liveMutationGate;
     private final Clock clock;
 
     public RacePlayerHeartbeatService(
@@ -47,6 +53,8 @@ public class RacePlayerHeartbeatService {
             RacePlayerGameplayPresenceService gameplayPresenceService,
             RacePlayerGameplayTimelineService gameplayTimelineService,
             RacePlayerDisconnectService disconnectService,
+            RaceLiveEventChangeRecorder liveEventChangeRecorder,
+            RaceLiveMutationGate liveMutationGate,
             Clock clock
     ) {
         this.sessionLockService = Objects.requireNonNull(sessionLockService);
@@ -56,6 +64,8 @@ public class RacePlayerHeartbeatService {
         this.gameplayPresenceService = Objects.requireNonNull(gameplayPresenceService);
         this.gameplayTimelineService = Objects.requireNonNull(gameplayTimelineService);
         this.disconnectService = Objects.requireNonNull(disconnectService);
+        this.liveEventChangeRecorder = Objects.requireNonNull(liveEventChangeRecorder);
+        this.liveMutationGate = Objects.requireNonNull(liveMutationGate);
         this.clock = Objects.requireNonNull(clock);
     }
 
@@ -96,6 +106,37 @@ public class RacePlayerHeartbeatService {
             LocalDateTime decisionNow
     ) {
         RacePlayer racePlayer = sessionLockService.lock(identity);
+        Race activeRace = liveMutationGate.lockIfActive(racePlayer).orElse(null);
+        PlayerLiveState playerBefore = activeRace == null
+                ? null
+                : liveEventChangeRecorder.capturePlayer(racePlayer);
+        RaceLiveState raceBefore = activeRace == null
+                ? null
+                : liveEventChangeRecorder.captureRace(activeRace);
+
+        try {
+            return resolveHeartbeatWithDurableLock(
+                    identity,
+                    activityLookup,
+                    decisionInstant,
+                    decisionNow,
+                    racePlayer
+            );
+        } finally {
+            if (activeRace != null) {
+                liveEventChangeRecorder.recordPlayerChange(playerBefore, racePlayer);
+                liveEventChangeRecorder.recordRaceChange(raceBefore, activeRace);
+            }
+        }
+    }
+
+    private RacePlayerHeartbeatResponse resolveHeartbeatWithDurableLock(
+            RacePlayerSessionIdentity identity,
+            GameplayActivityLookup activityLookup,
+            Instant decisionInstant,
+            LocalDateTime decisionNow,
+            RacePlayer racePlayer
+    ) {
         validateHeartbeatAllowed(racePlayer);
 
         if (isReconnectWindowExpired(

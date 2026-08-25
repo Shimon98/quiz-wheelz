@@ -14,6 +14,7 @@ import com.quiz_wheelz.enums.RaceStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,7 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -66,6 +69,20 @@ class RacePlayerFocusEventPolicyTest {
         assertEquals(1, racePlayer.getFocusLossCount());
         assertEquals(fixture.now(), racePlayer.getLastFocusLossAt());
         assertGameplayStateUnchanged(racePlayer, question);
+
+        InOrder mutationOrder = inOrder(
+                fixture.sessionLockService,
+                fixture.liveMutationGate,
+                fixture.focusEventRepository,
+                fixture.playerQuestionRepository
+        );
+        mutationOrder.verify(fixture.sessionLockService)
+                .resolveAndLock(fixture.httpRequest);
+        mutationOrder.verify(fixture.liveMutationGate).lockIfActive(racePlayer);
+        mutationOrder.verify(fixture.focusEventRepository)
+                .findByRacePlayerAndClientEventId(any(), any());
+        mutationOrder.verify(fixture.playerQuestionRepository)
+                .findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(any(), any());
 
         ArgumentCaptor<RacePlayerFocusEvent> captor =
                 ArgumentCaptor.forClass(RacePlayerFocusEvent.class);

@@ -14,6 +14,8 @@ import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.service.raceplayer.RaceStandingCalculator;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
@@ -24,6 +26,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
+
+import static org.mockito.ArgumentMatchers.any;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -45,6 +49,11 @@ final class StudentAnswerSubmissionTestFixture {
     final RaceEngineService raceEngineService = mock(RaceEngineService.class);
     final RacePlayerGameplayRequestGuard gameplayRequestGuard =
             mock(RacePlayerGameplayRequestGuard.class);
+    final RaceLiveEventRecorder liveEventRecorder = mock(RaceLiveEventRecorder.class);
+    final RaceLiveEventChangeRecorder liveEventChangeRecorder =
+            new RaceLiveEventChangeRecorder(liveEventRecorder);
+    final com.quiz_wheelz.service.liveevent.RaceLiveMutationGate liveMutationGate =
+            mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class);
     final StudentAnswerSubmissionService studentAnswerSubmissionService =
             new StudentAnswerSubmissionService(
                     playerQuestionRepository,
@@ -57,8 +66,17 @@ final class StudentAnswerSubmissionTestFixture {
                             new RaceStandingCalculator()
                     ),
                     new StudentRaceRuntimeSnapshotMapper(),
+                    liveEventRecorder,
+                    liveEventChangeRecorder,
+                    liveMutationGate,
                     Clock.fixed(FIXED_INSTANT, FIXED_ZONE)
             );
+
+    {
+        when(liveMutationGate.lockIfActive(any())).thenAnswer(invocation ->
+                Optional.of(invocation.<RacePlayer>getArgument(0).getRace())
+        );
+    }
 
     SubmitAnswerRequest createRequest(Long questionId, Long choiceId) {
         SubmitAnswerRequest request = new SubmitAnswerRequest();

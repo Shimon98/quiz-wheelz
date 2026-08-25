@@ -16,6 +16,7 @@ public class TeacherRaceLiveStateResponse {
     private final Integer totalDistance;
     private final RaceFocusPolicy focusPolicy;
     private final Long serverTimeEpochMs;
+    private final Double baseMovementUnitsPerSecond;
     private final Long eventVersion;
     private final List<TeacherRaceLivePlayerResponse> players;
 
@@ -27,6 +28,7 @@ public class TeacherRaceLiveStateResponse {
             Integer totalDistance,
             RaceFocusPolicy focusPolicy,
             Long serverTimeEpochMs,
+            Double baseMovementUnitsPerSecond,
             Long eventVersion,
             List<TeacherRaceLivePlayerResponse> players
     ) {
@@ -37,6 +39,7 @@ public class TeacherRaceLiveStateResponse {
         this.totalDistance = totalDistance;
         this.focusPolicy = focusPolicy;
         this.serverTimeEpochMs = serverTimeEpochMs;
+        this.baseMovementUnitsPerSecond = baseMovementUnitsPerSecond;
         this.eventVersion = eventVersion;
         this.players = List.copyOf(Objects.requireNonNull(players));
     }

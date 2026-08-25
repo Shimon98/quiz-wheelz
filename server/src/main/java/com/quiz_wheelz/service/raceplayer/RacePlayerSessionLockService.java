@@ -39,7 +39,7 @@ public class RacePlayerSessionLockService {
     }
 
     public RacePlayer resolveAndLock(HttpServletRequest request) {
-        return lock(currentRacePlayerService.resolveCurrentRacePlayerSession(request));
+        return lock(resolveIdentity(request));
     }
 
     public RacePlayer lock(RacePlayerSessionIdentity identity) {

@@ -28,6 +28,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -71,6 +72,8 @@ class RacePlayerDuplicateReconnectTest {
                 gameplayPresenceService,
                 timelineService,
                 disconnectService,
+                mock(com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.class),
+                mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class),
                 clock
         );
     }

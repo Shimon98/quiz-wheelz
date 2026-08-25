@@ -2,7 +2,7 @@
 
 **Status:** Canonical  
 **Audit date:** 2026-08-24
-**Code baseline:** `main@3b095ac47c3d0b237ce50811e53d0a6720ad3847`
+**Code baseline:** `main@c32600870902bade6c21ecec0a80777c0840e0de`
 **This document owns:** the implemented backend capabilities, gaps and stale assumptions
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -48,14 +48,40 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - real RacePlayers in waiting room
 - start-race command with validation and locking.
 - teacher-owned live-state GET with exact projector/recovery fields, injected-clock
-  epoch-millisecond server time, durable event version and every joined player in
-  shared authoritative competition order
+  epoch-millisecond server time, server-owned `baseMovementUnitsPerSecond`, durable event
+  version and every joined player in shared authoritative competition order
 - live-state performs one owned Race lookup plus one RacePlayer list fetch and is
   read-only: no Redis/presence/activity, movement settlement, timeout, reconnect,
   re-anchor, persistence or event publication
 - `Race.liveEventVersion` persists as non-null `live_event_version` with entity and
-  database default `0`; S2-01 never increments it, S2-02 owns future increments and
-  S2-03 owns SSE. Production migration remains Phase 6 debt.
+  database default `0`; S2-02 atomically increments it with each same-transaction
+  durable event, while S2-03 still owns future SSE. Production migration remains
+  Phase 6 debt.
+
+### Durable live-event model
+
+- `race_live_events` persists a typed JSON payload with Race, positive per-Race
+  version, exact event type and injected-Clock epoch-millisecond occurrence time.
+- The exact vocabulary is `PLAYER_JOINED`, `RACE_STARTED`, `QUESTION_ANSWERED`,
+  `PLAYER_PROGRESS_UPDATED`, `PLAYER_FINISHED` and `RACE_FINISHED`.
+- `(race_id, version)` is unique and indexed. Allocation uses one atomic database
+  increment followed by the scalar committed cursor; there is no Redis or JVM event
+  sequence.
+- Event persistence requires the authoritative owner's existing transaction. Domain
+  mutation, cursor and event row commit or roll back together; there is no
+  `REQUIRES_NEW` or after-commit durable event write.
+- Race start, progress and terminal payloads reuse the teacher live-state player
+  mapper and shared standing calculator. Full snapshots carry all affected ranks and
+  competition ties; answer events contain no choice or correct-answer material. The
+  snapshots are durable authoritative positions, not a guarantee that each player
+  shares the event occurrence time as a movement anchor; future teacher rendering may
+  interpolate toward them but never independently advances gameplay truth.
+- Join/start/answer, periodic settlement, timeout, focus, disconnect, heartbeat,
+  reconnect, race-state and finalization boundaries record only visible changes.
+  Before/after transition detection prevents duplicate player/race terminal events.
+- Ordered repository retrieval exists for future transport. There is no events API,
+  SSE registry or stream in S2-02; S2-03 is future work and live-state remains the
+  recovery query.
 
 ### RacePlayer flow
 

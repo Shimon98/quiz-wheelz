@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class TeacherRaceLiveStateResponseSerializationTest {
 
@@ -29,6 +30,7 @@ class TeacherRaceLiveStateResponseSerializationTest {
                 1000,
                 RaceFocusPolicy.STRICT,
                 1_787_568_000_000L,
+                4.0,
                 4L,
                 List.of(TeacherRaceLivePlayerResponse.from(player(), 2))
         );
@@ -45,6 +47,7 @@ class TeacherRaceLiveStateResponseSerializationTest {
                         "totalDistance",
                         "focusPolicy",
                         "serverTimeEpochMs",
+                        "baseMovementUnitsPerSecond",
                         "eventVersion",
                         "players"
                 ),
@@ -69,6 +72,8 @@ class TeacherRaceLiveStateResponseSerializationTest {
         );
         assertEquals("HOVER_KART_GREEN", player.get("vehicleAssetKey").asText());
         assertEquals(2, player.get("rank").asInt());
+        assertEquals(4.0, json.get("baseMovementUnitsPerSecond").asDouble());
+        assertFalse(json.has("movementUnitsPerSecond"));
     }
 
     private RacePlayer player() {

@@ -7,9 +7,11 @@ import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.exception.ApiException;
-import com.quiz_wheelz.exception.ErrorCode;
-import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceFinishService;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.PlayerLiveState;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.RaceLiveState;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationGate;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,45 +23,70 @@ import java.util.Objects;
 @Service
 public class StudentRaceStateService {
 
-    private final CurrentRacePlayerService currentRacePlayerService;
-    private final RacePlayerRepository racePlayerRepository;
+    private final RacePlayerSessionLockService sessionLockService;
     private final RacePlayerGameplayRequestGuard gameplayRequestGuard;
     private final RaceFinishService raceFinishService;
     private final StudentRaceStandingService standingService;
     private final StudentRaceRuntimeSnapshotMapper snapshotMapper;
+    private final RaceLiveEventChangeRecorder liveEventChangeRecorder;
+    private final RaceLiveMutationGate liveMutationGate;
     private final Clock clock;
 
     public StudentRaceStateService(
-            CurrentRacePlayerService currentRacePlayerService,
-            RacePlayerRepository racePlayerRepository,
+            RacePlayerSessionLockService sessionLockService,
             RacePlayerGameplayRequestGuard gameplayRequestGuard,
             RaceFinishService raceFinishService,
             StudentRaceStandingService standingService,
             StudentRaceRuntimeSnapshotMapper snapshotMapper,
+            RaceLiveEventChangeRecorder liveEventChangeRecorder,
+            RaceLiveMutationGate liveMutationGate,
             Clock clock
     ) {
-        this.currentRacePlayerService = Objects.requireNonNull(currentRacePlayerService);
-        this.racePlayerRepository = Objects.requireNonNull(racePlayerRepository);
+        this.sessionLockService = Objects.requireNonNull(sessionLockService);
         this.gameplayRequestGuard = Objects.requireNonNull(gameplayRequestGuard);
         this.raceFinishService = Objects.requireNonNull(raceFinishService);
         this.standingService = Objects.requireNonNull(standingService);
         this.snapshotMapper = Objects.requireNonNull(snapshotMapper);
+        this.liveEventChangeRecorder = Objects.requireNonNull(liveEventChangeRecorder);
+        this.liveMutationGate = Objects.requireNonNull(liveMutationGate);
         this.clock = Objects.requireNonNull(clock);
     }
 
     @Transactional(noRollbackFor = ApiException.class)
     public StudentRaceStateResponse getRaceState(HttpServletRequest request) {
-        RacePlayer sessionRacePlayer =
-                currentRacePlayerService.resolveCurrentRacePlayerSession(request);
-
-        RacePlayer racePlayer = racePlayerRepository
-                .findLockedByIdAndRaceId(
-                        sessionRacePlayer.getId(),
-                        Objects.requireNonNull(sessionRacePlayer.getRace()).getId()
-                )
-                .orElseThrow(() -> new ApiException(ErrorCode.RACE_PLAYER_NOT_FOUND));
-
+        RacePlayer racePlayer = sessionLockService.lock(
+                sessionLockService.resolveIdentity(request)
+        );
+        Race activeRace = liveMutationGate.lockIfActive(racePlayer).orElse(null);
         Race race = Objects.requireNonNull(racePlayer.getRace());
+        PlayerLiveState playerBefore = activeRace == null
+                ? null
+                : liveEventChangeRecorder.capturePlayer(racePlayer);
+        RaceLiveState raceBefore = activeRace == null
+                ? null
+                : liveEventChangeRecorder.captureRace(activeRace);
+
+        try {
+            return resolveRaceState(
+                    racePlayer,
+                    race,
+                    activeRace,
+                    playerBefore,
+                    raceBefore
+            );
+        } catch (ApiException exception) {
+            recordLiveChanges(activeRace, playerBefore, raceBefore, racePlayer);
+            throw exception;
+        }
+    }
+
+    private StudentRaceStateResponse resolveRaceState(
+            RacePlayer racePlayer,
+            Race race,
+            Race activeRace,
+            PlayerLiveState playerBefore,
+            RaceLiveState raceBefore
+    ) {
 
         Instant decisionInstant = clock.instant();
         long decisionEpochMs = decisionInstant.toEpochMilli();
@@ -79,6 +106,8 @@ public class StudentRaceStateService {
                 decisionEpochMs
         );
 
+        recordLiveChanges(activeRace, playerBefore, raceBefore, racePlayer);
+
         return new StudentRaceStateResponse(
                 race.getId(),
                 race.getTitle(),
@@ -88,5 +117,18 @@ public class StudentRaceStateService {
                 StudentRacePlayerPresentationResponse.from(racePlayer),
                 snapshot
         );
+    }
+
+    private void recordLiveChanges(
+            Race activeRace,
+            PlayerLiveState playerBefore,
+            RaceLiveState raceBefore,
+            RacePlayer racePlayer
+    ) {
+        if (activeRace == null) {
+            return;
+        }
+        liveEventChangeRecorder.recordPlayerChange(playerBefore, racePlayer);
+        liveEventChangeRecorder.recordRaceChange(raceBefore, activeRace);
     }
 }

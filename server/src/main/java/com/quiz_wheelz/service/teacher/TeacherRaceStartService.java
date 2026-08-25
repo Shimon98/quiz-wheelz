@@ -10,6 +10,7 @@ import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RaceRepository;
 import com.quiz_wheelz.service.auth.CurrentUserService;
 import com.quiz_wheelz.service.auth.UserService;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
 import com.quiz_wheelz.service.raceplayer.RacePlayerService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ public class TeacherRaceStartService {
     private final UserService userService;
     private final RaceRepository raceRepository;
     private final RacePlayerService racePlayerService;
+    private final RaceLiveEventRecorder liveEventRecorder;
     private final Clock clock;
 
     public TeacherRaceStartService(
@@ -30,12 +32,14 @@ public class TeacherRaceStartService {
             UserService userService,
             RaceRepository raceRepository,
             RacePlayerService racePlayerService,
+            RaceLiveEventRecorder liveEventRecorder,
             Clock clock
     ) {
         this.currentUserService = currentUserService;
         this.userService = userService;
         this.raceRepository = raceRepository;
         this.racePlayerService = racePlayerService;
+        this.liveEventRecorder = liveEventRecorder;
         this.clock = clock;
     }
 
@@ -51,6 +55,7 @@ public class TeacherRaceStartService {
         int playersStarted = racePlayerService.startWaitingPlayers(race, startedAt);
         race.setStatus(RaceStatus.IN_PROGRESS);
         race.setStartedAt(startedAt);
+        liveEventRecorder.recordRaceStarted(race);
         return StartRaceResponse.from(race, playersStarted);
     }
 

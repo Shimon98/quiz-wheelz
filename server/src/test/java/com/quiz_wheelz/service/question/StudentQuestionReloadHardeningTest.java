@@ -76,6 +76,8 @@ class StudentQuestionReloadHardeningTest {
                 fixture.playerQuestionPersistenceService,
                 new StudentQuestionResponseMapper(),
                 requestGuard,
+                mock(com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.class),
+                mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class),
                 clock
         );
     }

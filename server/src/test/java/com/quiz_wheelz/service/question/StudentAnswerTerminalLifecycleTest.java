@@ -44,6 +44,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -111,6 +112,9 @@ class StudentAnswerTerminalLifecycleTest {
                 requestGuard,
                 standingService,
                 new StudentRaceRuntimeSnapshotMapper(),
+                mock(com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder.class),
+                mock(com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.class),
+                mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class),
                 Clock.fixed(NOW, ZoneId.of("UTC"))
         );
     }
