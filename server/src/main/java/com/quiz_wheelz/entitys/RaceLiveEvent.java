@@ -7,7 +7,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
@@ -27,10 +26,6 @@ import lombok.Setter;
         uniqueConstraints = @UniqueConstraint(
                 name = "uk_race_live_events_race_version",
                 columnNames = {"race_id", "version"}
-        ),
-        indexes = @Index(
-                name = "idx_race_live_events_race_version",
-                columnList = "race_id,version"
         )
 )
 @Getter

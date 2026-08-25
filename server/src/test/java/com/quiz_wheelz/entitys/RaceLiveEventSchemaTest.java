@@ -2,7 +2,6 @@ package com.quiz_wheelz.entitys;
 
 import com.quiz_wheelz.enums.RaceLiveEventType;
 import jakarta.persistence.Column;
-import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -36,15 +35,14 @@ class RaceLiveEventSchemaTest {
     }
 
     @Test
-    void entityDeclaresDurableTableUniquenessAndOrderedLookupIndex() {
+    void entityDeclaresDurableTableUniquenessWithoutDuplicateIndex() {
         Table table = RaceLiveEvent.class.getAnnotation(Table.class);
 
         assertNotNull(table);
         assertEquals("race_live_events", table.name());
         assertEquals(1, table.uniqueConstraints().length);
         assertConstraint(table.uniqueConstraints()[0]);
-        assertEquals(1, table.indexes().length);
-        assertIndex(table.indexes()[0]);
+        assertEquals(0, table.indexes().length);
     }
 
     @Test
@@ -69,11 +67,6 @@ class RaceLiveEventSchemaTest {
     private void assertConstraint(UniqueConstraint constraint) {
         assertEquals("uk_race_live_events_race_version", constraint.name());
         assertEquals(List.of("race_id", "version"), List.of(constraint.columnNames()));
-    }
-
-    private void assertIndex(Index index) {
-        assertEquals("idx_race_live_events_race_version", index.name());
-        assertEquals("race_id,version", index.columnList());
     }
 
     private void assertRequiredColumn(Field field) {

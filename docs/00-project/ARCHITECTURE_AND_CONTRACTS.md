@@ -225,11 +225,14 @@ the shared `RaceStandingCalculator`; competition ties are preserved and the clie
 does not recalculate affected ranks. `QUESTION_ANSWERED` exposes only
 `racePlayerId`, `questionId` and `correct`.
 
-The repository can read committed events after a version in ascending order, but
-S2-02 adds no event controller or stream. The live-state GET remains the complete
-initial/recovery snapshot. S2-03 will add teacher-owned SSE transport over committed
-events. Redis remains presence/runtime infrastructure only. DEV schema update can
-create the event table; the production migration remains Phase 6 debt.
+The repository can read bounded caller-sized slices of committed events after a
+version in ascending order, but S2-02 adds no teacher-owned event controller or SSE
+transport. The repository already contains legacy generic SSE infrastructure under
+`/api/sse`; it is not authoritative for S2 events, does not own their cursor/replay
+contract and is not adopted or redesigned here. The live-state GET remains the
+complete initial/recovery snapshot. S2-03 will add teacher-owned transport over
+committed events. Redis remains presence/runtime infrastructure only. DEV schema
+update can create the event table; the production migration remains Phase 6 debt.
 
 ### RacePlayer
 

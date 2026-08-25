@@ -21,6 +21,8 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.IllegalTransactionStateException;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -41,7 +43,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -138,14 +142,28 @@ class RaceLiveEventTransactionIntegrationTest {
     }
 
     @Test
-    void orderedRepositoryRetrievalReturnsOnlyVersionsAfterCursor() {
+    void orderedRepositoryReplayIsBoundedAndSupportsCursorContinuation() {
         Long raceId = persistRace("Replay race").raceId();
         record(raceId);
         record(raceId);
         record(raceId);
+        record(raceId);
 
-        assertEquals(List.of(2L, 3L), eventVersionsAfter(raceId, 1L));
-        assertEquals(List.of(), eventVersionsAfter(raceId, 3L));
+        Slice<RaceLiveEvent> firstPage = eventRepository.findAfterVersionOrdered(
+                raceId,
+                1L,
+                PageRequest.of(0, 2)
+        );
+        assertEquals(List.of(2L, 3L), eventVersions(firstPage));
+        assertTrue(firstPage.hasNext());
+
+        Slice<RaceLiveEvent> secondPage = eventRepository.findAfterVersionOrdered(
+                raceId,
+                firstPage.getContent().getLast().getVersion(),
+                PageRequest.of(0, 2)
+        );
+        assertEquals(List.of(4L), eventVersions(secondPage));
+        assertFalse(secondPage.hasNext());
     }
 
     @Test
@@ -202,8 +220,15 @@ class RaceLiveEventTransactionIntegrationTest {
     }
 
     private List<Long> eventVersionsAfter(Long raceId, Long afterVersion) {
-        return eventRepository.findAfterVersionOrdered(raceId, afterVersion)
-                .stream()
+        return eventVersions(eventRepository.findAfterVersionOrdered(
+                raceId,
+                afterVersion,
+                PageRequest.of(0, 100)
+        ));
+    }
+
+    private List<Long> eventVersions(Slice<RaceLiveEvent> events) {
+        return events.stream()
                 .map(RaceLiveEvent::getVersion)
                 .toList();
     }

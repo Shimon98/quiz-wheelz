@@ -353,8 +353,11 @@ Do not add luck/junction events until their engines exist.
   full-player snapshots expose durable authoritative positions without promising a
   shared movement anchor at `serverTimeEpochMs` or event `occurredAtEpochMs`, so the
   future projector interpolates toward server positions and never advances truth
-- ordered repository cursor retrieval exists; no event endpoint, SSE, Redis event
-  truth or client change was added
+- bounded caller-sized repository cursor retrieval exists; S2-02 added no teacher-
+  owned event endpoint or SSE transport. The pre-existing generic `/api/sse`
+  infrastructure remains legacy, is not the durable event cursor/replay owner and
+  was not adopted or redesigned; Redis remains outside event truth and no client
+  change was added
 - DEV schema creation is safe; production migration remains Phase 6 debt.
 
 ### S2-03 — SSE stream

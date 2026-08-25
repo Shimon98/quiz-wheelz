@@ -21,6 +21,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
@@ -111,8 +112,9 @@ class RaceLiveMutationOrderingIntegrationTest {
 
             List<RaceLiveEvent> events = eventRepository.findAfterVersionOrdered(
                     persisted.raceId(),
-                    0L
-            );
+                    0L,
+                    PageRequest.of(0, 2)
+            ).getContent();
             assertEquals(List.of(1L, 2L), events.stream()
                     .map(RaceLiveEvent::getVersion)
                     .toList());

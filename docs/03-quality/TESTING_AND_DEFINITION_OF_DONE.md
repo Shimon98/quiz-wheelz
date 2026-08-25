@@ -139,9 +139,10 @@ Required gameplay tests:
 - join/start success and rejection, answer event order, meaningful/no-op movement,
   timeout terminal order, duplicate disconnect, reconnect no-op and exactly-once
   player/race terminal transitions
-- event writer has no Redis/JVM sequence dependency and the S2-02 surface has no SSE,
-  event controller or stream registry
-- SSE reconnect/recovery
+- event writer has no Redis/JVM sequence dependency and S2-02 adds no teacher-owned
+  durable-event SSE transport, event controller or stream registry; the legacy
+  generic `/api/sse` infrastructure is not S2 event truth or its cursor/replay owner
+- teacher-owned S2 SSE reconnect/recovery
 - event fairness boundaries.
 
 ## Client checks

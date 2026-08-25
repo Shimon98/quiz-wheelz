@@ -112,9 +112,11 @@ teacher live race/SSE screen and results.
   authoritative rank snapshot. Active mutations are serialized by a per-Race
   pessimistic gate after the player lock, so higher event versions cannot regress a
   committed player state or rank from a lower version. WAITING lifecycle paths do not
-  acquire that gate or emit progress events. Redis is not event truth, no event API
-  or SSE stream exists yet, and S2-03 remains the transport task. Production migration
-  remains Phase 6 debt.
+  acquire that gate or emit progress events. Redis is not event truth. S2-02 adds no
+  teacher-owned durable-event API or SSE transport. The repository's legacy generic
+  `/api/sse` infrastructure is not the S2 event source, cursor/replay contract or an
+  adopted S2 transport; S2-03 remains responsible for that transport. Production
+  migration remains Phase 6 debt.
 
 ## Client implemented
 

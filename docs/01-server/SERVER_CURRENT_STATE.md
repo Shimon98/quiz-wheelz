@@ -79,9 +79,11 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - Join/start/answer, periodic settlement, timeout, focus, disconnect, heartbeat,
   reconnect, race-state and finalization boundaries record only visible changes.
   Before/after transition detection prevents duplicate player/race terminal events.
-- Ordered repository retrieval exists for future transport. There is no events API,
-  SSE registry or stream in S2-02; S2-03 is future work and live-state remains the
-  recovery query.
+- Bounded ordered repository retrieval exists for future transport. S2-02 adds no
+  teacher-owned events API, SSE registry or stream. The legacy generic `/api/sse`
+  infrastructure already in the repository is not S2 event truth, does not define
+  the durable cursor/replay contract and is not adopted or redesigned by S2-02.
+  S2-03 is future work and live-state remains the recovery query.
 
 ### RacePlayer flow
 
