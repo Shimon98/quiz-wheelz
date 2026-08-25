@@ -11,6 +11,11 @@ import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceFinishService;
 import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationGate;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
+import com.quiz_wheelz.dto.raceplayer.RacePlayerSessionIdentity;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +38,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,7 +49,10 @@ class RacePlayerRefreshLifecycleTest {
     private static final long RACE_PLAYER_ID = 9L;
 
     @Mock
-    private CurrentRacePlayerService currentRacePlayerService;
+    private RacePlayerSessionLockService sessionLockService;
+
+    @Mock
+    private RaceLiveMutationGate liveMutationGate;
 
     @Mock
     private RacePlayerRepository racePlayerRepository;
@@ -74,12 +83,15 @@ class RacePlayerRefreshLifecycleTest {
                         racePlayerRepository
                 );
         raceStateService = new StudentRaceStateService(
-                currentRacePlayerService,
-                racePlayerRepository,
+                sessionLockService,
                 requestGuard,
                 raceFinishService,
                 standingService,
                 new StudentRaceRuntimeSnapshotMapper(),
+                new RaceLiveMutationTracker(
+                        liveMutationGate,
+                        new RaceLiveEventChangeRecorder(mock(RaceLiveEventRecorder.class))
+                ),
                 Clock.fixed(NOW, ZoneId.of("UTC"))
         );
     }
@@ -213,10 +225,16 @@ class RacePlayerRefreshLifecycleTest {
             RaceStatus raceStatus
     ) {
         RacePlayer racePlayer = createRacePlayer(playerStatus, raceStatus);
-        when(currentRacePlayerService.resolveCurrentRacePlayerSession(request))
-                .thenReturn(racePlayer);
-        when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
-                .thenReturn(Optional.of(racePlayer));
+        RacePlayerSessionIdentity identity =
+                new RacePlayerSessionIdentity(RACE_ID, RACE_PLAYER_ID);
+        when(sessionLockService.resolveIdentity(request)).thenReturn(identity);
+        when(sessionLockService.lock(identity)).thenReturn(racePlayer);
+        lenient().when(liveMutationGate.lockIfActive(racePlayer)).thenReturn(
+                playerStatus == RacePlayerStatus.RACING
+                        && raceStatus == RaceStatus.IN_PROGRESS
+                        ? Optional.of(racePlayer.getRace())
+                        : Optional.empty()
+        );
         lenient().when(standingService.calculate(racePlayer))
                 .thenReturn(new StudentRaceStandingResult(1, 1, List.of()));
         return racePlayer;
@@ -232,8 +250,9 @@ class RacePlayerRefreshLifecycleTest {
         assertEquals(first.getSnapshot().getPosition(), second.getSnapshot().getPosition());
         assertEquals(first.getSnapshot().getScore(), second.getSnapshot().getScore());
         assertEquals(racePlayer.getStatus(), second.getSnapshot().getPlayerStatus());
-        verify(racePlayerRepository, times(2))
-                .findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
+        verify(sessionLockService, times(2)).lock(
+                new RacePlayerSessionIdentity(RACE_ID, RACE_PLAYER_ID)
+        );
     }
 
     private void verifyNoMutationSave() {

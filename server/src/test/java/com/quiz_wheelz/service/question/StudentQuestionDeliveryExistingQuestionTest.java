@@ -31,6 +31,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class StudentQuestionDeliveryExistingQuestionTest {
@@ -161,6 +162,10 @@ class StudentQuestionDeliveryExistingQuestionTest {
                 fixture.playerQuestionPersistenceService,
                 fixture.studentQuestionResponseMapper,
                 fixture.gameplayRequestGuard,
+                new com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker(
+                        mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class),
+                        mock(com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.class)
+                ),
                 steppingClock
         );
         RacePlayer racePlayer = fixture.createRacePlayer();

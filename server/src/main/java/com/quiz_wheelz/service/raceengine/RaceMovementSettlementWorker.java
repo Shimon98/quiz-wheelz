@@ -8,6 +8,12 @@ import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.repository.RaceRepository;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService.GameplayPresenceDecision;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.PlayerChange;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.PlayerLiveState;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.RaceLiveState;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationContext;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +31,8 @@ public class RaceMovementSettlementWorker {
     private final RacePlayerGameplayPresenceService gameplayPresenceService;
     private final RacePlayerGameplayTimelineService gameplayTimelineService;
     private final RaceFinishService raceFinishService;
+    private final RaceLiveEventChangeRecorder liveEventChangeRecorder;
+    private final RaceLiveMutationTracker liveMutationTracker;
     private final Clock clock;
 
     public RaceMovementSettlementWorker(
@@ -33,6 +41,8 @@ public class RaceMovementSettlementWorker {
             RacePlayerGameplayPresenceService gameplayPresenceService,
             RacePlayerGameplayTimelineService gameplayTimelineService,
             RaceFinishService raceFinishService,
+            RaceLiveEventChangeRecorder liveEventChangeRecorder,
+            RaceLiveMutationTracker liveMutationTracker,
             Clock clock
     ) {
         this.racePlayerRepository = Objects.requireNonNull(racePlayerRepository);
@@ -40,6 +50,8 @@ public class RaceMovementSettlementWorker {
         this.gameplayPresenceService = Objects.requireNonNull(gameplayPresenceService);
         this.gameplayTimelineService = Objects.requireNonNull(gameplayTimelineService);
         this.raceFinishService = Objects.requireNonNull(raceFinishService);
+        this.liveEventChangeRecorder = Objects.requireNonNull(liveEventChangeRecorder);
+        this.liveMutationTracker = Objects.requireNonNull(liveMutationTracker);
         this.clock = Objects.requireNonNull(clock);
     }
 
@@ -49,10 +61,12 @@ public class RaceMovementSettlementWorker {
                 .findLockedByIdAndRaceId(racePlayerId, raceId)
                 .orElse(null);
 
-        if (racePlayer == null
-                || racePlayer.getStatus() != RacePlayerStatus.RACING
-                || racePlayer.getRace() == null
-                || racePlayer.getRace().getStatus() != RaceStatus.IN_PROGRESS) {
+        if (racePlayer == null) {
+            return;
+        }
+
+        RaceLiveMutationContext liveContext = liveMutationTracker.begin(racePlayer);
+        if (!liveContext.active()) {
             return;
         }
 
@@ -69,6 +83,8 @@ public class RaceMovementSettlementWorker {
             racePlayerRepository.save(racePlayer);
             gameplayPresenceService.markOffline(racePlayer);
         }
+
+        liveMutationTracker.recordChanges(liveContext, racePlayer);
     }
 
     @Transactional
@@ -86,8 +102,11 @@ public class RaceMovementSettlementWorker {
             return;
         }
 
+        RaceLiveState raceBefore = liveEventChangeRecorder.captureRace(race);
+
         Instant decisionInstant = clock.instant();
         List<FinalizationCandidate> absentPlayers = new ArrayList<>();
+        List<PlayerChange> playerChanges = new ArrayList<>();
 
         for (RacePlayer racePlayer : lockedPlayers) {
             if (racePlayer.getStatus() == RacePlayerStatus.WAITING) {
@@ -111,6 +130,9 @@ public class RaceMovementSettlementWorker {
         }
 
         for (FinalizationCandidate candidate : absentPlayers) {
+            PlayerLiveState playerBefore = liveEventChangeRecorder.capturePlayer(
+                    candidate.racePlayer()
+            );
             boolean disconnected = gameplayTimelineService.settleForRaceFinalization(
                     candidate.racePlayer(),
                     decisionInstant,
@@ -119,6 +141,7 @@ public class RaceMovementSettlementWorker {
             if (disconnected) {
                 gameplayPresenceService.markOffline(candidate.racePlayer());
             }
+            playerChanges.add(new PlayerChange(playerBefore, candidate.racePlayer()));
         }
 
         if (!absentPlayers.isEmpty()) {
@@ -129,7 +152,9 @@ public class RaceMovementSettlementWorker {
             );
         }
 
+        liveEventChangeRecorder.recordFinalizationPlayerChanges(race, playerChanges);
         raceFinishService.finishRaceIfAllPlayersTerminal(race, lockedPlayers);
+        liveEventChangeRecorder.recordRaceChange(raceBefore, race);
     }
 
     private record FinalizationCandidate(

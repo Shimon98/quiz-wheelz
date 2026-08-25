@@ -13,11 +13,16 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationGate;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.InOrder;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.RedisConnectionFailureException;
@@ -33,9 +38,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -60,6 +67,9 @@ class RacePlayerHeartbeatServiceTest {
 
     @Mock
     private HttpServletRequest request;
+
+    @Mock
+    private RaceLiveMutationGate liveMutationGate;
 
     private RacePlayerHeartbeatService service;
 
@@ -101,6 +111,10 @@ class RacePlayerHeartbeatServiceTest {
                 presenceService,
                 gameplayTimelineService,
                 disconnectService,
+                new RaceLiveMutationTracker(
+                        liveMutationGate,
+                        new RaceLiveEventChangeRecorder(mock(RaceLiveEventRecorder.class))
+                ),
                 fixedClock
         );
     }
@@ -149,6 +163,8 @@ class RacePlayerHeartbeatServiceTest {
                 .thenReturn(Optional.of(instantOf(now().minusMinutes(6))));
         when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
                 .thenReturn(Optional.of(racePlayer));
+        when(liveMutationGate.lockIfActive(racePlayer))
+                .thenReturn(Optional.of(racePlayer.getRace()));
 
         ApiException exception = assertThrows(
                 ApiException.class,
@@ -162,6 +178,10 @@ class RacePlayerHeartbeatServiceTest {
         verify(redisPresenceService, never()).renewPresenceLease(RACE_ID, RACE_PLAYER_ID, FIXED_INSTANT);
         verify(redisPresenceService, times(2)).findLastGameplayActivityAt(RACE_ID, RACE_PLAYER_ID);
         verify(redisPresenceService).markOffline(RACE_ID, RACE_PLAYER_ID);
+        InOrder mutationOrder = inOrder(racePlayerRepository, liveMutationGate);
+        mutationOrder.verify(racePlayerRepository)
+                .findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
+        mutationOrder.verify(liveMutationGate).lockIfActive(racePlayer);
         verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
         verify(racePlayerRepository).save(racePlayer);
     }

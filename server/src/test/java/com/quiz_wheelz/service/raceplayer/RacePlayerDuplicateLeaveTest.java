@@ -23,6 +23,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -59,6 +60,10 @@ class RacePlayerDuplicateLeaveTest {
         leaveService = new RacePlayerLeaveService(
                 sessionLockService,
                 disconnectService,
+                new com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker(
+                        mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class),
+                        mock(com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.class)
+                ),
                 Clock.fixed(NOW, ZoneId.of("UTC"))
         );
     }

@@ -18,6 +18,8 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerFocusEventRepository;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationContext;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import com.quiz_wheelz.service.question.QuestionTimeoutService;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,6 +41,7 @@ public class RacePlayerFocusEventService {
     private final PlayerQuestionRepository playerQuestionRepository;
     private final RacePlayerGameplayPresenceService gameplayPresenceService;
     private final QuestionTimeoutService questionTimeoutService;
+    private final RaceLiveMutationTracker liveMutationTracker;
     private final Clock clock;
 
     public RacePlayerFocusEventService(
@@ -47,6 +50,7 @@ public class RacePlayerFocusEventService {
             PlayerQuestionRepository playerQuestionRepository,
             RacePlayerGameplayPresenceService gameplayPresenceService,
             QuestionTimeoutService questionTimeoutService,
+            RaceLiveMutationTracker liveMutationTracker,
             Clock clock
     ) {
         this.sessionLockService = Objects.requireNonNull(sessionLockService);
@@ -54,6 +58,7 @@ public class RacePlayerFocusEventService {
         this.playerQuestionRepository = Objects.requireNonNull(playerQuestionRepository);
         this.gameplayPresenceService = Objects.requireNonNull(gameplayPresenceService);
         this.questionTimeoutService = Objects.requireNonNull(questionTimeoutService);
+        this.liveMutationTracker = Objects.requireNonNull(liveMutationTracker);
         this.clock = Objects.requireNonNull(clock);
     }
 
@@ -63,6 +68,7 @@ public class RacePlayerFocusEventService {
             RacePlayerFocusEventRequest request
     ) {
         RacePlayer racePlayer = sessionLockService.resolveAndLock(httpRequest);
+        RaceLiveMutationContext liveContext = liveMutationTracker.begin(racePlayer);
         String clientEventId = request.getEventId().toString();
 
         Optional<RacePlayerFocusEvent> existing = focusEventRepository
@@ -71,6 +77,8 @@ public class RacePlayerFocusEventService {
         if (existing.isPresent()) {
             return replay(existing.get(), request.getType());
         }
+
+        Race race = Objects.requireNonNull(racePlayer.getRace());
 
         Instant decisionInstant = clock.instant();
         LocalDateTime decisionTime = DateTimeUtils.toLocalDateTime(
@@ -97,6 +105,8 @@ public class RacePlayerFocusEventService {
                 decision,
                 decisionTime
         );
+
+        liveMutationTracker.recordChanges(liveContext, racePlayer);
 
         return toResponse(event);
     }

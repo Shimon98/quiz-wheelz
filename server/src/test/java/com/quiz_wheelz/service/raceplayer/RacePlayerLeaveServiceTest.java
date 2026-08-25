@@ -13,6 +13,10 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationGate;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +40,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -67,6 +72,8 @@ class RacePlayerLeaveServiceTest {
     void setUp() {
         Clock fixedClock = Clock.fixed(FIXED_INSTANT, FIXED_ZONE);
         RacePlayerReconnectPolicy reconnectPolicy = new RacePlayerReconnectPolicy();
+        lenient().when(currentRacePlayerService.resolveCurrentRacePlayerIdentity(request))
+                .thenReturn(new RacePlayerSessionIdentity(RACE_ID, RACE_PLAYER_ID));
         lenient().when(redisPresenceService.isOnline(RACE_ID, RACE_PLAYER_ID))
                 .thenReturn(true);
         lenient().when(redisPresenceService.findLastGameplayActivityAt(RACE_ID, RACE_PLAYER_ID))
@@ -90,6 +97,10 @@ class RacePlayerLeaveServiceTest {
         service = new RacePlayerLeaveService(
                 lockService,
                 disconnectService,
+                new RaceLiveMutationTracker(
+                        mock(RaceLiveMutationGate.class),
+                        new RaceLiveEventChangeRecorder(mock(RaceLiveEventRecorder.class))
+                ),
                 fixedClock
         );
     }
@@ -106,7 +117,7 @@ class RacePlayerLeaveServiceTest {
                 RacePlayerStatus.RACING,
                 now().minusMinutes(1)
         );
-        when(currentRacePlayerService.resolveCurrentRacePlayerSession(request))
+        lenient().when(currentRacePlayerService.resolveCurrentRacePlayerSession(request))
                 .thenReturn(sessionRacePlayer);
         when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
                 .thenReturn(Optional.of(lockedRacePlayer));
@@ -119,7 +130,7 @@ class RacePlayerLeaveServiceTest {
         assertEquals(RacePlayerStatus.DISCONNECTED, lockedRacePlayer.getStatus());
         assertNull(lockedRacePlayer.getLastSeenAt());
 
-        verify(currentRacePlayerService).resolveCurrentRacePlayerSession(request);
+        verify(currentRacePlayerService).resolveCurrentRacePlayerIdentity(request);
         verify(racePlayerRepository).findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
         verify(redisPresenceService).markOffline(RACE_ID, RACE_PLAYER_ID);
         verify(racePlayerRepository).save(lockedRacePlayer);
@@ -138,7 +149,7 @@ class RacePlayerLeaveServiceTest {
                 RacePlayerStatus.FINISHED,
                 now().minusMinutes(1)
         );
-        when(currentRacePlayerService.resolveCurrentRacePlayerSession(request))
+        lenient().when(currentRacePlayerService.resolveCurrentRacePlayerSession(request))
                 .thenReturn(sessionRacePlayer);
         when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
                 .thenReturn(Optional.of(lockedRacePlayer));
@@ -167,7 +178,7 @@ class RacePlayerLeaveServiceTest {
                 RacePlayerStatus.RACING,
                 now().minusMinutes(1)
         );
-        when(currentRacePlayerService.resolveCurrentRacePlayerSession(request))
+        lenient().when(currentRacePlayerService.resolveCurrentRacePlayerSession(request))
                 .thenReturn(sessionRacePlayer);
         when(racePlayerRepository.findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID))
                 .thenReturn(Optional.of(lockedRacePlayer));

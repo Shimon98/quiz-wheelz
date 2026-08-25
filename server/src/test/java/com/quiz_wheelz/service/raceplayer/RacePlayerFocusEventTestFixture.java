@@ -12,6 +12,10 @@ import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerFocusEventRepository;
 import com.quiz_wheelz.service.question.QuestionTimeoutService;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationGate;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.time.Clock;
@@ -46,6 +50,9 @@ final class RacePlayerFocusEventTestFixture {
             mock(RacePlayerGameplayPresenceService.class);
     final QuestionTimeoutService questionTimeoutService =
             mock(QuestionTimeoutService.class);
+    final RaceLiveEventChangeRecorder liveEventChangeRecorder =
+            new RaceLiveEventChangeRecorder(mock(RaceLiveEventRecorder.class));
+    final RaceLiveMutationGate liveMutationGate = mock(RaceLiveMutationGate.class);
     final HttpServletRequest httpRequest = mock(HttpServletRequest.class);
     final RacePlayerFocusEventService service = new RacePlayerFocusEventService(
             sessionLockService,
@@ -53,12 +60,19 @@ final class RacePlayerFocusEventTestFixture {
             playerQuestionRepository,
             gameplayPresenceService,
             questionTimeoutService,
+            new RaceLiveMutationTracker(liveMutationGate, liveEventChangeRecorder),
             Clock.fixed(NOW, ZONE)
     );
 
     RacePlayer prepareNewEvent(RacePlayerStatus playerStatus, RaceStatus raceStatus) {
         RacePlayer racePlayer = createRacePlayer(playerStatus, raceStatus);
         when(sessionLockService.resolveAndLock(httpRequest)).thenReturn(racePlayer);
+        when(liveMutationGate.lockIfActive(racePlayer)).thenReturn(
+                playerStatus == RacePlayerStatus.RACING
+                        && raceStatus == RaceStatus.IN_PROGRESS
+                        ? Optional.of(racePlayer.getRace())
+                        : Optional.empty()
+        );
         when(focusEventRepository.findByRacePlayerAndClientEventId(any(), any()))
                 .thenReturn(Optional.empty());
         when(focusEventRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));

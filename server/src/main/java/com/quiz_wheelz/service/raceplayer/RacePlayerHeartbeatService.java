@@ -10,6 +10,8 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationContext;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -37,6 +39,7 @@ public class RacePlayerHeartbeatService {
     private final RacePlayerGameplayPresenceService gameplayPresenceService;
     private final RacePlayerGameplayTimelineService gameplayTimelineService;
     private final RacePlayerDisconnectService disconnectService;
+    private final RaceLiveMutationTracker liveMutationTracker;
     private final Clock clock;
 
     public RacePlayerHeartbeatService(
@@ -47,6 +50,7 @@ public class RacePlayerHeartbeatService {
             RacePlayerGameplayPresenceService gameplayPresenceService,
             RacePlayerGameplayTimelineService gameplayTimelineService,
             RacePlayerDisconnectService disconnectService,
+            RaceLiveMutationTracker liveMutationTracker,
             Clock clock
     ) {
         this.sessionLockService = Objects.requireNonNull(sessionLockService);
@@ -56,6 +60,7 @@ public class RacePlayerHeartbeatService {
         this.gameplayPresenceService = Objects.requireNonNull(gameplayPresenceService);
         this.gameplayTimelineService = Objects.requireNonNull(gameplayTimelineService);
         this.disconnectService = Objects.requireNonNull(disconnectService);
+        this.liveMutationTracker = Objects.requireNonNull(liveMutationTracker);
         this.clock = Objects.requireNonNull(clock);
     }
 
@@ -96,6 +101,28 @@ public class RacePlayerHeartbeatService {
             LocalDateTime decisionNow
     ) {
         RacePlayer racePlayer = sessionLockService.lock(identity);
+        RaceLiveMutationContext liveContext = liveMutationTracker.begin(racePlayer);
+
+        try {
+            return resolveHeartbeatWithDurableLock(
+                    identity,
+                    activityLookup,
+                    decisionInstant,
+                    decisionNow,
+                    racePlayer
+            );
+        } finally {
+            liveMutationTracker.recordChanges(liveContext, racePlayer);
+        }
+    }
+
+    private RacePlayerHeartbeatResponse resolveHeartbeatWithDurableLock(
+            RacePlayerSessionIdentity identity,
+            GameplayActivityLookup activityLookup,
+            Instant decisionInstant,
+            LocalDateTime decisionNow,
+            RacePlayer racePlayer
+    ) {
         validateHeartbeatAllowed(racePlayer);
 
         if (isReconnectWindowExpired(

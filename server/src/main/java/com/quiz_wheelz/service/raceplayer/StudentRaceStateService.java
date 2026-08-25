@@ -7,9 +7,9 @@ import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.exception.ApiException;
-import com.quiz_wheelz.exception.ErrorCode;
-import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceFinishService;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationContext;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,45 +21,57 @@ import java.util.Objects;
 @Service
 public class StudentRaceStateService {
 
-    private final CurrentRacePlayerService currentRacePlayerService;
-    private final RacePlayerRepository racePlayerRepository;
+    private final RacePlayerSessionLockService sessionLockService;
     private final RacePlayerGameplayRequestGuard gameplayRequestGuard;
     private final RaceFinishService raceFinishService;
     private final StudentRaceStandingService standingService;
     private final StudentRaceRuntimeSnapshotMapper snapshotMapper;
+    private final RaceLiveMutationTracker liveMutationTracker;
     private final Clock clock;
 
     public StudentRaceStateService(
-            CurrentRacePlayerService currentRacePlayerService,
-            RacePlayerRepository racePlayerRepository,
+            RacePlayerSessionLockService sessionLockService,
             RacePlayerGameplayRequestGuard gameplayRequestGuard,
             RaceFinishService raceFinishService,
             StudentRaceStandingService standingService,
             StudentRaceRuntimeSnapshotMapper snapshotMapper,
+            RaceLiveMutationTracker liveMutationTracker,
             Clock clock
     ) {
-        this.currentRacePlayerService = Objects.requireNonNull(currentRacePlayerService);
-        this.racePlayerRepository = Objects.requireNonNull(racePlayerRepository);
+        this.sessionLockService = Objects.requireNonNull(sessionLockService);
         this.gameplayRequestGuard = Objects.requireNonNull(gameplayRequestGuard);
         this.raceFinishService = Objects.requireNonNull(raceFinishService);
         this.standingService = Objects.requireNonNull(standingService);
         this.snapshotMapper = Objects.requireNonNull(snapshotMapper);
+        this.liveMutationTracker = Objects.requireNonNull(liveMutationTracker);
         this.clock = Objects.requireNonNull(clock);
     }
 
     @Transactional(noRollbackFor = ApiException.class)
     public StudentRaceStateResponse getRaceState(HttpServletRequest request) {
-        RacePlayer sessionRacePlayer =
-                currentRacePlayerService.resolveCurrentRacePlayerSession(request);
-
-        RacePlayer racePlayer = racePlayerRepository
-                .findLockedByIdAndRaceId(
-                        sessionRacePlayer.getId(),
-                        Objects.requireNonNull(sessionRacePlayer.getRace()).getId()
-                )
-                .orElseThrow(() -> new ApiException(ErrorCode.RACE_PLAYER_NOT_FOUND));
-
+        RacePlayer racePlayer = sessionLockService.lock(
+                sessionLockService.resolveIdentity(request)
+        );
+        RaceLiveMutationContext liveContext = liveMutationTracker.begin(racePlayer);
         Race race = Objects.requireNonNull(racePlayer.getRace());
+
+        try {
+            return resolveRaceState(
+                    racePlayer,
+                    race,
+                    liveContext
+            );
+        } catch (ApiException exception) {
+            liveMutationTracker.recordChanges(liveContext, racePlayer);
+            throw exception;
+        }
+    }
+
+    private StudentRaceStateResponse resolveRaceState(
+            RacePlayer racePlayer,
+            Race race,
+            RaceLiveMutationContext liveContext
+    ) {
 
         Instant decisionInstant = clock.instant();
         long decisionEpochMs = decisionInstant.toEpochMilli();
@@ -79,6 +91,8 @@ public class StudentRaceStateService {
                 decisionEpochMs
         );
 
+        liveMutationTracker.recordChanges(liveContext, racePlayer);
+
         return new StudentRaceStateResponse(
                 race.getId(),
                 race.getTitle(),
@@ -89,4 +103,5 @@ public class StudentRaceStateService {
                 snapshot
         );
     }
+
 }

@@ -16,6 +16,9 @@ import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationContext;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStandingResult;
@@ -40,6 +43,8 @@ public class StudentAnswerSubmissionService {
     private final RacePlayerGameplayRequestGuard gameplayRequestGuard;
     private final StudentRaceStandingService standingService;
     private final StudentRaceRuntimeSnapshotMapper snapshotMapper;
+    private final RaceLiveEventRecorder liveEventRecorder;
+    private final RaceLiveMutationTracker liveMutationTracker;
     private final Clock clock;
 
     public StudentAnswerSubmissionService(
@@ -50,6 +55,8 @@ public class StudentAnswerSubmissionService {
             RacePlayerGameplayRequestGuard gameplayRequestGuard,
             StudentRaceStandingService standingService,
             StudentRaceRuntimeSnapshotMapper snapshotMapper,
+            RaceLiveEventRecorder liveEventRecorder,
+            RaceLiveMutationTracker liveMutationTracker,
             Clock clock
     ) {
         this.playerQuestionRepository = Objects.requireNonNull(playerQuestionRepository);
@@ -59,6 +66,8 @@ public class StudentAnswerSubmissionService {
         this.gameplayRequestGuard = Objects.requireNonNull(gameplayRequestGuard);
         this.standingService = Objects.requireNonNull(standingService);
         this.snapshotMapper = Objects.requireNonNull(snapshotMapper);
+        this.liveEventRecorder = Objects.requireNonNull(liveEventRecorder);
+        this.liveMutationTracker = Objects.requireNonNull(liveMutationTracker);
         this.clock = Objects.requireNonNull(clock);
     }
 
@@ -70,6 +79,25 @@ public class StudentAnswerSubmissionService {
         validateInput(racePlayer, request);
 
         RacePlayer lockedRacePlayer = findLockedRacePlayer(racePlayer);
+        RaceLiveMutationContext liveContext = liveMutationTracker.begin(lockedRacePlayer);
+
+        try {
+            return submitLockedAnswer(
+                    lockedRacePlayer,
+                    request,
+                    liveContext
+            );
+        } catch (ApiException exception) {
+            liveMutationTracker.recordChanges(liveContext, lockedRacePlayer);
+            throw exception;
+        }
+    }
+
+    private SubmitAnswerResponse submitLockedAnswer(
+            RacePlayer lockedRacePlayer,
+            SubmitAnswerRequest request,
+            RaceLiveMutationContext liveContext
+    ) {
 
         Instant decisionInstant = clock.instant();
         LocalDateTime now = DateTimeUtils.toLocalDateTime(decisionInstant, clock.getZone());
@@ -123,6 +151,15 @@ public class StudentAnswerSubmissionService {
         question.setAnsweredAt(now);
 
         PlayerQuestion savedQuestion = playerQuestionRepository.save(question);
+
+        if (liveContext.active()) {
+            liveEventRecorder.recordQuestionAnswered(
+                    lockedRacePlayer,
+                    savedQuestion.getId(),
+                    correct
+            );
+        }
+        liveMutationTracker.recordChanges(liveContext, lockedRacePlayer);
 
         return new SubmitAnswerResponse(
                 savedQuestion.getId(),

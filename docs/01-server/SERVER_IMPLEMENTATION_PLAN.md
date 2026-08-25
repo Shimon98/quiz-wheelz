@@ -2,7 +2,7 @@
 
 **Status:** Canonical  
 **Audit date:** 2026-08-24
-**Code baseline:** `main@3b095ac47c3d0b237ce50811e53d0a6720ad3847`
+**Code baseline:** `main@c32600870902bade6c21ecec0a80777c0840e0de`
 **This document owns:** the ordered backend task list with dependencies and integration outputs
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -296,7 +296,8 @@ Enforce teacher ownership.
 - dedicated `GET /api/teacher/races/{raceId}/live-state`; the lobby `/room` contract
   remains unchanged
 - exact top-level and player DTO fields with `focusPolicy`, injected-clock
-  `serverTimeEpochMs`, and no internal/question/focus-audit/presence leakage
+  `serverTimeEpochMs`, server-owned `baseMovementUnitsPerSecond`, and no
+  internal/question/focus-audit/presence leakage
 - teacher ownership reuses the room lookup sequence and returns `RACE_NOT_FOUND` for
   missing and foreign Races
 - one RacePlayer list fetch followed by one shared pure standing calculation used by
@@ -307,12 +308,14 @@ Enforce teacher ownership.
   entity and DB levels; the GET reads without incrementing
 - query is read-only and has no Redis, presence, gameplay activity, movement,
   timeout, reconnect, re-anchor, save or event-publication dependency
-- S2-02 owns future event vocabulary/version increments and S2-03 owns SSE; the new
+- S2-02 owns durable event vocabulary/version increments and S2-03 owns SSE; the new
   column uses DEV `ddl-auto=update`, while production migrations remain Phase 6 debt.
 
 ### S2-02 — Live event model
 
-Create a focused event/snapshot vocabulary:
+**Status:** `DONE (2026-08-24)`
+
+Implemented the focused event/snapshot vocabulary:
 
 ```text
 PLAYER_JOINED
@@ -325,7 +328,41 @@ RACE_FINISHED
 
 Do not add luck/junction events until their engines exist.
 
+- durable `RaceLiveEvent` table with unique/indexed `(race_id, version)`, injected-
+  Clock epoch time and typed JSON payload
+- atomic database-owned per-Race `Race.liveEventVersion` allocation; no Redis or JVM
+  sequence
+- active player mutations use one per-Race pessimistic live-mutation gate after the
+  authoritative RacePlayer lock and before settlement or snapshot reads; therefore
+  mutation serialization order, full-player snapshot order and event-version order
+  are identical
+- WAITING heartbeat/leave/reconnect paths do not acquire the Race gate or emit
+  `PLAYER_PROGRESS_UPDATED`; join/start remain Race-first, while finalization retains
+  ordered player locks followed by the Race lock
+- existing authoritative transaction is mandatory, so domain mutation, cursor and
+  event row commit or roll back together
+- join/start/answer and visible movement/timeout/disconnect/reconnect/finalization
+  boundaries wired without moving event ownership into inner engines
+- `QUESTION_ANSWERED` precedes progress/player-finish/race-finish events from the same
+  answer
+- shared full-player authoritative ranking snapshots, including overtake changes and
+  competition ties
+- teacher live-state adds `baseMovementUnitsPerSecond` from `RaceProgressRules` and its
+  `eventVersion` exposes the highest committed durable cursor
+- student `movementUnitsPerSecond` remains the effective per-player rate; teacher
+  full-player snapshots expose durable authoritative positions without promising a
+  shared movement anchor at `serverTimeEpochMs` or event `occurredAtEpochMs`, so the
+  future projector interpolates toward server positions and never advances truth
+- bounded caller-sized repository cursor retrieval exists; S2-02 added no teacher-
+  owned event endpoint or SSE transport. The pre-existing generic `/api/sse`
+  infrastructure remains legacy, is not the durable event cursor/replay owner and
+  was not adopted or redesigned; Redis remains outside event truth and no client
+  change was added
+- DEV schema creation is safe; production migration remains Phase 6 debt.
+
 ### S2-03 — SSE stream
+
+**Status:** `FUTURE`
 
 - teacher-owned stream
 - heartbeat/comment frames

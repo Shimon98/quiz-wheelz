@@ -54,6 +54,7 @@ class TeacherRaceControllerLiveStateTest {
                 1000,
                 RaceFocusPolicy.WARN,
                 1_787_568_000_000L,
+                4.0,
                 0L,
                 List.of()
         );

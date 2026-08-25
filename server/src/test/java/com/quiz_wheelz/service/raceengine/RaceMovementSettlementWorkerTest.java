@@ -6,6 +6,11 @@ import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.repository.RaceRepository;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.PlayerLiveState;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.RaceLiveState;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationGate;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService.GameplayPresenceDecision;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -53,6 +59,12 @@ class RaceMovementSettlementWorkerTest {
     @Mock
     private RaceFinishService raceFinishService;
 
+    @Mock
+    private RaceLiveEventChangeRecorder liveEventChangeRecorder;
+
+    @Mock
+    private RaceLiveMutationGate liveMutationGate;
+
     private RaceMovementSettlementWorker worker;
 
     @BeforeEach
@@ -63,8 +75,21 @@ class RaceMovementSettlementWorkerTest {
                 gameplayPresenceService,
                 gameplayTimelineService,
                 raceFinishService,
+                liveEventChangeRecorder,
+                new RaceLiveMutationTracker(liveMutationGate, liveEventChangeRecorder),
                 Clock.fixed(FIXED_INSTANT, FIXED_ZONE)
         );
+        lenient().when(liveMutationGate.lockIfActive(any())).thenAnswer(invocation -> {
+            RacePlayer player = invocation.getArgument(0);
+            return player.getStatus() == RacePlayerStatus.RACING
+                    && player.getRace().getStatus() == RaceStatus.IN_PROGRESS
+                    ? Optional.of(player.getRace())
+                    : Optional.empty();
+        });
+        lenient().when(liveEventChangeRecorder.capturePlayer(any()))
+                .thenAnswer(invocation -> playerState(invocation.getArgument(0)));
+        lenient().when(liveEventChangeRecorder.captureRace(any()))
+                .thenAnswer(invocation -> raceState(invocation.getArgument(0)));
     }
 
     @Test
@@ -86,11 +111,25 @@ class RaceMovementSettlementWorkerTest {
 
         worker.settlePlayer(RACE_PLAYER_ID, RACE_ID);
 
+        InOrder mutationOrder = inOrder(
+                racePlayerRepository,
+                liveMutationGate,
+                gameplayPresenceService
+        );
+        mutationOrder.verify(racePlayerRepository)
+                .findLockedByIdAndRaceId(RACE_PLAYER_ID, RACE_ID);
+        mutationOrder.verify(liveMutationGate).lockIfActive(racePlayer);
+        mutationOrder.verify(gameplayPresenceService).resolve(
+                racePlayer,
+                FIXED_INSTANT
+        );
+
         verify(gameplayTimelineService).settleBackground(
                 racePlayer,
                 FIXED_INSTANT,
                 presenceDecision
         );
+        verify(liveEventChangeRecorder).recordPlayerChange(any(), any());
         verify(gameplayPresenceService, never()).recordGameplayActivity(any(), any());
     }
 
@@ -349,6 +388,10 @@ class RaceMovementSettlementWorkerTest {
         assertEquals(RacePlayerStatus.DISCONNECTED, firstAbsent.getStatus());
         assertEquals(RacePlayerStatus.DISCONNECTED, secondAbsent.getStatus());
         verify(racePlayerRepository).saveAllAndFlush(players);
+        verify(liveEventChangeRecorder).recordFinalizationPlayerChanges(
+                any(),
+                any()
+        );
         verify(raceFinishService).finishRaceIfAllPlayersTerminal(race, players);
     }
 
@@ -389,6 +432,21 @@ class RaceMovementSettlementWorkerTest {
         race.setStatus(raceStatus);
         race.setTotalDistance(1000);
         return race;
+    }
+
+    private PlayerLiveState playerState(RacePlayer racePlayer) {
+        return new PlayerLiveState(
+                racePlayer.getPosition(),
+                racePlayer.getSpeed(),
+                racePlayer.getScore(),
+                racePlayer.getStreak(),
+                racePlayer.getStatus(),
+                racePlayer.getFinishedAt()
+        );
+    }
+
+    private RaceLiveState raceState(Race race) {
+        return new RaceLiveState(race.getStatus(), race.getFinishedAt());
     }
 
     private RacePlayer createPlayer(

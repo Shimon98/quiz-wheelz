@@ -2,7 +2,7 @@
 
 **Status:** Canonical  
 **Audit date:** 2026-08-24
-**Code baseline:** `main@3b095ac47c3d0b237ce50811e53d0a6720ad3847`
+**Code baseline:** `main@c32600870902bade6c21ecec0a80777c0840e0de`
 **This document owns:** the audited implementation status across the complete product
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -52,6 +52,7 @@ teacher live race/SSE screen and results.
 | Student question panel/HUD | server data exists | panel + timer DONE (C1-02); HUD stats DONE (C1-04) | DONE |
 | Opponent vehicles/nearby players | DONE authoritative snapshot contract | planned renderer | PARTIAL |
 | Teacher live-state query | DONE | route constant only | PARTIAL feature |
+| Teacher durable live-event model | DONE | N/A | SERVER FOUNDATION |
 | Teacher SSE | PLANNED | PLANNED | PLANNED |
 | Results | basic finish logic exists | route constant only | PLANNED |
 | Junction/highway/dirt road | PLANNED | PLANNED | REQUIRED |
@@ -94,13 +95,28 @@ teacher live race/SSE screen and results.
   row DEV backfill; production migrations remain Phase 6 debt.
 - Teacher-owned `GET /api/teacher/races/{raceId}/live-state` returns a read-only,
   projector-ready recovery snapshot with race details, focus policy, injected-clock
-  server time, durable event version and all RacePlayers in shared authoritative
-  competitive order. The query uses MySQL only, performs one owned Race lookup and
-  one player-list read, and never settles movement or mutates gameplay.
+  server time, `baseMovementUnitsPerSecond` from `RaceProgressRules`, durable event
+  version and all RacePlayers in shared authoritative competitive order. The query
+  uses MySQL only, performs one owned Race lookup and one player-list read, and never
+  settles movement or mutates gameplay. The baseline is rendering/reference data,
+  unlike the student's effective per-player `movementUnitsPerSecond`; teacher
+  snapshots do not promise a shared movement anchor at the server/event timestamp,
+  so future rendering interpolates toward server positions without advancing truth.
 - `Race.liveEventVersion` maps to non-null `live_event_version` with entity and DB
-  default `0` for DEV schema backfill. S2-01 only reads it; S2-02 owns future event
-  vocabulary and increments, while S2-03 owns the SSE stream. Production migration
-  remains Phase 6 debt.
+  default `0` for DEV schema backfill. S2-02 atomically increments it in the same
+  business transaction that persists each durable `RaceLiveEvent`; committed live-
+  state `eventVersion` equals the highest committed event version.
+- The S2-02 durable vocabulary is exactly `PLAYER_JOINED`, `RACE_STARTED`,
+  `QUESTION_ANSWERED`, `PLAYER_PROGRESS_UPDATED`, `PLAYER_FINISHED` and
+  `RACE_FINISHED`. Progress and terminal payloads reuse the shared full-player
+  authoritative rank snapshot. Active mutations are serialized by a per-Race
+  pessimistic gate after the player lock, so higher event versions cannot regress a
+  committed player state or rank from a lower version. WAITING lifecycle paths do not
+  acquire that gate or emit progress events. Redis is not event truth. S2-02 adds no
+  teacher-owned durable-event API or SSE transport. The repository's legacy generic
+  `/api/sse` infrastructure is not the S2 event source, cursor/replay contract or an
+  adopted S2 transport; S2-03 remains responsible for that transport. Production
+  migration remains Phase 6 debt.
 
 ## Client implemented
 
