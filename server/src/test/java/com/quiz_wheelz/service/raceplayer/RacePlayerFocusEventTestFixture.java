@@ -13,7 +13,9 @@ import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerFocusEventRepository;
 import com.quiz_wheelz.service.question.QuestionTimeoutService;
 import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
 import com.quiz_wheelz.service.liveevent.RaceLiveMutationGate;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.time.Clock;
@@ -49,7 +51,7 @@ final class RacePlayerFocusEventTestFixture {
     final QuestionTimeoutService questionTimeoutService =
             mock(QuestionTimeoutService.class);
     final RaceLiveEventChangeRecorder liveEventChangeRecorder =
-            mock(RaceLiveEventChangeRecorder.class);
+            new RaceLiveEventChangeRecorder(mock(RaceLiveEventRecorder.class));
     final RaceLiveMutationGate liveMutationGate = mock(RaceLiveMutationGate.class);
     final HttpServletRequest httpRequest = mock(HttpServletRequest.class);
     final RacePlayerFocusEventService service = new RacePlayerFocusEventService(
@@ -58,8 +60,7 @@ final class RacePlayerFocusEventTestFixture {
             playerQuestionRepository,
             gameplayPresenceService,
             questionTimeoutService,
-            liveEventChangeRecorder,
-            liveMutationGate,
+            new RaceLiveMutationTracker(liveMutationGate, liveEventChangeRecorder),
             Clock.fixed(NOW, ZONE)
     );
 

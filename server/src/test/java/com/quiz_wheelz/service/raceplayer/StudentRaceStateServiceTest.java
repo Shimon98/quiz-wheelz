@@ -11,7 +11,10 @@ import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceFinishService;
 import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
 import com.quiz_wheelz.service.liveevent.RaceLiveMutationGate;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerSessionIdentity;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
@@ -337,8 +340,10 @@ class StudentRaceStateServiceTest {
                         new RaceStandingCalculator()
                 ),
                 new StudentRaceRuntimeSnapshotMapper(),
-                mock(com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.class),
-                liveMutationGate,
+                new RaceLiveMutationTracker(
+                        liveMutationGate,
+                        new RaceLiveEventChangeRecorder(mock(RaceLiveEventRecorder.class))
+                ),
                 Clock.fixed(FIXED_INSTANT, FIXED_ZONE)
         );
     }

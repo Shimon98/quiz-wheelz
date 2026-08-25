@@ -26,6 +26,7 @@ import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
 import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -75,8 +76,7 @@ final class StudentQuestionDeliveryTestFixture {
                     playerQuestionPersistenceService,
                     studentQuestionResponseMapper,
                     gameplayRequestGuard,
-                    liveEventChangeRecorder,
-                    liveMutationGate,
+                    new RaceLiveMutationTracker(liveMutationGate, liveEventChangeRecorder),
                     Clock.fixed(FIXED_INSTANT, FIXED_ZONE)
             );
 

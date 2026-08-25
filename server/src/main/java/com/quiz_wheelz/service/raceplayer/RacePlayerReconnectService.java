@@ -7,10 +7,8 @@ import com.quiz_wheelz.enums.RacePlayerReconnectOutcome;
 import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
-import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
-import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.PlayerLiveState;
-import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.RaceLiveState;
-import com.quiz_wheelz.service.liveevent.RaceLiveMutationGate;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationContext;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
@@ -28,8 +26,7 @@ public class RacePlayerReconnectService {
     private final RacePlayerGameplayPresenceService gameplayPresenceService;
     private final RacePlayerGameplayTimelineService gameplayTimelineService;
     private final RacePlayerDisconnectService disconnectService;
-    private final RaceLiveEventChangeRecorder liveEventChangeRecorder;
-    private final RaceLiveMutationGate liveMutationGate;
+    private final RaceLiveMutationTracker liveMutationTracker;
     private final Clock clock;
 
     public RacePlayerReconnectService(
@@ -37,38 +34,26 @@ public class RacePlayerReconnectService {
             RacePlayerGameplayPresenceService gameplayPresenceService,
             RacePlayerGameplayTimelineService gameplayTimelineService,
             RacePlayerDisconnectService disconnectService,
-            RaceLiveEventChangeRecorder liveEventChangeRecorder,
-            RaceLiveMutationGate liveMutationGate,
+            RaceLiveMutationTracker liveMutationTracker,
             Clock clock
     ) {
         this.sessionLockService = Objects.requireNonNull(sessionLockService);
         this.gameplayPresenceService = Objects.requireNonNull(gameplayPresenceService);
         this.gameplayTimelineService = Objects.requireNonNull(gameplayTimelineService);
         this.disconnectService = Objects.requireNonNull(disconnectService);
-        this.liveEventChangeRecorder = Objects.requireNonNull(liveEventChangeRecorder);
-        this.liveMutationGate = Objects.requireNonNull(liveMutationGate);
+        this.liveMutationTracker = Objects.requireNonNull(liveMutationTracker);
         this.clock = Objects.requireNonNull(clock);
     }
 
     @Transactional
     public RacePlayerReconnectResponse reconnect(HttpServletRequest request) {
         RacePlayer racePlayer = sessionLockService.resolveAndLock(request);
-        Race activeRace = liveMutationGate.lockIfActive(racePlayer).orElse(null);
-        PlayerLiveState playerBefore = activeRace == null
-                ? null
-                : liveEventChangeRecorder.capturePlayer(racePlayer);
-        Race race = Objects.requireNonNull(racePlayer.getRace());
-        RaceLiveState raceBefore = activeRace == null
-                ? null
-                : liveEventChangeRecorder.captureRace(activeRace);
+        RaceLiveMutationContext liveContext = liveMutationTracker.begin(racePlayer);
 
         try {
             return resolveReconnect(racePlayer);
         } finally {
-            if (activeRace != null) {
-                liveEventChangeRecorder.recordPlayerChange(playerBefore, racePlayer);
-                liveEventChangeRecorder.recordRaceChange(raceBefore, activeRace);
-            }
+            liveMutationTracker.recordChanges(liveContext, racePlayer);
         }
     }
 

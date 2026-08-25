@@ -14,8 +14,7 @@ import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerFocusEventRepository;
-import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
-import com.quiz_wheelz.service.liveevent.RaceLiveMutationGate;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import com.quiz_wheelz.service.question.QuestionTimeoutService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -153,8 +152,7 @@ class RacePlayerFocusEventIgnoredLifecycleTest {
                         PlayerQuestionRepository.class,
                         RacePlayerGameplayPresenceService.class,
                         QuestionTimeoutService.class,
-                        RaceLiveEventChangeRecorder.class,
-                        RaceLiveMutationGate.class,
+                        RaceLiveMutationTracker.class,
                         Clock.class
                 ),
                 dependencyTypes

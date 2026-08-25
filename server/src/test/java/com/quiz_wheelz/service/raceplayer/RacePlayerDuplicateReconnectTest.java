@@ -72,8 +72,10 @@ class RacePlayerDuplicateReconnectTest {
                 gameplayPresenceService,
                 timelineService,
                 disconnectService,
-                mock(com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.class),
-                mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class),
+                new com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker(
+                        mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class),
+                        mock(com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.class)
+                ),
                 clock
         );
     }

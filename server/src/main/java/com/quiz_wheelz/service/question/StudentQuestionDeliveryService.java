@@ -15,10 +15,8 @@ import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
-import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
-import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.PlayerLiveState;
-import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.RaceLiveState;
-import com.quiz_wheelz.service.liveevent.RaceLiveMutationGate;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationContext;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import org.springframework.stereotype.Service;
@@ -41,8 +39,7 @@ public class StudentQuestionDeliveryService {
     private final PlayerQuestionPersistenceService playerQuestionPersistenceService;
     private final StudentQuestionResponseMapper studentQuestionResponseMapper;
     private final RacePlayerGameplayRequestGuard gameplayRequestGuard;
-    private final RaceLiveEventChangeRecorder liveEventChangeRecorder;
-    private final RaceLiveMutationGate liveMutationGate;
+    private final RaceLiveMutationTracker liveMutationTracker;
     private final Clock clock;
 
     public StudentQuestionDeliveryService(
@@ -54,8 +51,7 @@ public class StudentQuestionDeliveryService {
             PlayerQuestionPersistenceService playerQuestionPersistenceService,
             StudentQuestionResponseMapper studentQuestionResponseMapper,
             RacePlayerGameplayRequestGuard gameplayRequestGuard,
-            RaceLiveEventChangeRecorder liveEventChangeRecorder,
-            RaceLiveMutationGate liveMutationGate,
+            RaceLiveMutationTracker liveMutationTracker,
             Clock clock
     ) {
         this.racePlayerRepository = Objects.requireNonNull(racePlayerRepository);
@@ -66,55 +62,25 @@ public class StudentQuestionDeliveryService {
         this.playerQuestionPersistenceService = Objects.requireNonNull(playerQuestionPersistenceService);
         this.studentQuestionResponseMapper = Objects.requireNonNull(studentQuestionResponseMapper);
         this.gameplayRequestGuard = Objects.requireNonNull(gameplayRequestGuard);
-        this.liveEventChangeRecorder = Objects.requireNonNull(liveEventChangeRecorder);
-        this.liveMutationGate = Objects.requireNonNull(liveMutationGate);
+        this.liveMutationTracker = Objects.requireNonNull(liveMutationTracker);
         this.clock = Objects.requireNonNull(clock);
     }
 
     @Transactional(noRollbackFor = ApiException.class)
     public StudentQuestionResponse getOrCreateCurrentQuestion(RacePlayer racePlayer) {
         RacePlayer lockedRacePlayer = findLockedRacePlayer(racePlayer);
-        Race activeRace = liveMutationGate.lockIfActive(lockedRacePlayer).orElse(null);
-        PlayerLiveState playerBefore = activeRace == null
-                ? null
-                : liveEventChangeRecorder.capturePlayer(lockedRacePlayer);
-        RaceLiveState raceBefore = activeRace == null
-                ? null
-                : liveEventChangeRecorder.captureRace(activeRace);
+        RaceLiveMutationContext liveContext = liveMutationTracker.begin(lockedRacePlayer);
 
         try {
             StudentQuestionResponse response = resolveCurrentQuestion(
                     lockedRacePlayer
             );
-            recordLiveChanges(
-                    playerBefore,
-                    raceBefore,
-                    lockedRacePlayer,
-                    activeRace
-            );
+            liveMutationTracker.recordChanges(liveContext, lockedRacePlayer);
             return response;
         } catch (ApiException exception) {
-            recordLiveChanges(
-                    playerBefore,
-                    raceBefore,
-                    lockedRacePlayer,
-                    activeRace
-            );
+            liveMutationTracker.recordChanges(liveContext, lockedRacePlayer);
             throw exception;
         }
-    }
-
-    private void recordLiveChanges(
-            PlayerLiveState playerBefore,
-            RaceLiveState raceBefore,
-            RacePlayer racePlayer,
-            Race race
-    ) {
-        if (race == null) {
-            return;
-        }
-        liveEventChangeRecorder.recordPlayerChange(playerBefore, racePlayer);
-        liveEventChangeRecorder.recordRaceChange(raceBefore, race);
     }
 
     private StudentQuestionResponse resolveCurrentQuestion(RacePlayer lockedRacePlayer) {

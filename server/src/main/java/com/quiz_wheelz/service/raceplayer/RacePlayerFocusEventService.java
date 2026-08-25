@@ -18,10 +18,8 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerFocusEventRepository;
-import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
-import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.PlayerLiveState;
-import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.RaceLiveState;
-import com.quiz_wheelz.service.liveevent.RaceLiveMutationGate;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationContext;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import com.quiz_wheelz.service.question.QuestionTimeoutService;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,8 +41,7 @@ public class RacePlayerFocusEventService {
     private final PlayerQuestionRepository playerQuestionRepository;
     private final RacePlayerGameplayPresenceService gameplayPresenceService;
     private final QuestionTimeoutService questionTimeoutService;
-    private final RaceLiveEventChangeRecorder liveEventChangeRecorder;
-    private final RaceLiveMutationGate liveMutationGate;
+    private final RaceLiveMutationTracker liveMutationTracker;
     private final Clock clock;
 
     public RacePlayerFocusEventService(
@@ -53,8 +50,7 @@ public class RacePlayerFocusEventService {
             PlayerQuestionRepository playerQuestionRepository,
             RacePlayerGameplayPresenceService gameplayPresenceService,
             QuestionTimeoutService questionTimeoutService,
-            RaceLiveEventChangeRecorder liveEventChangeRecorder,
-            RaceLiveMutationGate liveMutationGate,
+            RaceLiveMutationTracker liveMutationTracker,
             Clock clock
     ) {
         this.sessionLockService = Objects.requireNonNull(sessionLockService);
@@ -62,8 +58,7 @@ public class RacePlayerFocusEventService {
         this.playerQuestionRepository = Objects.requireNonNull(playerQuestionRepository);
         this.gameplayPresenceService = Objects.requireNonNull(gameplayPresenceService);
         this.questionTimeoutService = Objects.requireNonNull(questionTimeoutService);
-        this.liveEventChangeRecorder = Objects.requireNonNull(liveEventChangeRecorder);
-        this.liveMutationGate = Objects.requireNonNull(liveMutationGate);
+        this.liveMutationTracker = Objects.requireNonNull(liveMutationTracker);
         this.clock = Objects.requireNonNull(clock);
     }
 
@@ -73,7 +68,7 @@ public class RacePlayerFocusEventService {
             RacePlayerFocusEventRequest request
     ) {
         RacePlayer racePlayer = sessionLockService.resolveAndLock(httpRequest);
-        Race activeRace = liveMutationGate.lockIfActive(racePlayer).orElse(null);
+        RaceLiveMutationContext liveContext = liveMutationTracker.begin(racePlayer);
         String clientEventId = request.getEventId().toString();
 
         Optional<RacePlayerFocusEvent> existing = focusEventRepository
@@ -83,13 +78,7 @@ public class RacePlayerFocusEventService {
             return replay(existing.get(), request.getType());
         }
 
-        PlayerLiveState playerBefore = activeRace == null
-                ? null
-                : liveEventChangeRecorder.capturePlayer(racePlayer);
         Race race = Objects.requireNonNull(racePlayer.getRace());
-        RaceLiveState raceBefore = activeRace == null
-                ? null
-                : liveEventChangeRecorder.captureRace(activeRace);
 
         Instant decisionInstant = clock.instant();
         LocalDateTime decisionTime = DateTimeUtils.toLocalDateTime(
@@ -117,10 +106,7 @@ public class RacePlayerFocusEventService {
                 decisionTime
         );
 
-        if (activeRace != null) {
-            liveEventChangeRecorder.recordPlayerChange(playerBefore, racePlayer);
-            liveEventChangeRecorder.recordRaceChange(raceBefore, activeRace);
-        }
+        liveMutationTracker.recordChanges(liveContext, racePlayer);
 
         return toResponse(event);
     }

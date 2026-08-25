@@ -7,7 +7,6 @@ import com.quiz_wheelz.dto.raceengine.AnswerRaceImpact;
 import com.quiz_wheelz.dto.raceplayer.StudentRaceRuntimeSnapshotResponse;
 import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.entitys.PlayerQuestionChoice;
-import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
 import com.quiz_wheelz.enums.RacePlayerStatus;
@@ -17,11 +16,9 @@ import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
-import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
-import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.PlayerLiveState;
-import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.RaceLiveState;
 import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
-import com.quiz_wheelz.service.liveevent.RaceLiveMutationGate;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationContext;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStandingResult;
@@ -47,8 +44,7 @@ public class StudentAnswerSubmissionService {
     private final StudentRaceStandingService standingService;
     private final StudentRaceRuntimeSnapshotMapper snapshotMapper;
     private final RaceLiveEventRecorder liveEventRecorder;
-    private final RaceLiveEventChangeRecorder liveEventChangeRecorder;
-    private final RaceLiveMutationGate liveMutationGate;
+    private final RaceLiveMutationTracker liveMutationTracker;
     private final Clock clock;
 
     public StudentAnswerSubmissionService(
@@ -60,8 +56,7 @@ public class StudentAnswerSubmissionService {
             StudentRaceStandingService standingService,
             StudentRaceRuntimeSnapshotMapper snapshotMapper,
             RaceLiveEventRecorder liveEventRecorder,
-            RaceLiveEventChangeRecorder liveEventChangeRecorder,
-            RaceLiveMutationGate liveMutationGate,
+            RaceLiveMutationTracker liveMutationTracker,
             Clock clock
     ) {
         this.playerQuestionRepository = Objects.requireNonNull(playerQuestionRepository);
@@ -72,8 +67,7 @@ public class StudentAnswerSubmissionService {
         this.standingService = Objects.requireNonNull(standingService);
         this.snapshotMapper = Objects.requireNonNull(snapshotMapper);
         this.liveEventRecorder = Objects.requireNonNull(liveEventRecorder);
-        this.liveEventChangeRecorder = Objects.requireNonNull(liveEventChangeRecorder);
-        this.liveMutationGate = Objects.requireNonNull(liveMutationGate);
+        this.liveMutationTracker = Objects.requireNonNull(liveMutationTracker);
         this.clock = Objects.requireNonNull(clock);
     }
 
@@ -85,29 +79,16 @@ public class StudentAnswerSubmissionService {
         validateInput(racePlayer, request);
 
         RacePlayer lockedRacePlayer = findLockedRacePlayer(racePlayer);
-        Race activeRace = liveMutationGate.lockIfActive(lockedRacePlayer).orElse(null);
-        PlayerLiveState playerBefore = activeRace == null
-                ? null
-                : liveEventChangeRecorder.capturePlayer(lockedRacePlayer);
-        RaceLiveState raceBefore = activeRace == null
-                ? null
-                : liveEventChangeRecorder.captureRace(activeRace);
+        RaceLiveMutationContext liveContext = liveMutationTracker.begin(lockedRacePlayer);
 
         try {
             return submitLockedAnswer(
                     lockedRacePlayer,
                     request,
-                    activeRace,
-                    playerBefore,
-                    raceBefore
+                    liveContext
             );
         } catch (ApiException exception) {
-            recordLiveChanges(
-                    activeRace,
-                    playerBefore,
-                    raceBefore,
-                    lockedRacePlayer
-            );
+            liveMutationTracker.recordChanges(liveContext, lockedRacePlayer);
             throw exception;
         }
     }
@@ -115,9 +96,7 @@ public class StudentAnswerSubmissionService {
     private SubmitAnswerResponse submitLockedAnswer(
             RacePlayer lockedRacePlayer,
             SubmitAnswerRequest request,
-            Race activeRace,
-            PlayerLiveState playerBefore,
-            RaceLiveState raceBefore
+            RaceLiveMutationContext liveContext
     ) {
 
         Instant decisionInstant = clock.instant();
@@ -173,19 +152,14 @@ public class StudentAnswerSubmissionService {
 
         PlayerQuestion savedQuestion = playerQuestionRepository.save(question);
 
-        if (activeRace != null) {
+        if (liveContext.active()) {
             liveEventRecorder.recordQuestionAnswered(
                     lockedRacePlayer,
                     savedQuestion.getId(),
                     correct
             );
         }
-        recordLiveChanges(
-                activeRace,
-                playerBefore,
-                raceBefore,
-                lockedRacePlayer
-        );
+        liveMutationTracker.recordChanges(liveContext, lockedRacePlayer);
 
         return new SubmitAnswerResponse(
                 savedQuestion.getId(),
@@ -197,19 +171,6 @@ public class StudentAnswerSubmissionService {
                 DateTimeUtils.toEpochMilli(savedQuestion.getExpiresAt(), clock.getZone()),
                 StudentAnswerRaceImpactResponse.from(answerRaceImpact, snapshot)
         );
-    }
-
-    private void recordLiveChanges(
-            Race activeRace,
-            PlayerLiveState playerBefore,
-            RaceLiveState raceBefore,
-            RacePlayer racePlayer
-    ) {
-        if (activeRace == null) {
-            return;
-        }
-        liveEventChangeRecorder.recordPlayerChange(playerBefore, racePlayer);
-        liveEventChangeRecorder.recordRaceChange(raceBefore, activeRace);
     }
 
     private void validateInput(

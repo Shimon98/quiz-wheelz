@@ -16,6 +16,7 @@ import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
 import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
 import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.service.raceplayer.RaceStandingCalculator;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
@@ -67,8 +68,7 @@ final class StudentAnswerSubmissionTestFixture {
                     ),
                     new StudentRaceRuntimeSnapshotMapper(),
                     liveEventRecorder,
-                    liveEventChangeRecorder,
-                    liveMutationGate,
+                    new RaceLiveMutationTracker(liveMutationGate, liveEventChangeRecorder),
                     Clock.fixed(FIXED_INSTANT, FIXED_ZONE)
             );
 

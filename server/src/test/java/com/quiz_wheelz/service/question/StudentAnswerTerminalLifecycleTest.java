@@ -113,8 +113,10 @@ class StudentAnswerTerminalLifecycleTest {
                 standingService,
                 new StudentRaceRuntimeSnapshotMapper(),
                 mock(com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder.class),
-                mock(com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.class),
-                mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class),
+                new com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker(
+                        mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class),
+                        mock(com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.class)
+                ),
                 Clock.fixed(NOW, ZoneId.of("UTC"))
         );
     }

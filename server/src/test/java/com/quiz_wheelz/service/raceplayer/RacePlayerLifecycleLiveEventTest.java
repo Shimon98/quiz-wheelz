@@ -7,6 +7,7 @@ import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
 import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
 import com.quiz_wheelz.service.liveevent.RaceLiveMutationGate;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,8 +79,7 @@ class RacePlayerLifecycleLiveEventTest {
         RacePlayerLeaveService service = new RacePlayerLeaveService(
                 sessionLockService,
                 disconnectService,
-                changeRecorder,
-                liveMutationGate,
+                new RaceLiveMutationTracker(liveMutationGate, changeRecorder),
                 fixedClock()
         );
 
@@ -121,8 +121,7 @@ class RacePlayerLifecycleLiveEventTest {
                 presenceService,
                 timelineService,
                 disconnectService,
-                changeRecorder,
-                liveMutationGate,
+                new RaceLiveMutationTracker(liveMutationGate, changeRecorder),
                 fixedClock()
         );
 

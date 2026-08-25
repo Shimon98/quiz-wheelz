@@ -13,6 +13,10 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationGate;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -93,8 +97,10 @@ class RacePlayerLeaveServiceTest {
         service = new RacePlayerLeaveService(
                 lockService,
                 disconnectService,
-                mock(com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.class),
-                mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class),
+                new RaceLiveMutationTracker(
+                        mock(RaceLiveMutationGate.class),
+                        new RaceLiveEventChangeRecorder(mock(RaceLiveEventRecorder.class))
+                ),
                 fixedClock
         );
     }

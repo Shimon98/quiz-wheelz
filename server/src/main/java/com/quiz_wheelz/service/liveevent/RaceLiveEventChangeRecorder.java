@@ -7,6 +7,8 @@ import com.quiz_wheelz.enums.RaceStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -38,15 +40,32 @@ public class RaceLiveEventChangeRecorder {
     public void recordPlayerChange(PlayerLiveState before, RacePlayer racePlayer) {
         Objects.requireNonNull(before);
         Objects.requireNonNull(racePlayer);
-        PlayerLiveState after = capturePlayer(racePlayer);
+        recordPlayerChange(resolvePlayerChange(before, racePlayer), racePlayer);
+    }
 
-        if (before.status() != RacePlayerStatus.FINISHED
-                && after.status() == RacePlayerStatus.FINISHED) {
-            eventRecorder.recordPlayerFinished(racePlayer);
-        } else if (!before.equals(after)) {
-            eventRecorder.recordPlayerProgressUpdated(
-                    Objects.requireNonNull(racePlayer.getRace())
-            );
+    public void recordFinalizationPlayerChanges(
+            Race race,
+            List<PlayerChange> changes
+    ) {
+        Objects.requireNonNull(race);
+        Objects.requireNonNull(changes);
+        List<RacePlayer> finishedPlayers = new ArrayList<>();
+        boolean progressChanged = false;
+
+        for (PlayerChange change : changes) {
+            Objects.requireNonNull(change);
+            RacePlayer racePlayer = change.racePlayer();
+            PlayerChangeType type = resolvePlayerChange(change.before(), racePlayer);
+            if (type == PlayerChangeType.FINISHED) {
+                finishedPlayers.add(racePlayer);
+            } else if (type == PlayerChangeType.PROGRESS) {
+                progressChanged = true;
+            }
+        }
+
+        finishedPlayers.forEach(eventRecorder::recordPlayerFinished);
+        if (progressChanged) {
+            eventRecorder.recordPlayerProgressUpdated(race);
         }
     }
 
@@ -58,6 +77,42 @@ public class RaceLiveEventChangeRecorder {
         if (before.status() != RaceStatus.FINISHED
                 && after.status() == RaceStatus.FINISHED) {
             eventRecorder.recordRaceFinished(race);
+        }
+    }
+
+    private PlayerChangeType resolvePlayerChange(
+            PlayerLiveState before,
+            RacePlayer racePlayer
+    ) {
+        Objects.requireNonNull(before);
+        PlayerLiveState after = capturePlayer(racePlayer);
+        if (before.status() != RacePlayerStatus.FINISHED
+                && after.status() == RacePlayerStatus.FINISHED) {
+            return PlayerChangeType.FINISHED;
+        }
+        return before.equals(after)
+                ? PlayerChangeType.NONE
+                : PlayerChangeType.PROGRESS;
+    }
+
+    private void recordPlayerChange(
+            PlayerChangeType type,
+            RacePlayer racePlayer
+    ) {
+        if (type == PlayerChangeType.FINISHED) {
+            eventRecorder.recordPlayerFinished(racePlayer);
+        } else if (type == PlayerChangeType.PROGRESS) {
+            eventRecorder.recordPlayerProgressUpdated(
+                    Objects.requireNonNull(racePlayer.getRace())
+            );
+        }
+    }
+
+    public record PlayerChange(PlayerLiveState before, RacePlayer racePlayer) {
+
+        public PlayerChange {
+            Objects.requireNonNull(before);
+            Objects.requireNonNull(racePlayer);
         }
     }
 
@@ -75,5 +130,11 @@ public class RaceLiveEventChangeRecorder {
             RaceStatus status,
             LocalDateTime finishedAt
     ) {
+    }
+
+    private enum PlayerChangeType {
+        NONE,
+        PROGRESS,
+        FINISHED
     }
 }
