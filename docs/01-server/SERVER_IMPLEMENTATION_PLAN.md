@@ -362,15 +362,27 @@ Do not add luck/junction events until their engines exist.
 
 ### S2-03 — SSE stream
 
-**Status:** `FUTURE`
+**Status:** `DONE (2026-08-25)`
 
-- teacher-owned stream
-- heartbeat/comment frames
-- event IDs or version cursor
-- reconnection support
-- initial query remains the recovery path
-- disconnect cleanup
-- concurrency tests.
+- dedicated teacher-owned `GET /api/teacher/races/{raceId}/events/stream`
+- raw `afterVersion`/`Last-Event-ID` binding with header-source precedence before
+  parsing, cursor `0` support and focused invalid-selected-cursor error 3029
+- existing envelope sent as SSE data with durable version as the sole SSE ID
+- shared injected-`ObjectMapper` payload codec for all six write/replay types
+- committed MySQL Race-scoped replay in ascending cursor order, bounded to 100 rows
+  per read with no unpaged or page-number continuation
+- reusable teacher Race access owner for room, live-state, start locking and stream
+- process-local server-identified registry with independent per-connection cursors
+- one-second dispatcher on a dedicated non-default single-thread teacher-live
+  scheduler, isolated from authoritative gameplay maintenance scheduling
+- per-connection dispatch lock and post-send-only advancement, with deterministic
+  overlapping-dispatch proof of one replay, one send and one cursor advancement
+- 15-second comment-only heartbeat with no ID, durable payload, persistence or Redis
+- idempotent completion, timeout, error and send-failure cleanup
+- live-state remains the complete initial/recovery path; legacy `/api/sse` remains
+  unchanged and unused by S2; cross-node fanout remains later production work
+- deterministic cursor, replay, codec, isolation, failure, cleanup, heartbeat and
+  snapshot-to-stream race tests.
 
 **Blocks:** client teacher live screen.
 

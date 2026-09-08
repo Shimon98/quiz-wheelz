@@ -1,8 +1,8 @@
 # Architecture and Contracts
 
 **Status:** Canonical  
-**Audit date:** 2026-08-24
-**Code baseline:** `main@c32600870902bade6c21ecec0a80777c0840e0de`
+**Audit date:** 2026-08-25
+**Code baseline:** `main@ef3cd3bac2fb10ee2f7a7e9586571f70e7127ae3`
 **This document owns:** the cross-system architecture, data ownership, API boundaries and runtime contracts
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -17,7 +17,7 @@ React application
   └─ Student race world (manual PixiJS)
             │
             │ REST commands/queries + cookies
-            │ future teacher SSE stream
+            │ teacher durable-event SSE stream
             ▼
 Spring Boot
   ├─ Security/session resolution
@@ -135,17 +135,15 @@ GET  /api/teacher/races
 POST /api/teacher/races
 GET  /api/teacher/races/{raceId}/room
 GET  /api/teacher/races/{raceId}/live-state
+GET  /api/teacher/races/{raceId}/events/stream
 POST /api/teacher/races/{raceId}/start
 ```
 
 Planned:
 
 ```http
-GET /api/teacher/races/{raceId}/events
 GET /api/teacher/races/{raceId}/results
 ```
-
-SSE will use a dedicated teacher-owned stream path decided by the server plan.
 
 ### Teacher live-state snapshot
 
@@ -178,7 +176,7 @@ The response time is Unix epoch milliseconds from the shared injected `Clock`.
 by that baseline).
 `eventVersion` reads `Race.liveEventVersion`, persisted as non-null
 `live_event_version` with entity and DB default `0`. The GET never increments it;
-S2-02 event writes increment it atomically, and S2-03 owns future SSE delivery.
+S2-02 event writes increment it atomically, and S2-03 delivers committed events.
 The snapshot performs one player-list read and has no Redis, presence, activity,
 movement settlement, timeout, reconnect, re-anchor, save or publication behavior.
 Teacher live-state and full-player event payloads are authoritative durable state,
@@ -225,14 +223,31 @@ the shared `RaceStandingCalculator`; competition ties are preserved and the clie
 does not recalculate affected ranks. `QUESTION_ANSWERED` exposes only
 `racePlayerId`, `questionId` and `correct`.
 
-The repository can read bounded caller-sized slices of committed events after a
-version in ascending order, but S2-02 adds no teacher-owned event controller or SSE
-transport. The repository already contains legacy generic SSE infrastructure under
-`/api/sse`; it is not authoritative for S2 events, does not own their cursor/replay
-contract and is not adopted or redesigned here. The live-state GET remains the
-complete initial/recovery snapshot. S2-03 will add teacher-owned transport over
-committed events. Redis remains presence/runtime infrastructure only. DEV schema
-update can create the event table; the production migration remains Phase 6 debt.
+The repository reads bounded committed events after a version in ascending order.
+`GET /api/teacher/races/{raceId}/events/stream` requires TEACHER role, Race ownership
+and a recovery cursor from `afterVersion` or `Last-Event-ID`. Both arrive as raw text;
+the header source takes precedence before parsing, so a valid header ignores even a
+malformed fallback query. Cursor `0` is valid. Missing, blank, malformed, negative or
+future selected cursors are rejected with `RACE_LIVE_EVENT_CURSOR_INVALID`.
+
+The initial lifecycle is `GET live-state → eventVersion V → connect after V`.
+Committed events written between the snapshot and stream registration are replayed
+from MySQL. Each event uses its durable version as SSE `id` and the existing envelope
+as `data`; no independent SSE event name exists. Replay reads at most 100 Race-scoped
+rows per connection/tick and continues by the last successfully sent version, never
+by page number. A successful send alone advances that connection's cursor.
+
+Connections are process-local, server-identified and independent. A one-second
+dispatcher reads committed MySQL truth only on a dedicated single-thread teacher-live
+scheduler that is not a default scheduling candidate. Authoritative movement,
+question cleanup and finalization work therefore remain on the normal gameplay
+scheduler path. Idle connections receive a 15-second
+`: heartbeat` comment with no ID, payload, persistence or cursor effect. Completion,
+timeout, error and failed send remove the connection idempotently. The live-state GET
+remains the complete recovery snapshot; no SSE snapshot event exists. The legacy
+generic `/api/sse` implementation is unchanged, unused by this transport and not S2
+event truth. Redis remains presence/runtime infrastructure only. Cross-node fanout
+and production migrations remain later production work.
 
 ### RacePlayer
 

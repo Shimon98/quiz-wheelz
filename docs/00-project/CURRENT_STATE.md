@@ -1,8 +1,8 @@
 # Project Current State
 
 **Status:** Canonical  
-**Audit date:** 2026-08-24
-**Code baseline:** `main@c32600870902bade6c21ecec0a80777c0840e0de`
+**Audit date:** 2026-08-25
+**Code baseline:** `main@ef3cd3bac2fb10ee2f7a7e9586571f70e7127ae3`
 **This document owns:** the audited implementation status across the complete product
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -26,8 +26,7 @@ with time, correct answers boost speed and add progress bonuses, and timeouts
 slow more than wrong answers. Real absence freezes position without pausing
 question deadlines; reconnect never awards offline catch-up, and absent
 players do not keep the class race open. The main missing product slices are
-opponents, real assets, and the
-teacher live race/SSE screen and results.
+opponents, real assets, and the teacher live race client screen and results.
 
 ## Product status board
 
@@ -53,7 +52,7 @@ teacher live race/SSE screen and results.
 | Opponent vehicles/nearby players | DONE authoritative snapshot contract | planned renderer | PARTIAL |
 | Teacher live-state query | DONE | route constant only | PARTIAL feature |
 | Teacher durable live-event model | DONE | N/A | SERVER FOUNDATION |
-| Teacher SSE | PLANNED | PLANNED | PLANNED |
+| Teacher SSE | DONE | PLANNED | PARTIAL feature |
 | Results | basic finish logic exists | route constant only | PLANNED |
 | Junction/highway/dirt road | PLANNED | PLANNED | REQUIRED |
 | Fair luck/power-ups | foundation ideas only | PLANNED | REQUIRED |
@@ -112,11 +111,22 @@ teacher live race/SSE screen and results.
   authoritative rank snapshot. Active mutations are serialized by a per-Race
   pessimistic gate after the player lock, so higher event versions cannot regress a
   committed player state or rank from a lower version. WAITING lifecycle paths do not
-  acquire that gate or emit progress events. Redis is not event truth. S2-02 adds no
-  teacher-owned durable-event API or SSE transport. The repository's legacy generic
-  `/api/sse` infrastructure is not the S2 event source, cursor/replay contract or an
-  adopted S2 transport; S2-03 remains responsible for that transport. Production
-  migration remains Phase 6 debt.
+  acquire that gate or emit progress events. Redis is not event truth.
+- Teacher-owned `GET /api/teacher/races/{raceId}/events/stream` delivers committed
+  durable envelopes after a required version cursor. Raw `Last-Event-ID` selection
+  takes precedence before the fallback `afterVersion` query is parsed; malformed
+  selected, negative, missing and future cursors return focused HTTP 400 error
+  `RACE_LIVE_EVENT_CURSOR_INVALID`. Replay is MySQL-backed, Race-
+  scoped, ascending and bounded to 100 events per read. Each connection has a server-
+  generated identity and independent cursor, which advances only after a successful
+  send. A one-second dispatcher runs on its own focused single-thread scheduler so
+  transport DB/network work cannot occupy the gameplay maintenance scheduler.
+  Fifteen-second comment-only heartbeats keep idle transports alive, and completion,
+  timeout, error or send
+  failure removes the connection idempotently. Live-state remains the complete
+  initial/recovery snapshot. The legacy generic `/api/sse` implementation is
+  unchanged and unused by S2; production cross-node fanout and schema migrations
+  remain later production work.
 
 ## Client implemented
 
@@ -164,5 +174,5 @@ Teacher creates and starts a race
 → refresh/reconnect recovers the same player
 ```
 
-No teacher SSE, luck event, junction or 2FA work should interrupt this slice unless it
-is required to make the slice run safely.
+No teacher client projector, luck event, junction or 2FA work should interrupt this
+slice unless it is required to make the slice run safely.

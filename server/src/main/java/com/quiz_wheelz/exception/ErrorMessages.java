@@ -23,6 +23,8 @@ public final class ErrorMessages {
 
     public static final String FOCUS_EVENT_REPLAY_CONFLICT =
             "Focus event was already recorded with a different type";
+    public static final String RACE_LIVE_EVENT_CURSOR_INVALID =
+            "Race live event cursor is invalid";
 
     public static final String QUESTION_TEMPLATE_NOT_FOUND =
             "Active question template not found";

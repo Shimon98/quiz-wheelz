@@ -1,8 +1,8 @@
 # Server Rules and Conventions
 
 **Status:** Canonical  
-**Audit date:** 2026-07-30  
-**Code baseline:** `main@47fe75fa763af2ecc4deb4e8bc972f564ee73b15`  
+**Audit date:** 2026-08-25
+**Code baseline:** `main@ef3cd3bac2fb10ee2f7a7e9586571f70e7127ae3`
 **This document owns:** backend package ownership, constants, services, security, persistence and testing rules
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -119,6 +119,25 @@ lock authoritative RacePlayer
 The Race gate is the serialization owner for active live mutations. WAITING lifecycle
 paths never acquire it; join/start keep Race-first locking and finalization keeps
 ordered RacePlayer locks before the Race lock.
+
+## Teacher durable-event stream
+
+- Live-state is the complete initial/recovery snapshot; connect after its
+  `eventVersion` and reconnect from `Last-Event-ID`.
+- Bind both cursor inputs as raw text, choose `Last-Event-ID` before parsing the
+  fallback query, and map malformed selected cursors to the focused cursor error.
+- MySQL `RaceLiveEvent` rows are stream truth. Dispatch only committed, Race-scoped,
+  ascending, bounded replay after each connection's last successful version.
+- SSE `id` is the durable version and `data` is the existing typed envelope. Do not
+  add a parallel event name or snapshot event.
+- Heartbeats are comment frames only and never carry an ID, payload or cursor effect.
+- Stream connections are process-local runtime, use server-generated identities and
+  are removed on completion, timeout, error or failed send.
+- Run teacher SSE dispatch on its dedicated non-default scheduler; movement,
+  question cleanup and finalization scheduling must not execute on that transport
+  scheduler.
+- Do not send from business transactions, use Redis as event truth, or route S2
+  events through the legacy generic `/api/sse` service.
 
 ## Race engine
 

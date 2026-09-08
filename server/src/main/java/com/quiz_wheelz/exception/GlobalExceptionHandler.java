@@ -2,6 +2,7 @@ package com.quiz_wheelz.exception;
 
 import com.quiz_wheelz.common.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -19,7 +20,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleApiException(ApiException ex, HttpServletRequest request) {
         ErrorCode errorCode = ex.getErrorCode();
         ErrorResponse response = ErrorResponse.from(errorCode, ex.getMessage(), request.getRequestURI());
-        return ResponseEntity.status(errorCode.getStatus()).body(response);
+        return ResponseEntity.status(errorCode.getStatus())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -31,7 +34,9 @@ public class GlobalExceptionHandler {
         );
         ErrorCode errorCode = ErrorCode.VALIDATION_ERROR;
         ErrorResponse response = ErrorResponse.validation(errorCode, request.getRequestURI(), validationErrors);
-        return ResponseEntity.status(errorCode.getStatus()).body(response);
+        return ResponseEntity.status(errorCode.getStatus())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -41,7 +46,9 @@ public class GlobalExceptionHandler {
     ) {
         ErrorCode errorCode = ErrorCode.BAD_REQUEST;
         ErrorResponse response = ErrorResponse.from(errorCode, request.getRequestURI());
-        return ResponseEntity.status(errorCode.getStatus()).body(response);
+        return ResponseEntity.status(errorCode.getStatus())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
     }
 
 
@@ -57,13 +64,17 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         );
 
-        return ResponseEntity.status(errorCode.getStatus()).body(response);
+        return ResponseEntity.status(errorCode.getStatus())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex, HttpServletRequest request) {
         ErrorCode errorCode = ErrorCode.INTERNAL_ERROR;
         ErrorResponse response = ErrorResponse.from(errorCode, request.getRequestURI());
-        return ResponseEntity.status(errorCode.getStatus()).body(response);
+        return ResponseEntity.status(errorCode.getStatus())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response);
     }
 }

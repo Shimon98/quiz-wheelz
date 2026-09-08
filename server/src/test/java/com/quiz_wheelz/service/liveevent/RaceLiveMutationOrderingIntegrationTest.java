@@ -46,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 @Import({
         RaceLiveEventService.class,
+        RaceLiveEventPayloadCodec.class,
         RaceLiveEventRecorder.class,
         RaceLiveMutationGate.class,
         TeacherRaceLivePlayerSnapshotService.class,
