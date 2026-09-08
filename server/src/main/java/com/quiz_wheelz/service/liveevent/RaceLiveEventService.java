@@ -1,7 +1,5 @@
 package com.quiz_wheelz.service.liveevent;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quiz_wheelz.dto.liveevent.RaceLiveEventEnvelope;
 import com.quiz_wheelz.dto.liveevent.RaceLiveEventPayload;
 import com.quiz_wheelz.entitys.Race;
@@ -21,18 +19,18 @@ public class RaceLiveEventService {
 
     private final RaceRepository raceRepository;
     private final RaceLiveEventRepository eventRepository;
-    private final ObjectMapper objectMapper;
+    private final RaceLiveEventPayloadCodec payloadCodec;
     private final Clock clock;
 
     public RaceLiveEventService(
             RaceRepository raceRepository,
             RaceLiveEventRepository eventRepository,
-            ObjectMapper objectMapper,
+            RaceLiveEventPayloadCodec payloadCodec,
             Clock clock
     ) {
         this.raceRepository = Objects.requireNonNull(raceRepository);
         this.eventRepository = Objects.requireNonNull(eventRepository);
-        this.objectMapper = Objects.requireNonNull(objectMapper);
+        this.payloadCodec = Objects.requireNonNull(payloadCodec);
         this.clock = Objects.requireNonNull(clock);
     }
 
@@ -63,7 +61,7 @@ public class RaceLiveEventService {
         event.setVersion(version);
         event.setType(type);
         event.setOccurredAtEpochMs(occurredAtEpochMs);
-        event.setPayloadJson(serialize(payload));
+        event.setPayloadJson(payloadCodec.serialize(payload));
         eventRepository.saveAndFlush(event);
 
         return new RaceLiveEventEnvelope<>(
@@ -75,11 +73,4 @@ public class RaceLiveEventService {
         );
     }
 
-    private String serialize(RaceLiveEventPayload payload) {
-        try {
-            return objectMapper.writeValueAsString(payload);
-        } catch (JsonProcessingException exception) {
-            throw new IllegalStateException(exception);
-        }
-    }
 }

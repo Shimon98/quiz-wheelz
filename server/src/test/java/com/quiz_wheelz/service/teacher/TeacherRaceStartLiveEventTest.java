@@ -1,12 +1,8 @@
 package com.quiz_wheelz.service.teacher;
 
 import com.quiz_wheelz.entitys.Race;
-import com.quiz_wheelz.entitys.User;
 import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.exception.ApiException;
-import com.quiz_wheelz.repository.RaceRepository;
-import com.quiz_wheelz.service.auth.CurrentUserService;
-import com.quiz_wheelz.service.auth.UserService;
 import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
 import com.quiz_wheelz.service.raceplayer.RacePlayerService;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,7 +15,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -34,13 +29,7 @@ class TeacherRaceStartLiveEventTest {
     private static final Instant NOW = Instant.parse("2026-08-24T17:00:00Z");
 
     @Mock
-    private CurrentUserService currentUserService;
-
-    @Mock
-    private UserService userService;
-
-    @Mock
-    private RaceRepository raceRepository;
+    private TeacherRaceAccessService raceAccessService;
 
     @Mock
     private RacePlayerService racePlayerService;
@@ -49,29 +38,20 @@ class TeacherRaceStartLiveEventTest {
     private RaceLiveEventRecorder eventRecorder;
 
     private TeacherRaceStartService service;
-    private User teacher;
-
     @BeforeEach
     void setUp() {
-        teacher = new User();
-        teacher.setId(5L);
         service = new TeacherRaceStartService(
-                currentUserService,
-                userService,
-                raceRepository,
+                raceAccessService,
                 racePlayerService,
                 eventRecorder,
                 Clock.fixed(NOW, ZoneOffset.UTC)
         );
-        when(currentUserService.getCurrentUserId()).thenReturn(teacher.getId());
-        when(userService.findActiveByIdOrThrow(teacher.getId())).thenReturn(teacher);
     }
 
     @Test
     void successfulStartRecordsExactlyOneEventAfterAuthoritativeMutation() {
         Race race = race(RaceStatus.WAITING_FOR_PLAYERS);
-        when(raceRepository.findByIdAndTeacherForUpdate(12L, teacher))
-                .thenReturn(Optional.of(race));
+        when(raceAccessService.requireOwnedRaceForUpdate(12L)).thenReturn(race);
         when(racePlayerService.countPlayersByRaceAndStatus(any(), any())).thenReturn(2L);
         when(racePlayerService.startWaitingPlayers(race, LocalDateTime.ofInstant(NOW, ZoneOffset.UTC)))
                 .thenReturn(2);
@@ -86,8 +66,7 @@ class TeacherRaceStartLiveEventTest {
     @Test
     void rejectedStartRecordsNoEvent() {
         Race race = race(RaceStatus.IN_PROGRESS);
-        when(raceRepository.findByIdAndTeacherForUpdate(12L, teacher))
-                .thenReturn(Optional.of(race));
+        when(raceAccessService.requireOwnedRaceForUpdate(12L)).thenReturn(race);
 
         assertThrows(ApiException.class, () -> service.startRace(12L));
 

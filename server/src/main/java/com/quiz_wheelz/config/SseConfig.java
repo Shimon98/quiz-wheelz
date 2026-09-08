@@ -21,7 +21,7 @@ public class SseConfig {
     @PostConstruct
     public void init() {
         this.sseTimeoutMillis = env.getProperty(
-                "SSE_TIMEOUT_MILLIS",
+                ConfigPropertyKeys.SSE_TIMEOUT_MILLIS,
                 Long.class,
                 AppConstants.DEFAULT_SSE_TIMEOUT_MILLIS
         );
@@ -32,7 +32,8 @@ public class SseConfig {
     private void validate() {
         if (sseTimeoutMillis <= 0) {
             throw new ConfigurationException(
-                    "SSE_TIMEOUT_MILLIS must be positive. Current value: " + sseTimeoutMillis
+                    ConfigPropertyKeys.SSE_TIMEOUT_MILLIS
+                            + " must be positive. Current value: " + sseTimeoutMillis
             );
         }
     }

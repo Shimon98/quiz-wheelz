@@ -14,6 +14,7 @@ import com.quiz_wheelz.service.auth.CurrentUserService;
 import com.quiz_wheelz.service.auth.UserService;
 import com.quiz_wheelz.service.teacher.TeacherRaceLivePlayerSnapshotService;
 import com.quiz_wheelz.service.teacher.TeacherRaceLiveStateService;
+import com.quiz_wheelz.service.teacher.TeacherRaceAccessService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +56,7 @@ import static org.mockito.Mockito.when;
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 @Import({
         RaceLiveEventService.class,
+        RaceLiveEventPayloadCodec.class,
         RaceLiveEventTransactionIntegrationTest.FixedTimeConfiguration.class
 })
 class RaceLiveEventTransactionIntegrationTest {
@@ -251,10 +253,13 @@ class RaceLiveEventTransactionIntegrationTest {
         when(userService.findActiveByIdOrThrow(persisted.teacher().getId()))
                 .thenReturn(persisted.teacher());
         when(snapshotService.getOrderedPlayers(any())).thenReturn(List.of());
-        TeacherRaceLiveStateService service = new TeacherRaceLiveStateService(
+        TeacherRaceAccessService raceAccessService = new TeacherRaceAccessService(
                 currentUserService,
                 userService,
-                raceRepository,
+                raceRepository
+        );
+        TeacherRaceLiveStateService service = new TeacherRaceLiveStateService(
+                raceAccessService,
                 snapshotService,
                 Clock.fixed(NOW, ZoneOffset.UTC)
         );

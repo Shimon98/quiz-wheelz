@@ -50,7 +50,7 @@ class RaceLiveEventServiceTest {
         service = new RaceLiveEventService(
                 raceRepository,
                 eventRepository,
-                new ObjectMapper(),
+                new RaceLiveEventPayloadCodec(new ObjectMapper()),
                 Clock.fixed(NOW, ZoneOffset.UTC)
         );
     }

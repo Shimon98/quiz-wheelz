@@ -139,10 +139,26 @@ Required gameplay tests:
 - join/start success and rejection, answer event order, meaningful/no-op movement,
   timeout terminal order, duplicate disconnect, reconnect no-op and exactly-once
   player/race terminal transitions
-- event writer has no Redis/JVM sequence dependency and S2-02 adds no teacher-owned
-  durable-event SSE transport, event controller or stream registry; the legacy
-  generic `/api/sse` infrastructure is not S2 event truth or its cursor/replay owner
-- teacher-owned S2 SSE reconnect/recovery
+- event writer and replay have no Redis/JVM sequence dependency; the legacy generic
+  `/api/sse` infrastructure is not used by teacher durable-event transport
+- owner/missing/foreign stream access, TEACHER controller guard and identical hidden
+  `RACE_NOT_FOUND` behavior
+- required cursor validation: missing, blank, malformed selected source, negative,
+  future and zero; MVC raw-string binding proves valid `Last-Event-ID` precedence
+  over a malformed fallback query before parsing
+- `live-state V → commit V+1 → connect after V` immediate replay
+- exact six-type payload-codec round trip and no answer/choice leakage
+- bounded, Race-scoped, strictly ascending replay with version-based continuation
+- durable SSE IDs and existing envelope data without a parallel event name
+- independent same-Race cursors, cross-Race isolation and monotonic successful-send
+  advancement; failed send neither advances nor leaks the connection
+- completion, timeout, error and duplicate cleanup; comment-only heartbeat without ID,
+  payload or cursor advancement
+- committed event arriving between dispatch cycles is delivered without loss
+- dedicated non-default scheduler qualifier and focused single-thread configuration;
+  authoritative gameplay scheduled methods remain outside the SSE scheduler
+- real latch-controlled overlapping dispatch on one connection produces exactly one
+  replay, one event frame and one cursor advancement without sleeps
 - event fairness boundaries.
 
 ## Client checks

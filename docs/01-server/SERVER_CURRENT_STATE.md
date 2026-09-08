@@ -1,8 +1,8 @@
 # Server Current State
 
 **Status:** Canonical  
-**Audit date:** 2026-08-24
-**Code baseline:** `main@c32600870902bade6c21ecec0a80777c0840e0de`
+**Audit date:** 2026-08-25
+**Code baseline:** `main@ef3cd3bac2fb10ee2f7a7e9586571f70e7127ae3`
 **This document owns:** the implemented backend capabilities, gaps and stale assumptions
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -55,8 +55,7 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
   re-anchor, persistence or event publication
 - `Race.liveEventVersion` persists as non-null `live_event_version` with entity and
   database default `0`; S2-02 atomically increments it with each same-transaction
-  durable event, while S2-03 still owns future SSE. Production migration remains
-  Phase 6 debt.
+  durable event. Production migration remains Phase 6 debt.
 
 ### Durable live-event model
 
@@ -79,11 +78,23 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - Join/start/answer, periodic settlement, timeout, focus, disconnect, heartbeat,
   reconnect, race-state and finalization boundaries record only visible changes.
   Before/after transition detection prevents duplicate player/race terminal events.
-- Bounded ordered repository retrieval exists for future transport. S2-02 adds no
-  teacher-owned events API, SSE registry or stream. The legacy generic `/api/sse`
-  infrastructure already in the repository is not S2 event truth, does not define
-  the durable cursor/replay contract and is not adopted or redesigned by S2-02.
-  S2-03 is future work and live-state remains the recovery query.
+- Teacher-owned `GET /api/teacher/races/{raceId}/events/stream` requires an owned Race
+  and a valid `afterVersion` or `Last-Event-ID` cursor. MVC binds both as raw text;
+  header precedence is selected before parsing the fallback query. A malformed
+  selected cursor uses the focused error without exposing foreign Race existence.
+- The shared payload codec writes and reconstructs exactly the six typed payloads with
+  the configured `ObjectMapper`. MySQL replay is Race-scoped, strictly ascending,
+  bounded to 100 events and continued by durable version rather than page number.
+- A one-second committed-event dispatcher owns transport delivery on a focused
+  single-thread scheduler that is not a default candidate, isolating SSE DB/network
+  work from authoritative gameplay scheduling. Per-connection
+  server IDs, cursors and write locks permit simultaneous independent streams; a
+  cursor advances only after successful send. Fifteen-second comment-only heartbeats
+  do not mutate the cursor. Completion, timeout, error and failed send clean up
+  idempotently.
+- Live-state remains the complete initial/recovery query. The legacy generic
+  `/api/sse` implementation is unchanged and unused by S2; Redis is not event truth.
+  Cross-node fanout remains later production scaling work.
 
 ### RacePlayer flow
 

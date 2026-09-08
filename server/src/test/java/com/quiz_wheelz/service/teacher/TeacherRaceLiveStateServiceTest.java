@@ -4,16 +4,10 @@ import com.quiz_wheelz.common.RaceProgressRules;
 import com.quiz_wheelz.dto.teacher.TeacherRaceLiveStateResponse;
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
-import com.quiz_wheelz.entitys.User;
 import com.quiz_wheelz.enums.RaceFocusPolicy;
 import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
-import com.quiz_wheelz.exception.ApiException;
-import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
-import com.quiz_wheelz.repository.RaceRepository;
-import com.quiz_wheelz.service.auth.CurrentUserService;
-import com.quiz_wheelz.service.auth.UserService;
 import com.quiz_wheelz.service.raceplayer.RaceStandingCalculator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,16 +25,13 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -50,28 +41,17 @@ class TeacherRaceLiveStateServiceTest {
     private static final Instant NOW = Instant.parse("2026-08-24T12:00:00Z");
 
     @Mock
-    private CurrentUserService currentUserService;
-
-    @Mock
-    private UserService userService;
-
-    @Mock
-    private RaceRepository raceRepository;
+    private TeacherRaceAccessService raceAccessService;
 
     @Mock
     private RacePlayerRepository racePlayerRepository;
 
-    private User teacher;
     private TeacherRaceLiveStateService service;
 
     @BeforeEach
     void setUp() {
-        teacher = new User();
-        teacher.setId(5L);
         service = new TeacherRaceLiveStateService(
-                currentUserService,
-                userService,
-                raceRepository,
+                raceAccessService,
                 new TeacherRaceLivePlayerSnapshotService(
                         racePlayerRepository,
                         new RaceStandingCalculator()
@@ -109,16 +89,9 @@ class TeacherRaceLiveStateServiceTest {
                 response.getPlayers().stream().map(player -> player.getRank()).toList()
         );
 
-        verify(currentUserService).getCurrentUserId();
-        verify(userService).findActiveByIdOrThrow(teacher.getId());
-        verify(raceRepository).findByIdAndTeacher(race.getId(), teacher);
+        verify(raceAccessService).requireOwnedRace(race.getId());
         verify(racePlayerRepository).findByRaceOrderByLaneNumberAsc(race);
-        verifyNoMoreInteractions(
-                currentUserService,
-                userService,
-                raceRepository,
-                racePlayerRepository
-        );
+        verifyNoMoreInteractions(raceAccessService, racePlayerRepository);
     }
 
     @ParameterizedTest
@@ -133,32 +106,6 @@ class TeacherRaceLiveStateServiceTest {
     }
 
     @Test
-    void foreignRaceIsHiddenAsRaceNotFound() {
-        prepareMissingOwnedRace(91L);
-
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> service.getLiveState(91L)
-        );
-
-        assertEquals(ErrorCode.RACE_NOT_FOUND, exception.getErrorCode());
-        verifyNoInteractions(racePlayerRepository);
-    }
-
-    @Test
-    void missingRaceUsesTheSameRaceNotFoundError() {
-        prepareMissingOwnedRace(404L);
-
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> service.getLiveState(404L)
-        );
-
-        assertEquals(ErrorCode.RACE_NOT_FOUND, exception.getErrorCode());
-        verifyNoInteractions(racePlayerRepository);
-    }
-
-    @Test
     void repeatedReadsReturnZeroWithoutIncrementOrPersistence() {
         Race race = race(RaceStatus.READY, 0L);
         prepareOwnedRace(race, List.of());
@@ -169,7 +116,7 @@ class TeacherRaceLiveStateServiceTest {
         assertEquals(0L, first.getEventVersion());
         assertEquals(0L, second.getEventVersion());
         assertEquals(0L, race.getLiveEventVersion());
-        verify(raceRepository, times(2)).findByIdAndTeacher(race.getId(), teacher);
+        verify(raceAccessService, times(2)).requireOwnedRace(race.getId());
         verify(racePlayerRepository, times(2)).findByRaceOrderByLaneNumberAsc(race);
     }
 
@@ -216,18 +163,9 @@ class TeacherRaceLiveStateServiceTest {
     }
 
     private void prepareOwnedRace(Race race, List<RacePlayer> players) {
-        when(currentUserService.getCurrentUserId()).thenReturn(teacher.getId());
-        when(userService.findActiveByIdOrThrow(teacher.getId())).thenReturn(teacher);
-        when(raceRepository.findByIdAndTeacher(race.getId(), teacher))
-                .thenReturn(Optional.of(race));
+        when(raceAccessService.requireOwnedRace(race.getId())).thenReturn(race);
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
                 .thenReturn(players);
-    }
-
-    private void prepareMissingOwnedRace(Long raceId) {
-        when(currentUserService.getCurrentUserId()).thenReturn(teacher.getId());
-        when(userService.findActiveByIdOrThrow(teacher.getId())).thenReturn(teacher);
-        when(raceRepository.findByIdAndTeacher(raceId, teacher)).thenReturn(Optional.empty());
     }
 
     private Race race(RaceStatus status, Long liveEventVersion) {
