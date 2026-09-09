@@ -131,7 +131,7 @@ export class PlayerKartLayer {
   }
 
   update(frameState) {
-    const { visualSpeed, deltaMs, layout } = frameState;
+    const { visualSpeed, deltaMs, layout, runtimeState } = frameState;
     this.elapsedMs += deltaMs;
 
     if (this.artSprite != null && this.artSprite.alpha < 1) {
@@ -145,7 +145,9 @@ export class PlayerKartLayer {
     this.root.x = layout.playerKart.anchorX - kartWidth / 2;
     this.root.y = layout.playerKart.anchorY - (UNIT_HEIGHT * scale) / 2;
 
-    const bobStrength = Math.min(1, Math.abs(visualSpeed) / 2);
+    const bobStrength = runtimeState?.visual?.reducedMotion === true
+      ? 0
+      : Math.min(1, Math.abs(visualSpeed) / 2);
     this.kart.y =
       Math.sin(this.elapsedMs / BOB_FREQUENCY_MS) * BOB_MAX_PX * bobStrength;
     this.kart.rotation =

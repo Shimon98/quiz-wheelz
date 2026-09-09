@@ -1,8 +1,11 @@
-/*
- * English strings for the student race screen — mirrors
- * locales/he/studentRace.js key-for-key.
- */
 export default {
+  preview: {
+    question: "DEV · Feedback preview",
+    correct: "Correct",
+    combo: "Streak 3",
+    strongCombo: "Streak 5",
+    wrong: "Wrong",
+  },
   status: {
     loadingTitle: "Loading the race...",
     loadingBody: "Starting in a moment!",
@@ -46,9 +49,24 @@ export default {
 
   hud: {
     scoreLabel: "Score",
+    rankLabel: "Place",
+    rankValue: "Place {{rank}} of {{count}}",
     streakLabel: "Correct answer streak",
+    streakShortLabel: "Streak",
+    streakValue: "{{count}} correct answers in a row",
+    streakValue_one: "One correct answer in a row",
+    comboLabel: "Combo",
     speedLabel: "Speed",
+    speedValue: "Speed {{speed}}",
     progressLabel: "Race progress",
+    progressShortLabel: "Track",
+  },
+
+  reward: {
+    correctTitle: "Correct answer!",
+    comboTitle: "Combo!",
+    streak: "{{count}} in a row",
+    points: "points",
   },
 
   timer: {

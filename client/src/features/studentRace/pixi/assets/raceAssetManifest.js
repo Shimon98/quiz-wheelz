@@ -27,11 +27,25 @@ export const STUDENT_RACE_ASSET_MANIFEST = Object.freeze({
     fallback: ASSET_PLACEHOLDER.GRAPHICS,
   }),
 
+  [KEYS.JUNGLE_GROUND]: Object.freeze({
+    key: KEYS.JUNGLE_GROUND,
+    description:
+      "Seamless top-down jungle floor projected as ONE ground plane under " +
+      "the road (visible outside it), scrolling in worldOffset lockstep.",
+    expectedPath:
+      "client/src/assets/game/studentRace/backgrounds/jungle-ground.webp",
+    required: true,
+    fallback: ASSET_PLACEHOLDER.GRAPHICS,
+  }),
+
   [KEYS.JUNGLE_BACKGROUND_MID]: Object.freeze({
     key: KEYS.JUNGLE_BACKGROUND_MID,
-    description: "Middle parallax jungle layer.",
+    description:
+      "Optional low roadside verge strip projected along both road edges " +
+      "(right side mirrored), scrolling in worldOffset lockstep; secondary " +
+      "to the scenery props (worldArtConfig.midBase.enabled).",
     expectedPath:
-      "client/src/assets/game/studentRace/backgrounds/jungle-background-mid.webp",
+      "client/src/assets/game/studentRace/backgrounds/jungle-mid-base.webp",
     required: true,
     fallback: ASSET_PLACEHOLDER.GRAPHICS,
   }),
@@ -114,11 +128,13 @@ export const STUDENT_RACE_ASSET_MANIFEST = Object.freeze({
     fallback: ASSET_PLACEHOLDER.GRAPHICS,
   }),
 
-  [KEYS.SMALL_TRACK_PROP]: Object.freeze({
-    key: KEYS.SMALL_TRACK_PROP,
-    description: "Small roadside props (stones, plants) for variety.",
-    expectedPath:
-      "client/src/assets/game/studentRace/props/small-track-prop-01.webp",
+  [KEYS.SCENERY_PROPS]: Object.freeze({
+    key: KEYS.SCENERY_PROPS,
+    description:
+      "Roadside scenery sprites (trees, palm, rocks, bush) projected " +
+      "outside the road at fixed looping world positions — per-prop art " +
+      "and placements are owned by sceneryConfig.",
+    expectedPath: "client/src/assets/game/studentRace/scenery/",
     required: false,
     fallback: ASSET_PLACEHOLDER.NONE,
   }),

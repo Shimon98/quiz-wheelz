@@ -4,9 +4,6 @@ import { mapRaceStateToRuntime } from "./mapRaceStateToRuntime";
 import { applyRaceSnapshot } from "./applyRaceSnapshot";
 import { ApiContractError } from "../../../errors/ApiContractError";
 
-// C1-06A race-state DTO boundary — presentation identity is consumed from
-// response.player only (refresh-safe: no joinData/sessionStorage input).
-
 function validPlayer(overrides = {}) {
   return {
     racePlayerId: 91,
@@ -52,6 +49,14 @@ function validResponse(overrides = {}) {
 }
 
 describe("mapRaceStateToRuntime — presentation identity", () => {
+  it("includes authoritative standing on refresh without requiring nearby player rendering", () => {
+    const runtime = mapRaceStateToRuntime(validResponse({
+      snapshot: validSnapshot({ rank: 4, playerCount: 20 }),
+    }));
+    expect(runtime.player.rank).toBe(4);
+    expect(runtime.playerCount).toBe(20);
+  });
+
   it("builds the complete player identity from race-state alone", () => {
     const runtime = mapRaceStateToRuntime(validResponse());
 
@@ -68,6 +73,7 @@ describe("mapRaceStateToRuntime — presentation identity", () => {
       score: 40,
       streak: 2,
       highestStreak: 4,
+      rank: null,
       currentDifficulty: "EASY",
     });
   });

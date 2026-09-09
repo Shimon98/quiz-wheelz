@@ -170,3 +170,27 @@ describe("loadStudentRaceVehicleAssets", () => {
     expect(loadTexture).not.toHaveBeenCalled();
   });
 });
+
+describe("STUDENT_RACE_VEHICLE_MANIFEST", () => {
+  it("covers every server lane color key with a usable definition", () => {
+    const serverColorKeys = [
+      "PURPLE",
+      "RED",
+      "BLUE",
+      "GREEN",
+      "ORANGE",
+      "PINK",
+      "YELLOW",
+      "CYAN",
+    ];
+
+    serverColorKeys.forEach((color) => {
+      const definition = resolveStudentRaceVehicleAsset(
+        `TOY_CAR_${color}`,
+        STUDENT_RACE_VEHICLE_MANIFEST,
+      );
+      expect(definition).not.toBeNull();
+      expect(definition.idleFrames.length).toBeGreaterThan(0);
+    });
+  });
+});

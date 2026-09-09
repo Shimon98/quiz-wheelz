@@ -24,14 +24,15 @@ export class EffectsLayer {
     this.spawnAccumulator = 0;
     this.activeEffects = new Map();
     this.observedRuntime = null;
+    this.destroyed = false;
 
     this.graphics = new Graphics();
     this.feedbackGraphics = new Graphics();
     container.addChild(this.graphics, this.feedbackGraphics);
   }
 
-  playEffect(effectName) {
-    if (!Object.hasOwn(EFFECT_DURATIONS_MS, effectName)) {
+  playEffect(effectName, { feedbackStreak = 0 } = {}) {
+    if (this.destroyed || !Object.hasOwn(EFFECT_DURATIONS_MS, effectName)) {
       return;
     }
 
@@ -45,18 +46,29 @@ export class EffectsLayer {
     this.activeEffects.set(effectName, {
       elapsedMs: 0,
       durationMs: EFFECT_DURATIONS_MS[effectName],
+      feedbackStreak,
     });
   }
 
   resize() {}
 
   update(frameState) {
+    if (this.destroyed) return;
     const { width, visualSpeed, deltaMs, layout, runtimeState } = frameState;
     const { anchorX, anchorY, maxWidth, dustOriginY } = layout.playerKart;
+    const reducedMotion = runtimeState?.visual?.reducedMotion === true;
 
-    this.observeRuntime(runtimeState);
-    this.spawnPuffs(anchorX, dustOriginY, visualSpeed, deltaMs, width);
+    this.observeRuntime(runtimeState, reducedMotion);
+    if (reducedMotion) {
+      this.puffs.length = 0;
+      this.spawnAccumulator = 0;
+      this.activeEffects.clear();
+      this.graphics.clear();
+      this.feedbackGraphics.clear();
+      return;
+    }
     this.agePuffs(deltaMs);
+    this.spawnPuffs(anchorX, dustOriginY, visualSpeed, deltaMs, width);
     this.drawPuffs(width);
     this.ageEffects(deltaMs);
     this.drawEffects({
@@ -69,13 +81,17 @@ export class EffectsLayer {
     });
   }
 
-  observeRuntime(runtimeState) {
+  observeRuntime(runtimeState, reducedMotion) {
     const { observed, effects } = detectRuntimeEffectTriggers(
       this.observedRuntime,
       runtimeState,
     );
     this.observedRuntime = observed;
-    effects.forEach((effect) => this.playEffect(effect));
+    if (!reducedMotion) {
+      effects.forEach((effect) => this.playEffect(effect, {
+        feedbackStreak: observed.feedbackStreak,
+      }));
+    }
   }
 
   ageEffects(deltaMs) {
@@ -91,16 +107,21 @@ export class EffectsLayer {
     const g = this.feedbackGraphics;
     g.clear();
     for (const [effect, state] of this.activeEffects) {
-      drawFeedbackEffect(g, effect, state.elapsedMs / state.durationMs, geometry);
+      drawFeedbackEffect(g, effect, state.elapsedMs / state.durationMs, {
+        ...geometry,
+        feedbackStreak: state.feedbackStreak,
+      });
     }
   }
 
   spawnPuffs(originX, originY, visualSpeed, deltaMs, width) {
-    this.spawnAccumulator +=
-      (Math.abs(visualSpeed) * SPAWN_RATE_PER_SPEED * deltaMs) / 1000;
+    const accumulated = this.spawnAccumulator
+      + (Math.abs(visualSpeed) * SPAWN_RATE_PER_SPEED * deltaMs) / 1000;
+    const requested = Math.floor(accumulated);
+    this.spawnAccumulator = accumulated - requested;
+    const spawnCount = Math.min(requested, MAX_PUFFS - this.puffs.length);
 
-    while (this.spawnAccumulator >= 1 && this.puffs.length < MAX_PUFFS) {
-      this.spawnAccumulator -= 1;
+    for (let i = 0; i < spawnCount; i += 1) {
       const side = Math.random() < 0.5 ? -1 : 1;
       this.puffs.push({
         x: originX + side * width * (0.06 + Math.random() * 0.06),
@@ -136,6 +157,12 @@ export class EffectsLayer {
   }
 
   destroy() {
+    if (this.destroyed) return;
+    this.destroyed = true;
+    this.puffs.length = 0;
+    this.activeEffects.clear();
+    this.observedRuntime = null;
+    this.spawnAccumulator = 0;
     this.graphics.destroy();
     this.feedbackGraphics.destroy();
   }

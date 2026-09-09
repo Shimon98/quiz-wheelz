@@ -1,32 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
+import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import StudentRaceScreen from "../layout/StudentRaceScreen";
-import { createInitialRaceRuntimeState } from "../runtime/createInitialRaceRuntimeState";
-import { createLocalStudentRaceRuntime } from "../runtime/localStudentRaceRuntime";
-import { mapLocalRuntimeSnapshotToState } from "../runtime/mapLocalRuntimeSnapshotToState";
+import { useStudentRaceVisualPreview } from "./useStudentRaceVisualPreview";
 
 export default function StudentRaceVisualPreview() {
-  const runtime = useMemo(() => createLocalStudentRaceRuntime(), []);
-  const [runtimeState, setRuntimeState] = useState(() =>
-    mapLocalRuntimeSnapshotToState(
-      createInitialRaceRuntimeState(),
-      runtime.getSnapshot(),
-    ),
-  );
-
-  useEffect(() => {
-    const unsubscribe = runtime.subscribe((snapshot) => {
-      setRuntimeState((previous) =>
-        mapLocalRuntimeSnapshotToState(previous, snapshot),
-      );
-    });
-    runtime.start();
-
-    return () => {
-      runtime.stop();
-      unsubscribe();
-    };
-  }, [runtime]);
-
-  return <StudentRaceScreen runtimeState={runtimeState} />;
+  const { t } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
+  const preview = useStudentRaceVisualPreview(t);
+  return <StudentRaceScreen {...preview} />;
 }

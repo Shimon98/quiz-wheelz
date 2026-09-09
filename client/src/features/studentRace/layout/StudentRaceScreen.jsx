@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useReducedMotion } from "@mantine/hooks";
 
 import { STUDENT_RACE_VISUAL_CONFIG } from "../config/raceVisualConfig";
 import PixiStudentRaceCanvas from "../pixi/PixiStudentRaceCanvas";
@@ -10,17 +11,22 @@ export default function StudentRaceScreen({
   ...overlayProps
 }) {
   const { gameFrame } = STUDENT_RACE_VISUAL_CONFIG;
-  const { feedbackState } = overlayProps;
+  const { feedbackState, answerFeedback } = overlayProps;
+  const reducedMotion = useReducedMotion();
   const presentationRuntimeState = useMemo(
-    () => applyFeedbackEffectToRuntime(runtimeState, feedbackState),
-    [runtimeState, feedbackState],
+    () => applyFeedbackEffectToRuntime(runtimeState, feedbackState, answerFeedback, { reducedMotion }),
+    [runtimeState, feedbackState, answerFeedback, reducedMotion],
   );
 
   return (
     <div className="flex h-dvh w-full justify-center bg-[var(--qw-bg)]">
       <div
         className="relative h-full w-full overflow-hidden"
-        style={{ maxWidth: gameFrame.maxWidth }}
+        style={{
+          maxWidth: `min(${gameFrame.maxWidth}px, ${
+            gameFrame.maxHeightRatio * 100
+          }dvh)`,
+        }}
       >
         <PixiStudentRaceCanvas
           runtimeState={presentationRuntimeState}

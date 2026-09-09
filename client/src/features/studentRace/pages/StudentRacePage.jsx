@@ -9,7 +9,6 @@ import { isRacePlayerSessionError } from "../../../errors/errorChecks";
 import StudentRaceContent from "../components/StudentRaceContent";
 import StudentRaceSessionConnecting from "../components/StudentRaceSessionConnecting";
 
-// Gameplay hooks mount only after the initial reconnect resolves.
 function ResolvedStudentRacePage({ runtimeSession }) {
   const {
     runtimeState,
@@ -21,7 +20,6 @@ function ResolvedStudentRacePage({ runtimeSession }) {
     applyAuthoritativeSnapshot,
   } = useRaceBootstrap({ syncEnabled: runtimeSession.isGameplayConnectionReady });
 
-  // Degraded connection pauses questions; the re-enable flip refetches.
   const questionEnabled =
     runtimeSession.isGameplayConnectionReady &&
     view === RACE_VIEWS.PLAYING &&
@@ -43,6 +41,7 @@ function ResolvedStudentRacePage({ runtimeSession }) {
     selectedChoiceId,
     correctAnswerChoiceId,
     feedbackState,
+    answerFeedback,
     answerError,
   } = useStudentRaceAnswer({
     question,
@@ -87,6 +86,7 @@ function ResolvedStudentRacePage({ runtimeSession }) {
               selectedChoiceId,
               correctAnswerChoiceId,
               feedbackState,
+              answerFeedback,
               isSubmitting,
               isAwaitingNextQuestion,
               connectionState: runtimeSession.connectionState,

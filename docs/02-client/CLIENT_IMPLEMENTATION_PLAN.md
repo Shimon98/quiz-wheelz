@@ -58,6 +58,14 @@ Completed:
 
 ## C1 — Student playable loop
 
+**Local development milestone: CLOSED for progression to C2 — 2026-09-08.**
+Shimon accepted the implemented single-player slice and requested C1 closure.
+This checkpoint applies to `feature/C1-Student-playable-loop`, not an audited
+merge into `main` or a production release. Live integration evidence from
+2026-09-07 and the current automated checks are recorded below. Remaining
+environment-specific verification is retained as required pre-release QA;
+those unchecked items are not represented as passed.
+
 ### C1-01 — Race route and bootstrap
 
 **Status: DONE — E2E verified 2026-08-17** (join → waiting → teacher start →
@@ -306,7 +314,9 @@ Client side:
   FINISHED transition remains server truth) and every new authoritative
   snapshot re-bases the prediction. `continuousWorldOffset` and
   `speedToPixelsPerSecondRatio` were retired; `positionToPixelsRatio` was
-  retuned (30) so speed 1.0 still feels like ~120 px/s.
+  retuned to 30 world pixels per server unit. Speed 1.0 corresponds to
+  4 server units/s and 120 world pixels/s; visible screen speed depends
+  on the shared perspective and is not a fixed 120 screen pixels/s.
 - Recovery fix from review: stale submitted-question errors
   (`QUESTION_NOT_ACTIVE`/`QUESTION_NOT_FOUND_FOR_PLAYER`/
   `QUESTION_CHOICE_NOT_FOUND`, `isStaleQuestionSubmissionError`) now trigger
@@ -326,7 +336,7 @@ pass.
 safe area — server truth in, pixels out:
 
 ```text
-[SCORE]   [TIMER]   [STREAK]
+[RANK / PLAYER COUNT]   [SCORE]   [QUESTION TIMER]   [STREAK]
 [progress ─────── %   ⚡ ×speed]
 ```
 
@@ -338,8 +348,16 @@ safe area — server truth in, pixels out:
   position/totalDistance clamped 0–100% for DRAWING only — the runtime keeps
   raw server truth, and a missing/non-positive totalDistance renders no bar,
   never a fake fallback distance).
-- Deliberately absent until their server contracts exist: rank (S1-02),
-  effect badge (the snapshot wire has no authoritative activeEffect field —
+- The 2026-09-07 revision renders authoritative `rank` and `playerCount`
+  through the existing snapshot mapper; missing standing data is hidden,
+  while malformed supplied data raises the existing contract error.
+  The stopwatch presentation formats the same question deadline as
+  minutes:seconds and caps its display to the question duration, avoiding
+  an extra second when a question changes between display ticks.
+  `getStudentRaceHudModel`, `getStudentRaceTimerModel` and
+  `useStudentRaceQuestionTimer` keep formatting and timing outside JSX.
+- Deliberately absent until its server contract exists: effect badge
+  (the snapshot wire has no authoritative activeEffect field —
   contract gap reported for S1/gameplay), currentDifficulty (not core HUD).
 - Seeded the client test foundation (Vitest + jsdom + React Testing Library,
   `npm run test`) with focused progress/HUD tests; the ongoing policy lives
@@ -440,8 +458,10 @@ vehicle rendering; it must use this server truth, never `sessionStorage`.
   Textures stay owned by the Pixi Assets cache. Calibrated on 360×640,
   390×844, 520×800 and desktop; the dev preview runtime carries the key so
   `/dev/race` shows the real art. Server fact: colors are lane-driven
-  (lane 1 PURPLE, 2 RED, 3 BLUE, 4 GREEN …), so until the other colors get
-  art, lanes 1–3 keep the placeholder by contract.
+  (lane 1 PURPLE, 2 RED, 3 BLUE, 4 GREEN …); interim decision 2026-09-05:
+  every server color key maps to the GREEN master until per-color art lands
+  (deterministic hue-shifted candidates for the other seven exist as a
+  preview).
 - **C1-06D — character idle animation — DEFERRED (optional polish,
   2026-08-23).** Static GREEN MASTER retained. Experimental full-frame and
   tail-layer idle loops were not accepted visually and are not part of the
@@ -477,8 +497,218 @@ vehicle rendering; it must use this server truth, never `sessionStorage`.
   presentation window (`useStudentRaceFinishMoment`, PLAYING→FINISHED,
   `finishEffectDurationMs`, composed with the answer dwell, no remount) so
   the FINISH one-shot completes before the final status view.
-- **C1-06F — world / road / jungle / depth / movement polish — NEXT.** Then
-  C1-06G QA/responsive/performance.
+  The 2026-09-07 presentation revision adds a React `StudentRaceReward`,
+  a server-streak combo chip and a compact `StudentRaceSpeedometer`.
+  `mapSubmitAnswerToModel` provides accepted feedback;
+  `useStudentRaceAnswer` owns its question identity and existing dwell;
+  the shared `assertValidRaceSnapshot` validates the answer snapshot before
+  feedback is exposed. The submitted question remains the feedback model
+  even when a background refresh supplies the next question.
+  `getStudentRaceHudModel` formats server streak/score delta and prepares
+  the reward. No local combo/scoring rule is added. Pixi answer events
+  deduplicate by question ID through `detectRuntimeEffectTriggers`;
+  `drawFeedbackEffect` and `raceFeedbackVisualConfig` own correct/combo
+  geometry. The speedometer's pure model formats raw server speed as ×N.N
+  and maps `speed / (speed + 1)` to a cosmetic dial, without a server cap
+  or invented units. JSX presents these models; CSS follows the existing
+  theme and CSS/Pixi honor reduced motion. The new revision still passes through G.
+- **C1-06F — world / road / jungle / depth / movement polish — IN
+  PROGRESS (accepted presentation; F-9/G QA open).** Locked world model: static FAR horizon art; projected surfaces
+  (road, ground and optional low MID verge) scroll in `worldOffset` lockstep — the
+  shared reciprocal distance projection makes far slow and near fast, so movement
+  multipliers belong only to future screen-space layers (NEAR ≈ 0.85);
+  `viewDepthZones` stays untouched (opponent contract). Art values live in
+  `worldArtConfig`; existing raw generator art is processed deterministically
+  (script beside the sources) into `assets/game/studentRace/`. The new
+  thicket and flowering verge are packaged as lossless WebP; their generated
+  PNGs stay private.
+  - **C1-06F-0 — foundation — DONE (2026-08-24).** `worldArtConfig` (FAR
+    placement + road tileWorldLength 960/meshRows/underPanelColor),
+    `studentRaceWorldAssets` loader (Assets.load, repeat/mipmap opts, never
+    rejects), processing script (FAR: alpha lift + bottom feather only when
+    the source bottom is not already transparent; ROAD: brightness de-drift
+    and half-roll + 24 px cross-fade seam heal only when measured necessary;
+    wrap seam measures like interior rows).
+  - **C1-06F-1 — SKY backdrop + FAR horizon — ACCEPTED (current world,
+    2026-09-07; integrated 2026-09-05).** Static sprite anchored by
+    `horizonAnchorYRatio` (0.86 for the V2 panorama, valley floor across the
+    horizon line) to `perspective.horizonY`,
+    1.22× frame width with
+    the valley opening (0.5 of source) aligned to the vanishing point
+    (`resolveFarHorizonPlacement`); static sky gradient above the horizon
+    and a receding ground gradient below it (`worldArtConfig.sky`/`ground`,
+    strip Graphics rebuilt only per canvas size, no clock, no assets); legacy
+    treelines/haze/bush rings draw only in the fallback path.
+  - **C1-06F-2 — ROAD mesh (V1 art) — DONE.** Flat top-down road+shoulders texture through
+    a 24-row `Mesh` built from THE existing projection
+    (`buildRoadMeshData` — PerspectiveMesh homography would not match the
+    quadratic depth mapping), texture v scrolled by
+    `getLoopPhase(worldOffset, tileWorldLength)`, repeat wrap + mipmaps on
+    the source, under-panel fill in the sampled road color; Graphics
+    road/curbs/mud remain only as load fallback. Wrap QA: phase 0.999 vs
+    0.001 differ by mean 0.18/255, zero px > 40.
+  - **C1-06F-2 — final ROAD V2 asset — ACCEPTED (current world,
+    2026-09-07; integrated 2026-09-05).**
+    682×2048 calm loop with baked green shoulder strips;
+    `tileWorldLength` now 960 with reciprocal sampling (F-8); road and kart widths derive
+    from a width unit = min(frame width, `camera.widthUnitWorldHeightRatio`
+    0.7 × visible world height), so wide frames keep phone proportions, show
+    more world at the sides and keep the texel aspect constant; road-width
+    exponent back to 2 (1.7 bent the edges into a bowl — the "fold" seen on
+    wide frames); now a 48×8 grid mesh (columns remove the
+    affine texture warp of wide trapezoid rows); 16× anisotropic filtering
+    for the far rows; road-top ratio 0.09; horizon haze became a localized
+    nested-ellipse mist at the vanishing point (`horizonHaze.radiusXRatio`)
+    instead of a full-width band. The 2026-09-07 revision sets
+    `worldArtConfig.road.surfaceInsetURatio` to 0.12: `buildRoadMeshData`
+    reuses the strip's horizontal sampling hook to read U 0.12–0.88,
+    omitting the flat green strips and widening the visible mud. The source
+    image and road silhouette are unchanged; inverse-distance V sampling and
+    repeat lengths follow F-8, while separate projected verge leaves soften
+    the boundary.
+    `edgeFeatherHalfWidthRatio` 0.04 adds a soft alpha transition over the
+    outer 4% of each road half-width (2% of full road width per edge).
+    This is an opt-in extension of `ProjectedTextureStrip`, with
+    `createStripEdgeShader` composing Pixi's public shader bits. Its edge
+    coordinates are independent of cropped/scrolled texture coordinates;
+    ground and MID retain their default strip behavior. Teardown releases
+    the strip's geometry buffers and shader while retaining cached textures.
+  - **C1-06F-3 — MID roadside base — OPTIONAL / DISABLED (2026-09-07).**
+    `MidBaseLayer`: two projected low-vegetation strips (art
+    `jungle-mid-base`, 2048×768 → 2024×768 after the horizontal crossfade
+    heal, top 56% transparent) built by the shared
+    `buildProjectedStripMeshData` (now also under `buildRoadMeshData`), feet
+    3% inside the road edges under the baked grass shoulder, height 0.55 ×
+    road half-width, right strip mirrored + 0.37 phase offset, `worldOffset`
+    lockstep, repeat + mipmaps + 16× anisotropy (`worldArtConfig.midBase`).
+    Surface layer containers keep the road/MID order stable across async
+    loads. Scenery sprites and the upright finish gate now share their
+    parent world's depth sort, so foliage can pass behind and in front of
+    the gate. Demoted 2026-09-07: next to the projected
+    ground and scenery props the strip read as a green rail, so
+    `worldArtConfig.midBase.enabled` is false by default (kept as an
+    optional low verge).
+  - **C1-06F-3A — projected side ground — ACCEPTED (2026-09-07).**
+    ONE seamless top-down jungle-floor tile
+    (`jungle-ground`, 1024², measured seamless on both axes) projected as a
+    full-width ground plane under the road inside `JungleLayer`, below the
+    FAR sprite so its mist dissolves into the floor: `buildGroundMeshData`
+    distributes `tilesPerRoadWidth` tiles per road width at every depth.
+    The 2026-09-07 tuning raises this value from 0.45 to 0.65, reducing
+    near-ground horizontal stretch from about 2.05:1 to 1.42:1 on the
+    736×800 reference frame. Ground mesh rows increase from 24 to 48
+    to reduce piecewise projection coarseness. F-8 also uses 48 road rows and
+    calibrates inverse-distance surface sampling. Texture v still scrolls in
+    `worldOffset` lockstep, and a static
+    pixel-snapped distance-mist fade (`ground.mist*`) sits above it. The
+    mesh plumbing shared by road, verge and ground is ONE class,
+    `ProjectedTextureStrip`.
+  - **C1-06F-4/5/6 — scenery props: foundation + trees + rocks/bush — ACCEPTED
+    (current world, 2026-09-07).**
+    `SceneryLayer` retains one sprite owner for every scenery asset.
+    `sceneryConfig` defines six composition bands: rear thicket, canopy,
+    trees, undergrowth, rocks and low verge foliage. `buildSceneryPlacements`
+    generates 588 stable placements once over per-band 2400–4800 world-px loops,
+    with staggered spacing, different left/right phases, varied scale and
+    lateral distance. Per side: 44 thickets, 32 canopy trees, 28 trees,
+    44 undergrowth props, 18 rocks and 128 verge plants. Eight WebPs include
+    a transparent rear thicket filling gaps behind individual trunks and
+    a new low flowering verge clump. Gradual per-band entry opacity connects
+    the foliage to the existing FAR. About one third of verge placements use
+    flowers; the undergrowth band also mixes this asset with existing plants.
+    Its 1774×887 lossless RGBA WebP is 1,344,364 bytes; `anchorY` 0.94
+    positions the dense base without cropping or altering the artwork.
+    The lossless runtime assets, private generated PNGs and exact prompts are recorded in
+    `STUDENT_RACE_SCREEN_AND_ASSETS.md`; this composition adds no separate
+    scenery renderer or per-frame randomness.
+    `projectSceneryPlacement` uses THE track projection, now owned by
+    `createRacePerspective`, and sizes each
+    sprite from road half-width, asset width and placement scale. Full
+    sprite widths constrain tree crowns outside the road; low foliage
+    may cover the outer 26% of a road half-width to conceal the sharp
+    shoulder join. Ground anchors come from prop metadata; all sprites and
+    the finish gate share world-container depth sorting. `SceneryLayer`
+    owns and destroys only its sprites, retaining the shared parent.
+    Bounds culling retains partially visible crowns even when their
+    anchors leave the frame. Road geometry, width, camera and logical
+    depth-zone thresholds remain unchanged for future C2 opponents. Reciprocal
+    distance mapping and its inverse now belong to `createRacePerspective`;
+    road/ground/MID texture sampling and Graphics fallbacks share that mapping.
+    Road and ground use 48×8 meshes with 960/710-world-pixel repeats. Per-band
+    spacing preserves dense near foliage; signed repeat windows recycle only
+    after full bounds exit and fade new instances into the distance.
+  - **C1-06F-7 — NEAR scenery continuity — ACCEPTED (2026-09-07).** The same
+    projected props continue beyond the old 0.78/0.80 cutoffs through the
+    near zone. Scenery opts into a signed exit tail through the same
+    projection beyond depth 1; its base can continue behind the panel
+    while its crown remains visible. It is culled only after its full
+    bounds leave the viewport, with no fade at the visible-world boundary.
+    The ordinary projection window stays unchanged for track objects.
+    Kart/effects/React overlay retain their foreground ownership. A separate
+    screen-space foliage strip remains optional future art.
+  - **C1-06F-8 — world/motion polish — IMPLEMENTED / ACCEPTED (2026-09-07;
+    final integration/performance verification in F-9/G).**
+    `studentRaceMotion` owns renderer prediction, server-rate movement and
+    bounded smooth snapshot correction; `raceAnimationConfig.motion` owns
+    its tuning. Base velocity follows server-rate changes over 400 ms.
+    Correction velocity uses a 2800 ms error horizon and 700 ms response;
+    their sum advances one visual position. The first EASY-sized fixture
+    (2→2.8 units/s, +10 position) peaks at about 5.48 units/s instead of
+    7.41 before this refinement and then settles to 2.8. Repeated +20 samples
+    every 0.9 seconds retain continuous motion with about 73 units of bounded
+    backlog in the stress test. Genuine sustained server rates remain intact:
+    initial speed 0.5 gives 2 units/s and maximum speed 2 gives 8 units/s;
+    no server code or rules changed. Finish settling presents the authoritative
+    finish flag and shares `raceAnimationConfig.effects.finishEffectDurationMs`
+    (1200 ms) with the existing effect; there is no second finish-duration
+    owner or client finish decision. DEV movement uses
+    `4 × speed` and `/dev/race?motionScenario=boost` supplies synthetic
+    one +10 position/+0.2 speed sample after five seconds, starting from
+    speed 0.5 and holding speed 0.7 afterward for sustained-motion checks.
+    `/dev/race?motionScenario=finish` begins at position 900
+    for about 21 seconds of gate approach at 4.8 units/s. The explicitly
+    labeled DEV preview now has four clickable fixed feedback fixtures:
+    correct, streak 3, streak 5 and wrong. Each uses a unique question ID,
+    the production answer mapper and the existing 900 ms dwell. Sample
+    score/streak values belong only to that harness; no rank/count is invented.
+    Production rank/count already use supplied server snapshots. HUD colors
+    now follow existing light/dark/system tokens without a theme override.
+    The upright finish gate uses poles and a checkered banner drawn once
+    with Pixi Graphics, scales with THE track projection and interleaves
+    with scenery by projected depth. It contains no baked text or finish
+    decision. Kart `maxWidthRatio` is now 0.34 (from 0.28), keeping its
+    center, anchor and track geometry. The renderer reveals its scene after
+    layer readiness settles; rejected assets use their existing fallback.
+    Pending loads also fall back at the 10-second deadline in `worldArtConfig.loading`.
+    Timers are cleared and late results cannot mutate textures.
+    Destruction before readiness cannot reveal a stale scene.
+    No calculations were added to JSX. Shimon accepted the current world
+    presentation; retain it while completing the feedback/speedometer pass.
+    Additional shadows/dust or separate NEAR art are optional polish,
+    not a reason to reopen the accepted composition.
+  - **C1-06F-9 — local checkpoint accepted; remaining release QA tracked**
+    (C1-06G). Validation rerun on 2026-09-08: 402 client tests across
+    49 files, ESLint and the production build pass. The known main-chunk
+    warning remains (899.70 kB; race chunk 271.17 kB). Built JavaScript has
+    no local-runtime, preview, motion-scenario or DEV-race identifiers. DEV browser checks
+    at widths 320, 375, 412, 768, 1024 (short frame) and 1280 found no
+    horizontal overflow and all four answers fit. Preview controls exercised
+    the combo reward and Pixi burst; missing rank stayed hidden. Light
+    English/LTR and system-dark Hebrew/RTL were inspected. Reduced motion
+    has unit/CSS coverage, with browser verification still open. Earlier world
+    checks covered gate/foliage depth and theme switching; automated coverage
+    includes reciprocal optical flow, texture/prop agreement, signed repeat
+    exits and sustained server movement.
+    Live API/browser QA on 2026-09-07 used an isolated two-player race: create/join/start, six
+    correct/wrong answers including streak 3, reconnect with persistent
+    speed 0.9, then normal finishes at distance 100 with ranks 1/2 and zero
+    movement rate. Score/streak remained authoritative through finish.
+    Real browser QA covered join/wait/start, correct +10 and speed 0.7,
+    actual expiry/question reset, then consecutive correct answers showing
+    score 50, streak 2, COMBO +10, speed 0.9 and rank 1/2. Reload near 94%
+    returned FINISHED. That is not a mid-race offline/resume browser test:
+    current offline and hidden→visible recovery, reduced-motion emulation
+    and physical-phone QA remain open. Opponents remain C2.
 
 - asset manifest keys
 - metadata-driven props
@@ -490,11 +720,47 @@ vehicle rendering; it must use this server truth, never `sessionStorage`.
 
 **C1 gate:** complete real single-player race flow including refresh/reconnect.
 
+C1-06G local development closure checklist:
+
+- [x] Current world, road/forest joins and movement presentation accepted by Shimon.
+- [x] Server-driven reward/combo and speedometer implemented with separate
+  JavaScript view models and existing React/Pixi ownership.
+- [x] Current tests (402/49), lint/build, production DEV exclusion and
+  narrow/short/wide DEV checks pass;
+  four answers fit, combo/Pixi feedback works, and light English/LTR plus
+  system-dark Hebrew/RTL were inspected.
+- [x] Live API create/join/start, repeated correct/wrong answers, reconnect
+  and normal finish retain server-owned score/streak/speed/rank.
+- [x] Real browser join/wait/start, correct/combo HUD, actual expiry/reset
+  and near-finish reload into FINISHED verified.
+- [x] Automated page/session recovery checks pass: hidden state pauses
+  gameplay/heartbeat, visible return reconnects before resync, and a failed
+  answer is never automatically posted again.
+- [x] `StudentRaceScreen` integration with the actual Mantine media-query
+  hook preserves written feedback and authoritative state, forwards the
+  initial/live reduced-motion preference to Pixi, and clears feedback after dwell.
+
+Required pre-release QA carried forward from C1 (not blocking the accepted
+local development handoff to C2; not yet verified on a physical device/browser):
+
+- [ ] Verify current browser offline/reconnect and hidden→visible recovery
+  during a race without answer replay or stale feedback.
+- [ ] Verify reduced-motion browser emulation; current coverage is unit/CSS only.
+- [ ] Verify touch/readability and sustained rendering on a physical phone;
+  record the device and result before claiming performance completion.
+
 ## C2 — Opponents
 
-Depends on S1-02.
+Next implementation stage after the accepted local C1 checkpoint. S1-02 is
+DONE: runtime and answer snapshots already
+provide authoritative `rank`, `playerCount` and up to four `nearbyPlayers`.
+The HUD consumes rank/count; nearby-player client mapping and rendering are
+not implemented yet. No new endpoint or client-calculated rank is needed.
 
-- extend projection with lateral `laneDelta`
+- validate/map nearby-player snapshots through the existing runtime boundary,
+  retaining snapshot freshness and each player's server identity/state
+- derive `laneDelta` from server lane numbers for the existing projection's
+  lateral coordinate; retain Depth Lock and the accepted road/camera/depth zones
 - opponent interpolation keyed by RacePlayer ID
 - hidden/entering/visible/exiting state machine
 - hysteresis/fades
@@ -502,6 +768,34 @@ Depends on S1-02.
 - object pooling
 - server color keys
 - no visual depth cheating.
+
+### C2-A — Race sound polish — PLANNED
+
+Next near-term polish slice after the first integrated opponent renderer,
+before the student-side final demonstration. No sound playback or assets
+are implemented by this planning checkpoint.
+
+- A quiet hover-engine loop changes pitch/volume gradually with the real
+  server speed and remains at the new level while that speed is sustained.
+- Short distinct sounds for accepted correct/wrong answers, combo, boost
+  and finish; optional subtle jungle ambience below the feedback volume.
+- Reuse accepted answer identity/streak and authoritative speed/finish
+  transitions. A combo sound is presentation of the server streak, never
+  a locally calculated reward or a new game event.
+- One feature audio controller owns playback and cleanup outside JSX and
+  outside Pixi drawing code. Reuse the existing feedback contract and
+  lifecycle; do not create another polling loop or gameplay clock.
+- Audio metadata belongs to focused manifest/config keys. Load bounded
+  assets with a silent fallback so sound failure cannot block the race.
+- Reuse existing settings/theme/i18n owners for mute and volume, with an
+  obvious reachable mute control. Begin playback after user interaction;
+  the game remains fully usable with sound off or browser playback blocked.
+- Pause engine/ambience when hidden or gameplay is unavailable; resume only
+  after the existing session recovery is ready. Do not replay old answer or
+  finish sounds on refresh/reconnect. Stop and release audio on unmount.
+- Acceptance: mobile playback, mute persistence, no doubled sounds after
+  repeated answers/reconnect, sustained speed changes, and comfortable
+  balance with classroom use. Retest the carried-forward device checklist.
 
 ## C3 — Teacher live race
 

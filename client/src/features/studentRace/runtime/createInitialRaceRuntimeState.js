@@ -1,44 +1,6 @@
 import { STUDENT_RACE_FEEDBACK } from "./studentRaceRuntimeConstants.js";
 
-/**
- * THE state contract of the student race screen. Every data source — REST
- * responses, submit-answer raceImpact, the temporary local runtime, future
- * SSE snapshots — is mapped (runtime/map*.js) into this exact shape; the
- * page, HUD and Pixi renderer consume it without knowing the source.
- *
- * Race-level fields and totalDistance start as null on purpose: the client
- * never pretends to know what the server hasn't said yet (no fake
- * IN_PROGRESS, no fake track length — the finish-line UI simply waits).
- * `visual` carries TARGETS only; frame-interpolated values (visualPosition,
- * camera, world offset) live inside the Pixi renderer, never here (README).
- *
- * @typedef {Object} StudentRaceRuntimeState
- * @property {{id: ?number, title: string, roomCode: string, startedAt: ?string,
- *   finishedAt: ?string}} race       Server race metadata (mapRaceStateToRuntime)
- * @property {?string} raceStatus     Server RaceStatus name (null until known)
- * @property {?string} playerStatus   Server RacePlayerStatus name (null until known)
- * @property {boolean} playerFinished Authoritative server flag — never derived locally
- * @property {boolean} raceFinished   Authoritative server flag — never derived locally
- * @property {?number} totalDistance  Track length in server units (null until known)
- * @property {{racePlayerId: ?number, displayName: string, laneNumber: ?number,
- *   vehicleTypeKey: ?string, vehicleColorKey: ?string, vehicleAssetKey: ?string,
- *   position: number, speed: number, score: number, streak: number,
- *   highestStreak: number, currentDifficulty: ?string}} player
- *   Identity fields are the server's presentation truth (race-state.player) —
- *   null/empty until known, never defaulted client-side
- * @property {{questionId: ?number, questionText: string, timeLimitSeconds: number,
- *   expiresAt: ?string, choices: Array<Object>}} question
- * @property {{isSubmitting: boolean, selectedChoiceId: ?number, correct: ?boolean,
- *   correctAnswerChoiceId: ?number, feedbackState: string}} answer
- * @property {?number} lastSnapshotAtEpochMs Server truth-time of the applied
- *   snapshot — the freshness order; network arrival order never rolls back
- * @property {{targetPosition: number, targetSpeed: number,
- *   movementUnitsPerSecond: number, activeEffect: ?string}} visual
- * @property {{assets: boolean, raceState: boolean, question: boolean}} loading
- * @property {?Object} error
- */
 
-/** @returns {StudentRaceRuntimeState} a fresh object per call — never a shared singleton. */
 export function createInitialRaceRuntimeState() {
   return {
     race: {
@@ -56,6 +18,7 @@ export function createInitialRaceRuntimeState() {
     raceFinished: false,
 
     totalDistance: null,
+    playerCount: null,
 
     player: {
       racePlayerId: null,
@@ -70,6 +33,7 @@ export function createInitialRaceRuntimeState() {
       score: 0,
       streak: 0,
       highestStreak: 0,
+      rank: null,
       currentDifficulty: null,
     },
 
@@ -94,8 +58,6 @@ export function createInitialRaceRuntimeState() {
     visual: {
       targetPosition: 0,
       targetSpeed: 0,
-      // Server-owned effective movement rate (speed x base rate) — the
-      // renderer predicts visual motion with it between snapshots.
       movementUnitsPerSecond: 0,
       activeEffect: null,
     },

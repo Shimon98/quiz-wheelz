@@ -1,20 +1,6 @@
 import { ApiContractError } from "../../../errors/ApiContractError.js";
+import { assertValidRaceSnapshot } from "./applyRaceSnapshot.js";
 
-/*
- * mapSubmitAnswerToModel — the ONE boundary between the server's
- * SubmitAnswerResponse and the answer flow. It receives the submitted
- * question model + choiceId so identity ("this response answers what we
- * asked") and correct-answer membership ("the revealed correct choice
- * belongs to that question") are enforced here — feedback can never paint a
- * choice on the wrong question.
- *
- * Deliberately validates ONLY what C1-03 consumes: correctness + the
- * authoritative snapshot (deep-validated by applyRaceSnapshot, the shared
- * snapshot owner). Unconsumed wire fields (questionStatus, timing echoes,
- * scoreDelta/progressDelta) are not validated or returned — they stay
- * outside the model until a future consumer actually needs them (the C1-04
- * HUD reads the authoritative snapshot, not the deltas).
- */
 export function mapSubmitAnswerToModel(response, { question, choiceId }) {
   if (response == null || typeof response !== "object") {
     throw new ApiContractError("Submit answer response is missing");
@@ -31,7 +17,6 @@ export function mapSubmitAnswerToModel(response, { question, choiceId }) {
     throw new ApiContractError("Submit answer correctness flag is missing");
   }
 
-  // Server contract: null on correct, the real correct choice id on wrong.
   const correctAnswerChoiceId = response.correctAnswerChoiceId ?? null;
 
   if (response.correct) {
@@ -44,13 +29,21 @@ export function mapSubmitAnswerToModel(response, { question, choiceId }) {
     throw new ApiContractError("Submit answer correct choice is unknown");
   }
 
-  if (response.raceImpact?.snapshot == null) {
-    throw new ApiContractError("Submit answer race snapshot is missing");
+  const { scoreDelta, snapshot } = response.raceImpact ?? {};
+  assertValidRaceSnapshot(snapshot);
+  if (!Number.isSafeInteger(scoreDelta)) {
+    throw new ApiContractError("Submit answer score delta is invalid");
   }
 
   return {
     correct: response.correct,
     correctAnswerChoiceId,
-    snapshot: response.raceImpact.snapshot,
+    snapshot,
+    feedback: {
+      questionId: response.questionId,
+      correct: response.correct,
+      scoreDelta,
+      streak: snapshot.streak,
+    },
   };
 }

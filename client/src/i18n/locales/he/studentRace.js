@@ -1,9 +1,11 @@
-/*
- * Hebrew strings for the student race screen. D scope: page status states
- * only — question/timer/HUD strings land with C1-02/C1-04. Generic API error
- * bodies stay in the errors namespace; these are race-specific texts.
- */
 export default {
+  preview: {
+    question: "DEV · תצוגת משוב לדוגמה",
+    correct: "נכון",
+    combo: "רצף 3",
+    strongCombo: "רצף 5",
+    wrong: "טעות",
+  },
   status: {
     loadingTitle: "טוענים את המרוץ...",
     loadingBody: "עוד רגע מתחילים!",
@@ -47,9 +49,24 @@ export default {
 
   hud: {
     scoreLabel: "ניקוד",
+    rankLabel: "מקום",
+    rankValue: "מקום {{rank}} מתוך {{count}}",
     streakLabel: "רצף תשובות נכונות",
+    streakShortLabel: "רצף",
+    streakValue: "{{count}} תשובות נכונות ברצף",
+    streakValue_one: "תשובה נכונה אחת ברצף",
+    comboLabel: "קומבו",
     speedLabel: "מהירות",
+    speedValue: "מהירות {{speed}}",
     progressLabel: "התקדמות במרוץ",
+    progressShortLabel: "מסלול",
+  },
+
+  reward: {
+    correctTitle: "תשובה נכונה!",
+    comboTitle: "קומבו!",
+    streak: "{{count}} ברצף",
+    points: "נקודות",
   },
 
   timer: {

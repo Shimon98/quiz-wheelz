@@ -1,3 +1,4 @@
+import { STUDENT_RACE_FEEDBACK_VISUAL } from "../../config/raceFeedbackVisualConfig";
 import { STUDENT_RACE_EFFECT } from "../../runtime/studentRaceRuntimeConstants";
 
 const GREEN = 0x51cf66;
@@ -8,7 +9,8 @@ const MUD = 0x8d5a2b;
 const CYAN = 0x22b8cf;
 const SKY = 0x74c0fc;
 
-const SPARK_ANGLES = [-170, -135, -100, -80, -45, -10].map((deg) => (deg * Math.PI) / 180);
+const CORRECT_CONFIG = STUDENT_RACE_FEEDBACK_VISUAL.correct;
+const SPARK_ANGLES = CORRECT_CONFIG.sparkAngles.map((deg) => (deg * Math.PI) / 180);
 const SPLASH_ANGLES = [10, 40, 70, 110, 140, 170].map((deg) => (deg * Math.PI) / 180);
 const STREAK_OFFSETS = [-0.42, -0.28, -0.14, 0.14, 0.28, 0.42];
 const CONFETTI = Array.from({ length: 14 }, (_, i) => ({
@@ -28,17 +30,28 @@ function dot(g, x, y, radius, color, alpha) {
   g.circle(x, y, radius).fill({ color, alpha });
 }
 
-function drawCorrect(g, { x, y, size }, progress) {
+function drawCorrect(g, { x, y, size, feedbackStreak = 0 }, progress) {
   const grow = easeOut(progress);
-  dot(g, x, y, size * (0.4 + 0.3 * grow), GREEN, fade(progress, 0.16));
-  ring(g, x, y, size * (0.3 + 0.55 * grow), GREEN, fade(progress, 0.85), size * 0.06 * (1 - progress) + 2);
-  if (progress > 0.2) {
-    const late = (progress - 0.2) / 0.8;
-    ring(g, x, y, size * (0.25 + 0.5 * easeOut(late)), GOLD, fade(late, 0.65), 3);
+  const streak = Number.isSafeInteger(feedbackStreak) ? feedbackStreak : 0;
+  const combo = Math.min(1, Math.max(0, (streak - 1) / (CORRECT_CONFIG.maxVisualStreak - 1)));
+  const spread = 1 + combo * CORRECT_CONFIG.comboSpreadRatio;
+  const alpha = fade(progress, 0.95);
+  dot(g, x, y, size * (0.3 + 0.28 * grow), GREEN, fade(progress, 0.13));
+  ring(g, x, y, size * (0.28 + 0.44 * grow) * spread, GREEN, alpha, size * 0.045 * (1 - progress) + 2);
+  if (progress > 0.12) {
+    const late = (progress - 0.12) / 0.88;
+    ring(g, x, y, size * (0.22 + 0.42 * easeOut(late)) * spread, GOLD, fade(late, 0.7 + 0.2 * combo), 2 + combo * 2);
   }
-  SPARK_ANGLES.forEach((angle) => {
-    const distance = size * (0.4 + 0.55 * grow);
-    dot(g, x + Math.cos(angle) * distance, y + Math.sin(angle) * distance * 0.8, size * (0.05 - 0.03 * progress), GOLD, fade(progress, 0.95));
+  SPARK_ANGLES.forEach((angle, index) => {
+    const distance = size * (0.34 + 0.45 * grow) * spread;
+    const radius = size * (0.07 - 0.035 * progress)
+      * (1 + combo * CORRECT_CONFIG.comboSparkScaleRatio);
+    const sparkX = x + Math.cos(angle) * distance;
+    const sparkY = y + Math.sin(angle) * distance * 0.8;
+    g.star(sparkX, sparkY, CORRECT_CONFIG.sparkPoints, radius,
+      radius * CORRECT_CONFIG.sparkInnerRatio, angle + Math.PI / 4)
+      .fill({ color: index % 3 === 0 ? GREEN : GOLD, alpha });
+    dot(g, sparkX, sparkY, radius * 0.18, WHITE, alpha);
   });
 }
 

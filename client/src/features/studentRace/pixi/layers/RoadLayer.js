@@ -1,69 +1,164 @@
-import { Graphics } from "pixi.js";
+import { Container, Graphics } from "pixi.js";
 
-/*
- * Wide muddy jungle track (locked track model, F-2): ONE lane-agnostic road,
- * symmetric around the screen center for EVERY player — server lanes are
- * invisible relative slots for future opponents and are never drawn. Near
- * the player the road is wider than the frame (edges off-screen); curbs and
- * edges fade in from the mid zone toward the horizon, driven by the LIVE
- * viewDepthZones config (this layer is its first consumer — future opponent
- * visibility caps join the same zones).
- *
- * NO lane lines, NO center markers, NO numbers. Road texture comes from
- * scattered mud details (wet patches, puddles, stones) flowing with depth —
- * scattered laterally on purpose so nothing reads as a lane marking.
- *
- * Placeholder drawing — colors/densities die with the real road asset.
- */
-const ROAD_COLOR = 0xc98f4e; // dry mud
-const WET_MUD_COLOR = 0xa9743c; // darker wet patches
-const PUDDLE_COLOR = 0x8c7a5b; // muddy water
+import { STUDENT_RACE_ANIMATION_CONFIG } from "../../config/raceAnimationConfig";
+import { STUDENT_RACE_WORLD_ART } from "../../config/worldArtConfig";
+import {
+  loadStudentRaceWorldTexture,
+  WORLD_ASSET_STATUS,
+} from "../assets/studentRaceWorldAssets";
+import { buildRoadMeshData } from "../utils/buildRoadMeshData";
+import { getLoopPhase } from "../utils/getLoopPhase";
+import { ProjectedTextureStrip } from "../utils/ProjectedTextureStrip";
+
+const ROAD_COLOR = 0xc98f4e;
+const WET_MUD_COLOR = 0xa9743c;
+const PUDDLE_COLOR = 0x8c7a5b;
 const STONE_COLOR = 0xb8a98f;
 const CURB_RED = 0xd9503d;
 const CURB_WHITE = 0xf5efe0;
-// World-pixels of forward travel per curb/detail step (placeholder motion
-// density; the real unit conversion lives in raceAnimationConfig).
-const DEPTH_CYCLE_WORLD_PX = 260;
-// Skip elements too close to the horizon — sub-pixel noise otherwise.
 const MIN_VISIBLE_DEPTH = 0.04;
 const MUD_DETAIL_TYPES = ["patch", "puddle", "stone"];
+const HAZE_LAYERS = 10;
 
 export class RoadLayer {
-  constructor(container, { road, viewDepthZones }) {
+  constructor(
+    container,
+    { road, viewDepthZones, loadWorldTexture = loadStudentRaceWorldTexture },
+  ) {
     this.road = road;
     this.zones = viewDepthZones;
-    this.graphics = new Graphics();
-    container.addChild(this.graphics);
+    this.destroyed = false;
+    this.roadTexture = null;
+    this.strip = null;
+    this.hazeSizeKey = null;
 
-    // Index-seeded scatter — deterministic, so details never flicker
-    // between frames and never line up into anything lane-like.
+    this.container = new Container();
+    container.addChild(this.container);
+    this.graphics = new Graphics();
+    this.meshContainer = new Container();
+    this.hazeGraphics = new Graphics();
+    this.container.addChild(this.graphics, this.meshContainer, this.hazeGraphics);
+
     this.mudDetails = Array.from({ length: road.mudDetailCount }, (_, i) => ({
       lateralRatio: this.pseudoRandom(i * 2.17) * 1.5 - 0.75,
       sizeFactor: 0.05 + this.pseudoRandom(i * 3.71) * 0.08,
       type: MUD_DETAIL_TYPES[i % MUD_DETAIL_TYPES.length],
     }));
+
+    this.ready = this.requestRoadTexture(loadWorldTexture);
   }
 
-  // Deterministic 0..1 noise from an index (classic sin-hash) — a stable
-  // placeholder scatter with zero per-frame randomness.
+  async requestRoadTexture(loadWorldTexture) {
+    const { assetUrl, maxAnisotropy, edgeFeatherHalfWidthRatio } = STUDENT_RACE_WORLD_ART.road;
+    const result = await loadWorldTexture(assetUrl, {
+      repeat: true,
+      mipmaps: true,
+      maxAnisotropy,
+    });
+
+    if (this.destroyed || result.status !== WORLD_ASSET_STATUS.LOADED) {
+      return;
+    }
+    this.roadTexture = result.texture;
+    this.strip = new ProjectedTextureStrip(
+      this.meshContainer,
+      result.texture,
+      (frameState) => this.buildRoadData(frameState),
+      { edgeFeatherHalfWidthRatio },
+    );
+  }
+
+  get mesh() {
+    return this.strip?.mesh ?? null;
+  }
+
+  buildRoadData({ perspective, layout }) {
+    const { tileWorldLength, meshRows, meshColumns, surfaceInsetURatio } =
+      STUDENT_RACE_WORLD_ART.road;
+    const { positionToPixelsRatio } = STUDENT_RACE_ANIMATION_CONFIG.serverUnits;
+
+    return buildRoadMeshData({
+      perspective,
+      worldBottomY: layout.world.bottomY,
+      positionToPixelsRatio,
+      tileWorldLength,
+      rows: meshRows,
+      columns: meshColumns,
+      surfaceInsetURatio,
+    });
+  }
+
   pseudoRandom(seed) {
     const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
     return x - Math.floor(x);
   }
 
-  resize() {
-    // All drawing derives from frameState.perspective on the next update.
-  }
+  resize() {}
 
   update(frameState) {
+    if (this.roadTexture != null) {
+      this.updateRoadMesh(frameState);
+    } else {
+      this.drawFallbackRoad(frameState);
+    }
+    this.drawHorizonHaze(frameState);
+  }
+
+  drawHorizonHaze(frameState) {
+    const { perspective, width, height, layout } = frameState;
+    const sizeKey = `${width}x${height}`;
+    if (sizeKey === this.hazeSizeKey) return;
+    this.hazeSizeKey = sizeKey;
+
+    const {
+      color,
+      maxAlpha,
+      aboveWorldHeightRatio,
+      belowWorldHeightRatio,
+      radiusXRatio,
+    } = STUDENT_RACE_WORLD_ART.horizonHaze;
+    const worldHeight = layout.world.bottomY;
+    const above = worldHeight * aboveWorldHeightRatio;
+    const below = worldHeight * belowWorldHeightRatio;
+    const centerY = perspective.horizonY + (below - above) / 2;
+    const radiusY = (above + below) / 2;
+    const radiusX = perspective.widthUnit * radiusXRatio;
+    const layerAlpha = 1 - (1 - maxAlpha) ** (1 / HAZE_LAYERS);
+
+    const g = this.hazeGraphics;
+    g.clear();
+    for (let i = HAZE_LAYERS; i >= 1; i -= 1) {
+      const scale = i / HAZE_LAYERS;
+      g.ellipse(perspective.centerX, centerY, radiusX * scale, radiusY * scale)
+        .fill({ color, alpha: layerAlpha });
+    }
+  }
+
+  updateRoadMesh(frameState) {
+    const { perspective, worldOffset, height, layout } = frameState;
+    const { tileWorldLength, underPanelColor } = STUDENT_RACE_WORLD_ART.road;
+    const worldBottomY = layout.world.bottomY;
+
+    this.strip.sync(frameState, getLoopPhase(worldOffset, tileWorldLength));
+
+    const g = this.graphics;
+    g.clear();
+    if (height > worldBottomY) {
+      const bottomHalf = perspective.roadHalfWidthAt(1);
+      g.rect(
+        perspective.centerX - bottomHalf,
+        worldBottomY,
+        bottomHalf * 2,
+        height - worldBottomY,
+      ).fill(underPanelColor);
+    }
+  }
+
+  drawFallbackRoad(frameState) {
     const { perspective, worldOffset, height, layout } = frameState;
     const g = this.graphics;
     g.clear();
 
-    // Road surface — trapezoid from horizon to the visible world's bottom
-    // (the question panel's overlap line, layout contract G). With
-    // roadBottomWidthRatio > 1 the near edges live OFF-screen, so up close
-    // the road is mud from edge to edge, exactly per the track model.
     const worldBottomY = layout.world.bottomY;
     const topHalf = perspective.roadHalfWidthAt(0);
     const bottomHalf = perspective.roadHalfWidthAt(1);
@@ -78,8 +173,6 @@ export class RoadLayer {
       worldBottomY,
     ]).fill(ROAD_COLOR);
 
-    // Continue the surface down behind the question panel, so the world
-    // never shows a seam where the panel's rounded corners reveal it.
     if (height > worldBottomY) {
       g.rect(
         perspective.centerX - bottomHalf,
@@ -89,22 +182,13 @@ export class RoadLayer {
       ).fill(ROAD_COLOR);
     }
 
-    const phase = this.depthPhase(worldOffset);
+    const viewWorldLength = perspective.viewDistanceAhead *
+      STUDENT_RACE_ANIMATION_CONFIG.serverUnits.positionToPixelsRatio;
+    const phase = getLoopPhase(worldOffset, viewWorldLength);
     this.drawMudDetails(g, perspective, phase);
     this.drawCurbs(g, perspective, phase);
   }
 
-  depthPhase(worldOffset) {
-    const raw = (worldOffset / DEPTH_CYCLE_WORLD_PX) % 1;
-    return raw < 0 ? raw + 1 : raw;
-  }
-
-  /*
-   * Curbs read mainly in the mid/far zones: full strength up to the near
-   * zone's edge, then fade out toward the player (where the road edges are
-   * off-screen anyway). Zone boundary comes from viewDepthZones — the same
-   * split future opponent visibility will use.
-   */
   curbAlphaAt(tMid) {
     const nearStart = this.zones.near.minDepth;
     if (tMid <= nearStart) return 1;
@@ -116,8 +200,13 @@ export class RoadLayer {
     const segments = this.road.curbSegmentCount;
 
     for (let i = 0; i < segments; i++) {
-      const t0 = ((i + phase) % segments) / segments;
-      const t1 = t0 + 1 / segments;
+      const nearDistance = getLoopPhase(i / segments - phase, 1) * perspective.viewDistanceAhead;
+      const farDistance = Math.min(
+        perspective.viewDistanceAhead,
+        nearDistance + perspective.viewDistanceAhead / segments,
+      );
+      const t0 = perspective.depthAtDistance(farDistance);
+      const t1 = perspective.depthAtDistance(nearDistance);
       if (t1 <= MIN_VISIBLE_DEPTH) continue;
 
       const alpha = this.curbAlphaAt((t0 + Math.min(t1, 1)) / 2);
@@ -160,7 +249,8 @@ export class RoadLayer {
 
     for (let i = 0; i < count; i++) {
       const detail = this.mudDetails[i];
-      const t = ((i + phase) % count) / count;
+      const distance = getLoopPhase(i / count - phase, 1) * perspective.viewDistanceAhead;
+      const t = perspective.depthAtDistance(distance);
       if (t <= MIN_VISIBLE_DEPTH) continue;
 
       const y = perspective.depthToY(t);
@@ -185,6 +275,7 @@ export class RoadLayer {
   }
 
   destroy() {
-    this.graphics.destroy();
+    this.destroyed = true;
+    this.container.destroy({ children: true });
   }
 }

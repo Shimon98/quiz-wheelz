@@ -14,6 +14,13 @@ This state is based on GitHub `main` at the recorded baseline plus the completed
 S0-01 development-infrastructure implementation verified on both development
 machines.
 
+Local client checkpoint, 2026-09-08: C1 development is accepted for
+progression to C2 on `feature/C1-Student-playable-loop`. The single-player
+world, HUD, accepted-answer/combo feedback and real server flow are implemented.
+402 client tests/49 files, lint and build pass. This does not update the
+audited `main` baseline or claim a production release. Remaining browser/device
+QA and near-term audio polish are tracked in the canonical client plan.
+
 ## Executive summary
 
 QuizWheelz is not an early prototype. Most backend gameplay foundations and the
@@ -25,7 +32,7 @@ with time, correct answers boost speed and add progress bonuses, and timeouts
 slow more than wrong answers. Real absence freezes position without pausing
 question deadlines; reconnect never awards offline catch-up, and absent
 players do not keep the class race open. The main missing product slices are
-opponents, real assets, and the
+opponents and the
 teacher live race/SSE screen and results.
 
 ## Product status board
@@ -129,3 +136,8 @@ Teacher creates and starts a race
 
 No teacher SSE, luck event, junction or 2FA work should interrupt this slice unless it
 is required to make the slice run safely.
+
+For the locally accepted C1 client implementation, the next work is C2
+opponent rendering against the existing S1-02 contract, followed by C2-A
+race sound polish. Required physical-device/recovery QA remains visible in
+the client plan and must pass before release.

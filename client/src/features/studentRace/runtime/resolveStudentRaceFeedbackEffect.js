@@ -21,7 +21,12 @@ export function resolveStudentRaceFeedbackEffect(
     : null;
 }
 
-export function applyFeedbackEffectToRuntime(runtimeState, feedbackState) {
+export function applyFeedbackEffectToRuntime(
+  runtimeState,
+  feedbackState,
+  answerFeedback = null,
+  { reducedMotion = false } = {},
+) {
   if (runtimeState == null) {
     return runtimeState;
   }
@@ -29,13 +34,22 @@ export function applyFeedbackEffectToRuntime(runtimeState, feedbackState) {
   const activeEffect = resolveStudentRaceFeedbackEffect(feedbackState, {
     playerFinished: runtimeState.playerFinished === true,
   });
+  const feedbackEventId = activeEffect == null ? null : answerFeedback?.questionId ?? null;
+  const feedbackStreak = activeEffect === STUDENT_RACE_EFFECT.CORRECT && answerFeedback?.correct === true
+    ? answerFeedback.streak
+    : 0;
 
-  if (activeEffect === (runtimeState.visual?.activeEffect ?? null)) {
+  if (
+    activeEffect === (runtimeState.visual?.activeEffect ?? null)
+    && feedbackEventId === (runtimeState.visual?.feedbackEventId ?? null)
+    && feedbackStreak === (runtimeState.visual?.feedbackStreak ?? 0)
+    && reducedMotion === (runtimeState.visual?.reducedMotion ?? false)
+  ) {
     return runtimeState;
   }
 
   return {
     ...runtimeState,
-    visual: { ...runtimeState.visual, activeEffect },
+    visual: { ...runtimeState.visual, activeEffect, feedbackEventId, feedbackStreak, reducedMotion },
   };
 }

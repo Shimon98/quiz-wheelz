@@ -59,6 +59,21 @@ function visibleArt(layer) {
 }
 
 describe("PlayerKartLayer vehicle art lifecycle", () => {
+  it("removes bob and tilt when reduced motion is enabled without changing the anchor", () => {
+    const layer = createLayer(vi.fn());
+    const moving = { ...frameState(100), visualSpeed: 2 };
+    layer.update(moving);
+    const anchor = { x: layer.root.x, y: layer.root.y };
+
+    expect(layer.kart.y).not.toBe(0);
+    expect(layer.kart.rotation).not.toBe(0);
+    layer.update({ ...moving, runtimeState: { visual: { reducedMotion: true } } });
+    expect(layer.kart.y).toBe(0);
+    expect(layer.kart.rotation).toBe(0);
+    expect({ x: layer.root.x, y: layer.root.y }).toEqual(anchor);
+    layer.destroy();
+  });
+
   it("shows nothing before any vehicle key is known", () => {
     const layer = createLayer(vi.fn());
 
