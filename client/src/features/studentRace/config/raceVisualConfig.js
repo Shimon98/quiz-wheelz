@@ -1,4 +1,15 @@
 export const STUDENT_RACE_VISUAL_CONFIG = Object.freeze({
+  opponents: Object.freeze({
+    laneGapKartWidths: 0.92,
+    maxPredictionMs: 2500,
+    smoothingTimeMs: 180,
+    snapCorrectionUnits: 20,
+    frontEnterMarginUnits: 10,
+    frontExitMarginUnits: 2,
+    enterFadeMs: 180,
+    exitFadeMs: 160,
+    sideCullMarginPx: 24,
+  }),
   gameFrame: Object.freeze({
     maxWidth: 960,
     maxHeightRatio: 0.92,

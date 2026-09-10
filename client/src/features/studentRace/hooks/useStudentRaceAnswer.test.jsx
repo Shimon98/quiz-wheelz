@@ -27,6 +27,8 @@ function response({ id = 17, correct = true, scoreDelta = 10, streak = 3 } = {})
         highestStreak: streak,
         totalDistance: 1000,
         movementUnitsPerSecond: 5.2,
+        eventVersion: 0,
+        opponents: [],
         snapshotAtEpochMs: 10000,
         raceStatus: "IN_PROGRESS",
         playerStatus: "RACING",
@@ -37,7 +39,7 @@ function response({ id = 17, correct = true, scoreDelta = 10, streak = 3 } = {})
   };
 }
 
-function setup() {
+function setup(coordination = {}) {
   const initialQuestion = question();
   const refreshQuestion = vi.fn();
   const applyAuthoritativeSnapshot = vi.fn();
@@ -46,6 +48,7 @@ function setup() {
       question: currentQuestion,
       refreshQuestion,
       applyAuthoritativeSnapshot,
+      ...coordination,
     }),
     { initialProps: { currentQuestion: initialQuestion } },
   );
@@ -62,6 +65,40 @@ afterEach(() => {
 });
 
 describe("useStudentRaceAnswer accepted feedback", () => {
+  it("discards an old-generation completion and releases submission without refreshing or retrying", async () => {
+    const token = { generation: 1 };
+    const isMutationCurrent = vi.fn(() => true);
+    const endAuthoritativeMutation = vi.fn();
+    let resolve;
+    submitAnswer.mockReturnValue(new Promise((done) => { resolve = done; }));
+    const { result, applyAuthoritativeSnapshot, refreshQuestion } = setup({
+      beginAuthoritativeMutation: () => token, endAuthoritativeMutation, isMutationCurrent,
+    });
+    act(() => { result.current.submitChoice(1); });
+    isMutationCurrent.mockReturnValue(false);
+    await act(async () => { resolve(response()); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+    expect(result.current.isSubmitting).toBe(false);
+    expect(result.current.answerFeedback).toBeNull();
+    expect(applyAuthoritativeSnapshot).not.toHaveBeenCalled();
+    expect(refreshQuestion).not.toHaveBeenCalled();
+    expect(submitAnswer).toHaveBeenCalledTimes(1);
+    expect(endAuthoritativeMutation).toHaveBeenCalledWith(token);
+  });
+
+  it("clears submission when the accumulator rejects a malformed snapshot", async () => {
+    submitAnswer.mockResolvedValue(response());
+    const { result, applyAuthoritativeSnapshot, refreshQuestion } = setup({
+      beginAuthoritativeMutation: () => ({ generation: 1 }),
+      isMutationCurrent: () => true,
+    });
+    applyAuthoritativeSnapshot.mockReturnValue(false);
+    await act(async () => { await result.current.submitChoice(1); });
+    expect(result.current.isSubmitting).toBe(false);
+    expect(result.current.answerFeedback).toBeNull();
+    expect(refreshQuestion).not.toHaveBeenCalled();
+  });
+
   it("waits for server acceptance, keeps one in-flight answer and forwards its snapshot unchanged", async () => {
     let resolveResponse;
     submitAnswer.mockReturnValue(new Promise((resolve) => { resolveResponse = resolve; }));

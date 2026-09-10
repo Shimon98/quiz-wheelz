@@ -15,6 +15,11 @@ import {
 } from "../../../api/racePlayerApi";
 import { RACE_PLAYER_RUNTIME_SESSION_CONFIG } from "../../../shared/racePlayer/racePlayerRuntimeSessionConfig";
 import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig";
+import { createStudentRaceEventSource } from "../../../api/studentRaceLiveApi.js";
+
+vi.mock("../../../api/studentRaceLiveApi.js", () => ({
+  createStudentRaceEventSource: vi.fn(() => ({ close: vi.fn() })),
+}));
 
 vi.mock("../../../api/racePlayerApi", () => ({
   joinRace: vi.fn(),
@@ -68,6 +73,8 @@ function waitingRaceStateResponse() {
       speed: 0,
       streak: 0,
       highestStreak: 0,
+      eventVersion: 0,
+      opponents: [],
       snapshotAtEpochMs: 1755600000000,
       movementUnitsPerSecond: 0,
     },
@@ -197,6 +204,24 @@ it("forwards the accepted answer feedback through question props only for its dw
 });
 
 describe("StudentRacePage — session-first gating", () => {
+  it("continues the existing polling fallback when EventSource is unavailable", async () => {
+    vi.useFakeTimers();
+    try {
+      createStudentRaceEventSource.mockImplementationOnce(() => { throw new Error("unavailable"); });
+      reconnectRacePlayer.mockResolvedValue(activeReconnectResponse());
+      getRaceState.mockResolvedValue(playingRaceStateResponse());
+      getCurrentQuestion.mockResolvedValue(currentQuestionResponse());
+      renderPage();
+      await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+      expect(getRaceState).toHaveBeenCalledTimes(1);
+      await act(async () => { await vi.advanceTimersByTimeAsync(STUDENT_RACE_CONFIG.raceStatePollMs * 2); });
+      expect(getRaceState).toHaveBeenCalledTimes(3);
+      expect(createStudentRaceEventSource).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("starts no race-state request while the initial reconnect is unresolved", async () => {
     reconnectRacePlayer.mockReturnValue(new Promise(() => {}));
 
@@ -230,6 +255,8 @@ describe("StudentRacePage — session-first gating", () => {
 
       expect(getRaceState).toHaveBeenCalledTimes(1);
       expect(getCurrentQuestion).toHaveBeenCalledTimes(1);
+      expect(createStudentRaceEventSource).toHaveBeenCalledTimes(1);
+      const stream = createStudentRaceEventSource.mock.results[0].value;
 
       await act(async () => {
         setDocumentVisibility("hidden");
@@ -252,6 +279,7 @@ describe("StudentRacePage — session-first gating", () => {
       expect(getCurrentQuestion).toHaveBeenCalledTimes(questionCalls);
       expect(screen.getByRole("button", { name: "7" })).toBeDisabled();
       expect(submitAnswer).not.toHaveBeenCalled();
+      expect(stream.close).toHaveBeenCalledTimes(1);
 
       let resolveReconnect;
       reconnectRacePlayer.mockReturnValueOnce(
@@ -268,6 +296,9 @@ describe("StudentRacePage — session-first gating", () => {
       expect(getRaceState).toHaveBeenCalledTimes(raceStateCalls);
       expect(getCurrentQuestion).toHaveBeenCalledTimes(questionCalls);
 
+      const resync = deferred();
+      getRaceState.mockReturnValueOnce(resync.promise);
+
       await act(async () => {
         resolveReconnect({
           outcome: "RECONNECTED",
@@ -281,6 +312,12 @@ describe("StudentRacePage — session-first gating", () => {
 
       expect(getRaceState.mock.calls.length).toBeGreaterThan(raceStateCalls);
       expect(getCurrentQuestion.mock.calls.length).toBeGreaterThan(questionCalls);
+      expect(createStudentRaceEventSource).toHaveBeenCalledTimes(1);
+      const fresh = playingRaceStateResponse();
+      fresh.snapshot.eventVersion = 5;
+      await act(async () => { resync.resolve(fresh); });
+      expect(createStudentRaceEventSource).toHaveBeenCalledTimes(2);
+      expect(createStudentRaceEventSource).toHaveBeenLastCalledWith(5);
     } finally {
       setDocumentVisibility("visible");
       vi.useRealTimers();

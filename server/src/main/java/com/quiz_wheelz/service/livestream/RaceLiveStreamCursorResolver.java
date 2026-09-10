@@ -1,11 +1,12 @@
-package com.quiz_wheelz.service.teacher;
+package com.quiz_wheelz.service.livestream;
+
 
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import org.springframework.stereotype.Component;
 
 @Component
-public class TeacherRaceLiveCursorResolver {
+public class RaceLiveStreamCursorResolver {
 
     public long resolve(
             String lastEventId,

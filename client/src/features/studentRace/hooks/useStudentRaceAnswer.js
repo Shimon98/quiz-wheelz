@@ -25,6 +25,9 @@ export default function useStudentRaceAnswer({
   question,
   refreshQuestion,
   applyAuthoritativeSnapshot,
+  beginAuthoritativeMutation,
+  endAuthoritativeMutation,
+  isMutationCurrent,
 }) {
   const [answer, setAnswer] = useState(IDLE_ANSWER);
 
@@ -41,6 +44,7 @@ export default function useStudentRaceAnswer({
         return;
       }
       inFlightRef.current = true;
+      const token = beginAuthoritativeMutation?.();
 
       setAnswer({
         ...IDLE_ANSWER,
@@ -59,7 +63,12 @@ export default function useStudentRaceAnswer({
           choiceId,
         });
 
-        applyAuthoritativeSnapshot(model.snapshot);
+        if (isMutationCurrent && !isMutationCurrent(token)) return;
+        if (token == null) applyAuthoritativeSnapshot(model.snapshot);
+        else if (!applyAuthoritativeSnapshot(model.snapshot, token)) {
+          setAnswer(IDLE_ANSWER);
+          return;
+        }
         setAnswer((previous) => ({
           ...previous,
           isSubmitting: false,
@@ -71,10 +80,15 @@ export default function useStudentRaceAnswer({
         }));
 
         dwellTimerRef.current = setTimeout(() => {
+          if (isMutationCurrent && !isMutationCurrent(token)) {
+            setAnswer(IDLE_ANSWER);
+            return;
+          }
           setAnswer((previous) => ({ ...previous, dwellComplete: true }));
           refreshQuestion();
         }, STUDENT_RACE_CONFIG.feedbackDelayMs);
       } catch (rawError) {
+        if (isMutationCurrent && !isMutationCurrent(token)) return;
         const error = normalizeApiError(rawError);
 
         setAnswer((previous) => ({
@@ -93,10 +107,13 @@ export default function useStudentRaceAnswer({
           refreshQuestion();
         }
       } finally {
+        if (isMutationCurrent && !isMutationCurrent(token)) setAnswer(IDLE_ANSWER);
+        if (token != null) endAuthoritativeMutation?.(token);
         inFlightRef.current = false;
       }
     },
-    [question, refreshQuestion, applyAuthoritativeSnapshot],
+    [question, refreshQuestion, applyAuthoritativeSnapshot, beginAuthoritativeMutation,
+      endAuthoritativeMutation, isMutationCurrent],
   );
 
   const isStale =

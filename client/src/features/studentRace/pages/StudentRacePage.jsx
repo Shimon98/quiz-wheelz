@@ -18,6 +18,9 @@ function ResolvedStudentRacePage({ runtimeSession }) {
     retry: raceRetry,
     authoritativeResync,
     applyAuthoritativeSnapshot,
+    beginAuthoritativeMutation,
+    endAuthoritativeMutation,
+    isMutationCurrent,
   } = useRaceBootstrap({ syncEnabled: runtimeSession.isGameplayConnectionReady });
 
   const questionEnabled =
@@ -47,6 +50,9 @@ function ResolvedStudentRacePage({ runtimeSession }) {
     question,
     refreshQuestion,
     applyAuthoritativeSnapshot,
+    beginAuthoritativeMutation,
+    endAuthoritativeMutation,
+    isMutationCurrent,
   });
 
   useStudentRaceRecoverySync({

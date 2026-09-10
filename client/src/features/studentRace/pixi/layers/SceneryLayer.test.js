@@ -174,7 +174,7 @@ describe("SceneryLayer", () => {
     const finish = new FinishLineLayer(layer.container);
     const state = frame();
     layer.update(state);
-    finish.update({ ...state, visualPosition: 900, runtimeState: { totalDistance: 1000 } });
+    finish.update({ ...state, raceObjectCameraPosition: 900, runtimeState: { totalDistance: 1000 } });
     layer.container.sortChildren();
     const gateIndex = layer.container.getChildIndex(finish.graphics);
     const shown = layer.items.filter(({ sprite }) => sprite.visible);

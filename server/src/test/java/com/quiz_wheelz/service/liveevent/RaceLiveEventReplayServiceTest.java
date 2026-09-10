@@ -1,9 +1,10 @@
 package com.quiz_wheelz.service.liveevent;
 
-import com.quiz_wheelz.common.TeacherRaceLiveStreamRules;
+import com.quiz_wheelz.common.RaceLiveStreamRules;
 import com.quiz_wheelz.dto.liveevent.QuestionAnsweredLiveEventPayload;
 import com.quiz_wheelz.dto.liveevent.RaceLiveEventEnvelope;
 import com.quiz_wheelz.dto.liveevent.RaceLiveEventPayload;
+import com.quiz_wheelz.dto.liveevent.RaceLiveEventSignal;
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RaceLiveEvent;
 import com.quiz_wheelz.enums.RaceLiveEventType;
@@ -41,6 +42,24 @@ class RaceLiveEventReplayServiceTest {
     }
 
     @Test
+    void studentReplayUsesTheSameOrderedQueryWithoutDecodingPayload() {
+        var first = event(12L, 3L);
+        first.setPayloadJson("not-json-and-not-student-data");
+        when(eventRepository.findAfterVersionOrdered(
+                org.mockito.ArgumentMatchers.eq(12L), org.mockito.ArgumentMatchers.eq(2L),
+                org.mockito.ArgumentMatchers.any(Pageable.class)
+        )).thenReturn(new SliceImpl<>(List.of(first, event(12L, 4L))));
+
+        var signals = service.readNextSignalBatch(12L, 2L);
+
+        assertEquals(List.of(3L, 4L), signals.stream().map(RaceLiveEventSignal::version).toList());
+        org.mockito.Mockito.verifyNoInteractions(payloadCodec);
+        assertEquals(List.of("version", "type", "occurredAtEpochMs"),
+                java.util.Arrays.stream(RaceLiveEventSignal.class.getRecordComponents())
+                        .map(java.lang.reflect.RecordComponent::getName).toList());
+    }
+
+    @Test
     void replayIsRaceScopedAscendingAndBounded() {
         RaceLiveEvent versionThree = event(12L, 3L);
         RaceLiveEvent versionFour = event(12L, 4L);
@@ -70,7 +89,7 @@ class RaceLiveEventReplayServiceTest {
                 pageable.capture()
         );
         assertEquals(0, pageable.getValue().getPageNumber());
-        assertEquals(TeacherRaceLiveStreamRules.REPLAY_BATCH_SIZE, pageable.getValue().getPageSize());
+        assertEquals(RaceLiveStreamRules.REPLAY_BATCH_SIZE, pageable.getValue().getPageSize());
         assertFalse(pageable.getValue().isUnpaged());
     }
 

@@ -6,19 +6,23 @@ import { STUDENT_RACE_VISUAL_CONFIG } from "../../config/raceVisualConfig";
 import { resolveStudentRaceLayoutMetrics } from "../../utils/resolveStudentRaceLayoutMetrics";
 import { createRacePerspective } from "../utils/createRacePerspective";
 import { FinishLineLayer } from "./FinishLineLayer";
+import { resolveRaceObjectGeometry } from "../utils/resolveRaceObjectGeometry.js";
 
 function frame(position, width = 736, height = 800) {
   const layout = resolveStudentRaceLayoutMetrics({ width, height });
-  return {
-    visualPosition: position,
-    runtimeState: { totalDistance: 1000, playerFinished: false },
-    perspective: createRacePerspective({
+  const perspective = createRacePerspective({
       width,
       widthUnit: layout.world.widthUnit,
       worldBottomY: layout.world.bottomY,
       camera: STUDENT_RACE_VISUAL_CONFIG.camera,
       viewDistanceAhead: 150,
-    }),
+    });
+  const geometry = resolveRaceObjectGeometry(layout, perspective);
+  return {
+    ...geometry,
+    raceObjectCameraPosition: position - geometry.playerReferenceDistance,
+    runtimeState: { totalDistance: 1000, playerFinished: false },
+    perspective,
   };
 }
 
@@ -28,13 +32,14 @@ describe("FinishLineLayer", () => {
     const state = frame(900);
     layer.update({ ...state, runtimeState: null });
     expect(layer.isVisible).toBe(false);
-    layer.update(frame(849.99));
+    layer.update(frame(849.99 + state.playerReferenceDistance));
     expect(layer.graphics.visible).toBe(false);
-    layer.update(frame(850));
+    layer.update(frame(850 + state.playerReferenceDistance));
     expect(layer.graphics.visible).toBe(true);
     layer.update(frame(1000));
     expect(layer.graphics.visible).toBe(true);
-    layer.update(frame(1000.01));
+    expect(layer.graphics.y).toBeCloseTo(state.playerGroundY);
+    layer.update(frame(1000.01 + state.playerReferenceDistance));
     expect(layer.graphics.visible).toBe(false);
     expect(state.runtimeState.playerFinished).toBe(false);
     layer.destroy();
@@ -45,7 +50,7 @@ describe("FinishLineLayer", () => {
     (width, height) => {
       const layer = new FinishLineLayer(new Container());
       const state = frame(970, width, height);
-      const expected = state.perspective.projectTrackObject(30);
+      const expected = state.perspective.projectTrackObject(30 + state.playerReferenceDistance);
       layer.update(state);
 
       expect(layer.graphics.x).toBeCloseTo(expected.x);

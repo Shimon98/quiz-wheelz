@@ -13,6 +13,8 @@ import { FinishLineLayer } from "./layers/FinishLineLayer";
 import { SceneryLayer } from "./layers/SceneryLayer";
 import { PlayerKartLayer } from "./layers/PlayerKartLayer";
 import { EffectsLayer } from "./layers/EffectsLayer";
+import { OpponentLayer } from "./layers/OpponentLayer.js";
+import { resolveRaceObjectGeometry } from "./utils/resolveRaceObjectGeometry.js";
 
 export class StudentRaceRenderer {
   constructor(app) {
@@ -46,12 +48,14 @@ export class StudentRaceRenderer {
       height: this.height,
     });
     this.perspective = this.buildPerspective();
+    this.raceObjectGeometry = resolveRaceObjectGeometry(this.layout, this.perspective);
 
     this.jungleLayer = new JungleLayer(this.backgroundContainer);
     this.midBaseLayer = new MidBaseLayer(this.worldContainer);
     this.roadLayer = new RoadLayer(this.worldContainer, { road, viewDepthZones });
     this.finishLineLayer = new FinishLineLayer(this.worldContainer);
     this.sceneryLayer = new SceneryLayer(this.worldContainer);
+    this.opponentLayer = new OpponentLayer(this.worldContainer);
     this.playerKartLayer = new PlayerKartLayer(this.playerContainer);
     this.effectsLayer = new EffectsLayer(this.effectsContainer);
     this.layers = [
@@ -60,6 +64,7 @@ export class StudentRaceRenderer {
       this.roadLayer,
       this.finishLineLayer,
       this.sceneryLayer,
+      this.opponentLayer,
       this.playerKartLayer,
       this.effectsLayer,
     ];
@@ -91,6 +96,7 @@ export class StudentRaceRenderer {
     this.runtimeState = nextState;
     this.playerKartLayer.setVehicleAssetKey(nextState?.player?.vehicleAssetKey);
     this.motion.updateRuntimeState(nextState);
+    this.opponentLayer.applyRuntimeState(nextState);
   }
 
   resize(width, height) {
@@ -98,6 +104,7 @@ export class StudentRaceRenderer {
     this.height = height;
     this.layout = resolveStudentRaceLayoutMetrics({ width, height });
     this.perspective = this.buildPerspective();
+    this.raceObjectGeometry = resolveRaceObjectGeometry(this.layout, this.perspective);
     if (!this.worldReady) this.drawLoadingSurface();
     this.layers.forEach((layer) => layer.resize(width, height));
   }
@@ -107,6 +114,8 @@ export class StudentRaceRenderer {
     if (!this.worldReady) return;
 
     const frameState = {
+      ...this.raceObjectGeometry,
+      raceObjectCameraPosition: position - this.raceObjectGeometry.playerReferenceDistance,
       deltaMs: ticker.deltaMS,
       width: this.width,
       height: this.height,

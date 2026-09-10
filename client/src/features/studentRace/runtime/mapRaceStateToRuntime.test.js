@@ -29,6 +29,8 @@ function validSnapshot(overrides = {}) {
     streak: 2,
     highestStreak: 4,
     currentDifficulty: "EASY",
+    eventVersion: 0,
+    opponents: [],
     snapshotAtEpochMs: 1_755_600_000_000,
     movementUnitsPerSecond: 6,
     ...overrides,
@@ -61,6 +63,7 @@ describe("mapRaceStateToRuntime — presentation identity", () => {
     const runtime = mapRaceStateToRuntime(validResponse());
 
     expect(runtime.player).toEqual({
+      positionAtEpochMs: null,
       racePlayerId: 91,
       displayName: "Noa",
       laneNumber: 3,

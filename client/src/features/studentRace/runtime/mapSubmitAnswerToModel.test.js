@@ -23,6 +23,8 @@ function response({ correct = true, scoreDelta = 15, streak = 4, ...overrides } 
         highestStreak: streak,
         totalDistance: 1000,
         movementUnitsPerSecond: 5.2,
+        eventVersion: 0,
+        opponents: [],
         snapshotAtEpochMs: 10000,
         raceStatus: "IN_PROGRESS",
         playerStatus: "RACING",

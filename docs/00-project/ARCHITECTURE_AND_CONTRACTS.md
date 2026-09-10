@@ -239,7 +239,7 @@ rows per connection/tick and continues by the last successfully sent version, ne
 by page number. A successful send alone advances that connection's cursor.
 
 Connections are process-local, server-identified and independent. A one-second
-dispatcher reads committed MySQL truth only on a dedicated single-thread teacher-live
+dispatcher reads committed MySQL truth only on a dedicated single-thread race-live
 scheduler that is not a default scheduling candidate. Authoritative movement,
 question cleanup and finalization work therefore remain on the normal gameplay
 scheduler path. Idle connections receive a 15-second
@@ -249,6 +249,15 @@ remains the complete recovery snapshot; no SSE snapshot event exists. The legacy
 generic `/api/sse` implementation is unchanged, unused by this transport and not S2
 event truth. Redis remains presence/runtime infrastructure only. Cross-node fanout
 and production migrations remain later production work.
+
+C2-02 shares the connection registry, cursor resolver, emitter factory, rules and
+scheduler across TEACHER/STUDENT audiences; teacher wire behavior is unchanged.
+`GET /api/race-players/me/events/stream` resolves only the RacePlayer session cookie
+and membership, without gameplay locks or presence writes. Student data contains only
+`version`, `type`, `occurredAtEpochMs`, with version as SSE ID and no event name.
+Signals only invalidate; the client retains polling and applies snapshots through
+one accumulator ordered by `(eventVersion, snapshotAtEpochMs)`, strictly increasing.
+Regular progress signals cause no GET; gaps coalesce one recovery refresh.
 
 ### RacePlayer
 

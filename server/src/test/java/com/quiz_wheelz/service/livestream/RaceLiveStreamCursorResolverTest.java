@@ -1,4 +1,5 @@
-package com.quiz_wheelz.service.teacher;
+package com.quiz_wheelz.service.livestream;
+
 
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
@@ -7,10 +8,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class TeacherRaceLiveCursorResolverTest {
+class RaceLiveStreamCursorResolverTest {
 
-    private final TeacherRaceLiveCursorResolver resolver =
-            new TeacherRaceLiveCursorResolver();
+    private final RaceLiveStreamCursorResolver resolver =
+            new RaceLiveStreamCursorResolver();
 
     @Test
     void zeroCursorIsValid() {

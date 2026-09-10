@@ -1,5 +1,7 @@
 package com.quiz_wheelz.service.teacher;
 
+import com.quiz_wheelz.service.livestream.RaceLiveStreamRegistry;
+
 import com.quiz_wheelz.service.liveevent.RaceLiveEventReplayService;
 import org.junit.jupiter.api.Test;
 
@@ -14,7 +16,7 @@ class TeacherRaceLiveStreamArchitectureTest {
     void streamAndReplayTruthHaveNoLegacySseOrRedisDependencies() {
         List<Class<?>> owners = List.of(
                 TeacherRaceLiveStreamService.class,
-                TeacherRaceLiveStreamRegistry.class,
+                RaceLiveStreamRegistry.class,
                 TeacherRaceLiveStreamDispatcher.class,
                 RaceLiveEventReplayService.class
         );

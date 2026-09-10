@@ -759,8 +759,12 @@ player, 0..7, standing order; each with `rank`, `position`, `positionAtEpochMs`,
 `movementUnitsPerSecond`, `status`, `finishedAtEpochMs` and lane/vehicle identity
 incl. `vehicleAssetKey`). `POST /api/race-players/me/finish-arbitration` returns the
 same snapshot plus the confirmed finish-order prefix. The HUD consumes rank/count;
-opponent client mapping and rendering are not implemented yet. No client-calculated
-rank is needed.
+opponent mapping and rendering are locally implemented in C2-02/C2-03 (2026-09-10),
+pending adversarial pre-commit review and live browser/device QA. No client-calculated
+rank is needed. One snapshot accumulator orders by `(eventVersion, snapshotAtEpochMs)`;
+student SSE invalidates with mutation/generation guards and existing polling fallback.
+Finish-arbitration proof support is available without an automatic trigger.
+**C2-04 remains pending.**
 
 - validate/map `opponents` snapshots through the existing runtime boundary,
   retaining snapshot freshness (`snapshotAtEpochMs`, `eventVersion`,
@@ -770,10 +774,13 @@ rank is needed.
 - opponent interpolation keyed by RacePlayer ID
 - hidden/entering/visible/exiting state machine
 - hysteresis/fades
-- depth-zone caps
+- bounded prediction (2.5 seconds), shared calibrated perspective and full-bounds culling
 - object pooling
 - server color keys
 - no visual depth cheating.
+
+Player/opponents share `StudentRaceVehicleVisual` and the existing asset loader;
+pooled opponent roots interleave with scenery directly in the world container.
 
 ### C2-A — Race sound polish — PLANNED
 

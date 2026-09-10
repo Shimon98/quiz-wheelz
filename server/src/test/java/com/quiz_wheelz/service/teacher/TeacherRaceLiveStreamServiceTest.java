@@ -1,5 +1,11 @@
 package com.quiz_wheelz.service.teacher;
 
+import com.quiz_wheelz.service.livestream.RaceLiveStreamAudience;
+
+import com.quiz_wheelz.service.livestream.RaceLiveStreamRegistry;
+import com.quiz_wheelz.service.livestream.RaceLiveStreamCursorResolver;
+import com.quiz_wheelz.service.livestream.RaceLiveEmitterFactory;
+
 import com.quiz_wheelz.dto.liveevent.QuestionAnsweredLiveEventPayload;
 import com.quiz_wheelz.dto.liveevent.RaceLiveEventEnvelope;
 import com.quiz_wheelz.dto.liveevent.RaceLiveEventPayload;
@@ -37,23 +43,23 @@ class TeacherRaceLiveStreamServiceTest {
     private TeacherRaceAccessService raceAccessService;
 
     @Mock
-    private TeacherRaceLiveEmitterFactory emitterFactory;
+    private RaceLiveEmitterFactory emitterFactory;
 
     @Mock
     private RaceLiveEventReplayService replayService;
 
-    private TeacherRaceLiveStreamRegistry registry;
+    private RaceLiveStreamRegistry registry;
     private TeacherRaceLiveStreamService service;
 
     @BeforeEach
     void setUp() {
         Clock clock = Clock.fixed(Instant.ofEpochMilli(1_000L), ZoneOffset.UTC);
-        registry = new TeacherRaceLiveStreamRegistry(emitterFactory, clock);
+        registry = new RaceLiveStreamRegistry(emitterFactory, clock);
         TeacherRaceLiveStreamDispatcher dispatcher =
                 new TeacherRaceLiveStreamDispatcher(registry, replayService, clock);
         service = new TeacherRaceLiveStreamService(
                 raceAccessService,
-                new TeacherRaceLiveCursorResolver(),
+                new RaceLiveStreamCursorResolver(),
                 registry,
                 dispatcher
         );
@@ -72,7 +78,7 @@ class TeacherRaceLiveStreamServiceTest {
 
         assertSame(emitter, result);
         assertEquals(1, registry.size());
-        assertEquals(5L, registry.activeConnections().getFirst().lastDeliveredVersion());
+        assertEquals(5L, registry.activeConnections(RaceLiveStreamAudience.TEACHER).getFirst().lastDeliveredVersion());
         assertEquals(1, emitter.frames.size());
         List<Object> wireData = emitter.frames.getFirst().stream()
                 .map(ResponseBodyEmitter.DataWithMediaType::getData)

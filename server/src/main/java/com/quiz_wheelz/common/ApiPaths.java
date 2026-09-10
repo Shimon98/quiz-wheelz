@@ -60,6 +60,8 @@ public final class ApiPaths {
     public static final String LIVE_STATE = "/live-state";
     public static final String EVENTS = "/events";
     public static final String STREAM = "/stream";
+    public static final String CURRENT_EVENTS_STREAM = ME + EVENTS + STREAM;
+    public static final String RACE_PLAYERS_EVENTS_STREAM = RACE_PLAYERS + CURRENT_EVENTS_STREAM;
     public static final String TEACHER_RACE_ROOM = RACE_ID + ROOM;
     public static final String TEACHER_RACE_START = RACE_ID + START;
     public static final String TEACHER_RACE_LIVE_STATE = RACE_ID + LIVE_STATE;

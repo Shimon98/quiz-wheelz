@@ -1,4 +1,5 @@
-package com.quiz_wheelz.service.teacher;
+package com.quiz_wheelz.service.livestream;
+
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,10 +23,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class TeacherRaceLiveStreamRegistryTest {
+class RaceLiveStreamRegistryTest {
 
     @Mock
-    private TeacherRaceLiveEmitterFactory emitterFactory;
+    private RaceLiveEmitterFactory emitterFactory;
 
     @Mock
     private SseEmitter firstEmitter;
@@ -33,35 +34,46 @@ class TeacherRaceLiveStreamRegistryTest {
     @Mock
     private SseEmitter secondEmitter;
 
-    private TeacherRaceLiveStreamRegistry registry;
+    private RaceLiveStreamRegistry registry;
 
     @BeforeEach
     void setUp() {
-        registry = new TeacherRaceLiveStreamRegistry(
+        registry = new RaceLiveStreamRegistry(
                 emitterFactory,
                 Clock.fixed(Instant.ofEpochMilli(1_000L), ZoneOffset.UTC)
         );
     }
 
     @Test
+    void audiencesShareStorageWithoutSharingDispatchLists() {
+        when(emitterFactory.create()).thenReturn(firstEmitter, secondEmitter);
+        var teacher = registry.register(RaceLiveStreamAudience.TEACHER, 12L, 3L);
+        var student = registry.register(RaceLiveStreamAudience.STUDENT, 12L, 7L);
+
+        assertEquals(List.of(teacher), registry.activeConnections(RaceLiveStreamAudience.TEACHER));
+        assertEquals(List.of(student), registry.activeConnections(RaceLiveStreamAudience.STUDENT));
+        assertEquals(2, registry.size());
+    }
+
+    @Test
     void sameRaceConnectionsHaveServerIdsAndIndependentCursors() {
         when(emitterFactory.create()).thenReturn(firstEmitter, secondEmitter);
 
-        TeacherRaceLiveConnection first = registry.register(12L, 3L);
-        TeacherRaceLiveConnection second = registry.register(12L, 7L);
+        RaceLiveStreamConnection first = registry.register(RaceLiveStreamAudience.TEACHER, 12L, 3L);
+        RaceLiveStreamConnection second = registry.register(RaceLiveStreamAudience.TEACHER, 12L, 7L);
 
         assertNotEquals(first.connectionId(), second.connectionId());
         assertEquals(3L, first.lastDeliveredVersion());
         assertEquals(7L, second.lastDeliveredVersion());
         assertEquals(2, registry.size());
-        assertEquals(List.of(first, second).stream().map(TeacherRaceLiveConnection::raceId).toList(),
-                registry.activeConnections().stream().map(TeacherRaceLiveConnection::raceId).toList());
+        assertEquals(List.of(first, second).stream().map(RaceLiveStreamConnection::raceId).toList(),
+                registry.activeConnections(RaceLiveStreamAudience.TEACHER).stream().map(RaceLiveStreamConnection::raceId).toList());
     }
 
     @Test
     void completionRemovesConnectionAndDuplicateCleanupIsSafe() {
         when(emitterFactory.create()).thenReturn(firstEmitter);
-        TeacherRaceLiveConnection connection = registry.register(12L, 0L);
+        RaceLiveStreamConnection connection = registry.register(RaceLiveStreamAudience.TEACHER, 12L, 0L);
         ArgumentCaptor<Runnable> callback = ArgumentCaptor.forClass(Runnable.class);
         verify(firstEmitter).onCompletion(callback.capture());
 
@@ -75,7 +87,7 @@ class TeacherRaceLiveStreamRegistryTest {
     @Test
     void timeoutRemovesConnection() {
         when(emitterFactory.create()).thenReturn(firstEmitter);
-        TeacherRaceLiveConnection connection = registry.register(12L, 0L);
+        RaceLiveStreamConnection connection = registry.register(RaceLiveStreamAudience.TEACHER, 12L, 0L);
         ArgumentCaptor<Runnable> callback = ArgumentCaptor.forClass(Runnable.class);
         verify(firstEmitter).onTimeout(callback.capture());
 
@@ -87,7 +99,7 @@ class TeacherRaceLiveStreamRegistryTest {
     @Test
     void errorRemovesConnection() {
         when(emitterFactory.create()).thenReturn(firstEmitter);
-        TeacherRaceLiveConnection connection = registry.register(12L, 0L);
+        RaceLiveStreamConnection connection = registry.register(RaceLiveStreamAudience.TEACHER, 12L, 0L);
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Consumer<Throwable>> callback =
                 ArgumentCaptor.forClass(Consumer.class);
@@ -96,6 +108,6 @@ class TeacherRaceLiveStreamRegistryTest {
         callback.getValue().accept(new IllegalStateException());
 
         assertFalse(registry.contains(connection.connectionId()));
-        assertTrue(registry.activeConnections().isEmpty());
+        assertTrue(registry.activeConnections(RaceLiveStreamAudience.TEACHER).isEmpty());
     }
 }

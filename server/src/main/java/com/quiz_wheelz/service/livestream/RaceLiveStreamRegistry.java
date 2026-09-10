@@ -1,4 +1,5 @@
-package com.quiz_wheelz.service.teacher;
+package com.quiz_wheelz.service.livestream;
+
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -11,25 +12,26 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 @Service
-public class TeacherRaceLiveStreamRegistry {
+public class RaceLiveStreamRegistry {
 
-    private final ConcurrentMap<UUID, TeacherRaceLiveConnection> connections =
+    private final ConcurrentMap<UUID, RaceLiveStreamConnection> connections =
             new ConcurrentHashMap<>();
-    private final TeacherRaceLiveEmitterFactory emitterFactory;
+    private final RaceLiveEmitterFactory emitterFactory;
     private final Clock clock;
 
-    public TeacherRaceLiveStreamRegistry(
-            TeacherRaceLiveEmitterFactory emitterFactory,
+    public RaceLiveStreamRegistry(
+            RaceLiveEmitterFactory emitterFactory,
             Clock clock
     ) {
         this.emitterFactory = Objects.requireNonNull(emitterFactory);
         this.clock = Objects.requireNonNull(clock);
     }
 
-    public TeacherRaceLiveConnection register(Long raceId, long cursor) {
+    public RaceLiveStreamConnection register(RaceLiveStreamAudience audience, Long raceId, long cursor) {
         SseEmitter emitter = emitterFactory.create();
-        TeacherRaceLiveConnection connection = new TeacherRaceLiveConnection(
+        RaceLiveStreamConnection connection = new RaceLiveStreamConnection(
                 UUID.randomUUID(),
+                audience,
                 raceId,
                 emitter,
                 cursor,
@@ -42,8 +44,10 @@ public class TeacherRaceLiveStreamRegistry {
         return connection;
     }
 
-    public List<TeacherRaceLiveConnection> activeConnections() {
-        return List.copyOf(connections.values());
+    public List<RaceLiveStreamConnection> activeConnections(RaceLiveStreamAudience audience) {
+        return connections.values().stream()
+                .filter(connection -> connection.audience() == audience)
+                .toList();
     }
 
     public boolean contains(UUID connectionId) {

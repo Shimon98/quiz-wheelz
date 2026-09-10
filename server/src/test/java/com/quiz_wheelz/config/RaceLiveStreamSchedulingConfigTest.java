@@ -1,6 +1,6 @@
 package com.quiz_wheelz.config;
 
-import com.quiz_wheelz.common.TeacherRaceLiveStreamRules;
+import com.quiz_wheelz.common.RaceLiveStreamRules;
 import com.quiz_wheelz.service.question.PlayerQuestionCleanupService;
 import com.quiz_wheelz.service.raceengine.RaceMovementSettlementScheduler;
 import com.quiz_wheelz.service.teacher.TeacherRaceLiveStreamDispatcher;
@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-class TeacherRaceLiveStreamSchedulingConfigTest {
+class RaceLiveStreamSchedulingConfigTest {
 
     @Test
     void dispatcherUsesDedicatedTeacherLiveScheduler() throws Exception {
@@ -25,38 +25,38 @@ class TeacherRaceLiveStreamSchedulingConfigTest {
         Scheduled scheduled = dispatch.getAnnotation(Scheduled.class);
 
         assertEquals(
-                TeacherRaceLiveStreamRules.SCHEDULER_BEAN_NAME,
+                RaceLiveStreamRules.SCHEDULER_BEAN_NAME,
                 scheduled.scheduler()
         );
         assertEquals(
-                TeacherRaceLiveStreamRules.DISPATCH_INTERVAL_MS,
+                RaceLiveStreamRules.DISPATCH_INTERVAL_MS,
                 scheduled.fixedDelay()
         );
     }
 
     @Test
     void schedulerBeanIsFocusedSingleThreadAndNotADefaultCandidate() throws Exception {
-        Method factory = TeacherRaceLiveStreamSchedulingConfig.class.getMethod(
-                "teacherRaceLiveStreamTaskScheduler"
+        Method factory = RaceLiveStreamSchedulingConfig.class.getMethod(
+                "raceLiveStreamTaskScheduler"
         );
         Bean bean = factory.getAnnotation(Bean.class);
         ThreadPoolTaskScheduler scheduler =
-                new TeacherRaceLiveStreamSchedulingConfig()
-                        .teacherRaceLiveStreamTaskScheduler();
+                new RaceLiveStreamSchedulingConfig()
+                        .raceLiveStreamTaskScheduler();
 
         assertArrayEquals(
-                new String[]{TeacherRaceLiveStreamRules.SCHEDULER_BEAN_NAME},
+                new String[]{RaceLiveStreamRules.SCHEDULER_BEAN_NAME},
                 bean.name()
         );
         assertFalse(bean.defaultCandidate());
         assertEquals(
-                TeacherRaceLiveStreamRules.SCHEDULER_THREAD_NAME_PREFIX,
+                RaceLiveStreamRules.SCHEDULER_THREAD_NAME_PREFIX,
                 scheduler.getThreadNamePrefix()
         );
         scheduler.initialize();
         try {
             assertEquals(
-                    TeacherRaceLiveStreamRules.SCHEDULER_POOL_SIZE,
+                    RaceLiveStreamRules.SCHEDULER_POOL_SIZE,
                     scheduler.getScheduledThreadPoolExecutor().getCorePoolSize()
             );
         } finally {

@@ -478,10 +478,10 @@ finish flag remains authoritative.
 S1-02 and server C2-01 supply authoritative `rank`, `playerCount` and the full
 `opponents` roster (renamed from `nearbyPlayers`, 0..7 in standing order) in
 runtime and answer snapshots. Rank/count are consumed by
-the current HUD; opponent mapping and opponent rendering remain C2,
-after the accepted local C1 checkpoint of 2026-09-08. Reuse the existing snapshot boundary and
-the lateral coordinate supported by `createRacePerspective`; do not create
-a second projection or alter depth to fit vehicles into the accepted road.
+the current HUD; C2-02/C2-03 locally implement opponent mapping and rendering,
+pending review and live QA. `createRacePerspective` remains the only projection;
+its inverse calibrates the player ground reference for opponents and the finish gate.
+The shared vehicle visual reuses the existing asset loader and preserves player pixels.
 
 Each opponent:
 
@@ -490,7 +490,8 @@ Each opponent:
 - uses server lane/color/status
 - has visual states `hidden → entering → visible → exiting`
 - uses hysteresis to prevent flicker
-- is capped by zone and lateral visibility
+- predicts at most 2.5 seconds from server timestamps, clamped to total distance
+- uses full vehicle bounds for rear/side departure and pooled world-container roots
 - never changes depth for visual convenience.
 
 ## Question panel
@@ -584,7 +585,7 @@ browser offline/hidden→visible recovery, reduced-motion emulation and
 physical-phone QA remain open. DEV browser checks are not a phone-performance
 benchmark. Follow the carried-forward pre-release checklist in
 `CLIENT_IMPLEMENTATION_PLAN.md`. C1 local development is closed for progression
-to C2; opponent implementation is next, with the server contract already available.
+to C2; C2-02/C2-03 are locally implemented. C2-04 finish choreography remains pending.
 
 ## Race audio — planned C2-A
 

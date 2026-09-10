@@ -92,11 +92,11 @@ export class FinishLineLayer {
 
   resize() {}
 
-  update({ perspective, visualPosition, runtimeState }) {
+  update({ perspective, raceObjectCameraPosition, runtimeState }) {
     const totalDistance = runtimeState?.totalDistance;
     const projected = totalDistance == null
       ? null
-      : perspective.projectTrackObject(totalDistance - visualPosition);
+      : perspective.projectTrackObject(totalDistance - raceObjectCameraPosition);
     this.isVisible = projected?.visible === true;
     this.graphics.visible = this.isVisible;
     if (!this.isVisible) return;

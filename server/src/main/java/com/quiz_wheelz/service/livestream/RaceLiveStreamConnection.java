@@ -1,4 +1,5 @@
-package com.quiz_wheelz.service.teacher;
+package com.quiz_wheelz.service.livestream;
+
 
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -7,23 +8,26 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
-public final class TeacherRaceLiveConnection {
+public final class RaceLiveStreamConnection {
 
     private final UUID connectionId;
+    private final RaceLiveStreamAudience audience;
     private final Long raceId;
     private final SseEmitter emitter;
     private final AtomicLong lastDeliveredVersion;
     private final AtomicLong lastWriteEpochMs;
     private final ReentrantLock dispatchLock = new ReentrantLock();
 
-    public TeacherRaceLiveConnection(
+    public RaceLiveStreamConnection(
             UUID connectionId,
+            RaceLiveStreamAudience audience,
             Long raceId,
             SseEmitter emitter,
             long lastDeliveredVersion,
             long lastWriteEpochMs
     ) {
         this.connectionId = Objects.requireNonNull(connectionId);
+        this.audience = Objects.requireNonNull(audience);
         this.raceId = Objects.requireNonNull(raceId);
         this.emitter = Objects.requireNonNull(emitter);
         this.lastDeliveredVersion = new AtomicLong(lastDeliveredVersion);
@@ -36,6 +40,10 @@ public final class TeacherRaceLiveConnection {
 
     public Long raceId() {
         return raceId;
+    }
+
+    public RaceLiveStreamAudience audience() {
+        return audience;
     }
 
     public SseEmitter emitter() {

@@ -12,6 +12,8 @@ function snapshot(overrides = {}) {
     speed: 1.5,
     streak: 2,
     highestStreak: 3,
+    eventVersion: 0,
+    opponents: [],
     snapshotAtEpochMs: 10000,
     movementUnitsPerSecond: 6,
     raceStatus: "IN_PROGRESS",
@@ -40,10 +42,11 @@ describe("applyRaceSnapshot authoritative standing", () => {
     expect(updated.player.position).toBe(state.player.position);
   });
 
-  it("ignores older standing snapshots and accepts same-timestamp authoritative updates", () => {
+  it("ignores older standing snapshots and requires a newer version for same-time updates", () => {
     const state = applyRaceSnapshot(createInitialRaceRuntimeState(), snapshot());
     expect(applyRaceSnapshot(state, snapshot({ rank: 1, snapshotAtEpochMs: 9999 }))).toBe(state);
-    expect(applyRaceSnapshot(state, snapshot({ rank: 4 })).player.rank).toBe(4);
+    expect(applyRaceSnapshot(state, snapshot({ rank: 4 }))).toBe(state);
+    expect(applyRaceSnapshot(state, snapshot({ rank: 4, eventVersion: 1 })).player.rank).toBe(4);
   });
 
   it.each([null, undefined])("clears missing standing in a fresh snapshot: %s", (value) => {

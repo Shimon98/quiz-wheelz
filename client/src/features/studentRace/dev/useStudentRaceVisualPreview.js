@@ -78,6 +78,8 @@ export function useStudentRaceVisualPreview(t) {
         scoreDelta: sample.scoreDelta,
         snapshot: {
           ...runtime.getSnapshot(),
+          eventVersion: question.id,
+          opponents: [],
           score: sample.score,
           streak: sample.streak,
           highestStreak: sample.streak,

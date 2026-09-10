@@ -16,6 +16,9 @@ export function createInitialRaceRuntimeState() {
 
     playerFinished: false,
     raceFinished: false,
+    playerFinishedAtEpochMs: null,
+    lastEventVersion: null,
+    opponents: [],
 
     totalDistance: null,
     playerCount: null,
@@ -29,6 +32,7 @@ export function createInitialRaceRuntimeState() {
       vehicleAssetKey: null,
 
       position: 0,
+      positionAtEpochMs: null,
       speed: 0,
       score: 0,
       streak: 0,

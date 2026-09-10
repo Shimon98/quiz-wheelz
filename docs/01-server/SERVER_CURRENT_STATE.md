@@ -92,6 +92,10 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
   cursor advances only after successful send. Fifteen-second comment-only heartbeats
   do not mutate the cursor. Completion, timeout, error and failed send clean up
   idempotently.
+- C2-02 is locally implemented: shared TEACHER/STUDENT stream transport and
+  cookie-authenticated `GET /api/race-players/me/events/stream`. Student signals
+  expose only version/type/time; replay uses committed rows without payload decoding,
+  gameplay locks or presence writes. Teacher stream behavior remains unchanged.
 - Live-state remains the complete initial/recovery query. The legacy generic
   `/api/sse` implementation is unchanged and unused by S2; Redis is not event truth.
   Cross-node fanout remains later production scaling work.
@@ -270,7 +274,7 @@ recovery never subtracts movement awarded in degraded mode.
 
 ## Partial or missing
 
-- Student live event stream and the deferred C2 accumulator/geometry work.
+- C2-04 finish presentation and subsequent teacher race UI remain deferred.
 - Durable final-results query/model closure.
 - Event/effect system for junction/luck/announcements.
 - Catch-up-assistance policy.
