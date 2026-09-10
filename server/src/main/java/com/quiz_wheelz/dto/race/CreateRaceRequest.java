@@ -1,6 +1,7 @@
 package com.quiz_wheelz.dto.race;
 
 import com.quiz_wheelz.common.RaceRules;
+import com.quiz_wheelz.enums.RaceFocusPolicy;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -28,4 +29,6 @@ public class CreateRaceRequest {
     @NotNull
     @Min(RaceRules.MIN_TOTAL_DISTANCE)
     private Integer totalDistance;
+
+    private RaceFocusPolicy focusPolicy;
 }

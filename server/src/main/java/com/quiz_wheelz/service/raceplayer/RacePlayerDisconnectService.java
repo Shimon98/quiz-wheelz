@@ -45,6 +45,11 @@ public class RacePlayerDisconnectService {
             Instant decisionInstant,
             boolean playerActivity
     ) {
+        if (racePlayer.getStatus() == RacePlayerStatus.DISCONNECTED) {
+            gameplayPresenceService.markOffline(racePlayer);
+            return;
+        }
+
         if (racePlayer.getStatus() != RacePlayerStatus.FINISHED) {
             RacePlayerGameplayPresenceService.GameplayPresenceDecision presenceDecision =
                     gameplayPresenceService.resolve(racePlayer, decisionInstant);

@@ -1,8 +1,8 @@
 # Server Implementation Plan
 
 **Status:** Canonical  
-**Audit date:** 2026-08-19
-**Code baseline:** `main@74402e6a8d702ca0299568e2130ce88dcb7a3917`
+**Audit date:** 2026-08-24
+**Code baseline:** `main@c32600870902bade6c21ecec0a80777c0840e0de`
 **This document owns:** the ordered backend task list with dependencies and integration outputs
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -215,52 +215,71 @@ Implemented rules:
 
 ### S1-03 — Runtime action hardening
 
-**Status:** `PLANNED`
+**Status:** `DONE (2026-08-23)`
 
-- test refresh during WAITING/RACING/FINISHED
-- test duplicate heartbeat/leave/reconnect
-- test expired question followed by reload
-- test answer after disconnect/finish
-- verify idempotent outcomes where appropriate.
+- race-state refresh is repeat-safe for waiting, active-online and terminal states;
+  an absent active player still requires explicit reconnect and refresh never creates
+  presence, re-anchors movement or creates another RacePlayer
+- heartbeat is repeat-safe and renews only an existing valid lease; duplicate
+  reconnect re-anchors only the real absent→resumed transition; repeated terminal
+  reconnect outcomes remain stable
+- leave is state-idempotent: an already-DISCONNECTED player skips settlement,
+  activity and duplicate persistence while best-effort offline cleanup remains allowed
+- current-question returns the same ACTIVE question with its original deadline;
+  an overdue ACTIVE question times out once and only then is one next question created
+- answer owns exactly-once gameplay mutation: terminal-state answers and a duplicate
+  submit for a no-longer-ACTIVE question are rejected without a second engine effect
+- no public endpoint, DTO, ErrorCode, schema or Redis contract changed.
 
 #### S1-03A — Focus integrity foundation
 
-**Status:** `PLANNED`
+**Status:** `DONE (2026-08-23)`
 
-- add server-owned focus-loss count, last focus-loss time, active-question
-  association, idempotent focus-event handling and focus-violation policy
-- accept future client transitions such as `TAB_HIDDEN` and `TAB_VISIBLE`; no focus
-  endpoint, event, DTO or schema is part of S1-01B
-- expose focus warnings, violations and question forfeits to later teacher live/SSE
-  contracts only when that contract is designed
+- added session-owned `POST /api/race-players/me/focus-events` with UUID event ID,
+  `TAB_HIDDEN`/`TAB_VISIBLE`, exact safe response fields and no target IDs/timestamps
+- persisted cumulative `focusLossCount`, `lastFocusLossAt`, `focusState`, and focused
+  audit rows with optional server-resolved ACTIVE-question association and unique
+  `(race_player_id, client_event_id)` replay protection
+- same ID/type returns the original stored result; conflicting type is rejected;
+  first counted loss per question is WARNING and second+ is VIOLATION while the race
+  total remains cumulative across questions
+- WAITING/terminal/non-playable/missing-or-expired-question hidden events are IGNORED;
+  repeated hidden/visible transitions are safe and auditable
+- focus detection is isolated from presence, activity, movement/re-anchor, reconnect,
+  question timeout/answer and every gameplay mutation
+- the non-null RacePlayer focus summary columns carry DB defaults (`0` / `VISIBLE`)
+  so DEV `ddl-auto=update` can backfill existing rows safely; production migration
+  remains Phase 6 debt, and no Redis focus state was added.
 
 #### S1-03B — Strict focus policy
 
-**Status:** `PLANNED`
+**Status:** `DONE (2026-08-24)`
 
-```text
-first focus loss
-→ warning
-
-second repeated focus loss
-→ stronger warning / integrity violation
-
-third repeated focus loss
-→ ACTIVE question may be forfeited as timeout
-```
-
-Ordinary focus loss does not automatically remove a player from the race. The
-teacher-selected future policy is `OFF` for normal absence/reconnect behavior,
-`WARN` for tracking and warnings, or `STRICT` for repeated-loss question
-forfeiture. Exact thresholds remain an S1-03 implementation decision. S1-01B owns
-neutral absence/return correctness; S1-03 owns intentional abuse detection and
-consequences. Complete this foundation before teacher live/SSE work.
+- added durable `RaceFocusPolicy` OFF/WARN/STRICT with explicit WARN service default
+  and DB default for existing-row DEV `ddl-auto=update` compatibility
+- race creation accepts optional `focusPolicy`; teacher race summary and room
+  responses expose the persisted policy
+- OFF persists ignored, uncounted focus audit results; WARN preserves S1-03A first
+  WARNING and second+ VIOLATION behavior without gameplay consequence
+- STRICT classifies loss 1 as WARNING, loss 2 as VIOLATION and loss 3 on the same
+  ACTIVE question as FORFEITED; a new question starts again at 1
+- strict forfeit reuses `QuestionTimeoutService` for ACTIVE→EXPIRED and timeout engine
+  impact exactly once, without generating the next question or removing the player
+- focus obtains a read-only trusted movement cutoff from the presence owner and never
+  records activity, renews presence, reconnects or re-anchors; durable fallback
+  prevents request-time absence catch-up during Redis outage
+- historic FORFEITED replay bypasses timeout/movement/engine mutation; conflicting
+  replay remains `FOCUS_EVENT_REPLAY_CONFLICT` 3028/409
+- production migration remains Phase 6 debt; client integration and teacher live/SSE
+  remain future work.
 
 ## S2 — Teacher live race and SSE
 
 ### S2-01 — Teacher live-state query
 
-Return a projector-ready initial state:
+**Status:** `DONE (2026-08-24)`
+
+Implemented a projector-ready initial/recovery state:
 
 ```text
 race details
@@ -274,9 +293,29 @@ event cursor/version
 
 Enforce teacher ownership.
 
+- dedicated `GET /api/teacher/races/{raceId}/live-state`; the lobby `/room` contract
+  remains unchanged
+- exact top-level and player DTO fields with `focusPolicy`, injected-clock
+  `serverTimeEpochMs`, server-owned `baseMovementUnitsPerSecond`, and no
+  internal/question/focus-audit/presence leakage
+- teacher ownership reuses the room lookup sequence and returns `RACE_NOT_FOUND` for
+  missing and foreign Races
+- one RacePlayer list fetch followed by one shared pure standing calculation used by
+  both teacher live-state and unchanged student standing/window behavior
+- all joined statuses are included; FINISHED/finish-time and non-finished/position
+  semantics use competition ties with deterministic output order
+- durable non-null `Race.liveEventVersion` / `live_event_version` defaults to `0` at
+  entity and DB levels; the GET reads without incrementing
+- query is read-only and has no Redis, presence, gameplay activity, movement,
+  timeout, reconnect, re-anchor, save or event-publication dependency
+- S2-02 owns durable event vocabulary/version increments and S2-03 owns SSE; the new
+  column uses DEV `ddl-auto=update`, while production migrations remain Phase 6 debt.
+
 ### S2-02 — Live event model
 
-Create a focused event/snapshot vocabulary:
+**Status:** `DONE (2026-08-24)`
+
+Implemented the focused event/snapshot vocabulary:
 
 ```text
 PLAYER_JOINED
@@ -289,15 +328,61 @@ RACE_FINISHED
 
 Do not add luck/junction events until their engines exist.
 
+- durable `RaceLiveEvent` table with unique/indexed `(race_id, version)`, injected-
+  Clock epoch time and typed JSON payload
+- atomic database-owned per-Race `Race.liveEventVersion` allocation; no Redis or JVM
+  sequence
+- active player mutations use one per-Race pessimistic live-mutation gate after the
+  authoritative RacePlayer lock and before settlement or snapshot reads; therefore
+  mutation serialization order, full-player snapshot order and event-version order
+  are identical
+- WAITING heartbeat/leave/reconnect paths do not acquire the Race gate or emit
+  `PLAYER_PROGRESS_UPDATED`; join/start remain Race-first, while finalization retains
+  ordered player locks followed by the Race lock
+- existing authoritative transaction is mandatory, so domain mutation, cursor and
+  event row commit or roll back together
+- join/start/answer and visible movement/timeout/disconnect/reconnect/finalization
+  boundaries wired without moving event ownership into inner engines
+- `QUESTION_ANSWERED` precedes progress/player-finish/race-finish events from the same
+  answer
+- shared full-player authoritative ranking snapshots, including overtake changes and
+  competition ties
+- teacher live-state adds `baseMovementUnitsPerSecond` from `RaceProgressRules` and its
+  `eventVersion` exposes the highest committed durable cursor
+- student `movementUnitsPerSecond` remains the effective per-player rate; teacher
+  full-player snapshots expose durable authoritative positions without promising a
+  shared movement anchor at `serverTimeEpochMs` or event `occurredAtEpochMs`, so the
+  future projector interpolates toward server positions and never advances truth
+- bounded caller-sized repository cursor retrieval exists; S2-02 added no teacher-
+  owned event endpoint or SSE transport. The pre-existing generic `/api/sse`
+  infrastructure remains legacy, is not the durable event cursor/replay owner and
+  was not adopted or redesigned; Redis remains outside event truth and no client
+  change was added
+- DEV schema creation is safe; production migration remains Phase 6 debt.
+
 ### S2-03 — SSE stream
 
-- teacher-owned stream
-- heartbeat/comment frames
-- event IDs or version cursor
-- reconnection support
-- initial query remains the recovery path
-- disconnect cleanup
-- concurrency tests.
+**Status:** `DONE (2026-08-25)`
+
+- dedicated teacher-owned `GET /api/teacher/races/{raceId}/events/stream`
+- raw `afterVersion`/`Last-Event-ID` binding with header-source precedence before
+  parsing, cursor `0` support and focused invalid-selected-cursor error 3029
+- existing envelope sent as SSE data with durable version as the sole SSE ID
+- shared injected-`ObjectMapper` payload codec for all six write/replay types
+- committed MySQL Race-scoped replay in ascending cursor order, bounded to 100 rows
+  per read with no unpaged or page-number continuation
+- reusable teacher Race access owner for room, live-state, start locking and stream
+- process-local server-identified registry with independent per-connection cursors
+- one-second dispatcher on a dedicated non-default single-thread teacher-live
+  scheduler, isolated from authoritative gameplay maintenance scheduling
+- per-connection dispatch lock and post-send-only advancement, with deterministic
+  overlapping-dispatch proof of one replay, one send and one cursor advancement
+- 15-second comment-only heartbeat with no ID, durable payload, persistence or Redis
+- idempotent completion, timeout, error and send-failure cleanup
+- live-state remains the complete initial/recovery path; legacy `/api/sse` remains
+  unchanged and unused by S2; cross-node fanout remains later production work
+- deterministic cursor, replay, codec, isolation, failure, cleanup, heartbeat and
+  snapshot-to-stream race tests.
 
 **Blocks:** client teacher live screen.
 

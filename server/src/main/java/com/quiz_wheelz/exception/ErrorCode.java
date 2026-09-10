@@ -53,6 +53,16 @@ public enum ErrorCode {
             ErrorMessages.RACE_PLAYER_RECONNECT_REQUIRED,
             HttpStatus.CONFLICT
     ),
+    FOCUS_EVENT_REPLAY_CONFLICT(
+            3028,
+            ErrorMessages.FOCUS_EVENT_REPLAY_CONFLICT,
+            HttpStatus.CONFLICT
+    ),
+    RACE_LIVE_EVENT_CURSOR_INVALID(
+            3029,
+            ErrorMessages.RACE_LIVE_EVENT_CURSOR_INVALID,
+            HttpStatus.BAD_REQUEST
+    ),
 
     INTERNAL_ERROR(9999, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
 

@@ -12,6 +12,7 @@ import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.repository.RaceRepository;
 import com.quiz_wheelz.service.auth.JwtService;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -36,6 +37,9 @@ class RacePlayerJoinServiceTest {
 
     @Mock
     private JwtService jwtService;
+
+    @Mock
+    private RaceLiveEventRecorder liveEventRecorder;
 
     @InjectMocks
     private RacePlayerJoinService racePlayerJoinService;
@@ -85,6 +89,7 @@ class RacePlayerJoinServiceTest {
         assertEquals(2, savedPlayer.getLaneNumber());
         assertEquals(RacePlayerStatus.WAITING, savedPlayer.getStatus());
         verify(jwtService).createRacePlayerToken(10L, 20L, "Noa Cohen");
+        verify(liveEventRecorder).recordPlayerJoined(savedPlayer);
     }
 
     @Test
@@ -98,6 +103,7 @@ class RacePlayerJoinServiceTest {
 
         assertEquals(ErrorCode.RACE_NOT_FOUND, exception.getErrorCode());
         verify(racePlayerRepository, never()).save(any());
+        verifyNoInteractions(liveEventRecorder);
     }
 
     @Test
@@ -112,6 +118,7 @@ class RacePlayerJoinServiceTest {
 
         assertEquals(ErrorCode.RACE_NOT_JOINABLE, exception.getErrorCode());
         verify(racePlayerRepository, never()).save(any());
+        verifyNoInteractions(liveEventRecorder);
     }
 
     @Test
@@ -127,6 +134,7 @@ class RacePlayerJoinServiceTest {
 
         assertEquals(ErrorCode.RACE_FULL, exception.getErrorCode());
         verify(racePlayerRepository, never()).save(any());
+        verifyNoInteractions(liveEventRecorder);
     }
 
     @Test
@@ -144,6 +152,7 @@ class RacePlayerJoinServiceTest {
 
         assertEquals(ErrorCode.RACE_PLAYER_NAME_TAKEN, exception.getErrorCode());
         verify(racePlayerRepository, never()).save(any());
+        verifyNoInteractions(liveEventRecorder);
     }
 
     private RacePlayerJoinRequest joinRequest(String roomCode, String displayName) {

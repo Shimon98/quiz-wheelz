@@ -2,6 +2,7 @@ package com.quiz_wheelz.dto.teacher;
 
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
+import com.quiz_wheelz.enums.RaceFocusPolicy;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -24,6 +25,7 @@ public class TeacherRaceRoomResponse {
     private Integer maxPlayers;
     private Integer currentPlayers;
     private Integer totalDistance;
+    private RaceFocusPolicy focusPolicy;
 
     private LocalDateTime createdAt;
     private LocalDateTime startedAt;
@@ -51,6 +53,7 @@ public class TeacherRaceRoomResponse {
                 race.getMaxPlayers(),
                 playerResponses.size(),
                 race.getTotalDistance(),
+                race.getFocusPolicy(),
                 race.getCreatedAt(),
                 race.getStartedAt(),
                 race.getFinishedAt(),

@@ -7,6 +7,7 @@ import com.quiz_wheelz.enums.RaceStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -49,6 +50,23 @@ public interface RaceRepository extends JpaRepository<Race, Long> {
     List<Race> findByTeacherAndStatusOrderByCreatedAtDesc(User teacher, RaceStatus status);
 
     Optional<Race> findByIdAndTeacher(Long raceId, User teacher);
+
+    @Modifying(flushAutomatically = true)
+    @Query(
+            value = """
+                    update races
+                    set live_event_version = live_event_version + 1
+                    where id = :raceId
+                    """,
+            nativeQuery = true
+    )
+    int incrementLiveEventVersion(@Param("raceId") Long raceId);
+
+    @Query(
+            value = "select live_event_version from races where id = :raceId",
+            nativeQuery = true
+    )
+    Long findLiveEventVersion(@Param("raceId") Long raceId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from Race r where r.id = :raceId and r.teacher = :teacher")

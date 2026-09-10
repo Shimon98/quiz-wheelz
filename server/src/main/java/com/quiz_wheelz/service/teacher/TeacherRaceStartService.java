@@ -2,14 +2,11 @@ package com.quiz_wheelz.service.teacher;
 import com.quiz_wheelz.common.RaceRules;
 import com.quiz_wheelz.dto.teacher.StartRaceResponse;
 import com.quiz_wheelz.entitys.Race;
-import com.quiz_wheelz.entitys.User;
 import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
-import com.quiz_wheelz.repository.RaceRepository;
-import com.quiz_wheelz.service.auth.CurrentUserService;
-import com.quiz_wheelz.service.auth.UserService;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
 import com.quiz_wheelz.service.raceplayer.RacePlayerService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,38 +16,33 @@ import java.time.LocalDateTime;
 @Service
 public class TeacherRaceStartService {
 
-    private final CurrentUserService currentUserService;
-    private final UserService userService;
-    private final RaceRepository raceRepository;
+    private final TeacherRaceAccessService raceAccessService;
     private final RacePlayerService racePlayerService;
+    private final RaceLiveEventRecorder liveEventRecorder;
     private final Clock clock;
 
     public TeacherRaceStartService(
-            CurrentUserService currentUserService,
-            UserService userService,
-            RaceRepository raceRepository,
+            TeacherRaceAccessService raceAccessService,
             RacePlayerService racePlayerService,
+            RaceLiveEventRecorder liveEventRecorder,
             Clock clock
     ) {
-        this.currentUserService = currentUserService;
-        this.userService = userService;
-        this.raceRepository = raceRepository;
+        this.raceAccessService = raceAccessService;
         this.racePlayerService = racePlayerService;
+        this.liveEventRecorder = liveEventRecorder;
         this.clock = clock;
     }
 
     @Transactional
     public StartRaceResponse startRace(Long raceId) {
-        Long teacherId = currentUserService.getCurrentUserId();
-        User teacher = userService.findActiveByIdOrThrow(teacherId);
-        Race race = raceRepository.findByIdAndTeacherForUpdate(raceId, teacher)
-                .orElseThrow(() -> new ApiException(ErrorCode.RACE_NOT_FOUND));
+        Race race = raceAccessService.requireOwnedRaceForUpdate(raceId);
         validateRaceCanStart(race);
         validateMinimumPlayersToStart(race);
         LocalDateTime startedAt = LocalDateTime.now(clock);
         int playersStarted = racePlayerService.startWaitingPlayers(race, startedAt);
         race.setStatus(RaceStatus.IN_PROGRESS);
         race.setStartedAt(startedAt);
+        liveEventRecorder.recordRaceStarted(race);
         return StartRaceResponse.from(race, playersStarted);
     }
 

@@ -48,9 +48,15 @@ public interface RacePlayerRepository extends JpaRepository<RacePlayer, Long> {
     Optional<RacePlayer> findByIdAndRaceId(Long playerId, Long raceId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select racePlayer
+            from RacePlayer racePlayer
+            where racePlayer.id = :playerId
+              and racePlayer.race.id = :raceId
+            """)
     Optional<RacePlayer> findLockedByIdAndRaceId(
-            Long playerId,
-            Long raceId
+            @Param("playerId") Long playerId,
+            @Param("raceId") Long raceId
     );
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

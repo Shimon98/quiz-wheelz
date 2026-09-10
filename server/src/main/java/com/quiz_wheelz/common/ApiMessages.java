@@ -15,6 +15,9 @@ public final class ApiMessages {
     public static final String RACE_ROOM_LOADED_SUCCESSFULLY =
             "Race room loaded successfully";
 
+    public static final String RACE_LIVE_STATE_LOADED_SUCCESSFULLY =
+            "Race live state loaded successfully";
+
     public static final String RACE_PLAYER_JOINED_SUCCESSFULLY =
             "Race player joined successfully";
 
@@ -35,6 +38,9 @@ public final class ApiMessages {
 
     public static final String RACE_PLAYER_RECONNECT_RESOLVED_SUCCESSFULLY =
             "Race player reconnect resolved successfully";
+
+    public static final String RACE_PLAYER_FOCUS_EVENT_RECORDED_SUCCESSFULLY =
+            "Race player focus event recorded successfully";
 
     public static final String STUDENT_ANSWER_SUBMITTED_SUCCESSFULLY =
             "Student answer submitted successfully";

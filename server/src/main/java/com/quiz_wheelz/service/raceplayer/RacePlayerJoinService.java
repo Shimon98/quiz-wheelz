@@ -14,6 +14,7 @@ import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.repository.RaceRepository;
 import com.quiz_wheelz.service.auth.JwtService;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,15 +27,18 @@ public class RacePlayerJoinService {
     private final RaceRepository raceRepository;
     private final RacePlayerRepository racePlayerRepository;
     private final JwtService jwtService;
+    private final RaceLiveEventRecorder liveEventRecorder;
 
     public RacePlayerJoinService(
             RaceRepository raceRepository,
             RacePlayerRepository racePlayerRepository,
-            JwtService jwtService
+            JwtService jwtService,
+            RaceLiveEventRecorder liveEventRecorder
     ) {
         this.raceRepository = raceRepository;
         this.racePlayerRepository = racePlayerRepository;
         this.jwtService = jwtService;
+        this.liveEventRecorder = liveEventRecorder;
     }
 
     @Transactional
@@ -74,6 +78,8 @@ public class RacePlayerJoinService {
                 savedPlayer.getId(),
                 savedPlayer.getDisplayName()
         );
+
+        liveEventRecorder.recordPlayerJoined(savedPlayer);
 
         return new RacePlayerJoinResult(response, racePlayerToken);
     }

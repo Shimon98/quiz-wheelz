@@ -4,6 +4,7 @@ import com.quiz_wheelz.common.BaseEntity;
 import com.quiz_wheelz.common.RacePlayerRules;
 import com.quiz_wheelz.enums.Difficulty;
 import com.quiz_wheelz.enums.RacePlayerStatus;
+import com.quiz_wheelz.enums.RacePlayerFocusState;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -22,6 +23,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
@@ -163,6 +165,21 @@ public class RacePlayer extends BaseEntity {
 
     @Column(name = "last_seen_at")
     private LocalDateTime lastSeenAt;
+
+    @NotNull
+    @PositiveOrZero
+    @ColumnDefault("0")
+    @Column(name = "focus_loss_count", nullable = false)
+    private Integer focusLossCount = 0;
+
+    @Column(name = "last_focus_loss_at")
+    private LocalDateTime lastFocusLossAt;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @ColumnDefault("'VISIBLE'")
+    @Column(name = "focus_state", nullable = false, length = 20)
+    private RacePlayerFocusState focusState = RacePlayerFocusState.VISIBLE;
 
     @Override
     protected void onPrePersist(LocalDateTime now) {

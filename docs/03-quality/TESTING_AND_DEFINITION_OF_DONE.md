@@ -1,8 +1,8 @@
 # Testing and Definition of Done
 
 **Status:** Canonical  
-**Audit date:** 2026-07-30  
-**Code baseline:** `main@47fe75fa763af2ecc4deb4e8bc972f564ee73b15`  
+**Audit date:** 2026-08-24
+**Code baseline:** `main@c32600870902bade6c21ecec0a80777c0840e0de`
 **This document owns:** the complete automated/manual quality bar for every feature and phase
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -54,6 +54,14 @@ Required gameplay tests:
 - score/progress/streak/difficulty
 - player/race finish
 - heartbeat/leave/reconnect
+- repeated WAITING/online-RACING/FINISHED/DISCONNECTED/finished-race refresh, including
+  stable identity/status, no duplicate RacePlayer and no terminal presence requirement
+- consecutive valid heartbeats without reconnect, settlement, re-anchor or illegal
+  transition; terminal/disconnected heartbeat cannot resurrect a player
+- duplicate reconnect: one absent-player resume re-anchor, then no second re-anchor;
+  repeated WAITING/FINISHED/DISCONNECTED/finished-race outcomes remain stable
+- duplicate leave: first active leave settles and persists once; repeated
+  DISCONNECTED leave performs only best-effort offline cleanup; FINISHED stays FINISHED
 - heartbeat with a missing lease settles to the trusted cutoff, performs no reconnect
   settlement/re-anchor or lease recreation, and requires explicit reconnect
 - trusted-activity monotonicity and absence movement cutoff
@@ -72,11 +80,85 @@ Required gameplay tests:
 - race-state and submit-answer serialize the same non-null rank/player-count/nearby
   vocabulary after current-request mutation, with exact-field nearby no-leak coverage
 - question wall-clock timeout during absence, exactly once, without deadline extension
+- expired-current-question reload applies timeout and generation once; the next
+  current-question repeat returns the same ACTIVE identity and original deadline
+- answers after DISCONNECTED, player FINISHED or race FINISHED leave question and
+  gameplay state unchanged; duplicate ANSWERED submit cannot invoke the engine twice
+- focus-event exact request/response fields and enum vocabulary, current-session-only
+  targeting, server time and server-owned ACTIVE-question association
+- focus visible/hidden transitions, first-loss WARNING, second+ VIOLATION, cumulative
+  race total and question-local reset on a new ACTIVE question
+- focus same-ID historic replay, conflicting-type rejection, repeated hidden/visible
+  safety, unique DB constraint and same-event-ID allowance across different players
+- focus RacePlayer summary metadata declares non-null DB defaults of `0` and
+  `VISIBLE` for existing-row DEV `ddl-auto=update` compatibility
+- WAITING/FINISHED/DISCONNECTED/finished-race/no-question/expired-question focus
+  ignores with no question, score, speed, position, streak or difficulty mutation
+- structural focus isolation from presence renewal/activity, movement settlement,
+  reconnect/re-anchor and answer/timeout engine owners
+- race focus-policy OFF/WARN/STRICT creation, omitted-WARN default, DB default and
+  exact teacher summary/room serialization
+- OFF ignored/no-count behavior; WARN third-loss VIOLATION regression; STRICT same-
+  question WARNING→VIOLATION→FORFEITED and new-question local-count reset
+- strict forfeit delegates ACTIVE→EXPIRED and one timeout consequence to the existing
+  owner; replay/conflict bypass repeated timeout, movement and engine effects
+- strict absence movement cutoff does not use focus request time, renew presence,
+  record activity, reconnect or re-anchor; Redis outage uses durable cutoff fallback
 - absent-player race completion and terminal grace expiry
 - Redis loss with DB fallback
 - Redis-loss fail-open movement/no mass disconnect
-- live-state ownership
-- SSE reconnect/recovery
+- teacher live-state exact top-level/player serialization and no-leak field sets
+- live-state owner success plus identical `RACE_NOT_FOUND` for missing/foreign Race
+- fixed injected-Clock `serverTimeEpochMs`, every durable Race lifecycle state and
+  inclusion of WAITING/RACING/FINISHED/DISCONNECTED players
+- shared teacher/student ranking: FINISHED first by earlier finish time, active
+  descending position, null safety, competition ties and deterministic tied output
+- one owned Race lookup, one RacePlayer list fetch and no per-player standing query
+- repeated live-state reads never increment or persist `liveEventVersion`; non-zero
+  fixtures return exactly, and non-null `live_event_version` entity/DB defaults are 0
+- live-state read-only transaction and structural isolation from Redis/presence,
+  gameplay activity, movement, timeout, reconnect/re-anchor, save and publication
+- exact teacher live-state `baseMovementUnitsPerSecond` serialization, absence of the
+  student-only `movementUnitsPerSecond` field, and sourcing from
+  `RaceProgressRules.BASE_MOVEMENT_UNITS_PER_SECOND`
+- exact six-value durable live-event vocabulary, table/column/unique/index metadata
+  and ordered after-version repository retrieval
+- exact typed envelope/payload serialization; `QUESTION_ANSWERED` leaks no choice,
+  answer, question text or choices
+- fixed-Clock event timestamps, atomic independent per-Race version sequences and
+  real same-Race concurrent sequential allocation without sleeps or lost increments
+- real two-player/two-transaction live-mutation serialization through the production
+  Race gate: versions `[1, 2]`, Race cursor `2`, and the higher deserialized full-player
+  payload contains both committed mutations with authoritative ranks
+- interaction proofs place the Race gate immediately after active RacePlayer locking
+  and before settlement/question/snapshot reads; WAITING paths prove no Race gate lock
+- forced rollback removes the business mutation, version increment and flushed event
+  row together and permits reuse of the uncommitted version
+- committed `Race.liveEventVersion`, highest committed event version and teacher
+  live-state `eventVersion` remain equal
+- join/start success and rejection, answer event order, meaningful/no-op movement,
+  timeout terminal order, duplicate disconnect, reconnect no-op and exactly-once
+  player/race terminal transitions
+- event writer and replay have no Redis/JVM sequence dependency; the legacy generic
+  `/api/sse` infrastructure is not used by teacher durable-event transport
+- owner/missing/foreign stream access, TEACHER controller guard and identical hidden
+  `RACE_NOT_FOUND` behavior
+- required cursor validation: missing, blank, malformed selected source, negative,
+  future and zero; MVC raw-string binding proves valid `Last-Event-ID` precedence
+  over a malformed fallback query before parsing
+- `live-state V → commit V+1 → connect after V` immediate replay
+- exact six-type payload-codec round trip and no answer/choice leakage
+- bounded, Race-scoped, strictly ascending replay with version-based continuation
+- durable SSE IDs and existing envelope data without a parallel event name
+- independent same-Race cursors, cross-Race isolation and monotonic successful-send
+  advancement; failed send neither advances nor leaks the connection
+- completion, timeout, error and duplicate cleanup; comment-only heartbeat without ID,
+  payload or cursor advancement
+- committed event arriving between dispatch cycles is delivered without loss
+- dedicated non-default scheduler qualifier and focused single-thread configuration;
+  authoritative gameplay scheduled methods remain outside the SSE scheduler
+- real latch-controlled overlapping dispatch on one connection produces exactly one
+  replay, one event frame and one cursor advancement without sleeps
 - event fairness boundaries.
 
 ## Client checks

@@ -1,8 +1,8 @@
 # Server Current State
 
 **Status:** Canonical  
-**Audit date:** 2026-08-19
-**Code baseline:** `main@74402e6a8d702ca0299568e2130ce88dcb7a3917`
+**Audit date:** 2026-08-25
+**Code baseline:** `main@ef3cd3bac2fb10ee2f7a7e9586571f70e7127ae3`
 **This document owns:** the implemented backend capabilities, gaps and stale assumptions
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -47,6 +47,54 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - teacher-owned room data
 - real RacePlayers in waiting room
 - start-race command with validation and locking.
+- teacher-owned live-state GET with exact projector/recovery fields, injected-clock
+  epoch-millisecond server time, server-owned `baseMovementUnitsPerSecond`, durable event
+  version and every joined player in shared authoritative competition order
+- live-state performs one owned Race lookup plus one RacePlayer list fetch and is
+  read-only: no Redis/presence/activity, movement settlement, timeout, reconnect,
+  re-anchor, persistence or event publication
+- `Race.liveEventVersion` persists as non-null `live_event_version` with entity and
+  database default `0`; S2-02 atomically increments it with each same-transaction
+  durable event. Production migration remains Phase 6 debt.
+
+### Durable live-event model
+
+- `race_live_events` persists a typed JSON payload with Race, positive per-Race
+  version, exact event type and injected-Clock epoch-millisecond occurrence time.
+- The exact vocabulary is `PLAYER_JOINED`, `RACE_STARTED`, `QUESTION_ANSWERED`,
+  `PLAYER_PROGRESS_UPDATED`, `PLAYER_FINISHED` and `RACE_FINISHED`.
+- `(race_id, version)` is unique and indexed. Allocation uses one atomic database
+  increment followed by the scalar committed cursor; there is no Redis or JVM event
+  sequence.
+- Event persistence requires the authoritative owner's existing transaction. Domain
+  mutation, cursor and event row commit or roll back together; there is no
+  `REQUIRES_NEW` or after-commit durable event write.
+- Race start, progress and terminal payloads reuse the teacher live-state player
+  mapper and shared standing calculator. Full snapshots carry all affected ranks and
+  competition ties; answer events contain no choice or correct-answer material. The
+  snapshots are durable authoritative positions, not a guarantee that each player
+  shares the event occurrence time as a movement anchor; future teacher rendering may
+  interpolate toward them but never independently advances gameplay truth.
+- Join/start/answer, periodic settlement, timeout, focus, disconnect, heartbeat,
+  reconnect, race-state and finalization boundaries record only visible changes.
+  Before/after transition detection prevents duplicate player/race terminal events.
+- Teacher-owned `GET /api/teacher/races/{raceId}/events/stream` requires an owned Race
+  and a valid `afterVersion` or `Last-Event-ID` cursor. MVC binds both as raw text;
+  header precedence is selected before parsing the fallback query. A malformed
+  selected cursor uses the focused error without exposing foreign Race existence.
+- The shared payload codec writes and reconstructs exactly the six typed payloads with
+  the configured `ObjectMapper`. MySQL replay is Race-scoped, strictly ascending,
+  bounded to 100 events and continued by durable version rather than page number.
+- A one-second committed-event dispatcher owns transport delivery on a focused
+  single-thread scheduler that is not a default candidate, isolating SSE DB/network
+  work from authoritative gameplay scheduling. Per-connection
+  server IDs, cursors and write locks permit simultaneous independent streams; a
+  cursor advances only after successful send. Fifteen-second comment-only heartbeats
+  do not mutate the cursor. Completion, timeout, error and failed send clean up
+  idempotently.
+- Live-state remains the complete initial/recovery query. The legacy generic
+  `/api/sse` implementation is unchanged and unused by S2; Redis is not event truth.
+  Cross-node fanout remains later production scaling work.
 
 ### RacePlayer flow
 
@@ -75,7 +123,36 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
   during runtime Redis outages.
 - reconnect using the freshest trusted gameplay activity, durable `lastSeenAt` and race start,
   with a 5-minute grace period and a 30-second DB-only fallback margin.
-- leave/disconnect persistence that remains authoritative when Redis cleanup fails.
+- core runtime actions have a frozen repeat policy: race-state and heartbeat are
+  repeat-safe; reconnect re-anchors only a real resume; duplicate leave is
+  state-idempotent; current-question preserves the same ACTIVE identity/deadline;
+  duplicate answer never applies gameplay mutation twice.
+- leave/disconnect persistence remains authoritative when Redis cleanup fails;
+  repeated leave after DISCONNECTED skips settlement, activity and duplicate save
+  while retaining best-effort offline cleanup. FINISHED remains FINISHED.
+- `POST /api/race-players/me/focus-events` accepts only a UUID `eventId` and
+  `TAB_HIDDEN`/`TAB_VISIBLE`. The current RacePlayer is locked before idempotency
+  lookup; same-ID replay returns stored counters/outcome/time, while a conflicting
+  type returns `FOCUS_EVENT_REPLAY_CONFLICT`.
+- `RacePlayer.focusLossCount`, `lastFocusLossAt` and `focusState` own the durable race
+  summary. `race_player_focus_events` owns the immutable audit decision, optional
+  server-resolved PlayerQuestion association, counters-after and server time, with a
+  unique `(race_player_id, client_event_id)` constraint.
+- The new non-null RacePlayer summary columns declare database defaults of `0` and
+  `VISIBLE`, so DEV `ddl-auto=update` can backfill existing rows safely. No production
+  migration exists yet; that remains Phase 6 debt.
+- A visible→hidden transition counts only for an unexpired ACTIVE question during
+  `RACING + IN_PROGRESS`: first loss on that question is WARNING and second+ is
+  VIOLATION under WARN.
+- `Race.focusPolicy` persists OFF/WARN/STRICT with non-null DB default `WARN` and is
+  selected optionally during race creation; teacher summary and room responses expose
+  it. OFF ignores without counting. STRICT classifies the third counted loss on one
+  ACTIVE question as FORFEITED.
+- Strict forfeit delegates EXPIRED and the exactly-once timeout consequence to
+  `QuestionTimeoutService`, using a read-only trusted activity cutoff from the
+  presence owner. It records no activity, renews no lease, reconnects/re-anchors
+  nothing, creates no next question and does not remove the RACING player. Redis
+  outage uses durable lastSeen/race-start fallback. Teacher live/SSE remains future.
 
 ### Server time policy (C1-02K)
 
@@ -118,7 +195,9 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - frozen ObjectMapper serialization/no-leak coverage for the public race-state,
   current-question, submit-answer, heartbeat, leave and reconnect contracts
 - answer validation and persistence
-- duplicate-submit protection.
+- duplicate-submit and terminal-state answer protection: DISCONNECTED, FINISHED-player
+  and FINISHED-race submissions cannot mutate the question or invoke engine policies;
+  an already-ANSWERED question cannot apply a second gameplay effect.
 - ACTIVE question ownership and the original `expiresAt` survive hidden, reload and
   reconnect transitions. An overdue ACTIVE question becomes EXPIRED exactly once
   before a next question can be created; reconnect itself never creates a question.
@@ -168,7 +247,6 @@ recovery never subtracts movement awarded in degraded mode.
 
 ## Partial or missing
 
-- Teacher live-state query.
 - Teacher SSE stream.
 - Durable final-results query/model closure.
 - Event/effect system for junction/luck/announcements.

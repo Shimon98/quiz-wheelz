@@ -1,8 +1,8 @@
 # Project Current State
 
 **Status:** Canonical  
-**Audit date:** 2026-07-30  
-**Code baseline:** `main@47fe75fa763af2ecc4deb4e8bc972f564ee73b15`  
+**Audit date:** 2026-08-25
+**Code baseline:** `main@ef3cd3bac2fb10ee2f7a7e9586571f70e7127ae3`
 **This document owns:** the audited implementation status across the complete product
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -27,13 +27,13 @@ QuizWheelz is not an early prototype. Most backend gameplay foundations and the
 teacher/student pre-race client flows exist, and the core student race loop is
 playable against the server (question → answer → feedback → authoritative
 snapshot → next question), with presence-bounded continuous
-server-authoritative movement (C1-03M/S1-01B): connected students advance
+server-authoritative movement (C1-03M/S1-01B) and hardened repeat-action semantics
+(S1-03): connected students advance
 with time, correct answers boost speed and add progress bonuses, and timeouts
 slow more than wrong answers. Real absence freezes position without pausing
 question deadlines; reconnect never awards offline catch-up, and absent
 players do not keep the class race open. The main missing product slices are
-opponents and the
-teacher live race/SSE screen and results.
+opponents and the teacher live race client screen and results.
 
 ## Product status board
 
@@ -57,8 +57,9 @@ teacher live race/SSE screen and results.
 | Student Pixi race foundation | N/A | UI-10A–G DONE | PARTIAL feature |
 | Student question panel/HUD | server data exists | panel + timer DONE (C1-02); HUD stats DONE (C1-04) | DONE |
 | Opponent vehicles/nearby players | DONE authoritative snapshot contract | planned renderer | PARTIAL |
-| Teacher live-state query | PLANNED | route constant only | PLANNED |
-| Teacher SSE | PLANNED | PLANNED | PLANNED |
+| Teacher live-state query | DONE | route constant only | PARTIAL feature |
+| Teacher durable live-event model | DONE | N/A | SERVER FOUNDATION |
+| Teacher SSE | DONE | PLANNED | PARTIAL feature |
 | Results | basic finish logic exists | route constant only | PLANNED |
 | Junction/highway/dirt road | PLANNED | PLANNED | REQUIRED |
 | Fair luck/power-ups | foundation ideas only | PLANNED | REQUIRED |
@@ -87,6 +88,52 @@ teacher live race/SSE screen and results.
   active requests require explicit reconnect without re-anchoring, terminal
   race-state remains readable without presence, and Redis failure is explicitly
   fail-open.
+- Runtime repeat policy is verified across refresh, heartbeat, reconnect, leave,
+  current-question and answer: only a real reconnect resume may re-anchor, duplicate
+  leave has no repeated gameplay side effects, current-question preserves the ACTIVE
+  identity/deadline, and duplicate or terminal answers cannot apply engine effects.
+- Server focus-integrity foundation persists cumulative focus-loss state plus
+  idempotent per-event, per-question audit rows. TAB_HIDDEN/TAB_VISIBLE classification
+  is server-timed and session-scoped. Race creation selects OFF/WARN/STRICT with WARN
+  default; STRICT forfeits the third same-question loss through the existing timeout
+  owner without activity renewal, reconnect, catch-up movement, player removal or
+  next-question creation. Focus and policy columns use DB defaults for safe existing-
+  row DEV backfill; production migrations remain Phase 6 debt.
+- Teacher-owned `GET /api/teacher/races/{raceId}/live-state` returns a read-only,
+  projector-ready recovery snapshot with race details, focus policy, injected-clock
+  server time, `baseMovementUnitsPerSecond` from `RaceProgressRules`, durable event
+  version and all RacePlayers in shared authoritative competitive order. The query
+  uses MySQL only, performs one owned Race lookup and one player-list read, and never
+  settles movement or mutates gameplay. The baseline is rendering/reference data,
+  unlike the student's effective per-player `movementUnitsPerSecond`; teacher
+  snapshots do not promise a shared movement anchor at the server/event timestamp,
+  so future rendering interpolates toward server positions without advancing truth.
+- `Race.liveEventVersion` maps to non-null `live_event_version` with entity and DB
+  default `0` for DEV schema backfill. S2-02 atomically increments it in the same
+  business transaction that persists each durable `RaceLiveEvent`; committed live-
+  state `eventVersion` equals the highest committed event version.
+- The S2-02 durable vocabulary is exactly `PLAYER_JOINED`, `RACE_STARTED`,
+  `QUESTION_ANSWERED`, `PLAYER_PROGRESS_UPDATED`, `PLAYER_FINISHED` and
+  `RACE_FINISHED`. Progress and terminal payloads reuse the shared full-player
+  authoritative rank snapshot. Active mutations are serialized by a per-Race
+  pessimistic gate after the player lock, so higher event versions cannot regress a
+  committed player state or rank from a lower version. WAITING lifecycle paths do not
+  acquire that gate or emit progress events. Redis is not event truth.
+- Teacher-owned `GET /api/teacher/races/{raceId}/events/stream` delivers committed
+  durable envelopes after a required version cursor. Raw `Last-Event-ID` selection
+  takes precedence before the fallback `afterVersion` query is parsed; malformed
+  selected, negative, missing and future cursors return focused HTTP 400 error
+  `RACE_LIVE_EVENT_CURSOR_INVALID`. Replay is MySQL-backed, Race-
+  scoped, ascending and bounded to 100 events per read. Each connection has a server-
+  generated identity and independent cursor, which advances only after a successful
+  send. A one-second dispatcher runs on its own focused single-thread scheduler so
+  transport DB/network work cannot occupy the gameplay maintenance scheduler.
+  Fifteen-second comment-only heartbeats keep idle transports alive, and completion,
+  timeout, error or send
+  failure removes the connection idempotently. Live-state remains the complete
+  initial/recovery snapshot. The legacy generic `/api/sse` implementation is
+  unchanged and unused by S2; production cross-node fanout and schema migrations
+  remain later production work.
 
 ## Client implemented
 
@@ -118,7 +165,7 @@ teacher live race/SSE screen and results.
 
 These must be corrected during the next client integration work:
 
-- Teacher live and results routes are constants only; they are not routed.
+- Teacher live and results client routes are constants only; they are not routed.
 - Old Stage B issue tables mark completed backend work as TODO.
 
 ## Immediate next product outcome
@@ -134,8 +181,8 @@ Teacher creates and starts a race
 → refresh/reconnect recovers the same player
 ```
 
-No teacher SSE, luck event, junction or 2FA work should interrupt this slice unless it
-is required to make the slice run safely.
+No teacher client projector, luck event, junction or 2FA work should interrupt this
+slice unless it is required to make the slice run safely.
 
 For the locally accepted C1 client implementation, the next work is C2
 opponent rendering against the existing S1-02 contract, followed by C2-A

@@ -199,6 +199,25 @@ class QuestionTimeoutServiceTest {
         assertEquals(ANCHOR_EPOCH_MS, player.getMovementUpdatedAtEpochMs());
     }
 
+    @Test
+    void strictForfeitShouldApplyTimeoutAtTrustedCutoffWithoutCatchUpMovement() {
+        RacePlayer player = racingPlayer(25.0, 1.0);
+        PlayerQuestion question = activeQuestionExpiringAfterSeconds(60);
+
+        questionTimeoutService.forfeitActiveQuestionAsTimeout(
+                player,
+                question,
+                afterSeconds(30),
+                afterSeconds(10)
+        );
+
+        assertEquals(65.0, player.getPosition(), 1e-9);
+        assertEquals(0.6, player.getSpeed(), 1e-9);
+        assertEquals(1, player.getWrongAnswers());
+        assertEquals(PlayerQuestionStatus.EXPIRED, question.getStatus());
+        assertEquals(afterSeconds(10), player.getMovementUpdatedAtEpochMs());
+    }
+
     private RacePlayer racingPlayer(double position, double speed) {
         Race race = new Race();
         race.setStatus(RaceStatus.IN_PROGRESS);

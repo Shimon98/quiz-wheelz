@@ -1,8 +1,8 @@
 # Architecture and Contracts
 
 **Status:** Canonical  
-**Audit date:** 2026-08-19
-**Code baseline:** `main@74402e6a8d702ca0299568e2130ce88dcb7a3917`
+**Audit date:** 2026-08-25
+**Code baseline:** `main@ef3cd3bac2fb10ee2f7a7e9586571f70e7127ae3`
 **This document owns:** the cross-system architecture, data ownership, API boundaries and runtime contracts
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -17,7 +17,7 @@ React application
   └─ Student race world (manual PixiJS)
             │
             │ REST commands/queries + cookies
-            │ future teacher SSE stream
+            │ teacher durable-event SSE stream
             ▼
 Spring Boot
   ├─ Security/session resolution
@@ -134,18 +134,120 @@ GET  /api/teacher/dashboard
 GET  /api/teacher/races
 POST /api/teacher/races
 GET  /api/teacher/races/{raceId}/room
+GET  /api/teacher/races/{raceId}/live-state
+GET  /api/teacher/races/{raceId}/events/stream
 POST /api/teacher/races/{raceId}/start
 ```
 
 Planned:
 
 ```http
-GET /api/teacher/races/{raceId}/live-state
-GET /api/teacher/races/{raceId}/events
 GET /api/teacher/races/{raceId}/results
 ```
 
-SSE will use a dedicated teacher-owned stream path decided by the server plan.
+### Teacher live-state snapshot
+
+`GET /api/teacher/races/{raceId}/live-state` is the complete authoritative initial
+and recovery query for the future projector screen. It exposes exactly:
+
+```text
+raceId, title, roomCode, status, totalDistance, focusPolicy,
+serverTimeEpochMs, baseMovementUnitsPerSecond, eventVersion, players
+```
+
+Each player exposes exactly:
+
+```text
+racePlayerId, displayName, laneNumber,
+vehicleTypeKey, vehicleColorKey, vehicleAssetKey,
+rank, position, speed, score, streak, status
+```
+
+Ownership follows the existing teacher room lookup and hides foreign Race existence
+as `RACE_NOT_FOUND`. All joined WAITING, RACING, FINISHED and DISCONNECTED players
+are included. The shared standing calculator places FINISHED players first by
+earlier `finishedAt`, then non-finished players by descending durable position;
+exact ties use competition rank and deterministic output order only.
+
+The response time is Unix epoch milliseconds from the shared injected `Clock`.
+`baseMovementUnitsPerSecond` is the shared server movement baseline from
+`RaceProgressRules.BASE_MOVEMENT_UNITS_PER_SECOND`; the student runtime field
+`movementUnitsPerSecond` remains the effective per-player rate (`speed` multiplied
+by that baseline).
+`eventVersion` reads `Race.liveEventVersion`, persisted as non-null
+`live_event_version` with entity and DB default `0`. The GET never increments it;
+S2-02 event writes increment it atomically, and S2-03 delivers committed events.
+The snapshot performs one player-list read and has no Redis, presence, activity,
+movement settlement, timeout, reconnect, re-anchor, save or publication behavior.
+Teacher live-state and full-player event payloads are authoritative durable state,
+but do not promise that every `position` shares `serverTimeEpochMs` or
+`occurredAtEpochMs` as its movement-settlement anchor. Players can have different
+durable anchors, and reconnect grace can temporarily freeze movement while status is
+still RACING. A teacher renderer may interpolate toward newly received authoritative
+positions; it must not calculate or advance authoritative gameplay progress from the
+baseline, player speed and an event/server timestamp.
+The column is DEV `ddl-auto=update` safety, not a production migration; migrations
+remain Phase 6 debt.
+
+### Durable teacher live events
+
+S2-02 persists `RaceLiveEvent` rows in `race_live_events`. Each row owns `race_id`,
+positive per-Race `version`, `type`, `occurred_at_epoch_ms` from the injected `Clock`
+and typed `payload_json`. `(race_id, version)` is unique and indexed for ascending
+cursor retrieval.
+
+The exact vocabulary is:
+
+```text
+PLAYER_JOINED
+RACE_STARTED
+QUESTION_ANSWERED
+PLAYER_PROGRESS_UPDATED
+PLAYER_FINISHED
+RACE_FINISHED
+```
+
+The authoritative mutation owner records the event in its existing transaction:
+
+```text
+domain mutation
+→ atomic database increment of Race.liveEventVersion
+→ typed RaceLiveEvent persistence
+→ one commit or one rollback
+```
+
+There is no JVM counter, Redis sequence, generic event bus, `REQUIRES_NEW` write or
+after-commit durable write. `PLAYER_PROGRESS_UPDATED`, `PLAYER_FINISHED`,
+`RACE_FINISHED` and `RACE_STARTED` carry a full ordered player snapshot produced by
+the shared `RaceStandingCalculator`; competition ties are preserved and the client
+does not recalculate affected ranks. `QUESTION_ANSWERED` exposes only
+`racePlayerId`, `questionId` and `correct`.
+
+The repository reads bounded committed events after a version in ascending order.
+`GET /api/teacher/races/{raceId}/events/stream` requires TEACHER role, Race ownership
+and a recovery cursor from `afterVersion` or `Last-Event-ID`. Both arrive as raw text;
+the header source takes precedence before parsing, so a valid header ignores even a
+malformed fallback query. Cursor `0` is valid. Missing, blank, malformed, negative or
+future selected cursors are rejected with `RACE_LIVE_EVENT_CURSOR_INVALID`.
+
+The initial lifecycle is `GET live-state → eventVersion V → connect after V`.
+Committed events written between the snapshot and stream registration are replayed
+from MySQL. Each event uses its durable version as SSE `id` and the existing envelope
+as `data`; no independent SSE event name exists. Replay reads at most 100 Race-scoped
+rows per connection/tick and continues by the last successfully sent version, never
+by page number. A successful send alone advances that connection's cursor.
+
+Connections are process-local, server-identified and independent. A one-second
+dispatcher reads committed MySQL truth only on a dedicated single-thread teacher-live
+scheduler that is not a default scheduling candidate. Authoritative movement,
+question cleanup and finalization work therefore remain on the normal gameplay
+scheduler path. Idle connections receive a 15-second
+`: heartbeat` comment with no ID, payload, persistence or cursor effect. Completion,
+timeout, error and failed send remove the connection idempotently. The live-state GET
+remains the complete recovery snapshot; no SSE snapshot event exists. The legacy
+generic `/api/sse` implementation is unchanged, unused by this transport and not S2
+event truth. Redis remains presence/runtime infrastructure only. Cross-node fanout
+and production migrations remain later production work.
 
 ### RacePlayer
 
@@ -251,6 +353,55 @@ The same runtime-session owner handles semantic `RACE_PLAYER_RECONNECT_REQUIRED`
 failures from race-state, current-question and answer. It closes gameplay readiness,
 reconnects, then uses the existing resync token to rebuild authoritative state;
 answer submission is never replayed automatically.
+
+Core runtime repeat policy:
+
+```text
+race-state       → repeat-safe materialization; same-instant reads award nothing extra
+heartbeat        → repeat-safe; never reconnects or re-anchors
+reconnect        → repeat-safe for state/movement; only a real resume re-anchors
+leave            → state-idempotent; repeated DISCONNECTED leave has no gameplay effects
+current-question → repeat-safe for the same ACTIVE identity and original expiresAt
+answer           → exactly-once gameplay mutation; duplicate submit is rejected
+```
+
+These guarantees use the existing per-RacePlayer lock and lifecycle owners. They add
+no replay-success protocol, request identifier, presence recreation, Redis state or
+public contract.
+
+Focus integrity foundation uses a separate server-only audit command:
+
+```text
+POST /api/race-players/me/focus-events
+request  → eventId, type = TAB_HIDDEN | TAB_VISIBLE
+response → eventId, type, outcome, focusLossCount, questionFocusLossCount,
+           activeQuestionId, recordedAtEpochMs
+```
+
+The RacePlayer session selects and locks the target; the client supplies no player,
+race, question or timestamp. MySQL stores the cumulative RacePlayer total and an
+immutable event row associated with the server-resolved ACTIVE question. Replaying
+the same event ID and type returns the stored historic result; a conflicting type is
+rejected. The first counted loss for one question is `WARNING`, and later counted
+losses for that question are `VIOLATION`; a new question starts its own count while
+the race total remains cumulative.
+
+The non-null RacePlayer focus summary columns carry database defaults of `0` and
+`VISIBLE`, allowing DEV `ddl-auto=update` to backfill existing rows safely. This is
+not a production migration; production migrations remain Phase 6 debt.
+
+Each Race durably selects `OFF`, `WARN` or `STRICT` through the optional teacher race
+creation field `focusPolicy`; omitted and existing rows default to `WARN`. Teacher
+race summary/room responses expose the configured value. OFF persists ignored audit
+events without counting. WARN retains warning/violation detection only. STRICT makes
+the third counted loss on the same ACTIVE question `FORFEITED`: the existing timeout
+owner expires the question and applies its gameplay consequence exactly once at the
+trusted activity cutoff. It does not remove the player or create the next question.
+
+Focus requests never renew presence, record gameplay activity, reconnect or re-anchor.
+Their request time is not a trusted activity timestamp. Redis outage uses the existing
+durable activity fallback, so strict consequence cannot award absence catch-up.
+Teacher live/SSE exposure remains future work.
 
 An ACTIVE question remains owned by its RacePlayer across hidden, reload,
 disconnect and reconnect transitions until it becomes ANSWERED or EXPIRED. Its

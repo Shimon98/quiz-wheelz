@@ -98,6 +98,40 @@ class RacePlayerGameplayPresenceServiceTest {
     }
 
     @Test
+    void untrustedConsequenceShouldUseLatestTrustedActivityWithoutWritingActivity() {
+        RacePlayer player = racingPlayer(NOW.minusSeconds(90));
+        Instant redisActivity = NOW.minusSeconds(30);
+        when(redisPresenceService.findLastGameplayActivityAt(RACE_ID, PLAYER_ID))
+                .thenReturn(Optional.of(redisActivity));
+
+        long cutoff = service.resolveUntrustedActivityCutoff(player, NOW);
+
+        assertEquals(redisActivity.toEpochMilli(), cutoff);
+        verify(redisPresenceService, never())
+                .recordGameplayActivity(RACE_ID, PLAYER_ID, NOW);
+        verify(redisPresenceService, never())
+                .renewPresenceLease(RACE_ID, PLAYER_ID, NOW);
+        verify(racePlayerRepository, never()).save(player);
+    }
+
+    @Test
+    void untrustedConsequenceShouldUseDurableCutoffDuringRedisOutage() {
+        Instant durableActivity = NOW.minusSeconds(90);
+        RacePlayer player = racingPlayer(durableActivity);
+        when(redisPresenceService.findLastGameplayActivityAt(RACE_ID, PLAYER_ID))
+                .thenThrow(new DataAccessResourceFailureException("redis unavailable"));
+
+        long cutoff = service.resolveUntrustedActivityCutoff(player, NOW);
+
+        assertEquals(durableActivity.toEpochMilli(), cutoff);
+        verify(redisPresenceService, never())
+                .recordGameplayActivity(RACE_ID, PLAYER_ID, NOW);
+        verify(redisPresenceService, never())
+                .renewPresenceLease(RACE_ID, PLAYER_ID, NOW);
+        verify(racePlayerRepository, never()).save(player);
+    }
+
+    @Test
     void recordGameplayActivityShouldKeepDurableTimestampMonotonic() {
         RacePlayer player = racingPlayer(NOW.minusSeconds(10));
 

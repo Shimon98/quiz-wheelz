@@ -11,6 +11,10 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.repository.RaceRepository;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationGate;
+import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import com.quiz_wheelz.service.raceplayer.CurrentRacePlayerService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerDisconnectService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService;
@@ -115,6 +119,13 @@ class RaceFinalizationHeartbeatConcurrencyTest {
                 presenceService,
                 gameplayTimelineService
         );
+        RaceLiveEventChangeRecorder changeRecorder = new RaceLiveEventChangeRecorder(
+                mock(RaceLiveEventRecorder.class)
+        );
+        RaceLiveMutationTracker mutationTracker = new RaceLiveMutationTracker(
+                mock(RaceLiveMutationGate.class),
+                changeRecorder
+        );
         heartbeatService = new RacePlayerHeartbeatService(
                 lockService,
                 racePlayerRepository,
@@ -123,6 +134,7 @@ class RaceFinalizationHeartbeatConcurrencyTest {
                 presenceService,
                 gameplayTimelineService,
                 disconnectService,
+                mutationTracker,
                 clock
         );
         settlementWorker = new RaceMovementSettlementWorker(
@@ -131,6 +143,8 @@ class RaceFinalizationHeartbeatConcurrencyTest {
                 presenceService,
                 gameplayTimelineService,
                 new RaceFinishService(racePlayerRepository, clock),
+                changeRecorder,
+                mutationTracker,
                 clock
         );
 

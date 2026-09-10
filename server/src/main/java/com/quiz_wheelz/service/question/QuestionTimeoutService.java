@@ -6,6 +6,8 @@ import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
 import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
+import com.quiz_wheelz.exception.ApiException;
+import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
 import com.quiz_wheelz.service.raceengine.RaceMovementService;
@@ -65,9 +67,46 @@ public class QuestionTimeoutService {
                 clock.getZone()
         );
 
+        applyTimeoutConsequence(
+                lockedRacePlayer,
+                question,
+                Math.min(expiryEpochMs, movementCutoffEpochMs),
+                Math.min(decisionEpochMs, movementCutoffEpochMs)
+        );
+    }
+
+    public void forfeitActiveQuestionAsTimeout(
+            RacePlayer lockedRacePlayer,
+            PlayerQuestion question,
+            long decisionEpochMs,
+            long movementCutoffEpochMs
+    ) {
+        if (question == null || question.getStatus() != PlayerQuestionStatus.ACTIVE) {
+            throw new ApiException(ErrorCode.QUESTION_NOT_ACTIVE);
+        }
+
+        long trustedConsequenceEpochMs = Math.min(
+                decisionEpochMs,
+                movementCutoffEpochMs
+        );
+
+        applyTimeoutConsequence(
+                lockedRacePlayer,
+                question,
+                trustedConsequenceEpochMs,
+                trustedConsequenceEpochMs
+        );
+    }
+
+    private void applyTimeoutConsequence(
+            RacePlayer lockedRacePlayer,
+            PlayerQuestion question,
+            long movementBeforeConsequenceEpochMs,
+            long movementAfterConsequenceEpochMs
+    ) {
         raceMovementService.settleTo(
                 lockedRacePlayer,
-                Math.min(expiryEpochMs, movementCutoffEpochMs)
+                movementBeforeConsequenceEpochMs
         );
 
         question.setStatus(PlayerQuestionStatus.EXPIRED);
@@ -79,7 +118,7 @@ public class QuestionTimeoutService {
 
         raceMovementService.settleTo(
                 lockedRacePlayer,
-                Math.min(decisionEpochMs, movementCutoffEpochMs)
+                movementAfterConsequenceEpochMs
         );
     }
 
