@@ -10,6 +10,7 @@ import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.service.raceplayer.CurrentRacePlayerService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerJoinService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerRuntimeSessionService;
+import com.quiz_wheelz.service.raceplayer.StudentRaceFinishArbitrationService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStateService;
 import com.quiz_wheelz.service.question.StudentAnswerSubmissionService;
 import com.quiz_wheelz.service.question.StudentQuestionDeliveryService;
@@ -60,6 +61,9 @@ class RacePlayerControllerCurrentQuestionTest {
     private RacePlayerRuntimeSessionService racePlayerRuntimeSessionService;
 
     @Mock
+    private StudentRaceFinishArbitrationService studentRaceFinishArbitrationService;
+
+    @Mock
     private HttpServletRequest request;
 
     @Test
@@ -90,8 +94,6 @@ class RacePlayerControllerCurrentQuestionTest {
 
     @Test
     void currentQuestionOperationShouldBePostOnTheSamePath() throws NoSuchMethodException {
-        // The operation can expire/create questions — it is a POST resolve,
-        // never a safe GET (C1-02K).
         Method endpoint = RacePlayerController.class.getMethod(
                 "getCurrentQuestion",
                 HttpServletRequest.class
@@ -111,7 +113,8 @@ class RacePlayerControllerCurrentQuestionTest {
                 studentQuestionDeliveryService,
                 studentAnswerSubmissionService,
                 studentRaceStateService,
-                racePlayerRuntimeSessionService
+                racePlayerRuntimeSessionService,
+                studentRaceFinishArbitrationService
         );
     }
 

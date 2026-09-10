@@ -63,6 +63,10 @@ public class Race extends BaseEntity {
     @Column(name = "live_event_version", nullable = false)
     private Long liveEventVersion = 0L;
 
+    @PositiveOrZero
+    @Column(name = "authoritative_decision_time_floor_epoch_ms", updatable = false)
+    private Long authoritativeDecisionTimeFloorEpochMs;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "teacher_id", nullable = false)
     private User teacher;

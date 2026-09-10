@@ -30,6 +30,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -247,6 +248,11 @@ class RaceLiveMutationOrderingIntegrationTest {
         @Bean
         Clock clock() {
             return Clock.fixed(NOW, ZoneOffset.UTC);
+        }
+
+        @Bean
+        ZoneId applicationZoneId() {
+            return ZoneOffset.UTC;
         }
     }
 }

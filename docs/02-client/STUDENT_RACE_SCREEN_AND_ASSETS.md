@@ -475,9 +475,10 @@ finish flag remains authoritative.
 
 ## Opponents
 
-S1-02 already supplies authoritative `rank`, `playerCount` and up to four
-`nearbyPlayers` in runtime and answer snapshots. Rank/count are consumed by
-the current HUD; nearby-player mapping and opponent rendering remain C2,
+S1-02 and server C2-01 supply authoritative `rank`, `playerCount` and the full
+`opponents` roster (renamed from `nearbyPlayers`, 0..7 in standing order) in
+runtime and answer snapshots. Rank/count are consumed by
+the current HUD; opponent mapping and opponent rendering remain C2,
 after the accepted local C1 checkpoint of 2026-09-08. Reuse the existing snapshot boundary and
 the lateral coordinate supported by `createRacePerspective`; do not create
 a second projection or alter depth to fit vehicles into the accepted road.

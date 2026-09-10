@@ -17,6 +17,7 @@ public class StudentRaceRuntimeSnapshotResponse {
 
     private Integer score;
     private Double position;
+    private Long positionAtEpochMs;
     private Double speed;
 
     private Integer streak;
@@ -29,9 +30,13 @@ public class StudentRaceRuntimeSnapshotResponse {
 
     private boolean playerFinished;
     private boolean raceFinished;
+    private Long playerFinishedAtEpochMs;
 
     private Long snapshotAtEpochMs;
     private Double movementUnitsPerSecond;
+
+    @NonNull
+    private Long eventVersion;
 
     @NonNull
     private Integer rank;
@@ -40,5 +45,5 @@ public class StudentRaceRuntimeSnapshotResponse {
     private Integer playerCount;
 
     @NonNull
-    private List<NearbyRacePlayerResponse> nearbyPlayers;
+    private List<StudentRaceOpponentResponse> opponents;
 }

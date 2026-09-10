@@ -1,8 +1,8 @@
 # Testing and Definition of Done
 
 **Status:** Canonical  
-**Audit date:** 2026-08-24
-**Code baseline:** `main@c32600870902bade6c21ecec0a80777c0840e0de`
+**Audit date:** 2026-09-10
+**Code baseline:** `main@bb2d00530f4637d4d1f75849fb0397ac443bc46a`
 **This document owns:** the complete automated/manual quality bar for every feature and phase
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -76,10 +76,35 @@ Required gameplay tests:
 - authoritative student standings count all joined players and rank FINISHED players
   by finish time before position-ranked waiting/racing/disconnected players
 - standings use competition rank for exact ties, deterministic ordering without
-  lane/ID rank influence, and an immutable max-4 nearby window that excludes self
-- race-state and submit-answer serialize the same non-null rank/player-count/nearby
-  vocabulary after current-request mutation, with exact-field nearby no-leak coverage
-- question wall-clock timeout during absence, exactly once, without deadline extension
+  lane/ID rank influence, and a full `opponents` roster that excludes self and is
+  verified for 1/2/4/8-player races
+- race-state, submit-answer and finish-arbitration serialize the same non-null
+  rank/player-count/opponents/eventVersion vocabulary after current-request
+  mutation, with exact-field opponent no-leak coverage
+- deterministic movement calculator: 1/10,000-unit tick projection, partition
+  invariance, exact crossing instant, zero-speed anchor advance, non-finite guards
+- timeout chronology: expiry beyond the trusted movement cutoff defers (settle to
+  the cutoff only, ACTIVE, no penalty); expiry within the cutoff settles to the
+  expiry at the old speed, applies the exactly-once penalty and settles the
+  remainder; reconnect re-anchors and resolves the overdue question at the decision
+  instant without hidden movement; DISCONNECTED expires it without consequence;
+  submit-answer rejects an overdue ACTIVE question
+- canonical `finishedAtEpochMs` from the answer decision instant or the crossing
+  instant, `finishedAt` derived from the same instant, standing and finish event
+  fall back to legacy `finishedAt`
+- snapshot `eventVersion` equals the race version after the request's own durable
+  events (race-state and submit-answer)
+- finish arbitration: identity/preflight rejection before locks, all-players → race
+  lock order, clock-regression gate (no settlement, unproven), requester guard
+  rejection with recorded roster changes, background settlement of other RACING
+  players, FINISHED-race durable truth, confirmed prefix bounded by
+  min(T−1, earliest MAX-speed crossing − 1), unproven for FINISHED-without-epoch,
+  WAITING or anchorless RACING, latch-based concurrency (concurrent arbitrations,
+  arbitration vs player→race lock holder, arbitration vs finalizer, rollback) and
+  MockMvc security (missing/invalid/teacher cookie 401, wrong membership 404,
+  WAITING race 409, valid session 200)
+- question wall-clock timeout during absence: deadline never extended, consequence
+  exactly once and only when the trusted cutoff reaches the deadline
 - expired-current-question reload applies timeout and generation once; the next
   current-question repeat returns the same ACTIVE identity and original deadline
 - answers after DISCONNECTED, player FINISHED or race FINISHED leave question and

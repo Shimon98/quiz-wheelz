@@ -6,14 +6,18 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class NearbyRacePlayerResponse {
+public class StudentRaceOpponentResponse {
 
     private Long racePlayerId;
     private String displayName;
     private Integer laneNumber;
     private String vehicleTypeKey;
     private String vehicleColorKey;
+    private String vehicleAssetKey;
+    private Integer rank;
     private Double position;
-    private Double speed;
+    private Long positionAtEpochMs;
+    private Double movementUnitsPerSecond;
     private RacePlayerStatus status;
+    private Long finishedAtEpochMs;
 }

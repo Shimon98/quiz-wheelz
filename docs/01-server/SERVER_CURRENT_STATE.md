@@ -1,8 +1,8 @@
 # Server Current State
 
 **Status:** Canonical  
-**Audit date:** 2026-08-25
-**Code baseline:** `main@ef3cd3bac2fb10ee2f7a7e9586571f70e7127ae3`
+**Audit date:** 2026-09-10
+**Code baseline:** `main@bb2d00530f4637d4d1f75849fb0397ac443bc46a`
 **This document owns:** the implemented backend capabilities, gaps and stale assumptions
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -105,10 +105,12 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - lane and vehicle assignment
 - race-state with refresh-safe current-player presentation identity and the shared
   runtime snapshot
-- authoritative standings in the shared race-state and submit-answer snapshot:
-  competition rank, actual joined-player count and a deterministic max-4 safe nearby
-  window. FINISHED uses `finishedAt`; all other statuses, including DISCONNECTED, use
-  stored position. Lane/ID stabilize tied output only and never decide public rank
+- authoritative standings in the shared race-state, submit-answer and
+  finish-arbitration snapshot: competition rank, actual joined-player count and the
+  full safe `opponents` roster (every other joined player, 0..7, standing order).
+  FINISHED uses the canonical `finishedAtEpochMs` (legacy `finishedAt` fallback); all
+  other statuses, including DISCONNECTED, use stored position. Lane/ID stabilize
+  tied output only and never decide public rank
 - Redis-first heartbeat and presence with 45-second presence TTL; only heartbeat
   and reconnect create or renew the lease. Active `RACING + IN_PROGRESS`
   race-state, current-question and answer requests record trusted gameplay activity.
@@ -152,7 +154,7 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
   `QuestionTimeoutService`, using a read-only trusted activity cutoff from the
   presence owner. It records no activity, renews no lease, reconnects/re-anchors
   nothing, creates no next question and does not remove the RACING player. Redis
-  outage uses durable lastSeen/race-start fallback. Teacher live/SSE remains future.
+  outage uses durable lastSeen/race-start fallback.
 
 ### Server time policy (C1-02K)
 
@@ -212,15 +214,24 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
   `movementUpdatedAtEpochMs` anchor (`RaceMovementService`, epoch-ms math —
   DST-proof; old speed owns past time, boosts/penalties own only the
   future). Real absence caps settlement at the last trusted activity; reconnect
-  re-anchors at now and never awards the offline interval.
+  re-anchors at now and never awards the offline interval. Projection is integer
+  tick math (`RaceMovementCalculator`: 1/10,000-unit position ticks, 0.1 speed
+  tenths), partition-invariant, and the anchor stops at the exact finish-crossing
+  instant, which becomes the canonical `finishedAtEpochMs`.
 - speed: bounded cumulative model — race start grants `MIN_RACING_SPEED`
   (0.5) + the movement anchor; correct answers ADD +0.20/+0.30/+0.40 by
   difficulty up to MAX 2.0; wrong −0.20 and timeout −0.40 floor at the
   minimum; FINISHED returns to 0
 - timeout is a real gameplay event with ONE exactly-once owner
-  (`QuestionTimeoutService`): settle to the deadline at the old speed,
-  ACTIVE→EXPIRED, penalty + wrong/failure progression, settle the remainder;
-  its wall clock continues while absent even though movement stays capped
+  (`QuestionTimeoutService`) and correct chronology: only when the trusted movement
+  cutoff has reached the deadline does it settle to the deadline at the old speed,
+  mark ACTIVE→EXPIRED, apply the penalty + wrong/failure progression and settle the
+  remainder to `min(decision, cutoff)`; while the cutoff is earlier than the
+  deadline it settles to the cutoff only and the question stays ACTIVE without
+  penalty. The deadline is never extended: reconnect re-anchors and then resolves
+  the overdue question at that instant, submit-answer rejects an overdue question
+  even while ACTIVE, and a player becoming DISCONNECTED has the leftover question
+  expired without consequence
 - safety settlement scheduler (5s) + per-player locked worker: connected movement,
   overdue timeouts, grace-expiry DISCONNECTED and race finish need no gameplay
   request; reconciliation can ignore RACING players after the short presence-loss
@@ -231,15 +242,27 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
   mapping (safe state-read materialization — repeated reads award nothing);
   RACING→DISCONNECTED settles first, FINISHED wins over DISCONNECTED
 - runtime snapshot carries `snapshotAtEpochMs` (client freshness ordering),
-  `movementUnitsPerSecond` (server-owned visual prediction rate), `rank`,
-  `playerCount` and `nearbyPlayers`; one focused standings owner reads the at-most-8
-  RacePlayers once and computes rank/window in memory after the current request mutation
+  `positionAtEpochMs` (durable movement anchor), `movementUnitsPerSecond`
+  (server-owned visual prediction rate), `playerFinishedAtEpochMs`, non-null
+  `eventVersion` (race version after the request's own durable events), `rank`,
+  `playerCount` and the full `opponents` roster; one focused standings owner reads
+  the at-most-8 RacePlayers once and computes rank/opponents in memory after the
+  current request mutation
 - streak/highest streak
 - difficulty progression
 - correct/wrong counters
-- player finish
+- player finish with canonical `finishedAtEpochMs` (answer decision instant or
+  deterministic crossing instant; `finishedAt` derived from the same instant)
 - basic race finish
-- answer response with reusable runtime snapshot.
+- answer response with reusable runtime snapshot
+- `POST /api/race-players/me/finish-arbitration` (C2-01): cookie-only identity,
+  scalar preflight, all RacePlayers locked by id then the Race, one decision
+  instant, requester through the gameplay guard and other RACING players through
+  the background presence path, batch events, race finish, shared snapshot and a
+  `RaceFinishOrderPolicy` confirmed finish-order prefix; an effective decision time behind the roster
+  settles nothing and returns the snapshot unproven.
+- Arbitration alone uses READ_COMMITTED. Arbitration and active answers share
+  the persisted race-local decision time floor documented in the architecture contract.
 
 Redis infrastructure failure is not absence: gameplay presence fails open, no racer
 is frozen or disconnected en masse, durable `lastSeenAt` remains available, and
@@ -247,7 +270,7 @@ recovery never subtracts movement awarded in degraded mode.
 
 ## Partial or missing
 
-- Teacher SSE stream.
+- Student live event stream and the deferred C2 accumulator/geometry work.
 - Durable final-results query/model closure.
 - Event/effect system for junction/luck/announcements.
 - Catch-up-assistance policy.

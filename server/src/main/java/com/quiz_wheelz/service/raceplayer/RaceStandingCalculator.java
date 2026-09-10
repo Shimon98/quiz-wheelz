@@ -2,9 +2,10 @@ package com.quiz_wheelz.service.raceplayer;
 
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.RacePlayerStatus;
+import com.quiz_wheelz.utils.DateTimeUtils;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -13,8 +14,7 @@ import java.util.Objects;
 @Component
 public class RaceStandingCalculator {
 
-    private static final Comparator<LocalDateTime> FINISH_TIME_ORDER =
-            Comparator.nullsLast(Comparator.naturalOrder());
+    private static final long UNKNOWN_FINISH_ORDER_KEY = Long.MAX_VALUE;
 
     private static final Comparator<RacePlayer> STABLE_TIE_ORDER =
             Comparator.comparing(
@@ -29,6 +29,12 @@ public class RaceStandingCalculator {
                             RacePlayer::getDisplayName,
                             Comparator.nullsLast(Comparator.naturalOrder())
                     );
+
+    private final ZoneId zoneId;
+
+    public RaceStandingCalculator(ZoneId applicationZoneId) {
+        this.zoneId = Objects.requireNonNull(applicationZoneId);
+    }
 
     public List<RankedRacePlayer> calculate(List<RacePlayer> racePlayers) {
         List<RacePlayer> orderedPlayers = new ArrayList<>(
@@ -54,6 +60,18 @@ public class RaceStandingCalculator {
         return List.copyOf(rankedPlayers);
     }
 
+    public long finishOrderKey(RacePlayer racePlayer) {
+        if (racePlayer.getFinishedAtEpochMs() != null) {
+            return racePlayer.getFinishedAtEpochMs();
+        }
+
+        if (racePlayer.getFinishedAt() != null) {
+            return DateTimeUtils.toEpochMilli(racePlayer.getFinishedAt(), zoneId);
+        }
+
+        return UNKNOWN_FINISH_ORDER_KEY;
+    }
+
     private int compareStanding(RacePlayer left, RacePlayer right) {
         int competitiveOrder = compareCompetitiveStanding(left, right);
 
@@ -71,7 +89,7 @@ public class RaceStandingCalculator {
         }
 
         if (leftFinished) {
-            return FINISH_TIME_ORDER.compare(left.getFinishedAt(), right.getFinishedAt());
+            return Long.compare(finishOrderKey(left), finishOrderKey(right));
         }
 
         return Double.compare(safePosition(right), safePosition(left));
@@ -86,7 +104,7 @@ public class RaceStandingCalculator {
         }
 
         if (leftFinished) {
-            return Objects.equals(left.getFinishedAt(), right.getFinishedAt());
+            return finishOrderKey(left) == finishOrderKey(right);
         }
 
         return Double.compare(safePosition(left), safePosition(right)) == 0;

@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -35,6 +36,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class StudentAnswerSubmissionBehaviorTest {
+
+    private static final long DECISION_EPOCH_MS =
+            StudentAnswerSubmissionTestFixture.FIXED_INSTANT.toEpochMilli();
 
     private StudentAnswerSubmissionTestFixture fixture;
 
@@ -112,7 +116,7 @@ class StudentAnswerSubmissionBehaviorTest {
         );
         AnswerRaceImpact impact = fixture.createRaceImpact(lockedRacePlayer, true);
         prepareAnswer(lockedRacePlayer, question, selected, impact, true);
-        when(fixture.raceEngineService.applyAnswerResult(lockedRacePlayer, true))
+        when(fixture.raceEngineService.applyAnswerResult(lockedRacePlayer, true, DECISION_EPOCH_MS))
                 .thenAnswer(invocation -> {
                     lockedRacePlayer.setPosition(impact.getNewPosition());
                     lockedRacePlayer.setSpeed(impact.getNewSpeed());
@@ -135,7 +139,7 @@ class StudentAnswerSubmissionBehaviorTest {
         assertEquals(2, response.getRaceImpact().getSnapshot().getPlayerCount());
         assertEquals(
                 8L,
-                response.getRaceImpact().getSnapshot().getNearbyPlayers().get(0).getRacePlayerId()
+                response.getRaceImpact().getSnapshot().getOpponents().get(0).getRacePlayerId()
         );
     }
 
@@ -167,7 +171,7 @@ class StudentAnswerSubmissionBehaviorTest {
         );
 
         assertEquals(ErrorCode.RACE_PLAYER_NOT_RACING, exception.getErrorCode());
-        verify(fixture.raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
+        verify(fixture.raceEngineService, never()).applyAnswerResult(any(), anyBoolean(), anyLong());
         verify(fixture.playerQuestionRepository, never()).save(question);
     }
 
@@ -208,7 +212,7 @@ class StudentAnswerSubmissionBehaviorTest {
                 response.getCorrectAnswerChoiceId()
         );
         assertEquals(PlayerQuestionStatus.ANSWERED, question.getStatus());
-        verify(fixture.raceEngineService).applyAnswerResult(lockedRacePlayer, false);
+        verify(fixture.raceEngineService).applyAnswerResult(lockedRacePlayer, false, DECISION_EPOCH_MS);
     }
 
     @Test
@@ -232,7 +236,7 @@ class StudentAnswerSubmissionBehaviorTest {
         );
         AnswerRaceImpact impact = fixture.createFinishedRaceImpact(lockedRacePlayer);
         prepareAnswer(lockedRacePlayer, question, selected, impact, true);
-        when(fixture.raceEngineService.applyAnswerResult(lockedRacePlayer, true))
+        when(fixture.raceEngineService.applyAnswerResult(lockedRacePlayer, true, DECISION_EPOCH_MS))
                 .thenAnswer(invocation -> {
                     lockedRacePlayer.setPosition(1000.0);
                     lockedRacePlayer.setSpeed(0.0);
@@ -257,7 +261,7 @@ class StudentAnswerSubmissionBehaviorTest {
         assertEquals(2, response.getRaceImpact().getSnapshot().getPlayerCount());
         assertEquals(
                 999.0,
-                response.getRaceImpact().getSnapshot().getNearbyPlayers().get(0).getPosition()
+                response.getRaceImpact().getSnapshot().getOpponents().get(0).getPosition()
         );
     }
 
@@ -289,7 +293,36 @@ class StudentAnswerSubmissionBehaviorTest {
         );
 
         assertEquals(ErrorCode.QUESTION_EXPIRED, exception.getErrorCode());
-        verify(fixture.raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
+        verify(fixture.raceEngineService, never()).applyAnswerResult(any(), anyBoolean(), anyLong());
+    }
+
+    @Test
+    void shouldRejectOverdueQuestionEvenWhenItIsStillActiveAfterTheGuard() {
+        RacePlayer racePlayer = fixture.createRacePlayer();
+        RacePlayer lockedRacePlayer = fixture.mockLockedRacePlayer(racePlayer);
+        PlayerQuestion question = fixture.createActiveQuestion(
+                fixture.now().minusSeconds(1)
+        );
+        when(fixture.playerQuestionRepository.findLockedByIdAndRacePlayer(
+                StudentAnswerSubmissionTestFixture.QUESTION_ID,
+                lockedRacePlayer
+        )).thenReturn(Optional.of(question));
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> fixture.studentAnswerSubmissionService.submitAnswer(
+                        racePlayer,
+                        fixture.createRequest(
+                                StudentAnswerSubmissionTestFixture.QUESTION_ID,
+                                StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID
+                        )
+                )
+        );
+
+        assertEquals(ErrorCode.QUESTION_EXPIRED, exception.getErrorCode());
+        assertEquals(PlayerQuestionStatus.ACTIVE, question.getStatus());
+        verify(fixture.raceEngineService, never()).applyAnswerResult(any(), anyBoolean(), anyLong());
+        verify(fixture.playerQuestionRepository, never()).save(question);
     }
 
     @Test
@@ -312,7 +345,7 @@ class StudentAnswerSubmissionBehaviorTest {
                 StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID,
                 question
         )).thenReturn(Optional.of(choice));
-        when(fixture.raceEngineService.applyAnswerResult(lockedRacePlayer, true))
+        when(fixture.raceEngineService.applyAnswerResult(lockedRacePlayer, true, DECISION_EPOCH_MS))
                 .thenThrow(new ApiException(ErrorCode.RACE_NOT_IN_PROGRESS));
 
         ApiException exception = assertThrows(
@@ -371,7 +404,7 @@ class StudentAnswerSubmissionBehaviorTest {
 
         assertEquals(ErrorCode.QUESTION_NOT_ACTIVE, second.getErrorCode());
         verify(fixture.raceEngineService, times(1))
-                .applyAnswerResult(lockedRacePlayer, true);
+                .applyAnswerResult(lockedRacePlayer, true, DECISION_EPOCH_MS);
     }
 
     @Test
@@ -398,7 +431,7 @@ class StudentAnswerSubmissionBehaviorTest {
                 selectedChoice.getId(),
                 question
         )).thenReturn(Optional.of(selectedChoice));
-        when(fixture.raceEngineService.applyAnswerResult(lockedRacePlayer, correct))
+        when(fixture.raceEngineService.applyAnswerResult(lockedRacePlayer, correct, DECISION_EPOCH_MS))
                 .thenReturn(impact);
         when(fixture.playerQuestionRepository.save(question)).thenReturn(question);
         when(fixture.racePlayerRepository.findByRaceOrderByLaneNumberAsc(

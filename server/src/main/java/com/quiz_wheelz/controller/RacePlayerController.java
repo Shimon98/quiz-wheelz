@@ -12,11 +12,13 @@ import com.quiz_wheelz.dto.raceplayer.RacePlayerJoinResponse;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerJoinResult;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerLeaveResponse;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerReconnectResponse;
+import com.quiz_wheelz.dto.raceplayer.StudentRaceFinishArbitrationResponse;
 import com.quiz_wheelz.dto.raceplayer.StudentRaceStateResponse;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.service.raceplayer.CurrentRacePlayerService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerJoinService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerRuntimeSessionService;
+import com.quiz_wheelz.service.raceplayer.StudentRaceFinishArbitrationService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStateService;
 import com.quiz_wheelz.service.question.StudentAnswerSubmissionService;
 import com.quiz_wheelz.service.question.StudentQuestionDeliveryService;
@@ -42,6 +44,7 @@ public class RacePlayerController {
     private final StudentAnswerSubmissionService studentAnswerSubmissionService;
     private final StudentRaceStateService studentRaceStateService;
     private final RacePlayerRuntimeSessionService racePlayerRuntimeSessionService;
+    private final StudentRaceFinishArbitrationService studentRaceFinishArbitrationService;
 
     public RacePlayerController(
             RacePlayerJoinService racePlayerJoinService,
@@ -50,7 +53,8 @@ public class RacePlayerController {
             StudentQuestionDeliveryService studentQuestionDeliveryService,
             StudentAnswerSubmissionService studentAnswerSubmissionService,
             StudentRaceStateService studentRaceStateService,
-            RacePlayerRuntimeSessionService racePlayerRuntimeSessionService
+            RacePlayerRuntimeSessionService racePlayerRuntimeSessionService,
+            StudentRaceFinishArbitrationService studentRaceFinishArbitrationService
     ) {
         this.racePlayerJoinService = racePlayerJoinService;
         this.cookieUtils = cookieUtils;
@@ -59,6 +63,7 @@ public class RacePlayerController {
         this.studentAnswerSubmissionService = studentAnswerSubmissionService;
         this.studentRaceStateService = studentRaceStateService;
         this.racePlayerRuntimeSessionService = racePlayerRuntimeSessionService;
+        this.studentRaceFinishArbitrationService = studentRaceFinishArbitrationService;
     }
 
     @PostMapping(ApiPaths.JOIN)
@@ -132,6 +137,21 @@ public class RacePlayerController {
         return ResponseEntity.ok(
                 ApiResponse.ok(
                         ApiMessages.RACE_PLAYER_RECONNECT_RESOLVED_SUCCESSFULLY,
+                        response
+                )
+        );
+    }
+
+    @PostMapping(ApiPaths.CURRENT_FINISH_ARBITRATION)
+    public ResponseEntity<ApiResponse<StudentRaceFinishArbitrationResponse>> arbitrateFinish(
+            HttpServletRequest request
+    ) {
+        StudentRaceFinishArbitrationResponse response =
+                studentRaceFinishArbitrationService.arbitrate(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        ApiMessages.STUDENT_RACE_FINISH_ARBITRATION_RESOLVED_SUCCESSFULLY,
                         response
                 )
         );

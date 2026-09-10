@@ -84,14 +84,15 @@ public class StudentRaceStateService {
             raceFinishService.finishRaceIfNeeded(race);
         }
 
-        StudentRaceStandingResult standing = standingService.calculate(racePlayer);
+        liveMutationTracker.recordChanges(liveContext, racePlayer);
+        long eventVersion = race.getLiveEventVersion();
+
         StudentRaceRuntimeSnapshotResponse snapshot = snapshotMapper.fromRacePlayer(
                 racePlayer,
-                standing,
-                decisionEpochMs
+                standingService.calculate(racePlayer),
+                decisionEpochMs,
+                eventVersion
         );
-
-        liveMutationTracker.recordChanges(liveContext, racePlayer);
 
         return new StudentRaceStateResponse(
                 race.getId(),

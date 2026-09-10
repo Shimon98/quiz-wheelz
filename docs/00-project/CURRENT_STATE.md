@@ -80,8 +80,8 @@ opponents and the teacher live race client screen and results.
 - Answer validation, expiry handling and duplicate-submit protection.
 - Race engine for score, progress, speed, streak, difficulty and finish state.
 - Shared runtime snapshot and race-state endpoint, including server-owned competition
-  rank, joined-player count and a safe deterministic max-4 nearby-player window shared
-  with submit-answer responses.
+  rank, joined-player count and the full safe `opponents` roster (server C2-01)
+  shared with submit-answer and finish-arbitration responses.
 - Redis-based presence, monotonic trusted gameplay activity, heartbeat, leave and
   reconnect grace; only heartbeat/reconnect renew the 45-second presence lease,
   active `RACING + IN_PROGRESS` gameplay queries/actions record activity, absent

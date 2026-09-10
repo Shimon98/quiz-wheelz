@@ -64,8 +64,7 @@ class RacePlayerDuplicateReconnectTest {
         RacePlayerGameplayTimelineService timelineService =
                 new RacePlayerGameplayTimelineService(
                         questionTimeoutService,
-                        raceMovementService,
-                        clock
+                        raceMovementService
                 );
         reconnectService = new RacePlayerReconnectService(
                 sessionLockService,
@@ -110,13 +109,11 @@ class RacePlayerDuplicateReconnectTest {
         assertEquals(RacePlayerStatus.RACING, racePlayer.getStatus());
         verify(questionTimeoutService).settleWithOverdueTimeout(
                 racePlayer,
-                java.time.LocalDateTime.ofInstant(NOW, ZoneId.of("UTC")),
                 NOW.toEpochMilli(),
                 trustedCutoff
         );
-        verify(questionTimeoutService).settleWithOverdueTimeout(
+        verify(questionTimeoutService, times(2)).settleWithOverdueTimeout(
                 racePlayer,
-                java.time.LocalDateTime.ofInstant(NOW, ZoneId.of("UTC")),
                 NOW.toEpochMilli(),
                 NOW.toEpochMilli()
         );

@@ -35,7 +35,8 @@ public class RaceEngineService {
     @Transactional
     public AnswerRaceImpact applyAnswerResult(
             RacePlayer racePlayer,
-            boolean correct
+            boolean correct,
+            long decisionEpochMs
     ) {
         validateRacePlayerCanReceiveAnswerImpact(racePlayer);
 
@@ -64,7 +65,10 @@ public class RaceEngineService {
         DifficultyProgressionResult difficultyProgression =
                 difficultyProgressionService.applyDifficultyProgression(racePlayer, correct);
 
-        boolean playerFinished = raceFinishService.finishPlayerIfNeeded(racePlayer);
+        boolean playerFinished = raceFinishService.finishPlayerAt(
+                racePlayer,
+                decisionEpochMs
+        );
         boolean raceFinished = raceFinishService.finishRaceIfNeeded(race);
 
         return new AnswerRaceImpact(

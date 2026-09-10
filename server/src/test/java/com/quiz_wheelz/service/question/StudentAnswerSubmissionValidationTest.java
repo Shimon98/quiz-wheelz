@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -157,7 +158,7 @@ class StudentAnswerSubmissionValidationTest {
                 StudentAnswerSubmissionTestFixture.FIXED_INSTANT
         );
         verify(fixture.playerQuestionRepository, never()).save(question);
-        verify(fixture.raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
+        verify(fixture.raceEngineService, never()).applyAnswerResult(any(), anyBoolean(), anyLong());
     }
 
     @Test
@@ -200,7 +201,7 @@ class StudentAnswerSubmissionValidationTest {
                 )
         );
         assertEquals(ErrorCode.INVALID_ANSWER_SUBMISSION, exception.getErrorCode());
-        verify(fixture.raceEngineService, never()).applyAnswerResult(any(), anyBoolean());
+        verify(fixture.raceEngineService, never()).applyAnswerResult(any(), anyBoolean(), anyLong());
     }
 
     private ApiException submitAndCapture(RacePlayer racePlayer, long choiceId) {

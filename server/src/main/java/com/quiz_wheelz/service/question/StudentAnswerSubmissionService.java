@@ -16,12 +16,12 @@ import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
+import com.quiz_wheelz.service.raceengine.RaceDecisionTimeService;
 import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
 import com.quiz_wheelz.service.liveevent.RaceLiveMutationContext;
 import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
-import com.quiz_wheelz.service.raceplayer.StudentRaceStandingResult;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStandingService;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import org.springframework.stereotype.Service;
@@ -45,6 +45,7 @@ public class StudentAnswerSubmissionService {
     private final StudentRaceRuntimeSnapshotMapper snapshotMapper;
     private final RaceLiveEventRecorder liveEventRecorder;
     private final RaceLiveMutationTracker liveMutationTracker;
+    private final RaceDecisionTimeService decisionTimeService;
     private final Clock clock;
 
     public StudentAnswerSubmissionService(
@@ -57,6 +58,7 @@ public class StudentAnswerSubmissionService {
             StudentRaceRuntimeSnapshotMapper snapshotMapper,
             RaceLiveEventRecorder liveEventRecorder,
             RaceLiveMutationTracker liveMutationTracker,
+            RaceDecisionTimeService decisionTimeService,
             Clock clock
     ) {
         this.playerQuestionRepository = Objects.requireNonNull(playerQuestionRepository);
@@ -68,6 +70,7 @@ public class StudentAnswerSubmissionService {
         this.snapshotMapper = Objects.requireNonNull(snapshotMapper);
         this.liveEventRecorder = Objects.requireNonNull(liveEventRecorder);
         this.liveMutationTracker = Objects.requireNonNull(liveMutationTracker);
+        this.decisionTimeService = Objects.requireNonNull(decisionTimeService);
         this.clock = Objects.requireNonNull(clock);
     }
 
@@ -99,9 +102,12 @@ public class StudentAnswerSubmissionService {
             RaceLiveMutationContext liveContext
     ) {
 
-        Instant decisionInstant = clock.instant();
+        long wallTimeEpochMs = clock.millis();
+        long decisionEpochMs = liveContext.active()
+                ? decisionTimeService.advance(lockedRacePlayer.getRace(), wallTimeEpochMs)
+                : wallTimeEpochMs;
+        Instant decisionInstant = Instant.ofEpochMilli(decisionEpochMs);
         LocalDateTime now = DateTimeUtils.toLocalDateTime(decisionInstant, clock.getZone());
-        long decisionEpochMs = decisionInstant.toEpochMilli();
 
         PlayerQuestion question = findLockedPlayerQuestion(
                 request.getQuestionId(),
@@ -115,9 +121,7 @@ public class StudentAnswerSubmissionService {
                 decisionInstant
         );
 
-        if (question.getStatus() == PlayerQuestionStatus.EXPIRED) {
-            throw new ApiException(ErrorCode.QUESTION_EXPIRED);
-        }
+        validateQuestionNotExpired(question, decisionEpochMs);
 
         if (lockedRacePlayer.getStatus() != RacePlayerStatus.RACING) {
             throw new ApiException(ErrorCode.RACE_PLAYER_NOT_RACING);
@@ -134,18 +138,11 @@ public class StudentAnswerSubmissionService {
                 ? null
                 : resolveCorrectAnswerChoiceId(question);
 
-        AnswerRaceImpact answerRaceImpact =
-                raceEngineService.applyAnswerResult(lockedRacePlayer, correct);
-
-        StudentRaceStandingResult standing = standingService.calculate(lockedRacePlayer);
-
-        StudentRaceRuntimeSnapshotResponse snapshot =
-                snapshotMapper.fromAnswerRaceImpact(
-                        answerRaceImpact,
-                        lockedRacePlayer.getRace(),
-                        standing,
-                        decisionEpochMs
-                );
+        AnswerRaceImpact answerRaceImpact = raceEngineService.applyAnswerResult(
+                lockedRacePlayer,
+                correct,
+                decisionEpochMs
+        );
 
         question.setStatus(PlayerQuestionStatus.ANSWERED);
         question.setAnsweredAt(now);
@@ -160,6 +157,15 @@ public class StudentAnswerSubmissionService {
             );
         }
         liveMutationTracker.recordChanges(liveContext, lockedRacePlayer);
+
+        StudentRaceRuntimeSnapshotResponse snapshot =
+                snapshotMapper.fromAnswerRaceImpact(
+                        answerRaceImpact,
+                        lockedRacePlayer,
+                        standingService.calculate(lockedRacePlayer),
+                        decisionEpochMs,
+                        lockedRacePlayer.getRace().getLiveEventVersion()
+                );
 
         return new SubmitAnswerResponse(
                 savedQuestion.getId(),
@@ -215,6 +221,15 @@ public class StudentAnswerSubmissionService {
     private void validateQuestionIsActive(PlayerQuestion question) {
         if (question.getStatus() != PlayerQuestionStatus.ACTIVE) {
             throw new ApiException(ErrorCode.QUESTION_NOT_ACTIVE);
+        }
+    }
+
+    private void validateQuestionNotExpired(PlayerQuestion question, long decisionEpochMs) {
+        if (question.getStatus() == PlayerQuestionStatus.EXPIRED
+                || question.getExpiresAt() == null
+                || DateTimeUtils.toEpochMilli(question.getExpiresAt(), clock.getZone())
+                <= decisionEpochMs) {
+            throw new ApiException(ErrorCode.QUESTION_EXPIRED);
         }
     }
 

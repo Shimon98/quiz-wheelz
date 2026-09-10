@@ -59,7 +59,7 @@ class TeacherRaceLivePlayerSnapshotServiceTest {
     private TeacherRaceLivePlayerSnapshotService service() {
         return new TeacherRaceLivePlayerSnapshotService(
                 racePlayerRepository,
-                new RaceStandingCalculator()
+                new RaceStandingCalculator(java.time.ZoneOffset.UTC)
         );
     }
 

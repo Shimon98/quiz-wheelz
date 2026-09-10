@@ -1,5 +1,6 @@
 package com.quiz_wheelz.service.question;
 
+import com.quiz_wheelz.dto.answer.SubmitAnswerResponse;
 import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.entitys.PlayerQuestionChoice;
 import com.quiz_wheelz.entitys.RacePlayer;
@@ -12,6 +13,7 @@ import org.mockito.InOrder;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -32,7 +34,11 @@ class StudentAnswerLiveEventTest {
         doAnswer(invocation -> {
             player.setPosition(10.0);
             return fixture.createRaceImpact(player, true);
-        }).when(fixture.raceEngineService).applyAnswerResult(player, true);
+        }).when(fixture.raceEngineService).applyAnswerResult(
+                player,
+                true,
+                StudentAnswerSubmissionTestFixture.FIXED_INSTANT.toEpochMilli()
+        );
 
         submit(player);
 
@@ -70,7 +76,11 @@ class StudentAnswerLiveEventTest {
             player.setStatus(RacePlayerStatus.FINISHED);
             player.setFinishedAt(fixture.now());
             return fixture.createFinishedRaceImpact(player);
-        }).when(fixture.raceEngineService).applyAnswerResult(player, true);
+        }).when(fixture.raceEngineService).applyAnswerResult(
+                player,
+                true,
+                StudentAnswerSubmissionTestFixture.FIXED_INSTANT.toEpochMilli()
+        );
 
         submit(player);
 
@@ -93,7 +103,11 @@ class StudentAnswerLiveEventTest {
             player.getRace().setStatus(RaceStatus.FINISHED);
             player.getRace().setFinishedAt(fixture.now());
             return fixture.createFinishedRaceImpact(player);
-        }).when(fixture.raceEngineService).applyAnswerResult(player, true);
+        }).when(fixture.raceEngineService).applyAnswerResult(
+                player,
+                true,
+                StudentAnswerSubmissionTestFixture.FIXED_INSTANT.toEpochMilli()
+        );
 
         submit(player);
 
@@ -106,6 +120,44 @@ class StudentAnswerLiveEventTest {
         order.verify(fixture.liveEventRecorder).recordPlayerFinished(player);
         order.verify(fixture.liveEventRecorder).recordRaceFinished(player.getRace());
         verifyNoMoreInteractions(fixture.liveEventRecorder);
+    }
+
+    @Test
+    void answerResponseCarriesTheVersionAfterItsOwnEvents() {
+        RacePlayer player = prepareSuccessfulAnswer();
+        player.getRace().setLiveEventVersion(10L);
+        doAnswer(invocation -> {
+            player.setPosition(10.0);
+            return fixture.createRaceImpact(player, true);
+        }).when(fixture.raceEngineService).applyAnswerResult(
+                player,
+                true,
+                StudentAnswerSubmissionTestFixture.FIXED_INSTANT.toEpochMilli()
+        );
+        doAnswer(invocation -> bumpVersion(player)).when(fixture.liveEventRecorder)
+                .recordQuestionAnswered(player, StudentAnswerSubmissionTestFixture.QUESTION_ID, true);
+        doAnswer(invocation -> bumpVersion(player)).when(fixture.liveEventRecorder)
+                .recordPlayerProgressUpdated(player.getRace());
+
+        RacePlayer requestPlayer = fixture.createRacePlayer();
+        when(fixture.racePlayerRepository.findLockedByIdAndRaceId(
+                requestPlayer.getId(),
+                requestPlayer.getRace().getId()
+        )).thenReturn(Optional.of(player));
+        SubmitAnswerResponse response = fixture.studentAnswerSubmissionService.submitAnswer(
+                requestPlayer,
+                fixture.createRequest(
+                        StudentAnswerSubmissionTestFixture.QUESTION_ID,
+                        StudentAnswerSubmissionTestFixture.CORRECT_CHOICE_ID
+                )
+        );
+
+        assertEquals(12L, response.getRaceImpact().getSnapshot().getEventVersion());
+    }
+
+    private Object bumpVersion(RacePlayer player) {
+        player.getRace().setLiveEventVersion(player.getRace().getLiveEventVersion() + 1);
+        return null;
     }
 
     private RacePlayer prepareSuccessfulAnswer() {

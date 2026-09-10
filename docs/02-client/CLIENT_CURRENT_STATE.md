@@ -358,9 +358,10 @@ Implemented A–G:
   engine/ambience, accepted-answer/combo/finish cues, mute and volume. The
   detailed ownership and acceptance contract is C2-A in the client plan.
 
-S1-02 already supplies authoritative `rank`, `playerCount` and `nearbyPlayers`
-in runtime snapshots, including answer snapshots. The HUD consumes standing;
-the client still needs to map nearby players and render pooled opponents in C2.
+S1-02 and server C2-01 supply authoritative `rank`, `playerCount`, `eventVersion`
+and the full `opponents` roster (renamed from `nearbyPlayers`) in runtime
+snapshots, including answer snapshots. The HUD consumes standing; the client still
+needs to map opponents and render pooled opponents in C2.
 The C1 completion checklist is in `CLIENT_IMPLEMENTATION_PLAN.md`; future
 teacher/SSE/results/auth work does not belong to that single-player gate.
 

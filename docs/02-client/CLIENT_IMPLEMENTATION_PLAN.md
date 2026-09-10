@@ -751,14 +751,20 @@ local development handoff to C2; not yet verified on a physical device/browser):
 
 ## C2 — Opponents
 
-Next implementation stage after the accepted local C1 checkpoint. S1-02 is
-DONE: runtime and answer snapshots already
-provide authoritative `rank`, `playerCount` and up to four `nearbyPlayers`.
-The HUD consumes rank/count; nearby-player client mapping and rendering are
-not implemented yet. No new endpoint or client-calculated rank is needed.
+Next implementation stage after the accepted local C1 checkpoint. Server S1-02 and
+C2-01 are DONE: race-state, answer and finish-arbitration snapshots provide
+authoritative `rank`, `playerCount`, `eventVersion`, `positionAtEpochMs`,
+`playerFinishedAtEpochMs` and the full `opponents` roster (every other joined
+player, 0..7, standing order; each with `rank`, `position`, `positionAtEpochMs`,
+`movementUnitsPerSecond`, `status`, `finishedAtEpochMs` and lane/vehicle identity
+incl. `vehicleAssetKey`). `POST /api/race-players/me/finish-arbitration` returns the
+same snapshot plus the confirmed finish-order prefix. The HUD consumes rank/count;
+opponent client mapping and rendering are not implemented yet. No client-calculated
+rank is needed.
 
-- validate/map nearby-player snapshots through the existing runtime boundary,
-  retaining snapshot freshness and each player's server identity/state
+- validate/map `opponents` snapshots through the existing runtime boundary,
+  retaining snapshot freshness (`snapshotAtEpochMs`, `eventVersion`,
+  per-opponent `positionAtEpochMs`) and each player's server identity/state
 - derive `laneDelta` from server lane numbers for the existing projection's
   lateral coordinate; retain Depth Lock and the accepted road/camera/depth zones
 - opponent interpolation keyed by RacePlayer ID

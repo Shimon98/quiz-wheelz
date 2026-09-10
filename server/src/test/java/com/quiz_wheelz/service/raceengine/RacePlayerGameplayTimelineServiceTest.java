@@ -7,17 +7,17 @@ import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService.Game
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -41,8 +41,7 @@ class RacePlayerGameplayTimelineServiceTest {
     void setUp() {
         service = new RacePlayerGameplayTimelineService(
                 questionTimeoutService,
-                raceMovementService,
-                Clock.fixed(NOW, ZoneOffset.UTC)
+                raceMovementService
         );
         player = new RacePlayer();
         player.setStatus(RacePlayerStatus.RACING);
@@ -50,25 +49,14 @@ class RacePlayerGameplayTimelineServiceTest {
 
     @Test
     void repeatedAbsentSweepsShouldAlwaysSettleOnlyToTrustedCutoff() {
-        GameplayPresenceDecision absent = new GameplayPresenceDecision(
-                true,
-                false,
-                false,
-                CUTOFF
-        );
+        GameplayPresenceDecision absent = new GameplayPresenceDecision(true, false, false, CUTOFF);
 
         service.settleBackground(player, NOW, absent);
         service.settleBackground(player, NOW.plusSeconds(5), absent);
 
+        verify(questionTimeoutService).settleWithOverdueTimeout(player, NOW.toEpochMilli(), CUTOFF);
         verify(questionTimeoutService).settleWithOverdueTimeout(
                 player,
-                NOW.atZone(ZoneOffset.UTC).toLocalDateTime(),
-                NOW.toEpochMilli(),
-                CUTOFF
-        );
-        verify(questionTimeoutService).settleWithOverdueTimeout(
-                player,
-                NOW.plusSeconds(5).atZone(ZoneOffset.UTC).toLocalDateTime(),
                 NOW.plusSeconds(5).toEpochMilli(),
                 CUTOFF
         );
@@ -76,59 +64,41 @@ class RacePlayerGameplayTimelineServiceTest {
     }
 
     @Test
-    void reconnectInsideGraceShouldSettleToCutoffThenReanchorWithoutCatchUp() {
-        GameplayPresenceDecision absentInsideGrace = new GameplayPresenceDecision(
-                true,
-                false,
-                false,
-                CUTOFF
-        );
+    void reconnectInsideGraceShouldSettleToCutoffReanchorThenResolveOverdueQuestion() {
+        GameplayPresenceDecision absentInsideGrace =
+                new GameplayPresenceDecision(true, false, false, CUTOFF);
 
         assertFalse(service.settleReconnect(player, NOW, absentInsideGrace));
 
-        verify(questionTimeoutService).settleWithOverdueTimeout(
+        InOrder order = inOrder(questionTimeoutService, raceMovementService);
+        order.verify(questionTimeoutService).settleWithOverdueTimeout(player, NOW.toEpochMilli(), CUTOFF);
+        order.verify(raceMovementService).reanchorAt(player, NOW.toEpochMilli());
+        order.verify(questionTimeoutService).settleWithOverdueTimeout(
                 player,
-                NOW.atZone(ZoneOffset.UTC).toLocalDateTime(),
                 NOW.toEpochMilli(),
-                CUTOFF
+                NOW.toEpochMilli()
         );
-        verify(raceMovementService).reanchorAt(player, NOW.toEpochMilli());
     }
 
     @Test
     void absentGameplayRequestShouldSettleToCutoffWithoutReanchor() {
-        GameplayPresenceDecision absentInsideGrace = new GameplayPresenceDecision(
-                true,
-                false,
-                false,
-                CUTOFF
-        );
+        GameplayPresenceDecision absentInsideGrace =
+                new GameplayPresenceDecision(true, false, false, CUTOFF);
 
         assertFalse(service.settleGameplayRequest(player, NOW, absentInsideGrace));
 
-        verify(questionTimeoutService).settleWithOverdueTimeout(
-                player,
-                NOW.atZone(ZoneOffset.UTC).toLocalDateTime(),
-                NOW.toEpochMilli(),
-                CUTOFF
-        );
+        verify(questionTimeoutService).settleWithOverdueTimeout(player, NOW.toEpochMilli(), CUTOFF);
         verify(raceMovementService, never()).reanchorAt(player, NOW.toEpochMilli());
     }
 
     @Test
     void connectedActivityShouldSettleNormallyWithoutReanchor() {
-        GameplayPresenceDecision connected = new GameplayPresenceDecision(
-                true,
-                true,
-                false,
-                CUTOFF
-        );
+        GameplayPresenceDecision connected = new GameplayPresenceDecision(true, true, false, CUTOFF);
 
         service.settleGameplayRequest(player, NOW, connected);
 
         verify(questionTimeoutService).settleWithOverdueTimeout(
                 player,
-                NOW.atZone(ZoneOffset.UTC).toLocalDateTime(),
                 NOW.toEpochMilli(),
                 NOW.toEpochMilli()
         );
@@ -136,96 +106,75 @@ class RacePlayerGameplayTimelineServiceTest {
     }
 
     @Test
-    void graceExpiryShouldDisconnectWithoutCatchUp() {
-        GameplayPresenceDecision expired = new GameplayPresenceDecision(
-                true,
-                false,
-                true,
-                CUTOFF
+    void onlineReconnectDoesNotReanchorOrResolveTwice() {
+        GameplayPresenceDecision connected = new GameplayPresenceDecision(true, true, false, CUTOFF);
+
+        assertFalse(service.settleReconnect(player, NOW, connected));
+
+        verify(questionTimeoutService, times(1)).settleWithOverdueTimeout(
+                player,
+                NOW.toEpochMilli(),
+                NOW.toEpochMilli()
         );
+        verify(raceMovementService, never()).reanchorAt(player, NOW.toEpochMilli());
+    }
+
+    @Test
+    void graceExpiryShouldDisconnectCloseTheQuestionAndAwardNoCatchUp() {
+        GameplayPresenceDecision expired = new GameplayPresenceDecision(true, false, true, CUTOFF);
 
         assertTrue(service.settleBackground(player, NOW, expired));
 
         assertEquals(RacePlayerStatus.DISCONNECTED, player.getStatus());
-        verify(questionTimeoutService, times(1)).settleWithOverdueTimeout(
-                player,
-                NOW.atZone(ZoneOffset.UTC).toLocalDateTime(),
-                NOW.toEpochMilli(),
-                CUTOFF
-        );
+        verify(questionTimeoutService, times(1)).settleWithOverdueTimeout(player, NOW.toEpochMilli(), CUTOFF);
+        verify(questionTimeoutService).expireActiveQuestionWithoutConsequence(player);
     }
 
     @Test
     void legitimatePreCutoffFinishShouldNotBeDowngradedAtGraceExpiry() {
-        GameplayPresenceDecision expired = new GameplayPresenceDecision(
-                true,
-                false,
-                true,
-                CUTOFF
-        );
+        GameplayPresenceDecision expired = new GameplayPresenceDecision(true, false, true, CUTOFF);
         doAnswer(invocation -> {
             player.setStatus(RacePlayerStatus.FINISHED);
             return null;
-        }).when(questionTimeoutService).settleWithOverdueTimeout(
-                player,
-                NOW.atZone(ZoneOffset.UTC).toLocalDateTime(),
-                NOW.toEpochMilli(),
-                CUTOFF
-        );
+        }).when(questionTimeoutService).settleWithOverdueTimeout(player, NOW.toEpochMilli(), CUTOFF);
 
         assertFalse(service.settleBackground(player, NOW, expired));
 
         assertEquals(RacePlayerStatus.FINISHED, player.getStatus());
+        verify(questionTimeoutService, never()).expireActiveQuestionWithoutConsequence(player);
     }
 
     @Test
-    void finalizationShouldSettleToCutoffThenNormalizeRacingPlayer() {
-        GameplayPresenceDecision absentInsideGrace = new GameplayPresenceDecision(
-                true,
-                false,
-                false,
-                CUTOFF
-        );
+    void finalizationShouldSettleToCutoffThenNormalizeRacingPlayerAndCloseTheQuestion() {
+        GameplayPresenceDecision absentInsideGrace =
+                new GameplayPresenceDecision(true, false, false, CUTOFF);
 
-        assertTrue(service.settleForRaceFinalization(
-                player,
-                NOW,
-                absentInsideGrace
-        ));
+        assertTrue(service.settleForRaceFinalization(player, NOW, absentInsideGrace));
 
         assertEquals(RacePlayerStatus.DISCONNECTED, player.getStatus());
-        verify(questionTimeoutService).settleWithOverdueTimeout(
-                player,
-                NOW.atZone(ZoneOffset.UTC).toLocalDateTime(),
-                NOW.toEpochMilli(),
-                CUTOFF
-        );
+        verify(questionTimeoutService).settleWithOverdueTimeout(player, NOW.toEpochMilli(), CUTOFF);
+        verify(questionTimeoutService).expireActiveQuestionWithoutConsequence(player);
     }
 
     @Test
     void finalizationShouldPreserveLegitimatePreCutoffFinish() {
-        GameplayPresenceDecision absentInsideGrace = new GameplayPresenceDecision(
-                true,
-                false,
-                false,
-                CUTOFF
-        );
+        GameplayPresenceDecision absentInsideGrace =
+                new GameplayPresenceDecision(true, false, false, CUTOFF);
         doAnswer(invocation -> {
             player.setStatus(RacePlayerStatus.FINISHED);
             return null;
-        }).when(questionTimeoutService).settleWithOverdueTimeout(
-                player,
-                NOW.atZone(ZoneOffset.UTC).toLocalDateTime(),
-                NOW.toEpochMilli(),
-                CUTOFF
-        );
+        }).when(questionTimeoutService).settleWithOverdueTimeout(player, NOW.toEpochMilli(), CUTOFF);
 
-        assertFalse(service.settleForRaceFinalization(
-                player,
-                NOW,
-                absentInsideGrace
-        ));
+        assertFalse(service.settleForRaceFinalization(player, NOW, absentInsideGrace));
 
         assertEquals(RacePlayerStatus.FINISHED, player.getStatus());
+        verify(questionTimeoutService, never()).expireActiveQuestionWithoutConsequence(player);
+    }
+
+    @Test
+    void terminalQuestionClosureDelegatesToTheTimeoutOwner() {
+        service.expireActiveQuestionForTerminalPlayer(player);
+
+        verify(questionTimeoutService).expireActiveQuestionWithoutConsequence(player);
     }
 }

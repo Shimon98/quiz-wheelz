@@ -1,8 +1,8 @@
 # Architecture and Contracts
 
 **Status:** Canonical  
-**Audit date:** 2026-08-25
-**Code baseline:** `main@ef3cd3bac2fb10ee2f7a7e9586571f70e7127ae3`
+**Audit date:** 2026-09-10
+**Code baseline:** `main@bb2d00530f4637d4d1f75849fb0397ac443bc46a`
 **This document owns:** the cross-system architecture, data ownership, API boundaries and runtime contracts
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -166,7 +166,8 @@ rank, position, speed, score, streak, status
 Ownership follows the existing teacher room lookup and hides foreign Race existence
 as `RACE_NOT_FOUND`. All joined WAITING, RACING, FINISHED and DISCONNECTED players
 are included. The shared standing calculator places FINISHED players first by
-earlier `finishedAt`, then non-finished players by descending durable position;
+earlier canonical finish time (`finishedAtEpochMs`, legacy `finishedAt` fallback),
+then non-finished players by descending durable position;
 exact ties use competition rank and deterministic output order only.
 
 The response time is Unix epoch milliseconds from the shared injected `Clock`.
@@ -259,6 +260,7 @@ POST /api/race-players/me/answers
 POST /api/race-players/me/heartbeat
 POST /api/race-players/me/leave
 POST /api/race-players/me/reconnect
+POST /api/race-players/me/finish-arbitration
 ```
 
 ## Shared runtime snapshot
@@ -284,6 +286,7 @@ Every student state source maps into one client runtime shape:
     "totalDistance": 1000,
     "score": 420,
     "position": 350,
+    "positionAtEpochMs": 1787148000000,
     "speed": 1.2,
     "streak": 3,
     "highestStreak": 5,
@@ -292,38 +295,98 @@ Every student state source maps into one client runtime shape:
     "raceStatus": "IN_PROGRESS",
     "playerFinished": false,
     "raceFinished": false,
+    "playerFinishedAtEpochMs": null,
     "snapshotAtEpochMs": 1787148000000,
     "movementUnitsPerSecond": 4.8,
+    "eventVersion": 37,
     "rank": 2,
     "playerCount": 5,
-    "nearbyPlayers": [
+    "opponents": [
       {
         "racePlayerId": 92,
         "displayName": "Avi",
         "laneNumber": 4,
         "vehicleTypeKey": "HOVER_KART",
         "vehicleColorKey": "BLUE",
+        "vehicleAssetKey": "HOVER_KART_BLUE",
+        "rank": 1,
         "position": 420.0,
-        "speed": 1.3,
-        "status": "DISCONNECTED"
+        "positionAtEpochMs": 1787147999500,
+        "movementUnitsPerSecond": 0,
+        "status": "DISCONNECTED",
+        "finishedAtEpochMs": null
       }
     ]
   }
 }
+
 ```
 
 The answer response contains deltas plus the same snapshot shape. The `player`
 block owns stable presentation identity only; `snapshot.playerStatus` remains the
 single owner of runtime player status.
 
-The shared race-state and submit-answer snapshot also owns authoritative standings.
-All joined RacePlayers count. FINISHED players precede non-finished players and are
-ordered by `finishedAt`; non-finished players, including DISCONNECTED, are ordered by
-stored position. Exact ties use competition rank, while ID/lane may stabilize output
-order only and never change rank. `nearbyPlayers` excludes the current player, exposes
-only safe presentation/movement fields, and contains at most four opponents in
-standing order, preferring two immediately ahead and two immediately behind and
-filling from the available side.
+The shared race-state, submit-answer and finish-arbitration snapshot also owns
+authoritative standings. All joined RacePlayers count. FINISHED players precede
+non-finished players and are ordered by the canonical `finishedAtEpochMs` (rows
+written before C2-01 fall back to `finishedAt` in the application zone);
+non-finished players, including DISCONNECTED, are ordered by stored position. Exact
+ties use competition rank, while ID/lane may stabilize output order only and never
+change rank. `opponents` excludes the current player, exposes only safe
+presentation/movement fields and contains every other joined player (0..7) in
+standing order, each with its own `rank`, `positionAtEpochMs` anchor, effective
+`movementUnitsPerSecond` and `finishedAtEpochMs`.
+
+`positionAtEpochMs` is the durable movement anchor of the reported `position`.
+`playerFinishedAtEpochMs` is the canonical finish time: the answer decision instant
+for an answer finish, the deterministic crossing instant for a movement finish.
+`eventVersion` is `Race.liveEventVersion` after the request's own durable events
+were recorded, so a client can order any snapshot against the live event stream.
+Movement projection is deterministic integer math (`RaceMovementCalculator`:
+positions in 1/10,000 units, speed in tenths), so every server path computes the
+same position and the same crossing instant however the interval is partitioned.
+
+`POST /api/race-players/me/finish-arbitration` takes the race-player cookie only
+(no body, no client-supplied identifiers), locks every RacePlayer of the race and
+then the Race, settles the roster at one decision instant and returns the shared
+snapshot plus a finish-order proof:
+
+```json
+{
+  "raceId": 12,
+  "snapshot": { "...": "shared runtime snapshot" },
+  "finishOrder": {
+    "decidedAtEpochMs": 1787148000000,
+    "eventVersion": 37,
+    "confirmedThroughEpochMs": 1787147999999,
+    "confirmedFinishers": [
+      { "racePlayerId": 92, "finishedAtEpochMs": 1787147990000, "rank": 1 }
+    ]
+  }
+}
+```
+
+`confirmedFinishers` is the prefix of the standing order that no still-racing
+player can change: a finish is confirmed when its time is at or before
+`min(decision − 1, earliest possible MAX-speed crossing of every RACING player − 1)`.
+A FINISHED player without `finishedAtEpochMs`, a WAITING player or a RACING player
+without a movement anchor makes the order unproven (`confirmedThroughEpochMs` null,
+empty list). IN_PROGRESS races are settled; FINISHED races return durable truth; any
+other status fails with `RACE_NOT_IN_PROGRESS`. An effective decision time behind the roster's
+latest anchor or finish time settles nothing and returns the snapshot unproven.
+
+Finish arbitration owns a `READ_COMMITTED` transaction from preflight through
+reconciliation, so question reads after a lock wait see committed answers. Other
+transaction isolation settings are unchanged. Arbitration and active answers share
+`RaceDecisionTimeService`: after the existing Race lock, it atomically advances the
+nullable `Race.authoritativeDecisionTimeFloorEpochMs` and chooses
+`max(wall time, persisted floor)` as the decision time. Equal times remain equal;
+no artificial millisecond is added. Since confirmed finishers satisfy `f < T`, a
+later answer clamped to that floor cannot join or precede their confirmed cohort.
+The floor commits with gameplay/events and rolls back with them; native persistence
+owns its updates, preventing a stale managed Race from overwriting it. Legacy null
+rows initialize on first use. The nullable column uses DEV schema update;
+production migration remains Phase 6 work. Polling does not advance this floor.
 
 Approved answer semantics:
 
@@ -335,9 +398,14 @@ TIMEOUT → no answer-derived progress bonus + stronger speed penalty
 
 Baseline server-authoritative movement continues after wrong answers and timeouts
 while trustworthy gameplay presence is active. Real absence freezes position at the
-latest trusted player-originated activity, but question wall-clock deadlines and
-exactly-once timeout penalties continue. Reconnect grants no catch-up movement: it
-re-anchors at reconnect time. The 5-minute grace is a right to return while the race
+latest trusted player-originated activity. A question deadline is never extended,
+but its exactly-once timeout penalty is applied only when the trusted movement
+timeline reaches the deadline: while the trusted cutoff is earlier than the
+deadline the question stays ACTIVE and no penalty is charged, so a speed penalty
+never lands on movement the player was never credited with. Reconnect grants no
+catch-up movement: it re-anchors at reconnect time and then resolves an overdue
+question at that instant; a player who becomes DISCONNECTED has the leftover
+question expired without consequence. The 5-minute grace is a right to return while the race
 is active, not a right for an absent player to block race completion. Reconnect
 remains a focused command: when continuation is possible, the client follows it with
 `GET race-state` to rebuild the latest state.

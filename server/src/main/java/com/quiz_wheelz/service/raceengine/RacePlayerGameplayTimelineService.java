@@ -4,12 +4,9 @@ import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.service.question.QuestionTimeoutService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService.GameplayPresenceDecision;
-import com.quiz_wheelz.utils.DateTimeUtils;
 import org.springframework.stereotype.Service;
 
-import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Service
@@ -17,16 +14,13 @@ public class RacePlayerGameplayTimelineService {
 
     private final QuestionTimeoutService questionTimeoutService;
     private final RaceMovementService raceMovementService;
-    private final Clock clock;
 
     public RacePlayerGameplayTimelineService(
             QuestionTimeoutService questionTimeoutService,
-            RaceMovementService raceMovementService,
-            Clock clock
+            RaceMovementService raceMovementService
     ) {
         this.questionTimeoutService = Objects.requireNonNull(questionTimeoutService);
         this.raceMovementService = Objects.requireNonNull(raceMovementService);
-        this.clock = Objects.requireNonNull(clock);
     }
 
     public boolean settleBackground(
@@ -73,6 +67,7 @@ public class RacePlayerGameplayTimelineService {
                     lockedRacePlayer,
                     decisionInstant.toEpochMilli()
             );
+            settle(lockedRacePlayer, decisionInstant, decisionInstant.toEpochMilli());
         }
 
         return disconnectWhenGraceExpired(lockedRacePlayer, presenceDecision);
@@ -93,8 +88,12 @@ public class RacePlayerGameplayTimelineService {
             return false;
         }
 
-        lockedRacePlayer.setStatus(RacePlayerStatus.DISCONNECTED);
+        markDisconnected(lockedRacePlayer);
         return true;
+    }
+
+    public void expireActiveQuestionForTerminalPlayer(RacePlayer terminalRacePlayer) {
+        questionTimeoutService.expireActiveQuestionWithoutConsequence(terminalRacePlayer);
     }
 
     private boolean disconnectWhenGraceExpired(
@@ -106,8 +105,13 @@ public class RacePlayerGameplayTimelineService {
             return false;
         }
 
-        racePlayer.setStatus(RacePlayerStatus.DISCONNECTED);
+        markDisconnected(racePlayer);
         return true;
+    }
+
+    private void markDisconnected(RacePlayer racePlayer) {
+        racePlayer.setStatus(RacePlayerStatus.DISCONNECTED);
+        expireActiveQuestionForTerminalPlayer(racePlayer);
     }
 
     private long resolvePlayerRequestCutoff(
@@ -124,13 +128,8 @@ public class RacePlayerGameplayTimelineService {
             Instant decisionInstant,
             long movementCutoffEpochMs
     ) {
-        LocalDateTime decisionNow = DateTimeUtils.toLocalDateTime(
-                decisionInstant,
-                clock.getZone()
-        );
         questionTimeoutService.settleWithOverdueTimeout(
                 lockedRacePlayer,
-                decisionNow,
                 decisionInstant.toEpochMilli(),
                 movementCutoffEpochMs
         );

@@ -102,7 +102,7 @@ class StudentAnswerTerminalLifecycleTest {
         );
         standingService = new StudentRaceStandingService(
                 racePlayerRepository,
-                new RaceStandingCalculator()
+                new RaceStandingCalculator(ZoneId.of("UTC"))
         );
         answerService = new StudentAnswerSubmissionService(
                 playerQuestionRepository,
@@ -117,6 +117,7 @@ class StudentAnswerTerminalLifecycleTest {
                         mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class),
                         mock(com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.class)
                 ),
+                mock(com.quiz_wheelz.service.raceengine.RaceDecisionTimeService.class),
                 Clock.fixed(NOW, ZoneId.of("UTC"))
         );
     }

@@ -3,16 +3,11 @@ package com.quiz_wheelz.dto.answer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.quiz_wheelz.dto.raceplayer.NearbyRacePlayerResponse;
-import com.quiz_wheelz.dto.raceplayer.StudentRaceRuntimeSnapshotResponse;
-import com.quiz_wheelz.enums.Difficulty;
+import com.quiz_wheelz.dto.raceplayer.StudentRaceSnapshotContractFixture;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
-import com.quiz_wheelz.enums.RacePlayerStatus;
-import com.quiz_wheelz.enums.RaceStatus;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -68,7 +63,7 @@ class SubmitAnswerContractSerializationTest {
                         correct ? 10 : 0,
                         correct ? 10.0 : 0.0,
                         false,
-                        createSnapshot()
+                        StudentRaceSnapshotContractFixture.snapshot()
                 )
         );
 
@@ -98,75 +93,22 @@ class SubmitAnswerContractSerializationTest {
                 Set.of("scoreDelta", "progressDelta", "difficultyChanged", "snapshot"),
                 fieldNames(raceImpact)
         );
+        JsonNode snapshot = raceImpact.get("snapshot");
         assertEquals(
-                Set.of(
-                        "totalDistance",
-                        "score",
-                        "position",
-                        "speed",
-                        "streak",
-                        "highestStreak",
-                        "currentDifficulty",
-                        "playerStatus",
-                        "raceStatus",
-                        "playerFinished",
-                        "raceFinished",
-                        "snapshotAtEpochMs",
-                        "movementUnitsPerSecond",
-                        "rank",
-                        "playerCount",
-                        "nearbyPlayers"
-                ),
-                fieldNames(raceImpact.get("snapshot"))
+                StudentRaceSnapshotContractFixture.SNAPSHOT_FIELDS,
+                fieldNames(snapshot)
         );
-        JsonNode nearbyPlayer = raceImpact.get("snapshot").get("nearbyPlayers").get(0);
+        assertEquals(153L, snapshot.get("eventVersion").asLong());
+        JsonNode opponent = snapshot.get("opponents").get(0);
         assertEquals(
-                Set.of(
-                        "racePlayerId",
-                        "displayName",
-                        "laneNumber",
-                        "vehicleTypeKey",
-                        "vehicleColorKey",
-                        "position",
-                        "speed",
-                        "status"
-                ),
-                fieldNames(nearbyPlayer)
+                StudentRaceSnapshotContractFixture.OPPONENT_FIELDS,
+                fieldNames(opponent)
         );
-        assertFalse(nearbyPlayer.has("score"));
-        assertFalse(nearbyPlayer.has("correctAnswers"));
-        assertFalse(nearbyPlayer.has("difficulty"));
-        assertFalse(nearbyPlayer.has("lastSeenAt"));
-    }
-
-    private StudentRaceRuntimeSnapshotResponse createSnapshot() {
-        return new StudentRaceRuntimeSnapshotResponse(
-                1000,
-                420,
-                350.0,
-                1.2,
-                3,
-                5,
-                Difficulty.MEDIUM,
-                RacePlayerStatus.RACING,
-                RaceStatus.IN_PROGRESS,
-                false,
-                false,
-                1_787_148_010_000L,
-                4.8,
-                2,
-                5,
-                List.of(new NearbyRacePlayerResponse(
-                        92L,
-                        "Avi",
-                        4,
-                        "HOVER_KART",
-                        "BLUE",
-                        420.0,
-                        1.3,
-                        RacePlayerStatus.DISCONNECTED
-                ))
-        );
+        assertFalse(opponent.has("speed"));
+        assertFalse(opponent.has("score"));
+        assertFalse(opponent.has("correctAnswers"));
+        assertFalse(opponent.has("difficulty"));
+        assertFalse(opponent.has("lastSeenAt"));
     }
 
     private Set<String> fieldNames(JsonNode node) {

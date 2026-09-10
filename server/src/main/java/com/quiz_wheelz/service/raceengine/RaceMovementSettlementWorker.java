@@ -152,7 +152,7 @@ public class RaceMovementSettlementWorker {
             );
         }
 
-        liveEventChangeRecorder.recordFinalizationPlayerChanges(race, playerChanges);
+        liveEventChangeRecorder.recordBatchPlayerChanges(race, playerChanges);
         raceFinishService.finishRaceIfAllPlayersTerminal(race, lockedPlayers);
         liveEventChangeRecorder.recordRaceChange(raceBefore, race);
     }

@@ -8,9 +8,11 @@ import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
+import com.quiz_wheelz.utils.DateTimeUtils;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -28,7 +30,7 @@ public class RaceFinishService {
         this.clock = clock;
     }
 
-    public boolean finishPlayerIfNeeded(RacePlayer racePlayer) {
+    public boolean finishPlayerAt(RacePlayer racePlayer, long finishEpochMs) {
         if (racePlayer == null
                 || racePlayer.getRace() == null
                 || racePlayer.getStatus() == RacePlayerStatus.FINISHED
@@ -51,7 +53,11 @@ public class RaceFinishService {
         racePlayer.setPosition(totalDistance.doubleValue());
         racePlayer.setStatus(RacePlayerStatus.FINISHED);
         racePlayer.setSpeed(RaceProgressRules.FINISHED_SPEED);
-        racePlayer.setFinishedAt(LocalDateTime.now(clock));
+        racePlayer.setFinishedAtEpochMs(finishEpochMs);
+        racePlayer.setFinishedAt(DateTimeUtils.toLocalDateTime(
+                Instant.ofEpochMilli(finishEpochMs),
+                clock.getZone()
+        ));
 
         return true;
     }

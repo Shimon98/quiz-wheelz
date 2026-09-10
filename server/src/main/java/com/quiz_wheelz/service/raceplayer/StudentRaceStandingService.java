@@ -1,5 +1,6 @@
 package com.quiz_wheelz.service.raceplayer;
 
+import com.quiz_wheelz.common.RacePlayerRules;
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.repository.RacePlayerRepository;
@@ -11,9 +12,6 @@ import java.util.Objects;
 
 @Service
 public class StudentRaceStandingService {
-
-    private static final int MAX_NEARBY_PLAYERS = 4;
-    private static final int PREFERRED_PLAYERS_PER_SIDE = 2;
 
     private final RacePlayerRepository racePlayerRepository;
     private final RaceStandingCalculator standingCalculator;
@@ -29,80 +27,66 @@ public class StudentRaceStandingService {
     public StudentRaceStandingResult calculate(RacePlayer currentRacePlayer) {
         Objects.requireNonNull(currentRacePlayer);
         Race race = Objects.requireNonNull(currentRacePlayer.getRace());
+
+        return calculate(
+                currentRacePlayer,
+                racePlayerRepository.findByRaceOrderByLaneNumberAsc(race)
+        );
+    }
+
+    public StudentRaceStandingResult calculate(
+            RacePlayer currentRacePlayer,
+            List<RacePlayer> authoritativePlayers
+    ) {
+        Objects.requireNonNull(currentRacePlayer);
         Long currentRacePlayerId = Objects.requireNonNull(currentRacePlayer.getId());
 
         List<RaceStandingCalculator.RankedRacePlayer> standings =
-                standingCalculator.calculate(
-                        racePlayerRepository.findByRaceOrderByLaneNumberAsc(race)
-                );
+                standingCalculator.calculate(authoritativePlayers);
 
-        int currentIndex = findCurrentIndex(standings, currentRacePlayerId);
-        RaceStandingCalculator.RankedRacePlayer currentStanding =
-                standings.get(currentIndex);
-        List<StudentRaceStandingResult.NearbyPlayer> nearbyPlayers =
-                selectNearbyPlayers(standings, currentIndex);
+        RaceStandingCalculator.RankedRacePlayer currentStanding = null;
+        List<StudentRaceStandingResult.Opponent> opponents = new ArrayList<>();
+
+        for (RaceStandingCalculator.RankedRacePlayer standing : standings) {
+            if (currentRacePlayerId.equals(standing.racePlayer().getId())) {
+                currentStanding = standing;
+            } else {
+                opponents.add(toOpponent(standing));
+            }
+        }
+
+        if (currentStanding == null) {
+            throw new IllegalStateException();
+        }
 
         return new StudentRaceStandingResult(
                 currentStanding.rank(),
                 standings.size(),
-                nearbyPlayers
+                opponents
         );
     }
 
-    private int findCurrentIndex(
-            List<RaceStandingCalculator.RankedRacePlayer> standings,
-            Long currentRacePlayerId
+    private StudentRaceStandingResult.Opponent toOpponent(
+            RaceStandingCalculator.RankedRacePlayer standing
     ) {
-        for (int index = 0; index < standings.size(); index++) {
-            if (currentRacePlayerId.equals(standings.get(index).racePlayer().getId())) {
-                return index;
-            }
-        }
+        RacePlayer racePlayer = standing.racePlayer();
 
-        throw new IllegalStateException();
-    }
-
-    private List<StudentRaceStandingResult.NearbyPlayer> selectNearbyPlayers(
-            List<RaceStandingCalculator.RankedRacePlayer> standings,
-            int currentIndex
-    ) {
-        int playersAhead = Math.min(PREFERRED_PLAYERS_PER_SIDE, currentIndex);
-        int playersBehind = Math.min(
-                PREFERRED_PLAYERS_PER_SIDE,
-                standings.size() - currentIndex - 1
-        );
-        int remainingSlots = MAX_NEARBY_PLAYERS - playersAhead - playersBehind;
-
-        int additionalAhead = Math.min(remainingSlots, currentIndex - playersAhead);
-        playersAhead += additionalAhead;
-        remainingSlots -= additionalAhead;
-
-        int availableBehind = standings.size() - currentIndex - 1 - playersBehind;
-        playersBehind += Math.min(remainingSlots, availableBehind);
-
-        List<StudentRaceStandingResult.NearbyPlayer> nearbyPlayers = new ArrayList<>();
-        int firstIndex = currentIndex - playersAhead;
-        int lastIndex = currentIndex + playersBehind;
-
-        for (int index = firstIndex; index <= lastIndex; index++) {
-            if (index != currentIndex) {
-                nearbyPlayers.add(toNearbyPlayer(standings.get(index).racePlayer()));
-            }
-        }
-
-        return List.copyOf(nearbyPlayers);
-    }
-
-    private StudentRaceStandingResult.NearbyPlayer toNearbyPlayer(RacePlayer racePlayer) {
-        return new StudentRaceStandingResult.NearbyPlayer(
+        return new StudentRaceStandingResult.Opponent(
                 racePlayer.getId(),
                 racePlayer.getDisplayName(),
                 racePlayer.getLaneNumber(),
                 racePlayer.getVehicleTypeKey(),
                 racePlayer.getVehicleColorKey(),
+                RacePlayerRules.buildVehicleAssetKey(
+                        racePlayer.getVehicleTypeKey(),
+                        racePlayer.getVehicleColorKey()
+                ),
+                standing.rank(),
                 racePlayer.getPosition(),
+                racePlayer.getMovementUpdatedAtEpochMs(),
                 racePlayer.getSpeed(),
-                racePlayer.getStatus()
+                racePlayer.getStatus(),
+                racePlayer.getFinishedAtEpochMs()
         );
     }
 }

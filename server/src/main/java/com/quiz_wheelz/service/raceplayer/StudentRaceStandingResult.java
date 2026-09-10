@@ -8,22 +8,26 @@ import java.util.Objects;
 public record StudentRaceStandingResult(
         int rank,
         int playerCount,
-        List<NearbyPlayer> nearbyPlayers
+        List<Opponent> opponents
 ) {
 
     public StudentRaceStandingResult {
-        nearbyPlayers = List.copyOf(Objects.requireNonNull(nearbyPlayers));
+        opponents = List.copyOf(Objects.requireNonNull(opponents));
     }
 
-    public record NearbyPlayer(
+    public record Opponent(
             Long racePlayerId,
             String displayName,
             Integer laneNumber,
             String vehicleTypeKey,
             String vehicleColorKey,
+            String vehicleAssetKey,
+            int rank,
             Double position,
+            Long positionAtEpochMs,
             Double speed,
-            RacePlayerStatus status
+            RacePlayerStatus status,
+            Long finishedAtEpochMs
     ) {
     }
 }

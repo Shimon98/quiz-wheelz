@@ -77,6 +77,7 @@ public class RacePlayerDisconnectService {
                 }
 
                 racePlayer.setStatus(RacePlayerStatus.DISCONNECTED);
+                gameplayTimelineService.expireActiveQuestionForTerminalPlayer(racePlayer);
                 racePlayerRepository.save(racePlayer);
             }
         }

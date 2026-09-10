@@ -12,12 +12,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -26,68 +30,78 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class RaceFinishServiceTest {
 
+    private static final Instant CLOCK_INSTANT = Instant.parse("2026-09-10T12:00:00Z");
+    private static final ZoneId ZONE = ZoneId.of("Asia/Jerusalem");
+    private static final long FINISH_EPOCH_MS = Instant.parse("2026-09-10T11:59:58.123Z").toEpochMilli();
+
     @Mock
     private RacePlayerRepository racePlayerRepository;
 
+    private RaceFinishService service() {
+        return new RaceFinishService(racePlayerRepository, Clock.fixed(CLOCK_INSTANT, ZONE));
+    }
+
     @Test
-    void shouldFinishPlayerWhenPositionReachesTotalDistance() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
+    void shouldFinishPlayerAtTheGivenInstantNotTheClock() {
         RacePlayer player = player(RacePlayerStatus.RACING, 120.0, 2.0, race(100));
 
-        boolean finished = raceFinishService.finishPlayerIfNeeded(player);
+        boolean finished = service().finishPlayerAt(player, FINISH_EPOCH_MS);
 
         assertTrue(finished);
         assertEquals(RacePlayerStatus.FINISHED, player.getStatus());
         assertEquals(100.0, player.getPosition());
         assertEquals(0.0, player.getSpeed());
-        assertNotNull(player.getFinishedAt());
+        assertEquals(FINISH_EPOCH_MS, player.getFinishedAtEpochMs());
+        assertEquals(
+                LocalDateTime.ofInstant(Instant.ofEpochMilli(FINISH_EPOCH_MS), ZONE),
+                player.getFinishedAt()
+        );
     }
 
     @Test
     void shouldNotFinishPlayerBeforeTotalDistance() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         RacePlayer player = player(RacePlayerStatus.RACING, 99.0, 2.0, race(100));
 
-        assertFalse(raceFinishService.finishPlayerIfNeeded(player));
+        assertFalse(service().finishPlayerAt(player, FINISH_EPOCH_MS));
         assertEquals(RacePlayerStatus.RACING, player.getStatus());
+        assertNull(player.getFinishedAtEpochMs());
+        assertNull(player.getFinishedAt());
     }
 
     @Test
     void shouldThrowWhenFinishingPlayerAndRaceTotalDistanceIsMissing() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         RacePlayer player = player(RacePlayerStatus.RACING, 120.0, 2.0, race(null));
 
         ApiException exception = assertThrows(
                 ApiException.class,
-                () -> raceFinishService.finishPlayerIfNeeded(player)
+                () -> service().finishPlayerAt(player, FINISH_EPOCH_MS)
         );
 
         assertEquals(ErrorCode.RACE_TOTAL_DISTANCE_MISSING, exception.getErrorCode());
     }
 
     @Test
-    void shouldNotRefinishAlreadyFinishedPlayer() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
-        RacePlayer player = player(RacePlayerStatus.FINISHED, 100.0, 0.0, race(100));
-        LocalDateTime finishedAt = LocalDateTime.now().minusMinutes(1);
-        player.setFinishedAt(finishedAt);
+    void duplicateFinishShouldNotAlterTheCanonicalTimestamp() {
+        RacePlayer player = player(RacePlayerStatus.RACING, 100.0, 0.0, race(100));
+        assertTrue(service().finishPlayerAt(player, FINISH_EPOCH_MS));
+        LocalDateTime finishedAt = player.getFinishedAt();
 
-        assertFalse(raceFinishService.finishPlayerIfNeeded(player));
+        assertFalse(service().finishPlayerAt(player, FINISH_EPOCH_MS + 5_000));
+
+        assertEquals(FINISH_EPOCH_MS, player.getFinishedAtEpochMs());
         assertSame(finishedAt, player.getFinishedAt());
     }
 
     @Test
     void shouldNotConvertDisconnectedPlayerToFinished() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         RacePlayer player = player(RacePlayerStatus.DISCONNECTED, 100.0, 0.0, race(100));
 
-        assertFalse(raceFinishService.finishPlayerIfNeeded(player));
+        assertFalse(service().finishPlayerAt(player, FINISH_EPOCH_MS));
         assertEquals(RacePlayerStatus.DISCONNECTED, player.getStatus());
     }
 
     @Test
     void shouldFinishRaceWhenAllPlayersAreFinished() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         Race race = race(100);
 
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
@@ -96,14 +110,13 @@ class RaceFinishServiceTest {
                         player(RacePlayerStatus.FINISHED, 100.0, 0.0, race)
                 ));
 
-        assertTrue(raceFinishService.finishRaceIfNeeded(race));
+        assertTrue(service().finishRaceIfNeeded(race));
         assertEquals(RaceStatus.FINISHED, race.getStatus());
         assertNotNull(race.getFinishedAt());
     }
 
     @Test
     void shouldFinishRaceWhenAllPlayersAreFinishedOrDisconnected() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         Race race = race(100);
 
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
@@ -112,13 +125,12 @@ class RaceFinishServiceTest {
                         player(RacePlayerStatus.DISCONNECTED, 80.0, 0.0, race)
                 ));
 
-        assertTrue(raceFinishService.finishRaceIfNeeded(race));
+        assertTrue(service().finishRaceIfNeeded(race));
         assertEquals(RaceStatus.FINISHED, race.getStatus());
     }
 
     @Test
     void shouldNotFinishRaceWhenPlayerIsStillRacing() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         Race race = race(100);
 
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
@@ -127,48 +139,39 @@ class RaceFinishServiceTest {
                         player(RacePlayerStatus.RACING, 80.0, 1.0, race)
                 ));
 
-        assertFalse(raceFinishService.finishRaceIfNeeded(race));
+        assertFalse(service().finishRaceIfNeeded(race));
         assertEquals(RaceStatus.IN_PROGRESS, race.getStatus());
     }
 
     @Test
     void lockedFinalizationShouldRejectAnyActiveStatusPlayer() {
-        RaceFinishService raceFinishService = new RaceFinishService(
-                racePlayerRepository,
-                java.time.Clock.systemUTC()
-        );
         Race race = race(100);
         RacePlayer finished = player(RacePlayerStatus.FINISHED, 100.0, 0.0, race);
         RacePlayer absent = player(RacePlayerStatus.RACING, 80.0, 1.0, race);
 
-        assertFalse(raceFinishService.finishRaceIfAllPlayersTerminal(
-                race,
-                List.of(finished, absent)
-        ));
+        assertFalse(service().finishRaceIfAllPlayersTerminal(race, List.of(finished, absent)));
         assertEquals(RaceStatus.IN_PROGRESS, race.getStatus());
     }
 
     @Test
     void shouldNotFinishRaceWhenPlayerIsWaiting() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         Race race = race(100);
 
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
                 .thenReturn(List.of(player(RacePlayerStatus.WAITING, 0.0, 0.0, race)));
 
-        assertFalse(raceFinishService.finishRaceIfNeeded(race));
+        assertFalse(service().finishRaceIfNeeded(race));
         assertEquals(RaceStatus.IN_PROGRESS, race.getStatus());
     }
 
     @Test
     void shouldNotRefinishAlreadyFinishedRace() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
         Race race = race(100);
         race.setStatus(RaceStatus.FINISHED);
         LocalDateTime finishedAt = LocalDateTime.now().minusMinutes(1);
         race.setFinishedAt(finishedAt);
 
-        assertFalse(raceFinishService.finishRaceIfNeeded(race));
+        assertFalse(service().finishRaceIfNeeded(race));
         assertSame(finishedAt, race.getFinishedAt());
     }
 

@@ -14,6 +14,7 @@ import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
+import com.quiz_wheelz.service.raceengine.RaceDecisionTimeService;
 import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
 import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
 import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
@@ -48,6 +49,7 @@ final class StudentAnswerSubmissionTestFixture {
             mock(PlayerQuestionChoiceRepository.class);
     final RacePlayerRepository racePlayerRepository = mock(RacePlayerRepository.class);
     final RaceEngineService raceEngineService = mock(RaceEngineService.class);
+    final RaceDecisionTimeService decisionTimeService = mock(RaceDecisionTimeService.class);
     final RacePlayerGameplayRequestGuard gameplayRequestGuard =
             mock(RacePlayerGameplayRequestGuard.class);
     final RaceLiveEventRecorder liveEventRecorder = mock(RaceLiveEventRecorder.class);
@@ -64,15 +66,18 @@ final class StudentAnswerSubmissionTestFixture {
                     gameplayRequestGuard,
                     new StudentRaceStandingService(
                             racePlayerRepository,
-                            new RaceStandingCalculator()
+                            new RaceStandingCalculator(FIXED_ZONE)
                     ),
                     new StudentRaceRuntimeSnapshotMapper(),
                     liveEventRecorder,
                     new RaceLiveMutationTracker(liveMutationGate, liveEventChangeRecorder),
+                    decisionTimeService,
                     Clock.fixed(FIXED_INSTANT, FIXED_ZONE)
             );
 
     {
+        when(decisionTimeService.advance(any(), org.mockito.ArgumentMatchers.anyLong()))
+                .thenAnswer(invocation -> invocation.getArgument(1));
         when(liveMutationGate.lockIfActive(any())).thenAnswer(invocation ->
                 Optional.of(invocation.<RacePlayer>getArgument(0).getRace())
         );

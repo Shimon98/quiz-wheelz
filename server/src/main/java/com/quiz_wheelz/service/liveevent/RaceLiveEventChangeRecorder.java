@@ -43,7 +43,7 @@ public class RaceLiveEventChangeRecorder {
         recordPlayerChange(resolvePlayerChange(before, racePlayer), racePlayer);
     }
 
-    public void recordFinalizationPlayerChanges(
+    public void recordBatchPlayerChanges(
             Race race,
             List<PlayerChange> changes
     ) {

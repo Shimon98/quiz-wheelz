@@ -27,12 +27,14 @@ public final class ApiPaths {
     public static final String LEAVE = "/leave";
     public static final String RECONNECT = "/reconnect";
     public static final String FOCUS_EVENTS = "/focus-events";
+    public static final String FINISH_ARBITRATION = "/finish-arbitration";
     public static final String CURRENT_QUESTION = ME + QUESTION + CURRENT;
     public static final String CURRENT_RACE_STATE = ME + RACE_STATE;
     public static final String CURRENT_HEARTBEAT = ME + HEARTBEAT;
     public static final String CURRENT_LEAVE = ME + LEAVE;
     public static final String CURRENT_RECONNECT = ME + RECONNECT;
     public static final String CURRENT_FOCUS_EVENTS = ME + FOCUS_EVENTS;
+    public static final String CURRENT_FINISH_ARBITRATION = ME + FINISH_ARBITRATION;
     public static final String SUBMIT_ANSWER = ME + ANSWERS;
     public static final String RACE_PLAYERS_JOIN = RACE_PLAYERS + JOIN;
     public static final String RACE_PLAYERS_CURRENT_RACE_STATE =
@@ -45,6 +47,8 @@ public final class ApiPaths {
             RACE_PLAYERS + CURRENT_RECONNECT;
     public static final String RACE_PLAYERS_FOCUS_EVENTS =
             RACE_PLAYERS + CURRENT_FOCUS_EVENTS;
+    public static final String RACE_PLAYERS_FINISH_ARBITRATION =
+            RACE_PLAYERS + CURRENT_FINISH_ARBITRATION;
     public static final String RACE_PLAYERS_CURRENT_QUESTION =
             RACE_PLAYERS + CURRENT_QUESTION;
     public static final String RACE_PLAYERS_SUBMIT_ANSWER =

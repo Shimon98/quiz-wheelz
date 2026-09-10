@@ -12,6 +12,7 @@ import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.service.raceplayer.CurrentRacePlayerService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerJoinService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerRuntimeSessionService;
+import com.quiz_wheelz.service.raceplayer.StudentRaceFinishArbitrationService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStateService;
 import com.quiz_wheelz.service.question.StudentAnswerSubmissionService;
 import com.quiz_wheelz.service.question.StudentQuestionDeliveryService;
@@ -59,6 +60,9 @@ class RacePlayerControllerRaceStateTest {
 
     @Mock
     private RacePlayerRuntimeSessionService racePlayerRuntimeSessionService;
+
+    @Mock
+    private StudentRaceFinishArbitrationService studentRaceFinishArbitrationService;
 
     @Mock
     private HttpServletRequest request;
@@ -110,7 +114,8 @@ class RacePlayerControllerRaceStateTest {
                 studentQuestionDeliveryService,
                 studentAnswerSubmissionService,
                 studentRaceStateService,
-                racePlayerRuntimeSessionService
+                racePlayerRuntimeSessionService,
+                studentRaceFinishArbitrationService
         );
     }
 
@@ -133,6 +138,7 @@ class RacePlayerControllerRaceStateTest {
                         1000,
                         50,
                         120.0,
+                        1_787_045_369_000L,
                         1.2,
                         3,
                         5,
@@ -141,8 +147,10 @@ class RacePlayerControllerRaceStateTest {
                         RaceStatus.IN_PROGRESS,
                         false,
                         false,
+                        null,
                         1_787_045_370_000L,
                         4.8,
+                        7L,
                         1,
                         1,
                         List.of()

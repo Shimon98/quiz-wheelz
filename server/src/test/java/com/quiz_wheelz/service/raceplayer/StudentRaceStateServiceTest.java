@@ -110,7 +110,7 @@ class StudentRaceStateServiceTest {
         assertEquals(4.8, response.getSnapshot().getMovementUnitsPerSecond());
         assertEquals(1, response.getSnapshot().getRank());
         assertEquals(1, response.getSnapshot().getPlayerCount());
-        assertTrue(response.getSnapshot().getNearbyPlayers().isEmpty());
+        assertTrue(response.getSnapshot().getOpponents().isEmpty());
 
         InOrder mutationOrder = inOrder(
                 sessionLockService,
@@ -192,7 +192,7 @@ class StudentRaceStateServiceTest {
         assertEquals(2, response.getSnapshot().getPlayerCount());
         assertEquals(
                 RacePlayerStatus.FINISHED,
-                response.getSnapshot().getNearbyPlayers().get(0).getStatus()
+                response.getSnapshot().getOpponents().get(0).getStatus()
         );
         verify(raceFinishService).finishRaceIfNeeded(racePlayer.getRace());
     }
@@ -220,7 +220,7 @@ class StudentRaceStateServiceTest {
 
         assertEquals(700.0, response.getSnapshot().getPosition());
         assertEquals(1, response.getSnapshot().getRank());
-        assertEquals(600.0, response.getSnapshot().getNearbyPlayers().get(0).getPosition());
+        assertEquals(600.0, response.getSnapshot().getOpponents().get(0).getPosition());
     }
 
     @Test
@@ -324,6 +324,46 @@ class StudentRaceStateServiceTest {
         verifyNoInteractions(gameplayPresenceService, gameplayTimelineService);
     }
 
+    @Test
+    void getRaceStateShouldExposeTheEventVersionAfterItsOwnDurableEvents() {
+        RacePlayer racePlayer = mockResolvedAndLocked(
+                RacePlayerStatus.RACING,
+                RaceStatus.IN_PROGRESS
+        );
+        RaceLiveEventRecorder liveEventRecorder = mock(RaceLiveEventRecorder.class);
+        doAnswer(invocation -> {
+            Race race = invocation.getArgument(0);
+            race.setLiveEventVersion(race.getLiveEventVersion() + 1);
+            return null;
+        }).when(liveEventRecorder).recordPlayerProgressUpdated(racePlayer.getRace());
+        doAnswer(invocation -> {
+            racePlayer.setPosition(700.0);
+            racePlayer.setMovementUpdatedAtEpochMs(FIXED_INSTANT.toEpochMilli());
+            return null;
+        }).when(gameplayRequestGuard).requireGameplayAccess(racePlayer, FIXED_INSTANT);
+        StudentRaceStateService service = new StudentRaceStateService(
+                sessionLockService,
+                gameplayRequestGuard,
+                raceFinishService,
+                new StudentRaceStandingService(
+                        racePlayerRepository,
+                        new RaceStandingCalculator(FIXED_ZONE)
+                ),
+                new StudentRaceRuntimeSnapshotMapper(),
+                new RaceLiveMutationTracker(
+                        liveMutationGate,
+                        new RaceLiveEventChangeRecorder(liveEventRecorder)
+                ),
+                Clock.fixed(FIXED_INSTANT, FIXED_ZONE)
+        );
+
+        StudentRaceStateResponse response = service.getRaceState(request);
+
+        assertEquals(1L, response.getSnapshot().getEventVersion());
+        assertEquals(FIXED_INSTANT.toEpochMilli(), response.getSnapshot().getPositionAtEpochMs());
+        verify(liveEventRecorder).recordPlayerProgressUpdated(racePlayer.getRace());
+    }
+
     private StudentRaceStateService createService() {
         return createService(gameplayRequestGuard);
     }
@@ -337,7 +377,7 @@ class StudentRaceStateServiceTest {
                 raceFinishService,
                 new StudentRaceStandingService(
                         racePlayerRepository,
-                        new RaceStandingCalculator()
+                        new RaceStandingCalculator(FIXED_ZONE)
                 ),
                 new StudentRaceRuntimeSnapshotMapper(),
                 new RaceLiveMutationTracker(
