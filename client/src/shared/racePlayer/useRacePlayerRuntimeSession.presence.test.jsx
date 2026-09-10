@@ -12,6 +12,7 @@ import {
   heartbeatAck,
   renderResolvedActiveSession,
   setDocumentVisibility,
+  setNavigatorOnLine,
   setupRuntimeSessionSuite,
 } from "./racePlayerRuntimeSessionTestUtils";
 
@@ -58,6 +59,28 @@ describe("heartbeat", () => {
 });
 
 describe("stopPresence", () => {
+  it("allows passive finish requests across offline/online without reviving gameplay", async () => {
+    const { result } = await renderResolvedActiveSession(reconnectRacePlayer);
+    await act(async () => { result.current.stopPresence(); });
+    expect(result.current.isGameplayConnectionReady).toBe(false);
+    expect(result.current.isPassiveRaceRequestReady).toBe(true);
+    await act(async () => {
+      setNavigatorOnLine(false);
+      window.dispatchEvent(new Event("offline"));
+    });
+    expect(result.current.isPassiveRaceRequestReady).toBe(false);
+    await act(async () => {
+      setNavigatorOnLine(true);
+      window.dispatchEvent(new Event("online"));
+      setDocumentVisibility("hidden");
+    });
+    expect(result.current.isPassiveRaceRequestReady).toBe(false);
+    await act(async () => { setDocumentVisibility("visible"); });
+    expect(result.current.isPassiveRaceRequestReady).toBe(true);
+    await advance(heartbeatIntervalMs * 2);
+    expect(heartbeatRacePlayer).not.toHaveBeenCalled();
+    expect(reconnectRacePlayer).toHaveBeenCalledTimes(1);
+  });
   it("halts heartbeat and automatic reconnect triggers", async () => {
     const { result } = await renderResolvedActiveSession(reconnectRacePlayer);
     heartbeatRacePlayer.mockResolvedValue(heartbeatAck());

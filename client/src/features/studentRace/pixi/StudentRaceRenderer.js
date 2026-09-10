@@ -20,6 +20,7 @@ export class StudentRaceRenderer {
   constructor(app) {
     this.app = app;
     this.runtimeState = null;
+    this.finishPresentation = null;
     this.width = app.screen.width;
     this.height = app.screen.height;
     this.motion = createStudentRaceMotion();
@@ -109,6 +110,13 @@ export class StudentRaceRenderer {
     this.layers.forEach((layer) => layer.resize(width, height));
   }
 
+  updateFinishPresentation(next) {
+    this.finishPresentation = next == null ? null : {
+      ...next, releasedFinisherIdsSet: new Set(next.releasedFinisherIds),
+    };
+    this.motion.updateFinishPresentation(next);
+  }
+
   tick(ticker) {
     const { position, speed } = this.motion.advance(ticker.elapsedMS ?? ticker.deltaMS);
     if (!this.worldReady) return;
@@ -117,6 +125,7 @@ export class StudentRaceRenderer {
       ...this.raceObjectGeometry,
       raceObjectCameraPosition: position - this.raceObjectGeometry.playerReferenceDistance,
       deltaMs: ticker.deltaMS,
+      elapsedMs: ticker.elapsedMS ?? ticker.deltaMS,
       width: this.width,
       height: this.height,
       visualPosition: position,
@@ -126,6 +135,7 @@ export class StudentRaceRenderer {
       perspective: this.perspective,
       layout: this.layout,
       runtimeState: this.runtimeState,
+      finishPresentation: this.finishPresentation,
     };
     this.layers.forEach((layer) => layer.update(frameState));
     if (this.loadingSurface.visible) {

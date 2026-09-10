@@ -3,6 +3,28 @@ import { expect, it } from "vitest";
 import { OpponentLayer } from "./OpponentLayer.js";
 import { opponentFrame, fallbackVehicle } from "../opponents/opponentTestFixtures.js";
 import { raceOpponent } from "../../runtime/studentRaceTestFixtures.js";
+import { STUDENT_RACE_FINISH_EXPERIENCE } from "../../config/finishExperienceConfig.js";
+import { STUDENT_RACE_ANIMATION_CONFIG } from "../../config/raceAnimationConfig.js";
+
+it("retains a completed hidden finisher so later snapshots cannot replay its crossing", async () => {
+  const layer = new OpponentLayer(new Container(), { loadVehicleAssets: fallbackVehicle });
+  const frame = opponentFrame({ position: 200, deltaMs: 1200 });
+  frame.runtimeState.opponents = [raceOpponent({ position: 1000, status: "FINISHED" })];
+  frame.finishPresentation = { ...STUDENT_RACE_FINISH_EXPERIENCE, active: true,
+    releasedFinisherIdsSet: new Set([2]), runoutDurationMs: STUDENT_RACE_ANIMATION_CONFIG.effects.finishEffectDurationMs };
+  layer.applyRuntimeState(frame.runtimeState);
+  await Promise.resolve();
+  layer.update(frame);
+  const finished = layer.byPlayerId.get(2);
+  finished.releasable = true;
+  layer.update(frame);
+  layer.applyRuntimeState(frame.runtimeState);
+  expect(layer.byPlayerId.get(2)).toBe(finished);
+  expect(finished.visualPosition).toBe(1006);
+  expect(finished.finishRunout.elapsedMs).toBe(1200);
+  expect(layer.pool).toHaveLength(0);
+  layer.destroy();
+});
 
 it.each([1, 7])("preserves %s player identities on reordered polls without reallocating visuals", async (count) => {
   const world = new Container();

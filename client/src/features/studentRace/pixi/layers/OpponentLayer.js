@@ -47,7 +47,7 @@ export class OpponentLayer {
   update(frame) {
     for (const [id, kart] of this.byPlayerId) {
       kart.update(frame);
-      if (kart.releasable) this.release(id, kart);
+      if (kart.releasable && (!kart.finishReleased || kart.removed)) this.release(id, kart);
     }
   }
 

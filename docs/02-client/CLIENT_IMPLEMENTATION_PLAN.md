@@ -763,8 +763,10 @@ opponent mapping and rendering are locally implemented in C2-02/C2-03 (2026-09-1
 pending adversarial pre-commit review and live browser/device QA. No client-calculated
 rank is needed. One snapshot accumulator orders by `(eventVersion, snapshotAtEpochMs)`;
 student SSE invalidates with mutation/generation guards and existing polling fallback.
-Finish-arbitration proof support is available without an automatic trigger.
-**C2-04 remains pending.**
+C2-04 is locally implemented (2026-09-11): passive finish synchronization,
+ETA/opponent arbitration triggers, ordered proof-gated crossing and shared visual
+runout. Direct FINISHED reloads do not replay a crossing. Fifteen focused tests
+were added; live multiplayer/browser/device QA remains open before C2 acceptance.
 
 - validate/map `opponents` snapshots through the existing runtime boundary,
   retaining snapshot freshness (`snapshotAtEpochMs`, `eventVersion`,

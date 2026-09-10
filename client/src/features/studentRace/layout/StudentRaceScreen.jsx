@@ -8,6 +8,7 @@ import StudentRaceOverlay from "./StudentRaceOverlay";
 
 export default function StudentRaceScreen({
   runtimeState = null,
+  finishPresentation = null,
   ...overlayProps
 }) {
   const { gameFrame } = STUDENT_RACE_VISUAL_CONFIG;
@@ -30,6 +31,7 @@ export default function StudentRaceScreen({
       >
         <PixiStudentRaceCanvas
           runtimeState={presentationRuntimeState}
+          finishPresentation={finishPresentation}
           className="absolute inset-0"
         />
         <StudentRaceOverlay runtimeState={runtimeState} {...overlayProps} />

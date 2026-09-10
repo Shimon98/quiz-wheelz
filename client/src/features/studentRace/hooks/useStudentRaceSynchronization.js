@@ -12,7 +12,9 @@ import { mergeStudentRaceFinishOrder } from "../runtime/mergeStudentRaceFinishOr
 
 const REFRESH_SIGNALS = new Set(["QUESTION_ANSWERED", "PLAYER_FINISHED", "RACE_FINISHED"]);
 
-export default function useStudentRaceSynchronization({ raceState, requestError, silentRefresh, syncEnabled }) {
+export default function useStudentRaceSynchronization({
+  raceState, requestError, silentRefresh, syncEnabled, finishSyncEnabled = syncEnabled,
+}) {
   const runtimeRef = useRef(null);
   const finishOrderRef = useRef(null);
   const arbitrationRef = useRef(null);
@@ -22,6 +24,7 @@ export default function useStudentRaceSynchronization({ raceState, requestError,
   const pendingRefreshVersionRef = useRef(null);
   const refreshScheduledRef = useRef(false);
   const enabledRef = useRef(syncEnabled);
+  const finishSyncEnabledRef = useRef(finishSyncEnabled);
   const awaitingResyncRef = useRef(false);
   const mountedRef = useRef(true);
   const [runtimeState, setRuntimeState] = useState(null);
@@ -34,14 +37,11 @@ export default function useStudentRaceSynchronization({ raceState, requestError,
   const invalidateMutations = useCallback((waitForResync = false) => {
     generationRef.current += 1;
     activeMutationsRef.current.clear();
-    arbitrationRef.current = null;
     pendingRefreshVersionRef.current = null;
     refreshScheduledRef.current = false;
     setGeneration(generationRef.current);
-    if (waitForResync) {
-      awaitingResyncRef.current = true;
-      setAwaitingResync(true);
-    }
+    awaitingResyncRef.current = waitForResync;
+    setAwaitingResync(waitForResync);
   }, []);
 
   useEffect(() => {
@@ -54,8 +54,11 @@ export default function useStudentRaceSynchronization({ raceState, requestError,
 
   useEffect(() => {
     enabledRef.current = syncEnabled;
-    if (!syncEnabled) invalidateMutations(true);
-  }, [syncEnabled, invalidateMutations]);
+    finishSyncEnabledRef.current = finishSyncEnabled;
+    if (!syncEnabled || !finishSyncEnabled) {
+      invalidateMutations(getRaceView(runtimeRef.current) === RACE_VIEWS.PLAYING);
+    }
+  }, [syncEnabled, finishSyncEnabled, invalidateMutations]);
 
   const publish = useCallback((next) => {
     if (next !== runtimeRef.current) {
@@ -79,7 +82,7 @@ export default function useStudentRaceSynchronization({ raceState, requestError,
         finishOrderRef.current = null;
         setFinishOrder(null);
       }
-      if (enabledRef.current) {
+      if (enabledRef.current || getRaceView(next) === RACE_VIEWS.FINISHED) {
         awaitingResyncRef.current = false;
         setAwaitingResync(false);
       }
@@ -169,7 +172,7 @@ export default function useStudentRaceSynchronization({ raceState, requestError,
 
   const requestFinishArbitration = useCallback(() => {
     if (arbitrationRef.current) return arbitrationRef.current;
-    if (!runtimeRef.current || !enabledRef.current || awaitingResyncRef.current) return Promise.resolve(null);
+    if (!runtimeRef.current || !finishSyncEnabledRef.current || awaitingResyncRef.current) return Promise.resolve(null);
     const token = beginAuthoritativeMutation();
     const pending = (async () => {
       try {

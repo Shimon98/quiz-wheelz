@@ -585,7 +585,10 @@ browser offline/hidden→visible recovery, reduced-motion emulation and
 physical-phone QA remain open. DEV browser checks are not a phone-performance
 benchmark. Follow the carried-forward pre-release checklist in
 `CLIENT_IMPLEMENTATION_PLAN.md`. C1 local development is closed for progression
-to C2; C2-02/C2-03 are locally implemented. C2-04 finish choreography remains pending.
+to C2; C2-02/C2-03/C2-04 are locally implemented, pending review and live QA.
+Crossing requires confirmed finish-prefix release; same-ms cohorts release together.
+Own/opponent runout uses one interpolation with a shared crossing midpoint, so visual
+backlog cannot reverse server order. Passive finish reads do not revive gameplay presence.
 
 ## Race audio — planned C2-A
 

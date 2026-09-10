@@ -29,6 +29,32 @@ async function signals(result, events) {
 }
 
 describe("student synchronization", () => {
+  it("allows passive arbitration after gameplay stops and keeps one flight through an offline pause", async () => {
+    const { result, rerender } = await mount();
+    act(() => result.current.applyAuthoritativeSnapshot(raceSnapshot({ eventVersion: 13,
+      playerFinished: true, playerStatus: "FINISHED", position: 1000, movementUnitsPerSecond: 0 })));
+    rerender({ raceState: null, syncEnabled: false, finishSyncEnabled: true });
+    await act(async () => {});
+    let resolve;
+    requestFinishArbitration.mockClear();
+    requestFinishArbitration.mockReturnValueOnce(new Promise((done) => { resolve = done; }));
+    let pending;
+    act(() => { pending = result.current.requestFinishArbitration(); });
+    expect(requestFinishArbitration).toHaveBeenCalledTimes(1);
+    rerender({ raceState: null, syncEnabled: false, finishSyncEnabled: false });
+    rerender({ raceState: null, syncEnabled: false, finishSyncEnabled: true });
+    act(() => { expect(result.current.requestFinishArbitration()).toBe(pending); });
+    await act(async () => { resolve({ invalid: true }); await pending; });
+    expect(result.current.error).toBeNull();
+    requestFinishArbitration.mockResolvedValueOnce({ raceId: 7,
+      snapshot: raceSnapshot({ eventVersion: 14, playerFinished: true, playerStatus: "FINISHED", position: 1000 }),
+      finishOrder: { eventVersion: 14, decidedAtEpochMs: 11000, confirmedThroughEpochMs: 10000,
+        confirmedFinishers: [{ racePlayerId: 1, finishedAtEpochMs: 9999, rank: 1 }] } });
+    await act(async () => { await result.current.requestFinishArbitration(); });
+    expect(result.current.finishOrder.confirmedFinishers[0].racePlayerId).toBe(1);
+    expect(requestFinishArbitration).toHaveBeenCalledTimes(2);
+    expect(silentRefresh).not.toHaveBeenCalled();
+  });
   it("merges a proof even when its snapshot is older and keeps arbitration single-flight", async () => {
     const { result } = await mount();
     let resolve;

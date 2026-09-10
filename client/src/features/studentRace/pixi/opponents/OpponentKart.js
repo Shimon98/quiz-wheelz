@@ -1,5 +1,6 @@
 import { StudentRaceVehicleVisual } from "../vehicles/StudentRaceVehicleVisual.js";
 import { STUDENT_RACE_VISUAL_CONFIG } from "../../config/raceVisualConfig.js";
+import { advanceFinishRunout } from "../utils/advanceFinishRunout.js";
 
 export const OPPONENT_VISIBILITY_STATES = Object.freeze({
   HIDDEN: "HIDDEN", ENTERING: "ENTERING", VISIBLE: "VISIBLE", EXITING: "EXITING",
@@ -49,14 +50,28 @@ export class OpponentKart {
     else this.visibilityState = STATES.EXITING;
   }
 
-  advancePosition(deltaMs, totalDistance) {
+  advancePosition(deltaMs, totalDistance, finishPresentation) {
+    const released = finishPresentation?.active && finishPresentation.releasedFinisherIdsSet.has(this.racePlayerId);
+    if (released && !this.finishReleased) {
+      this.finishReleased = true;
+      this.finishRunout = { start: this.visualPosition, finishLine: totalDistance,
+        target: totalDistance + finishPresentation.runoutUnits, elapsedMs: 0,
+        durationMs: finishPresentation.runoutDurationMs };
+    }
+    if (this.finishRunout) {
+      this.visualPosition = advanceFinishRunout(this.finishRunout, deltaMs);
+      this.targetPosition = this.finishRunout.target;
+      return;
+    }
     this.elapsedSinceSnapshotMs += deltaMs;
     const ageMs = Math.min(CONFIG.maxPredictionMs, this.baseAgeMs + this.elapsedSinceSnapshotMs);
     const rate = this.status === "RACING" && this.positionAtEpochMs != null ? this.movementUnitsPerSecond : 0;
-    this.targetPosition = Math.max(0, Math.min(totalDistance, this.authoritativePosition + rate * ageMs / 1000));
+    const limit = Math.max(0, totalDistance - (finishPresentation?.active ? finishPresentation.visualHoldUnits : 0));
+    this.targetPosition = Math.max(0, Math.min(limit, this.authoritativePosition + rate * ageMs / 1000));
     const difference = this.targetPosition - this.visualPosition;
     if (Math.abs(difference) >= CONFIG.snapCorrectionUnits) this.visualPosition = this.targetPosition;
     else this.visualPosition += difference * (1 - Math.exp(-deltaMs / CONFIG.smoothingTimeMs));
+    this.visualPosition = Math.min(this.visualPosition, limit);
   }
 
   advanceVisibility(deltaMs, reducedMotion) {
@@ -76,7 +91,7 @@ export class OpponentKart {
     if (this.racePlayerId == null || this.visualPosition == null) return;
     const { deltaMs, perspective, layout, runtimeState, width, height,
       raceObjectCameraPosition, playerRoadHalfWidth, laneStepRatio } = frame;
-    this.advancePosition(Math.max(0, deltaMs), runtimeState.totalDistance);
+    this.advancePosition(Math.max(0, frame.elapsedMs ?? deltaMs), runtimeState.totalDistance, frame.finishPresentation);
     const relativeDistance = this.visualPosition - raceObjectCameraPosition;
     const lateralRatio = (this.laneNumber - runtimeState.player.laneNumber) * laneStepRatio;
     const maxDepth = perspective.depthAtY(height + layout.playerKart.maxWidth);
@@ -126,6 +141,8 @@ export class OpponentKart {
     this.laneNumber = null;
     this.status = null;
     this.finishedAtEpochMs = null;
+    this.finishRunout = null;
+    this.finishReleased = false;
     this.baseAgeMs = 0;
     this.elapsedSinceSnapshotMs = 0;
     this.visibilityState = STATES.HIDDEN;

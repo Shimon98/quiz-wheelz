@@ -27,7 +27,7 @@ function content(props) {
         isLoading={false}
         error={null}
         retry={() => {}}
-        showFinishMoment={false}
+        keepRaceScreen={false}
         questionProps={{ feedbackState: STUDENT_RACE_FEEDBACK.IDLE }}
         {...props}
       />
@@ -63,7 +63,7 @@ describe("StudentRaceContent finish presentation", () => {
     const { rerender } = render(content({ view: RACE_VIEWS.PLAYING }));
     const canvas = screen.getByTestId("race-canvas");
 
-    rerender(content({ view: RACE_VIEWS.FINISHED }));
+    rerender(content({ view: RACE_VIEWS.FINISHED, keepRaceScreen: true }));
 
     expect(screen.getByTestId("race-canvas")).toBe(canvas);
     act(() => vi.advanceTimersByTime(HOLD_MS - 1));
@@ -71,6 +71,8 @@ describe("StudentRaceContent finish presentation", () => {
     expect(screen.queryByText(finishedTitle())).not.toBeInTheDocument();
 
     act(() => vi.advanceTimersByTime(1));
+    expect(screen.getByTestId("race-canvas")).toBe(canvas);
+    rerender(content({ view: RACE_VIEWS.FINISHED, keepRaceScreen: false }));
     expect(screen.queryByTestId("race-canvas")).not.toBeInTheDocument();
     expect(screen.getByText(finishedTitle())).toBeInTheDocument();
   });
@@ -79,19 +81,20 @@ describe("StudentRaceContent finish presentation", () => {
     const { rerender } = render(content({ view: RACE_VIEWS.PLAYING }));
     const canvas = screen.getByTestId("race-canvas");
 
-    rerender(content({ view: RACE_VIEWS.FINISHED, showFinishMoment: true }));
+    rerender(content({ view: RACE_VIEWS.FINISHED, keepRaceScreen: true }));
     act(() => vi.advanceTimersByTime(900));
-    rerender(content({ view: RACE_VIEWS.FINISHED, showFinishMoment: false }));
+    rerender(content({ view: RACE_VIEWS.FINISHED, keepRaceScreen: true }));
 
     expect(screen.getByTestId("race-canvas")).toBe(canvas);
     act(() => vi.advanceTimersByTime(HOLD_MS - 900));
+    rerender(content({ view: RACE_VIEWS.FINISHED }));
     expect(screen.getByText(finishedTitle())).toBeInTheDocument();
   });
 
-  it("clears the hold timer on unmount", () => {
+  it("does not own another finish timer", () => {
     const { rerender, unmount } = render(content({ view: RACE_VIEWS.PLAYING }));
     rerender(content({ view: RACE_VIEWS.FINISHED }));
-    expect(vi.getTimerCount()).toBe(1);
+    expect(vi.getTimerCount()).toBe(0);
 
     unmount();
 

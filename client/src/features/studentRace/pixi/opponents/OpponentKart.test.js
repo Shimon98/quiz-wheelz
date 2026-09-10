@@ -3,8 +3,32 @@ import { afterEach, expect, it, vi } from "vitest";
 import { OpponentKart, OPPONENT_VISIBILITY_STATES as STATES } from "./OpponentKart.js";
 import { opponentFrame, fallbackVehicle } from "./opponentTestFixtures.js";
 import { raceOpponent } from "../../runtime/studentRaceTestFixtures.js";
+import { STUDENT_RACE_FINISH_EXPERIENCE } from "../../config/finishExperienceConfig.js";
+import { STUDENT_RACE_ANIMATION_CONFIG } from "../../config/raceAnimationConfig.js";
 
 const allocated = [];
+
+it("holds a server-finished opponent until release, then runs out once without changing truth", async () => {
+  const kart = await kartAt(1000, { status: "FINISHED", finishedAtEpochMs: 9999 });
+  const presentation = { ...STUDENT_RACE_FINISH_EXPERIENCE, active: true,
+    releasedFinisherIdsSet: new Set(), runoutDurationMs: STUDENT_RACE_ANIMATION_CONFIG.effects.finishEffectDurationMs };
+  kart.advancePosition(3000, 1000, presentation);
+  expect(kart.visualPosition).toBe(999.85);
+  presentation.releasedFinisherIdsSet.add(kart.racePlayerId);
+  kart.advancePosition(600, 1000, presentation);
+  expect(kart.visualPosition).toBe(1000);
+  kart.applySnapshot(raceOpponent({ position: 1000, status: "FINISHED", finishedAtEpochMs: 9999 }), 11000);
+  kart.advancePosition(600, 1000, presentation);
+  expect(kart.visualPosition).toBe(1006);
+  kart.advancePosition(1200, 1000, presentation);
+  expect(kart.visualPosition).toBe(1006);
+  expect(kart.authoritativePosition).toBe(1000);
+  expect(kart.status).toBe("FINISHED");
+  expect(kart.finishedAtEpochMs).toBe(9999);
+  kart.reset();
+  expect(kart.finishReleased).toBe(false);
+  expect(kart.finishRunout).toBeNull();
+});
 afterEach(() => { allocated.splice(0).forEach((kart) => kart.destroy()); });
 async function kartAt(position, extra = {}) {
   const kart = new OpponentKart(new Container(), { loadVehicleAssets: fallbackVehicle });

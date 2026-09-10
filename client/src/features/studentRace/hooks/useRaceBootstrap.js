@@ -6,13 +6,14 @@ import { isRacePlayerSessionError } from "../../../errors/errorChecks.js";
 import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig.js";
 import useStudentRaceSynchronization from "./useStudentRaceSynchronization.js";
 
-export default function useRaceBootstrap({ syncEnabled = true } = {}) {
+export default function useRaceBootstrap({ syncEnabled = true, finishSyncEnabled = syncEnabled } = {}) {
   const loader = useRacePlayerState();
   const synchronization = useStudentRaceSynchronization({
     raceState: loader.raceState,
     requestError: loader.error,
     silentRefresh: loader.silentRefresh,
     syncEnabled,
+    finishSyncEnabled,
   });
   const { runtimeState, prepareAuthoritativeResync } = synchronization;
   const view = runtimeState ? getRaceView(runtimeState) : null;

@@ -3,6 +3,10 @@ import { describe, expect, it } from "vitest";
 import { STUDENT_RACE_ANIMATION_CONFIG } from "../../config/raceAnimationConfig";
 import { createInitialRaceRuntimeState } from "../../runtime/createInitialRaceRuntimeState";
 import { createStudentRaceMotion } from "./studentRaceMotion";
+import { STUDENT_RACE_FINISH_EXPERIENCE } from "../../config/finishExperienceConfig.js";
+
+const presentation = (released) => ({ ...STUDENT_RACE_FINISH_EXPERIENCE, active: true,
+  ownCrossingReleased: released, runoutDurationMs: STUDENT_RACE_ANIMATION_CONFIG.effects.finishEffectDurationMs });
 
 function runtime({ position = 100, rate = 4, speed = 1, stamp = 1000, finished = false, raceId = 1 } = {}) {
   return {
@@ -295,6 +299,12 @@ describe("student race visual motion", () => {
 
     motion.updateRuntimeState(runtime({ position: 40, stamp: 3000, raceId: 2 }));
     expect(motion.advance(0).position).toBe(40);
+    motion.updateFinishPresentation(presentation(true));
+    motion.advance(1200);
+    motion.updateRuntimeState({ ...runtime({ position: 990, stamp: 4000, raceId: 2 }), player: { racePlayerId: 22 } });
+    motion.updateFinishPresentation(presentation(false));
+    expect(motion.advance(0).position).toBe(990);
+    expect(runFrames(motion, 10000).every((frame) => frame.position <= 999.85)).toBe(true);
   });
 
   it("settles a final bonus during the finish moment and remains stopped", () => {
@@ -302,12 +312,13 @@ describe("student race visual motion", () => {
     motion.updateRuntimeState(runtime({ position: 980 }));
     const finished = runtime({ position: 1000, rate: 0, speed: 0, finished: true, stamp: 2000 });
     motion.updateRuntimeState(finished);
+    motion.updateFinishPresentation(presentation(true));
     runFrames(motion, 500);
     motion.updateRuntimeState({ ...finished, lastSnapshotAtEpochMs: 3000 });
     const samples = runFrames(motion, STUDENT_RACE_ANIMATION_CONFIG.effects.finishEffectDurationMs - 500);
 
-    expect(samples.at(-1).position).toBe(1000);
-    expect(runFrames(motion, 2000).at(-1).position).toBe(1000);
+    expect(samples.at(-1).position).toBe(1006);
+    expect(runFrames(motion, 2000).at(-1).position).toBe(1006);
     expect(finished.playerFinished).toBe(true);
   });
 
@@ -316,11 +327,12 @@ describe("student race visual motion", () => {
     const holdMs = STUDENT_RACE_ANIMATION_CONFIG.effects.finishEffectDurationMs;
     motion.updateRuntimeState(runtime({ position: 960 }));
     motion.updateRuntimeState(runtime({ position: 1000, rate: 0, speed: 0, finished: true, stamp: 2000 }));
+    motion.updateFinishPresentation(presentation(true));
 
     const first = motion.advance(1000 / 60).position;
     expect(first - 960).toBeLessThan(0.1);
-    expect(runFrames(motion, holdMs - 1000 / 60).at(-1).position).toBe(1000);
-    expect(motion.advance(100).position).toBe(1000);
+    expect(runFrames(motion, holdMs - 1000 / 60).at(-1).position).toBe(1006);
+    expect(motion.advance(100).position).toBe(1006);
   });
 
   it("finishes accumulated consecutive bonuses before the canvas hold expires", () => {
@@ -334,9 +346,10 @@ describe("student race visual motion", () => {
     }
     expect(1000 - motion.advance(0).position).toBeGreaterThan(40);
     motion.updateRuntimeState(runtime({ position: 1000, rate: 0, speed: 0, finished: true, stamp: 2000 }));
+    motion.updateFinishPresentation(presentation(true));
 
     const holdMs = STUDENT_RACE_ANIMATION_CONFIG.effects.finishEffectDurationMs;
-    expect(runFrames(motion, holdMs).at(-1).position).toBe(1000);
+    expect(runFrames(motion, holdMs).at(-1).position).toBe(1006);
   });
 
   it("uses elapsed time for the finish even when a frame exceeds the normal prediction cap", () => {
@@ -344,11 +357,12 @@ describe("student race visual motion", () => {
     motion.updateRuntimeState(runtime({ position: 960 }));
     const finished = runtime({ position: 1000, rate: 0, speed: 0, finished: true, stamp: 2000 });
     motion.updateRuntimeState(finished);
+    motion.updateFinishPresentation(presentation(true));
     motion.advance(600);
     motion.updateRuntimeState({ ...finished, lastSnapshotAtEpochMs: 3000 });
 
     const holdMs = STUDENT_RACE_ANIMATION_CONFIG.effects.finishEffectDurationMs;
-    expect(motion.advance(holdMs - 600).position).toBe(1000);
+    expect(motion.advance(holdMs - 600).position).toBe(1006);
   });
 
   it("caps drawing at totalDistance without declaring a finish", () => {
@@ -358,5 +372,32 @@ describe("student race visual motion", () => {
 
     expect(runFrames(motion, 1000).at(-1).position).toBe(1000);
     expect(state.playerFinished).toBe(false);
+  });
+
+  it("holds before proof despite a finished snapshot and never starts runout on direct finished bootstrap", () => {
+    const motion = createStudentRaceMotion();
+    const truth = runtime({ position: 1000, finished: true, rate: 0 });
+    motion.updateRuntimeState(truth);
+    expect(runFrames(motion, 2000).at(-1).position).toBe(1000);
+    motion.updateFinishPresentation(presentation(false));
+    expect(runFrames(motion, 2000).every((frame) => frame.position <= 999.85)).toBe(true);
+    expect(truth.visual.targetPosition).toBe(1000);
+    motion.updateFinishPresentation(presentation(true));
+    expect(runFrames(motion, 1200).at(-1).position).toBe(1006);
+    expect(truth.visual.targetPosition).toBe(1000);
+  });
+
+  it("aligns crossing time for tied racers despite different visual backlogs", () => {
+    const racers = [960, 999.85].map((position) => {
+      const motion = createStudentRaceMotion();
+      motion.updateRuntimeState(runtime({ position }));
+      motion.updateFinishPresentation(presentation(true));
+      return motion;
+    });
+    for (const racer of racers) {
+      expect(racer.advance(599).position).toBeLessThan(1000);
+      expect(racer.advance(1).position).toBe(1000);
+      expect(racer.advance(1).position).toBeGreaterThan(1000);
+    }
   });
 });

@@ -2,6 +2,7 @@ import useRaceBootstrap from "../hooks/useRaceBootstrap";
 import useStudentRaceQuestion from "../hooks/useStudentRaceQuestion";
 import useStudentRaceAnswer from "../hooks/useStudentRaceAnswer";
 import useStudentRaceRecoverySync from "../hooks/useStudentRaceRecoverySync";
+import useStudentRaceFinishExperience from "../hooks/useStudentRaceFinishExperience.js";
 import { RACE_VIEWS } from "../../../shared/racePlayer/getRaceView";
 import RacePlayerSessionGate from "../../../shared/racePlayer/RacePlayerSessionGate";
 import useRacePlayerRuntimeSession from "../../../shared/racePlayer/useRacePlayerRuntimeSession";
@@ -21,7 +22,14 @@ function ResolvedStudentRacePage({ runtimeSession }) {
     beginAuthoritativeMutation,
     endAuthoritativeMutation,
     isMutationCurrent,
-  } = useRaceBootstrap({ syncEnabled: runtimeSession.isGameplayConnectionReady });
+    finishOrder,
+    requestFinishArbitration,
+  } = useRaceBootstrap({ syncEnabled: runtimeSession.isGameplayConnectionReady,
+    finishSyncEnabled: runtimeSession.isPassiveRaceRequestReady });
+
+  const finishExperience = useStudentRaceFinishExperience({ runtimeState, view, finishOrder,
+    finishSyncEnabled: runtimeSession.isPassiveRaceRequestReady && !isRacePlayerSessionError(raceError),
+    requestFinishArbitration });
 
   const questionEnabled =
     runtimeSession.isGameplayConnectionReady &&
@@ -38,7 +46,6 @@ function ResolvedStudentRacePage({ runtimeSession }) {
   const {
     submitChoice,
     displayedQuestion,
-    isFeedbackDwellActive,
     isAwaitingNextQuestion,
     isSubmitting,
     selectedChoiceId,
@@ -77,9 +84,8 @@ function ResolvedStudentRacePage({ runtimeSession }) {
             isLoading={isLoading}
             error={raceError}
             retry={raceRetry}
-            showFinishMoment={
-              view === RACE_VIEWS.FINISHED && isFeedbackDwellActive
-            }
+            keepRaceScreen={finishExperience.keepRaceScreen}
+            finishPresentation={finishExperience.presentation}
             questionProps={{
               question: displayedQuestion,
               questionError,

@@ -1,5 +1,4 @@
 import { RACE_VIEWS } from "../../../shared/racePlayer/getRaceView";
-import useStudentRaceFinishMoment from "../hooks/useStudentRaceFinishMoment";
 import StudentRaceScreen from "../layout/StudentRaceScreen";
 import StudentRaceStatusView from "./StudentRaceStatusView";
 import { STUDENT_RACE_STATUSES } from "./studentRaceStatusConfig";
@@ -10,11 +9,10 @@ export default function StudentRaceContent({
   isLoading,
   error,
   retry,
-  showFinishMoment,
+  keepRaceScreen = false,
+  finishPresentation = null,
   questionProps,
 }) {
-  const isHoldingFinish = useStudentRaceFinishMoment(view);
-
   if (!runtimeState && isLoading) {
     return <StudentRaceStatusView status={STUDENT_RACE_STATUSES.LOADING} />;
   }
@@ -35,8 +33,8 @@ export default function StudentRaceContent({
     );
   }
 
-  if (view === RACE_VIEWS.PLAYING || showFinishMoment || isHoldingFinish) {
-    return <StudentRaceScreen runtimeState={runtimeState} {...questionProps} />;
+  if (view === RACE_VIEWS.PLAYING || keepRaceScreen) {
+    return <StudentRaceScreen runtimeState={runtimeState} finishPresentation={finishPresentation} {...questionProps} />;
   }
 
   return <StudentRaceStatusView status={view} onRetry={retry} />;
