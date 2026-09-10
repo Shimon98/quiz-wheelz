@@ -5,12 +5,6 @@ import i18n from "../../../i18n/i18n";
 import { createInitialRaceRuntimeState } from "../runtime/createInitialRaceRuntimeState";
 import StudentRaceHud from "./StudentRaceHud";
 
-/*
- * C1-04 HUD contract: runtimeState (server truth) in, presentation out.
- * Assertions target visible values and accessible semantics, never internal
- * structure; expected labels come from the real i18n instance so the tests
- * protect the wiring without duplicating strings.
- */
 
 function buildRuntimeState({
   score = 850,
@@ -18,21 +12,37 @@ function buildRuntimeState({
   speed = 1.3,
   position = 420,
   totalDistance = 1000,
+  rank = null,
+  playerCount = null,
 } = {}) {
   const state = createInitialRaceRuntimeState();
-  state.player = { ...state.player, score, streak, speed, position };
+  state.player = { ...state.player, score, streak, speed, position, rank };
   state.totalDistance = totalDistance;
+  state.playerCount = playerCount;
   return state;
 }
 
 const progressLabel = () => i18n.t("studentRace:hud.progressLabel");
 
 describe("StudentRaceHud", () => {
+  it("shows server rank and count and removes them when either is unavailable", () => {
+    const { rerender } = render(
+      <StudentRaceHud runtimeState={buildRuntimeState({ rank: 3, playerCount: 18 })} />,
+    );
+    expect(screen.getByText("3 / 18")).toBeInTheDocument();
+    expect(screen.getByLabelText(i18n.t("studentRace:hud.rankValue", { rank: 3, count: 18 })))
+      .toBeInTheDocument();
+
+    rerender(<StudentRaceHud runtimeState={buildRuntimeState({ rank: 2, playerCount: null })} />);
+    expect(screen.queryByText(i18n.t("studentRace:hud.rankLabel"))).not.toBeInTheDocument();
+  });
+
   it("renders score, streak, speed and progress from runtime truth", () => {
     render(<StudentRaceHud runtimeState={buildRuntimeState()} />);
 
     expect(screen.getByText("850")).toBeInTheDocument();
-    expect(screen.getByText("×3")).toBeInTheDocument();
+    expect(screen.getByText("3")).toBeInTheDocument();
+    expect(screen.getByLabelText(i18n.t("studentRace:hud.streakValue", { count: 3 }))).toBeInTheDocument();
     expect(screen.getByText("×1.3")).toBeInTheDocument();
 
     const progressBar = screen.getByRole("progressbar", {
@@ -60,7 +70,7 @@ describe("StudentRaceHud", () => {
 
     expect(screen.getByText("950")).toBeInTheDocument();
     expect(screen.queryByText("850")).not.toBeInTheDocument();
-    expect(screen.getByText("×4")).toBeInTheDocument();
+    expect(screen.getByText("4")).toBeInTheDocument();
     expect(
       screen.getByRole("progressbar", { name: progressLabel() }),
     ).toHaveAttribute("aria-valuenow", "45");
@@ -74,7 +84,6 @@ describe("StudentRaceHud", () => {
     );
 
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
-    // Speed is independent server truth and stays visible.
     expect(screen.getByText("×1.3")).toBeInTheDocument();
   });
 
@@ -112,5 +121,63 @@ describe("StudentRaceHud", () => {
     const { container } = render(<StudentRaceHud runtimeState={null} />);
 
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it("celebrates the accepted answer snapshot even if a later poll has another streak", () => {
+    render(
+      <StudentRaceHud
+        runtimeState={buildRuntimeState({ streak: 4, speed: 2 })}
+        answerFeedback={{ questionId: 7, correct: true, scoreDelta: 20, streak: 3 }}
+      />,
+    );
+
+    const reward = screen.getByRole("status");
+    expect(reward).toHaveTextContent(i18n.t("studentRace:reward.comboTitle"));
+    expect(reward).toHaveTextContent(i18n.t("studentRace:reward.streak", { count: 3 }));
+    expect(reward).toHaveTextContent("+20");
+    expect(screen.getByText("×2.0")).toBeInTheDocument();
+    expect(screen.getByLabelText(i18n.t("studentRace:hud.streakValue", { count: 4 }))).toBeInTheDocument();
+  });
+
+  it("remounts the reward for each accepted answer and clears it after dwell", () => {
+    const runtimeState = buildRuntimeState();
+    const feedback = { questionId: 7, correct: true, scoreDelta: 10, streak: 2 };
+    const { rerender } = render(<StudentRaceHud runtimeState={runtimeState} answerFeedback={feedback} />);
+    const firstReward = screen.getByRole("status");
+
+    rerender(<StudentRaceHud runtimeState={runtimeState} answerFeedback={{ ...feedback, questionId: 8, streak: 3 }} />);
+    expect(screen.getByRole("status")).not.toBe(firstReward);
+    rerender(<StudentRaceHud runtimeState={runtimeState} />);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    null,
+    { questionId: 7, correct: false, scoreDelta: 0, streak: 0 },
+  ])("does not infer a reward from a speed or score increase", (answerFeedback) => {
+    render(<StudentRaceHud runtimeState={buildRuntimeState({ speed: 2, score: 1000 })} answerFeedback={answerFeedback} />);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("shows the first correct answer without inventing bonus points", () => {
+    render(
+      <StudentRaceHud
+        runtimeState={buildRuntimeState({ streak: 1 })}
+        answerFeedback={{ questionId: 1, correct: true, scoreDelta: 0, streak: 1 }}
+      />,
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(i18n.t("studentRace:reward.correctTitle"));
+    expect(screen.queryByText(i18n.t("studentRace:reward.points"))).not.toBeInTheDocument();
+  });
+
+  it("lets the finish presentation take precedence over a final correct answer", () => {
+    const runtimeState = { ...buildRuntimeState(), playerFinished: true };
+    render(
+      <StudentRaceHud
+        runtimeState={runtimeState}
+        answerFeedback={{ questionId: 1, correct: true, scoreDelta: 20, streak: 3 }}
+      />,
+    );
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 });

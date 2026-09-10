@@ -1,131 +1,82 @@
 import { useTranslation } from "react-i18next";
-import { StarIcon, TrophyIcon, ZapIcon } from "lucide-react";
+import { FlagIcon, FlameIcon, TrophyIcon } from "lucide-react";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
-import { getRaceProgressRatio } from "../utils/getRaceProgressRatio";
+import { getStudentRaceHudModel } from "../utils/getStudentRaceHudModel";
 import StudentRaceQuestionTimer from "./StudentRaceQuestionTimer";
+import StudentRaceSpeedometer from "./StudentRaceSpeedometer";
+import StudentRaceReward from "./StudentRaceReward";
+import "../styles/studentRaceHud.css";
 
-/*
- * StudentRaceHud (C1-04) — presentation-only view of server-owned gameplay
- * state inside the HUD safe area:
- *
- *   [SCORE]        [TIMER]        [STREAK]
- *   [ progress bar ──────── %   ⚡ speed ]
- *
- * Every number comes straight from runtimeState (applyRaceSnapshot output);
- * no game rules, no local counters. The timer stays the ONE existing
- * StudentRaceQuestionTimer. Deliberately absent until their server
- * contracts exist: rank (S1-02), effect badge (no authoritative
- * activeEffect on the wire yet), currentDifficulty (not core HUD).
- */
-
-function HudStatChip({ icon: Icon, label, accentVar, children }) {
+function HudStatChip({ icon: Icon, label, value, accessibleLabel }) {
   return (
-    <div className="flex items-center gap-1.5 rounded-full bg-[var(--qw-surface)] px-3 py-1.5 shadow-[var(--qw-shadow-sm)]">
-      <Icon size={16} style={{ color: accentVar }} aria-hidden="true" />
-      <span className="sr-only">{label}</span>
-      <span
-        className="text-base font-bold leading-none tabular-nums text-[var(--qw-text)]"
-        dir="ltr"
-      >
-        {children}
-      </span>
+    <div className="race-hud-stat" aria-label={accessibleLabel}>
+      <div className="race-hud-stat-label">
+        <Icon aria-hidden="true" />
+        <span>{label}</span>
+      </div>
+      <span className="race-hud-stat-value" dir="ltr" title={value}>{value}</span>
     </div>
   );
 }
 
-export default function StudentRaceHud({ runtimeState = null, question = null }) {
-  const { t } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
+export default function StudentRaceHud({ runtimeState = null, question = null, answerFeedback = null }) {
+  const { t, i18n } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
+  const hud = getStudentRaceHudModel(runtimeState, i18n.resolvedLanguage, answerFeedback);
 
-  if (!runtimeState) {
-    return null;
-  }
-
-  const { score, streak, speed } = runtimeState.player;
-  const progressRatio = getRaceProgressRatio(
-    runtimeState.player.position,
-    runtimeState.totalDistance,
-  );
-  const progressPercent =
-    progressRatio == null ? null : Math.round(progressRatio * 100);
+  if (hud == null) return null;
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-        <div className="justify-self-start">
+    <div className="student-race-hud" style={hud.style} data-reward={hud.reward != null}>
+      <div className="race-hud-top">
+        <HudStatChip key={hud.rewardKey} icon={TrophyIcon} label={t("hud.scoreLabel")} value={hud.scoreText} />
+        {question ? <StudentRaceQuestionTimer {...question} /> : <span aria-hidden="true" />}
+        {hud.rankText != null ? (
           <HudStatChip
-            icon={TrophyIcon}
-            label={t("hud.scoreLabel")}
-            accentVar="var(--qw-gold)"
-          >
-            {score}
-          </HudStatChip>
-        </div>
-        {question ? (
-          <StudentRaceQuestionTimer
-            expiresAtEpochMs={question.expiresAtEpochMs}
-            serverClockOffsetMs={question.serverClockOffsetMs}
-            timeLimitSeconds={question.timeLimitSeconds}
+            icon={FlagIcon}
+            label={t("hud.rankLabel")}
+            value={hud.rankText}
+            accessibleLabel={t("hud.rankValue", { rank: hud.rank, count: hud.playerCount })}
           />
-        ) : (
-          <span aria-hidden="true" />
-        )}
-        <div className="justify-self-end">
-          <HudStatChip
-            icon={StarIcon}
-            label={t("hud.streakLabel")}
-            accentVar="var(--qw-accent)"
-          >
-            {`×${streak}`}
-          </HudStatChip>
+        ) : <span aria-hidden="true" />}
+      </div>
+      <div className="race-hud-telemetry">
+        <div
+          key={hud.rewardKey}
+          className="race-hud-combo"
+          data-active={hud.isCombo}
+          data-celebrating={hud.reward != null}
+          aria-label={t("hud.streakValue", { count: hud.streak })}
+        >
+          <FlameIcon aria-hidden="true" />
+          <div className="race-hud-combo-copy">
+            <span className="race-hud-combo-label">{t(hud.streakLabelKey)}</span>
+            <strong dir="ltr">{hud.streakText}</strong>
+          </div>
         </div>
-      </div>
-
-      <div className="flex items-center gap-2 rounded-full bg-[var(--qw-surface)] px-3 py-1 shadow-[var(--qw-shadow-sm)]">
-        {progressPercent != null ? (
-          <>
-            <div
-              className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-[var(--qw-border)]"
-              role="progressbar"
-              aria-label={t("hud.progressLabel")}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={progressPercent}
-            >
+        <div className="race-hud-progress">
+          {hud.progressPercent != null ? (
+            <>
+              <div className="race-hud-progress-caption">
+                <span>{t("hud.progressShortLabel")}</span>
+                <span dir="ltr" aria-hidden="true">{hud.progressText}</span>
+              </div>
               <div
-                className="h-full rounded-full bg-[var(--qw-primary)]"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-            <span
-              className="text-xs font-bold leading-none tabular-nums text-[var(--qw-text)]"
-              dir="ltr"
-              aria-hidden="true"
-            >
-              {progressPercent}%
-            </span>
-          </>
-        ) : (
-          // Honest UI: no totalDistance yet → no invented progress.
-          <span className="min-w-0 flex-1" aria-hidden="true" />
-        )}
-        {Number.isFinite(speed) ? (
-          <span className="flex items-center gap-1">
-            <ZapIcon
-              size={14}
-              style={{ color: "var(--qw-primary)" }}
-              aria-hidden="true"
-            />
-            <span className="sr-only">{t("hud.speedLabel")}</span>
-            <span
-              className="text-xs font-bold leading-none tabular-nums text-[var(--qw-text)]"
-              dir="ltr"
-            >
-              {`×${speed.toFixed(1)}`}
-            </span>
-          </span>
-        ) : null}
+                className="race-hud-progress-track"
+                role="progressbar"
+                aria-label={t("hud.progressLabel")}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={hud.progressPercent}
+              >
+                <div className="race-hud-progress-fill" style={hud.progressStyle} />
+              </div>
+            </>
+          ) : null}
+        </div>
+        <StudentRaceSpeedometer speed={hud.speed} />
       </div>
+      <StudentRaceReward key={hud.rewardKey} reward={hud.reward} />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { MantineProvider } from "@mantine/core";
 
 import i18n from "../../../i18n/i18n";
 import StudentRacePage from "./StudentRacePage";
+import StudentRaceContent from "../components/StudentRaceContent";
 import {
   getCurrentQuestion,
   getRaceState,
@@ -28,6 +29,11 @@ vi.mock("../pixi/PixiStudentRaceCanvas", () => ({
   default: () => <div data-testid="race-canvas" />,
 }));
 
+vi.mock("../components/StudentRaceContent", async (importOriginal) => {
+  const { default: Content } = await importOriginal();
+  return { default: vi.fn((props) => <Content {...props} />) };
+});
+
 function waitingReconnectResponse() {
   return {
     outcome: "WAITING_FOR_RACE",
@@ -43,6 +49,14 @@ function waitingRaceStateResponse() {
     raceId: 7,
     raceTitle: "Jungle Cup",
     roomCode: "ABC123",
+    player: {
+      racePlayerId: 91,
+      displayName: "Noa",
+      laneNumber: 3,
+      vehicleTypeKey: "TOY_CAR",
+      vehicleColorKey: "GREEN",
+      vehicleAssetKey: "TOY_CAR_GREEN",
+    },
     snapshot: {
       raceStatus: "WAITING_FOR_PLAYERS",
       playerStatus: "WAITING",
@@ -137,6 +151,49 @@ function renderPage() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+it("forwards the accepted answer feedback through question props only for its dwell", async () => {
+  vi.useFakeTimers();
+  try {
+    reconnectRacePlayer.mockResolvedValue(activeReconnectResponse());
+    const raceState = playingRaceStateResponse();
+    getRaceState.mockResolvedValue(raceState);
+    getCurrentQuestion.mockResolvedValueOnce(currentQuestionResponse())
+      .mockReturnValue(new Promise(() => {}));
+    heartbeatRacePlayer.mockResolvedValue({});
+    const snapshot = {
+      ...raceState.snapshot,
+      score: 30,
+      position: 10,
+      speed: 0.7,
+      movementUnitsPerSecond: 2.8,
+      streak: 3,
+      highestStreak: 3,
+      snapshotAtEpochMs: raceState.snapshot.snapshotAtEpochMs + 100,
+    };
+    submitAnswer.mockResolvedValue({
+      questionId: 17,
+      selectedChoiceId: 1,
+      correct: true,
+      correctAnswerChoiceId: null,
+      raceImpact: { scoreDelta: 10, snapshot },
+    });
+    renderPage();
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "7" })); });
+
+    expect(StudentRaceContent.mock.lastCall[0].questionProps.answerFeedback).toEqual({
+      questionId: 17, correct: true, scoreDelta: 10, streak: 3,
+    });
+    expect(StudentRaceContent.mock.lastCall[0].runtimeState.player.speed).toBe(0.7);
+    await act(async () => { await vi.advanceTimersByTimeAsync(STUDENT_RACE_CONFIG.feedbackDelayMs); });
+
+    expect(StudentRaceContent.mock.lastCall[0].questionProps.answerFeedback).toBeNull();
+    expect(submitAnswer).toHaveBeenCalledTimes(1);
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 describe("StudentRacePage — session-first gating", () => {

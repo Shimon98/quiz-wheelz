@@ -1,4 +1,5 @@
 import { RACE_VIEWS } from "../../../shared/racePlayer/getRaceView";
+import useStudentRaceFinishMoment from "../hooks/useStudentRaceFinishMoment";
 import StudentRaceScreen from "../layout/StudentRaceScreen";
 import StudentRaceStatusView from "./StudentRaceStatusView";
 import { STUDENT_RACE_STATUSES } from "./studentRaceStatusConfig";
@@ -12,6 +13,8 @@ export default function StudentRaceContent({
   showFinishMoment,
   questionProps,
 }) {
+  const isHoldingFinish = useStudentRaceFinishMoment(view);
+
   if (!runtimeState && isLoading) {
     return <StudentRaceStatusView status={STUDENT_RACE_STATUSES.LOADING} />;
   }
@@ -32,8 +35,7 @@ export default function StudentRaceContent({
     );
   }
 
-  // showFinishMoment keeps the finish visible for the feedback window.
-  if (view === RACE_VIEWS.PLAYING || showFinishMoment) {
+  if (view === RACE_VIEWS.PLAYING || showFinishMoment || isHoldingFinish) {
     return <StudentRaceScreen runtimeState={runtimeState} {...questionProps} />;
   }
 

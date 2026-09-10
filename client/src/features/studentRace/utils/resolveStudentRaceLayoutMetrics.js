@@ -11,7 +11,7 @@ import { STUDENT_RACE_VISUAL_CONFIG } from "../config/raceVisualConfig";
  * resize only.
  */
 export function resolveStudentRaceLayoutMetrics({ width, height }) {
-  const { layout, playerKart } = STUDENT_RACE_VISUAL_CONFIG;
+  const { layout, playerKart, camera } = STUDENT_RACE_VISUAL_CONFIG;
   const panelConfig = layout.questionPanel;
 
   // Mirrors the DOM panel's CSS clamp(minHeight, ratio*100dvh, maxHeight).
@@ -24,6 +24,10 @@ export function resolveStudentRaceLayoutMetrics({ width, height }) {
   // The world is composed against the visible strip above the panel, plus
   // the small overlap peeking behind the panel's rounded top.
   const worldBottomY = questionPanelTopY + panelConfig.topOverlap;
+  const widthUnit = Math.min(
+    width,
+    worldBottomY * camera.widthUnitWorldHeightRatio,
+  );
 
   const anchorY = worldBottomY * layout.world.playerKartAnchorYRatio;
 
@@ -38,12 +42,13 @@ export function resolveStudentRaceLayoutMetrics({ width, height }) {
       topY: 0,
       bottomY: worldBottomY,
       height: worldBottomY,
+      widthUnit,
     },
 
     playerKart: {
       anchorX: width * playerKart.screenXRatio,
       anchorY,
-      maxWidth: width * playerKart.maxWidthRatio,
+      maxWidth: widthUnit * playerKart.maxWidthRatio,
       // Dust spawns just behind the kart, in visible-world units.
       dustOriginY: anchorY + worldBottomY * 0.045,
     },

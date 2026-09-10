@@ -1,0 +1,321 @@
+.student-race-hud,
+.race-hud-timer {
+  --race-hud-gold: color-mix(in srgb, var(--qw-accent) 50%, var(--qw-text));
+  --race-hud-surface-top: color-mix(in srgb, var(--qw-surface-alt) 92%, var(--qw-accent));
+  --race-hud-border: color-mix(in srgb, var(--qw-accent) 64%, var(--qw-border));
+  --race-hud-highlight: color-mix(in srgb, var(--qw-white) 20%, transparent);
+  --race-hud-depth: color-mix(in srgb, var(--qw-navy) 44%, transparent);
+  --race-hud-text-shadow: color-mix(in srgb, var(--qw-surface) 75%, transparent);
+}
+
+.student-race-hud {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+  color: var(--qw-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.race-hud-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(88px, 1.18fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.race-hud-stat,
+.race-hud-timer,
+.race-hud-telemetry {
+  background: linear-gradient(180deg, var(--race-hud-surface-top), var(--qw-surface));
+  border: 1px solid var(--race-hud-border);
+  box-shadow: inset 0 1px 0 var(--race-hud-highlight), 0 3px 0 var(--race-hud-depth), var(--qw-shadow-sm);
+}
+
+.race-hud-stat {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 5px 6px;
+  border-radius: 12px 12px 17px 17px;
+}
+
+.race-hud-stat-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--race-hud-gold);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.race-hud-stat-label svg {
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+
+.race-hud-stat-value {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: clamp(16px, 4.5vw, 21px);
+  font-weight: 900;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 2px 0 var(--race-hud-text-shadow);
+}
+
+.race-hud-timer {
+  --race-timer-accent: var(--race-hud-gold, var(--qw-gold));
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 7px 10px 8px;
+  color: var(--qw-text);
+  border-width: 2px;
+  border-radius: 15px;
+}
+
+.race-hud-timer[data-urgency="warning"] {
+  --race-timer-accent: color-mix(in srgb, var(--qw-warning) 60%, var(--qw-text));
+}
+
+.race-hud-timer[data-urgency="danger"] {
+  --race-timer-accent: color-mix(in srgb, var(--qw-error) 85%, var(--qw-text));
+}
+
+.race-hud-timer-face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: var(--race-timer-accent);
+}
+
+.race-hud-timer-face svg {
+  width: 21px;
+  height: 21px;
+  flex: none;
+}
+
+.race-hud-timer-value {
+  font-size: clamp(20px, 5.5vw, 27px);
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 0 var(--race-hud-text-shadow);
+}
+
+.race-hud-timer-track,
+.race-hud-progress-track {
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--qw-border);
+  box-shadow: inset 0 1px 2px var(--race-hud-depth);
+}
+
+.race-hud-timer-track {
+  height: 5px;
+}
+
+.race-hud-timer-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--race-timer-accent);
+}
+
+.race-hud-telemetry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 4px 10px;
+  border-color: color-mix(in srgb, var(--race-hud-border) 65%, var(--qw-border));
+  border-radius: 11px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.race-hud-combo {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 62px;
+  flex: none;
+  color: var(--qw-text-muted);
+  white-space: nowrap;
+}
+
+.race-hud-combo[data-active="true"] {
+  color: var(--race-hud-gold);
+}
+
+.race-hud-combo svg {
+  width: 23px;
+  height: 29px;
+  flex: none;
+}
+
+.race-hud-combo[data-active="true"] svg {
+  fill: color-mix(in srgb, var(--qw-accent) 24%, transparent);
+}
+
+.race-hud-combo-copy {
+  display: grid;
+  gap: 3px;
+}
+
+.race-hud-combo-label {
+  font-size: 10px;
+}
+
+.race-hud-combo-copy strong {
+  font-size: 23px;
+  font-weight: 900;
+}
+
+.race-hud-progress {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  flex: 1;
+}
+
+.race-hud-progress-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  color: var(--qw-text-muted);
+  font-size: 10px;
+}
+
+.race-hud-progress-track {
+  height: 7px;
+  min-width: 0;
+}
+
+.race-hud-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--race-hud-gold), var(--qw-accent));
+}
+
+.race-hud-reward {
+  --race-reward-color: color-mix(in srgb, var(--qw-success) 55%, var(--qw-text));
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + 12px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: max-content;
+  max-width: calc(100% - 12px);
+  margin-inline: auto;
+  padding: 8px 15px;
+  color: var(--qw-text);
+  background: linear-gradient(135deg, var(--qw-surface), color-mix(in srgb, var(--qw-surface) 90%, var(--qw-success)));
+  border: 2px solid var(--race-hud-border);
+  border-radius: 18px 8px 18px 8px;
+  box-shadow: 0 4px 0 var(--race-hud-depth), var(--qw-shadow-md);
+  animation: race-reward-arrive var(--race-reward-duration) ease-out both;
+}
+
+.race-hud-reward[data-kind="combo"] {
+  --race-reward-color: var(--race-hud-gold);
+  background: linear-gradient(135deg, var(--qw-surface), color-mix(in srgb, var(--qw-surface) 85%, var(--qw-accent)));
+}
+
+.race-hud-reward-medal {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  color: var(--race-reward-color);
+}
+
+.race-hud-reward-spark {
+  position: absolute;
+  top: -10px;
+  inset-inline-end: -10px;
+  width: 22px;
+  height: 22px;
+  color: var(--race-hud-gold);
+  fill: var(--qw-surface);
+}
+
+.race-hud-reward-copy,
+.race-hud-reward-points {
+  display: grid;
+  gap: 2px;
+}
+
+.race-hud-reward-copy strong {
+  color: var(--race-reward-color);
+  font-size: 19px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.race-hud-reward-copy span,
+.race-hud-reward-points span {
+  color: var(--qw-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.race-hud-reward-points {
+  padding-inline-start: 12px;
+  border-inline-start: 1px solid var(--race-hud-border);
+  text-align: center;
+}
+
+.race-hud-reward-points strong {
+  font-size: 23px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.student-race-hud[data-reward="true"] .race-hud-top > .race-hud-stat:first-child,
+.race-hud-combo[data-celebrating="true"] {
+  animation: race-hud-reward-pulse var(--race-reward-duration) ease-out both;
+}
+
+@keyframes race-reward-arrive {
+  0% { opacity: 0; transform: translateY(8px) scale(.9); }
+  18% { opacity: 1; transform: translateY(0) scale(1.04); }
+  32%, 80% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-5px) scale(.98); }
+}
+
+@keyframes race-hud-reward-pulse {
+  0%, 100% { transform: scale(1); }
+  22% { transform: scale(1.08); }
+  45% { transform: scale(1); }
+}
+
+@media (max-width: 360px), (max-height: 600px) {
+  .student-race-hud { gap: 5px; }
+  .race-hud-top { gap: 6px; }
+  .race-hud-timer { padding: 6px 7px; }
+  .race-hud-timer-value { font-size: 22px; }
+  .race-hud-telemetry { gap: 8px; padding: 3px 8px; }
+  .race-hud-combo { min-width: 56px; gap: 3px; }
+  .race-hud-combo svg { width: 20px; }
+  .race-hud-combo-copy strong { font-size: 21px; }
+  .race-hud-reward { top: calc(100% + 8px); padding: 6px 10px; gap: 7px; }
+  .race-hud-reward-copy strong { font-size: 17px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .race-hud-reward,
+  .student-race-hud[data-reward="true"] .race-hud-top > .race-hud-stat:first-child,
+  .race-hud-combo[data-celebrating="true"] {
+    animation: none;
+  }
+}

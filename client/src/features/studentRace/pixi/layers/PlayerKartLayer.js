@@ -1,47 +1,50 @@
-import { Container, Graphics } from "pixi.js";
+import { Container, Graphics, Sprite } from "pixi.js";
 
-/*
- * The student's kart — SCREEN-FIXED at the anchors from
- * frameState.layout.playerKart (layout contract, G): anchored inside the
- * VISIBLE world area above the question panel, never a raw-screen ratio.
- * The world moves, the kart doesn't. Only cosmetic motion is allowed here
- * (speed bob/tilt), never movement derived from position.
- *
- * Placeholder drawing (a simple kart only, no monkey-from-shapes — the real
- * art replaces this wholesale). Drawn once at unit size, then scaled.
- */
+import {
+  loadStudentRaceVehicleAssets,
+  VEHICLE_ASSET_STATUS,
+} from "../assets/studentRaceVehicleAssets";
+
 const KART_BODY_COLOR = 0x37b24d;
 const KART_STRIPE_COLOR = 0x2b8a3e;
 const WHEEL_COLOR = 0x212529;
 const HELMET_COLOR = 0x339af0;
 const SHADOW_COLOR = 0x1d3557;
-// Unit-size drawing base (scaled to the configured width ratio per frame).
 const UNIT_WIDTH = 100;
 const UNIT_HEIGHT = 64;
-// Cosmetic bob: subtle, speed-driven.
+const GROUND_Y = UNIT_HEIGHT * 0.92;
 const BOB_FREQUENCY_MS = 95;
 const BOB_MAX_PX = 2.5;
+const ART_REVEAL_MS = 120;
 
 export class PlayerKartLayer {
-  constructor(container) {
+  constructor(container, { loadVehicleAssets = loadStudentRaceVehicleAssets } = {}) {
     this.elapsedMs = 0;
+    this.loadVehicleAssets = loadVehicleAssets;
+    this.requestedVehicleAssetKey = null;
+    this.assetRequestId = 0;
+    this.destroyed = false;
+    this.artSprite = null;
+    this.artRevealMs = 0;
 
     this.root = new Container();
     container.addChild(this.root);
 
-    // Shadow under the kart — separate so the bob doesn't move it.
     this.shadow = new Graphics()
-      .ellipse(UNIT_WIDTH / 2, UNIT_HEIGHT * 0.92, UNIT_WIDTH * 0.52, 9)
+      .ellipse(UNIT_WIDTH / 2, GROUND_Y, UNIT_WIDTH * 0.52, 9)
       .fill({ color: SHADOW_COLOR, alpha: 0.25 });
+    this.shadow.visible = false;
 
-    this.kart = new Graphics();
-    this.drawKart(this.kart);
+    this.kart = new Container();
+    this.placeholder = new Graphics();
+    this.drawPlaceholder(this.placeholder);
+    this.placeholder.visible = false;
+    this.kart.addChild(this.placeholder);
 
     this.root.addChild(this.shadow, this.kart);
   }
 
-  drawKart(g) {
-    // Rear wheels (big, like the over-the-shoulder reference art).
+  drawPlaceholder(g) {
     g.roundRect(-6, UNIT_HEIGHT * 0.45, 22, UNIT_HEIGHT * 0.5, 7).fill(
       WHEEL_COLOR,
     );
@@ -52,8 +55,6 @@ export class PlayerKartLayer {
       UNIT_HEIGHT * 0.5,
       7,
     ).fill(WHEEL_COLOR);
-
-    // Body.
     g.roundRect(4, UNIT_HEIGHT * 0.3, UNIT_WIDTH - 8, UNIT_HEIGHT * 0.6, 12)
       .fill(KART_BODY_COLOR);
     g.roundRect(
@@ -63,20 +64,80 @@ export class PlayerKartLayer {
       UNIT_HEIGHT * 0.18,
       6,
     ).fill(KART_STRIPE_COLOR);
-
-    // Driver helmet dome peeking above the body.
     g.ellipse(UNIT_WIDTH / 2, UNIT_HEIGHT * 0.22, UNIT_WIDTH * 0.16, 14).fill(
       HELMET_COLOR,
     );
   }
 
-  resize() {
-    // Placement derives from frameState width/height on the next update.
+  resize() {}
+
+  setVehicleAssetKey(nextKey) {
+    if (typeof nextKey !== "string" || nextKey === "") {
+      return;
+    }
+    if (nextKey === this.requestedVehicleAssetKey) {
+      return;
+    }
+
+    this.requestedVehicleAssetKey = nextKey;
+    this.clearVehicleArt();
+    this.requestVehicleArt(nextKey);
+  }
+
+  async requestVehicleArt(vehicleAssetKey) {
+    const requestId = ++this.assetRequestId;
+    const result = await this.loadVehicleAssets(vehicleAssetKey);
+
+    if (this.destroyed || requestId !== this.assetRequestId) {
+      return;
+    }
+
+    this.showVehicleArt(
+      result.status === VEHICLE_ASSET_STATUS.LOADED ? result : null,
+    );
+  }
+
+  clearVehicleArt() {
+    this.artSprite?.destroy();
+    this.artSprite = null;
+    this.placeholder.visible = false;
+    this.shadow.visible = false;
+  }
+
+  showVehicleArt(loadedResult) {
+    this.clearVehicleArt();
+    this.shadow.visible = true;
+
+    if (loadedResult == null) {
+      this.placeholder.visible = true;
+      return;
+    }
+
+    this.artSprite = this.createArtSprite(
+      loadedResult.textures[0],
+      loadedResult.definition,
+    );
+    this.artSprite.alpha = 0;
+    this.artRevealMs = 0;
+    this.kart.addChild(this.artSprite);
+  }
+
+  createArtSprite(texture, { anchorX, anchorY, baseScale }) {
+    const sprite = new Sprite(texture);
+    sprite.anchor.set(anchorX, anchorY);
+    sprite.scale.set((UNIT_WIDTH * baseScale) / texture.width);
+    sprite.position.set(UNIT_WIDTH / 2, GROUND_Y);
+    return sprite;
   }
 
   update(frameState) {
-    const { visualSpeed, deltaMs, layout } = frameState;
+    const { visualSpeed, deltaMs, layout, runtimeState } = frameState;
     this.elapsedMs += deltaMs;
+
+    if (this.artSprite != null && this.artSprite.alpha < 1) {
+      this.artRevealMs += deltaMs;
+      this.artSprite.alpha = Math.min(1, this.artRevealMs / ART_REVEAL_MS);
+    }
 
     const kartWidth = layout.playerKart.maxWidth;
     const scale = kartWidth / UNIT_WIDTH;
@@ -84,8 +145,9 @@ export class PlayerKartLayer {
     this.root.x = layout.playerKart.anchorX - kartWidth / 2;
     this.root.y = layout.playerKart.anchorY - (UNIT_HEIGHT * scale) / 2;
 
-    // Cosmetic speed bob — visual only, never real movement.
-    const bobStrength = Math.min(1, Math.abs(visualSpeed) / 2);
+    const bobStrength = runtimeState?.visual?.reducedMotion === true
+      ? 0
+      : Math.min(1, Math.abs(visualSpeed) / 2);
     this.kart.y =
       Math.sin(this.elapsedMs / BOB_FREQUENCY_MS) * BOB_MAX_PX * bobStrength;
     this.kart.rotation =
@@ -95,6 +157,7 @@ export class PlayerKartLayer {
   }
 
   destroy() {
+    this.destroyed = true;
     this.root.destroy({ children: true });
   }
 }

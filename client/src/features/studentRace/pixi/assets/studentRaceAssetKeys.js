@@ -6,6 +6,7 @@
  */
 export const STUDENT_RACE_ASSET_KEYS = Object.freeze({
   JUNGLE_BACKGROUND_FAR: "jungleBackgroundFar",
+  JUNGLE_GROUND: "jungleGround",
   JUNGLE_BACKGROUND_MID: "jungleBackgroundMid",
   JUNGLE_FOREGROUND_LEAVES: "jungleForegroundLeaves",
 
@@ -19,5 +20,5 @@ export const STUDENT_RACE_ASSET_KEYS = Object.freeze({
   WRONG_EFFECT: "wrongEffect",
 
   FINISH_LINE: "finishLine",
-  SMALL_TRACK_PROP: "smallTrackProp",
+  SCENERY_PROPS: "sceneryProps",
 });

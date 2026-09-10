@@ -75,6 +75,14 @@ Create race
 
 ## Phase 2 — Teacher live race and SSE
 
+Client checkpoint carried from Phase 1 (2026-09-08): the local C1 development
+milestone is accepted for progression to C2. The next student-side work is
+opponent rendering using the available S1-02 contract, then C2-A sound polish
+(engine, accepted-answer/combo/finish feedback, mute and volume). These are
+ordered in `../02-client/CLIENT_IMPLEMENTATION_PLAN.md`; sound is planned,
+not implemented. Remaining browser/device checks stay required before release.
+This checkpoint does not claim that the working branch has merged into `main`.
+
 **Goal:** the projected teacher screen shows all active players in real time.
 
 Server:
