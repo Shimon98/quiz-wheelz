@@ -1,4 +1,8 @@
-import { OpponentKart } from "../opponents/OpponentKart.js";
+import { OpponentKart, OPPONENT_VISIBILITY_STATES as STATES } from "../opponents/OpponentKart.js";
+import { STUDENT_RACE_VISUAL_CONFIG } from "../../config/raceVisualConfig.js";
+
+const ZONES = STUDENT_RACE_VISUAL_CONFIG.viewDepthZones;
+const DENSITY = STUDENT_RACE_VISUAL_CONFIG.opponents.density;
 
 export class OpponentLayer {
   constructor(container, options) {
@@ -7,6 +11,8 @@ export class OpponentLayer {
     this.byPlayerId = new Map();
     this.pool = [];
     this.runtimeIdentity = null;
+    this.selected = new Map();
+    this.zones = new Map();
   }
 
   acquire() {
@@ -15,6 +21,8 @@ export class OpponentLayer {
 
   release(id, kart) {
     this.byPlayerId.delete(id);
+    this.selected.delete(id);
+    this.zones.delete(id);
     kart.reset();
     this.pool.push(kart);
   }
@@ -35,7 +43,7 @@ export class OpponentLayer {
         kart.assignIdentity(opponent.racePlayerId);
         this.byPlayerId.set(opponent.racePlayerId, kart);
       }
-      kart.applySnapshot(opponent, runtime.lastSnapshotAtEpochMs);
+      kart.applySnapshot(opponent, runtime.lastSnapshotAtEpochMs, runtime.totalDistance ?? Infinity);
     }
     for (const [id, kart] of this.byPlayerId) {
       if (!activeIds.has(id)) kart.beginAuthoritativeRemoval();
@@ -44,10 +52,45 @@ export class OpponentLayer {
 
   resize() {}
 
-  update(frame) {
+  zoneFor(kart) {
+    const depth = kart.projected?.visible ? kart.projected.depth : null;
+    const previous = this.zones.get(kart.racePlayerId);
+    if (depth == null) return previous;
+    const held = previous && depth >= ZONES[previous].minDepth - DENSITY.zoneHysteresis &&
+      (previous === "near" || depth <= ZONES[previous].maxDepth + DENSITY.zoneHysteresis);
+    const zone = held ? previous : depth < ZONES.far.maxDepth ? "far" : depth < ZONES.mid.maxDepth ? "mid" : "near";
+    this.zones.set(kart.racePlayerId, zone);
+    return zone;
+  }
+
+  selectDrawable(frame) {
+    const next = new Map();
+    const candidates = { near: [], mid: [], far: [] };
     for (const [id, kart] of this.byPlayerId) {
-      kart.update(frame);
-      if (kart.releasable && (!kart.finishReleased || kart.removed)) this.release(id, kart);
+      const zone = this.zoneFor(kart);
+      const retained = this.selected.has(id) && kart.visibilityState !== STATES.HIDDEN;
+      const laneFits = zone === "far" || kart.laneOffsetMagnitude <= frame.laneLimits[zone];
+      if (zone && laneFits && !kart.removed && (kart.canEnter || retained)) candidates[zone].push(kart);
+    }
+    const laneDistance = (kart) => Math.abs(kart.laneNumber - frame.runtimeState.player.laneNumber);
+    for (const zone of Object.keys(candidates)) {
+      const incumbent = (kart) => this.selected.get(kart.racePlayerId) === zone ? 0
+        : kart.visibilityState === STATES.HIDDEN ? 2 : 1;
+      candidates[zone].sort((a, b) => incumbent(a) - incumbent(b) ||
+        (zone === "near" ? laneDistance(a) - laneDistance(b) : Math.abs(a.relativeDistance) - Math.abs(b.relativeDistance)) ||
+        (zone === "near" ? Math.abs(a.relativeDistance) - Math.abs(b.relativeDistance) : laneDistance(a) - laneDistance(b)) ||
+        a.racePlayerId - b.racePlayerId);
+      for (const kart of candidates[zone].slice(0, DENSITY[`${zone}MaxVisible`])) next.set(kart.racePlayerId, zone);
+    }
+    this.selected = next;
+  }
+
+  update(frame) {
+    for (const kart of this.byPlayerId.values()) kart.prepareFrame(frame);
+    this.selectDrawable(frame);
+    for (const [id, kart] of this.byPlayerId) {
+      kart.presentFrame(frame, this.selected.has(id));
+      if (kart.releasable && kart.removed) this.release(id, kart);
     }
   }
 
@@ -56,5 +99,7 @@ export class OpponentLayer {
     this.pool.forEach((kart) => kart.destroy());
     this.byPlayerId.clear();
     this.pool.length = 0;
+    this.selected.clear();
+    this.zones.clear();
   }
 }

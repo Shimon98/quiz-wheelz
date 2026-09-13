@@ -56,7 +56,8 @@ import static org.mockito.Mockito.when;
         RaceLiveEventChangeRecorder.class, RaceLiveEventRecorder.class, RaceLiveEventService.class,
         RaceLiveEventPayloadCodec.class, RaceLiveMutationGate.class, RaceLiveMutationTracker.class,
         TeacherRaceLivePlayerSnapshotService.class, RaceStandingCalculator.class,
-        StudentRaceStandingService.class, StudentRaceRuntimeSnapshotMapper.class,
+        StudentRaceStandingService.class,
+        StudentRaceStandingProjectionService.class, StudentRaceRuntimeSnapshotMapper.class,
         RaceFinishOrderPolicy.class, RaceChronologyIntegrationFixture.TimeConfiguration.class
 })
 abstract class RaceChronologyIntegrationFixture {

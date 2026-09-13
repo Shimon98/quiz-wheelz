@@ -1,4 +1,6 @@
 import { Container, Graphics, Sprite } from "pixi.js";
+import { STUDENT_RACE_VISUAL_CONFIG } from "../../config/raceVisualConfig.js";
+import { resolveStudentRaceVehicleAsset } from "../assets/studentRaceVehicleAssets.js";
 
 import {
   loadStudentRaceVehicleAssets,
@@ -45,7 +47,8 @@ export class StudentRaceVehicleVisual {
     this.root.addChild(this.shadow, this.kart);
   }
 
-  drawPlaceholder(g) {
+  drawPlaceholder(g, bodyColor = KART_BODY_COLOR) {
+    g.clear();
     g.roundRect(-6, UNIT_HEIGHT * 0.45, 22, UNIT_HEIGHT * 0.5, 7).fill(
       WHEEL_COLOR,
     );
@@ -57,7 +60,7 @@ export class StudentRaceVehicleVisual {
       7,
     ).fill(WHEEL_COLOR);
     g.roundRect(4, UNIT_HEIGHT * 0.3, UNIT_WIDTH - 8, UNIT_HEIGHT * 0.6, 12)
-      .fill(KART_BODY_COLOR);
+      .fill(bodyColor);
     g.roundRect(
       UNIT_WIDTH * 0.3,
       UNIT_HEIGHT * 0.34,
@@ -81,6 +84,7 @@ export class StudentRaceVehicleVisual {
     }
 
     this.requestedVehicleAssetKey = nextKey;
+    this.drawPlaceholder(this.placeholder, resolveStudentRaceVehicleAsset(nextKey)?.bodyColor);
     this.clearVehicleArt();
     this.requestVehicleArt(nextKey);
   }
@@ -131,9 +135,10 @@ export class StudentRaceVehicleVisual {
     return sprite;
   }
 
-  setGroundTransform({ x, y, width, alpha = 1, zIndex = 0 }) {
+  setGroundTransform({ x, y, width, alpha = 1, zIndex = 0,
+    visualScale = STUDENT_RACE_VISUAL_CONFIG.playerKart.visualScale }) {
     this.root.position.set(x, y);
-    this.root.scale.set(width / UNIT_WIDTH);
+    this.root.scale.set(width / UNIT_WIDTH * visualScale);
     this.root.alpha = alpha;
     this.root.zIndex = zIndex;
   }
@@ -150,7 +155,11 @@ export class StudentRaceVehicleVisual {
   }
 
   getBounds() {
-    return this.root.getBounds();
+    const visible = this.root.visible;
+    this.root.visible = true;
+    const bounds = this.root.getBounds();
+    this.root.visible = visible;
+    return bounds;
   }
 
   setVisible(visible) {
@@ -170,6 +179,7 @@ export class StudentRaceVehicleVisual {
 
   destroy() {
     this.destroyed = true;
+    this.clearVehicleArt();
     this.root.destroy({ children: true });
   }
 }

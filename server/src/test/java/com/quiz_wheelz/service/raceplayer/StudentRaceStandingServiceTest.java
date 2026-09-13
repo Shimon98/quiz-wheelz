@@ -2,9 +2,17 @@ package com.quiz_wheelz.service.raceplayer;
 
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
+import com.quiz_wheelz.enums.PlayerQuestionStatus;
 import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
+import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
+import com.quiz_wheelz.service.question.QuestionTimeoutService;
+import com.quiz_wheelz.service.raceengine.RaceMovementCalculator;
+import com.quiz_wheelz.service.raceengine.RaceMovementCalculator.Projection;
+import com.quiz_wheelz.service.raceengine.RaceMovementService;
+import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
+import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService.GameplayPresenceDecision;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,19 +21,27 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,9 +49,13 @@ class StudentRaceStandingServiceTest {
 
     private static final long FINISH_EPOCH_MS = 1_787_048_000_000L;
     private static final long ANCHOR_EPOCH_MS = 1_787_047_000_000L;
+    private static final long DECISION_EPOCH_MS = ANCHOR_EPOCH_MS + 10_000L;
 
     @Mock
     private RacePlayerRepository racePlayerRepository;
+
+    @Mock
+    private StudentRaceStandingProjectionService standingProjectionService;
 
     private Race race;
     private StudentRaceStandingService standingService;
@@ -49,7 +69,8 @@ class StudentRaceStandingServiceTest {
         race.setMaxPlayers(8);
         standingService = new StudentRaceStandingService(
                 racePlayerRepository,
-                new RaceStandingCalculator(ZoneOffset.UTC)
+                new RaceStandingCalculator(ZoneOffset.UTC),
+                standingProjectionService
         );
     }
 
@@ -60,7 +81,7 @@ class StudentRaceStandingServiceTest {
         preparePlayers(players);
         RacePlayer current = players.get(raceSize - 1);
 
-        StudentRaceStandingResult result = standingService.calculate(current);
+        StudentRaceStandingResult result = calculate(current);
 
         assertEquals(raceSize, result.playerCount());
         assertEquals(raceSize - 1, result.opponents().size());
@@ -71,6 +92,7 @@ class StudentRaceStandingServiceTest {
             assertFalse(current.getId().equals(opponent.racePlayerId()));
         }
         verify(racePlayerRepository, times(1)).findByRaceOrderByLaneNumberAsc(race);
+        verify(standingProjectionService).projectAt(players, current.getId(), DECISION_EPOCH_MS);
     }
 
     @Test
@@ -78,7 +100,7 @@ class StudentRaceStandingServiceTest {
         List<RacePlayer> players = activePlayers(8);
         preparePlayers(players);
 
-        StudentRaceStandingResult result = standingService.calculate(players.get(3));
+        StudentRaceStandingResult result = calculate(players.get(3));
 
         assertEquals(List.of(1L, 2L, 3L, 5L, 6L, 7L, 8L), opponentIds(result));
         assertEquals(List.of(1, 2, 3, 5, 6, 7, 8), result.opponents().stream()
@@ -98,7 +120,69 @@ class StudentRaceStandingServiceTest {
     }
 
     @Test
-    void preloadedRosterOverloadRanksWithoutRepositoryAccess() {
+    void projectedComparisonModelDecidesRankAndEmitsProjectedPositionAndAnchor() {
+        RacePlayer current = player(1L, 100.0, RacePlayerStatus.RACING);
+        current.setMovementUpdatedAtEpochMs(DECISION_EPOCH_MS);
+        RacePlayer stale = player(2L, 96.0, RacePlayerStatus.RACING);
+        RacePlayer behind = player(3L, 90.0, RacePlayerStatus.RACING);
+        preparePlayers(List.of(current, stale, behind));
+        when(standingProjectionService.projectAt(List.of(current, stale, behind), 1L, DECISION_EPOCH_MS))
+                .thenReturn(Map.of(
+                        2L, new Projection(100.0, DECISION_EPOCH_MS, null),
+                        3L, new Projection(94.0, DECISION_EPOCH_MS - 500L, null)
+                ));
+
+        StudentRaceStandingResult result = calculate(current);
+
+        assertEquals(1, result.rank());
+        assertEquals(List.of(2L, 3L), opponentIds(result));
+        StudentRaceStandingResult.Opponent tied = result.opponents().get(0);
+        assertEquals(1, tied.rank());
+        assertEquals(100.0, tied.position());
+        assertEquals(DECISION_EPOCH_MS, tied.positionAtEpochMs());
+        StudentRaceStandingResult.Opponent trailing = result.opponents().get(1);
+        assertEquals(3, trailing.rank());
+        assertEquals(94.0, trailing.position());
+        assertEquals(DECISION_EPOCH_MS - 500L, trailing.positionAtEpochMs());
+        var snapshot = new StudentRaceRuntimeSnapshotMapper().fromRacePlayer(
+                current, result, DECISION_EPOCH_MS, 1L
+        );
+        assertEquals(4.0, snapshot.getOpponents().get(0).getMovementUnitsPerSecond());
+        assertEquals(0.0, snapshot.getOpponents().get(1).getMovementUnitsPerSecond());
+        assertEquals(1.0, behind.getSpeed());
+        assertEquals(96.0, stale.getPosition());
+        assertEquals(ANCHOR_EPOCH_MS + 2, stale.getMovementUpdatedAtEpochMs());
+    }
+
+    @Test
+    void differentAnchorsRepresentingOnePositionTieForEitherRequester() {
+        StudentRaceStandingService realService = new StudentRaceStandingService(
+                racePlayerRepository,
+                new RaceStandingCalculator(ZoneOffset.UTC),
+                realProjectionService()
+        );
+        RacePlayer settled = player(1L, 100.0, RacePlayerStatus.RACING);
+        settled.setMovementUpdatedAtEpochMs(DECISION_EPOCH_MS);
+        RacePlayer stale = player(2L, 96.0, RacePlayerStatus.RACING);
+        stale.setMovementUpdatedAtEpochMs(DECISION_EPOCH_MS - 1_000L);
+        preparePlayers(List.of(settled, stale));
+
+        StudentRaceStandingResult seenBySettled = realService.calculate(settled, DECISION_EPOCH_MS);
+        stale.setPosition(100.0);
+        stale.setMovementUpdatedAtEpochMs(DECISION_EPOCH_MS);
+        StudentRaceStandingResult seenByStale = realService.calculate(stale, DECISION_EPOCH_MS);
+
+        assertEquals(1, seenBySettled.rank());
+        assertEquals(1, seenBySettled.opponents().get(0).rank());
+        assertEquals(100.0, seenBySettled.opponents().get(0).position());
+        assertEquals(DECISION_EPOCH_MS, seenBySettled.opponents().get(0).positionAtEpochMs());
+        assertEquals(1, seenByStale.rank());
+        assertEquals(1, seenByStale.opponents().get(0).rank());
+        assertEquals(100.0, seenByStale.opponents().get(0).position());
+    }
+
+    @Test
+    void settledRosterOverloadRanksStoredPositionsWithoutProjectionOrRepositoryAccess() {
         List<RacePlayer> players = activePlayers(3);
 
         StudentRaceStandingResult result = standingService.calculate(players.get(1), players);
@@ -107,6 +191,7 @@ class StudentRaceStandingServiceTest {
         assertEquals(3, result.playerCount());
         assertEquals(List.of(1L, 3L), opponentIds(result));
         verify(racePlayerRepository, never()).findByRaceOrderByLaneNumberAsc(race);
+        verifyNoInteractions(standingProjectionService);
     }
 
     @Test
@@ -117,7 +202,7 @@ class StudentRaceStandingServiceTest {
         RacePlayer current = player(2L, 500.0, RacePlayerStatus.RACING);
         preparePlayers(List.of(current, finished));
 
-        StudentRaceStandingResult result = standingService.calculate(current);
+        StudentRaceStandingResult result = calculate(current);
 
         assertEquals(2, result.rank());
         StudentRaceStandingResult.Opponent opponent = result.opponents().get(0);
@@ -134,7 +219,7 @@ class StudentRaceStandingServiceTest {
         current.setMovementUpdatedAtEpochMs(null);
         preparePlayers(List.of(current, waiting));
 
-        StudentRaceStandingResult result = standingService.calculate(current);
+        StudentRaceStandingResult result = calculate(current);
 
         assertNull(result.opponents().get(0).positionAtEpochMs());
     }
@@ -148,9 +233,9 @@ class StudentRaceStandingServiceTest {
         RacePlayer third = player(2L, 400.0, RacePlayerStatus.RACING);
         preparePlayers(List.of(tiedWithHigherId, third, tiedWithLowerId));
 
-        assertEquals(1, standingService.calculate(tiedWithHigherId).rank());
-        assertEquals(1, standingService.calculate(tiedWithLowerId).rank());
-        assertEquals(3, standingService.calculate(third).rank());
+        assertEquals(1, calculate(tiedWithHigherId).rank());
+        assertEquals(1, calculate(tiedWithLowerId).rank());
+        assertEquals(3, calculate(third).rank());
     }
 
     @Test
@@ -160,9 +245,9 @@ class StudentRaceStandingServiceTest {
         RacePlayer racing = player(3L, 999.0, RacePlayerStatus.RACING);
         preparePlayers(List.of(racing, second, first));
 
-        assertEquals(1, standingService.calculate(first).rank());
-        assertEquals(2, standingService.calculate(second).rank());
-        assertEquals(3, standingService.calculate(racing).rank());
+        assertEquals(1, calculate(first).rank());
+        assertEquals(2, calculate(second).rank());
+        assertEquals(3, calculate(racing).rank());
     }
 
     @Test
@@ -172,12 +257,37 @@ class StudentRaceStandingServiceTest {
         RacePlayer behind = player(3L, 400.0, RacePlayerStatus.RACING);
         preparePlayers(List.of(current, behind, disconnected));
 
-        StudentRaceStandingResult result = standingService.calculate(current);
+        StudentRaceStandingResult result = calculate(current);
 
         assertEquals(3, result.playerCount());
         assertEquals(2, result.rank());
         assertEquals(RacePlayerStatus.DISCONNECTED, result.opponents().get(0).status());
         assertEquals(List.of(1L, 3L), opponentIds(result));
+    }
+
+    private StudentRaceStandingResult calculate(RacePlayer current) {
+        return standingService.calculate(current, DECISION_EPOCH_MS);
+    }
+
+    private StudentRaceStandingProjectionService realProjectionService() {
+        RacePlayerGameplayPresenceService presenceService =
+                mock(RacePlayerGameplayPresenceService.class);
+        when(presenceService.resolve(any(), eq(Instant.ofEpochMilli(DECISION_EPOCH_MS))))
+                .thenReturn(new GameplayPresenceDecision(true, true, false, DECISION_EPOCH_MS));
+        PlayerQuestionRepository playerQuestionRepository = mock(PlayerQuestionRepository.class);
+        when(playerQuestionRepository.findByRacePlayerInAndStatus(anyList(), eq(PlayerQuestionStatus.ACTIVE)))
+                .thenReturn(List.of());
+
+        return new StudentRaceStandingProjectionService(
+                presenceService,
+                new RacePlayerGameplayTimelineService(
+                        mock(QuestionTimeoutService.class),
+                        mock(RaceMovementService.class)
+                ),
+                playerQuestionRepository,
+                new RaceMovementCalculator(),
+                Clock.fixed(Instant.ofEpochMilli(DECISION_EPOCH_MS), ZoneOffset.UTC)
+        );
     }
 
     private void preparePlayers(List<RacePlayer> players) {

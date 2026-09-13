@@ -9,6 +9,7 @@ export const STUDENT_RACE_ANIMATION_CONFIG = Object.freeze({
     maxCorrectionUnitsPerSecond: 24,
     maxFrameDeltaMs: 100,
     maxStepMs: 1000 / 120,
+    predictionLimitMs: 5000,
   }),
   projection: Object.freeze({
     viewDistanceAhead: 150,

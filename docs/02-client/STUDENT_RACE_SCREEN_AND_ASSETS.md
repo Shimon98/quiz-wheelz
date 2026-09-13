@@ -490,7 +490,18 @@ Each opponent:
 - uses server lane/color/status
 - has visual states `hidden → entering → visible → exiting`
 - uses hysteresis to prevent flicker
-- predicts at most 2.5 seconds from server timestamps, clamped to total distance
+- shares one normalized motion authority with the local kart: checkpoint age from
+  server timestamps, one 5-second prediction limit for both, seeding at the
+  checkpoint-aged position, and duplicate checkpoints that never renew the horizon
+- sits in the shared sorted world container with the local kart, whose `zIndex` is
+  its own ground depth, so nearer opponents occlude it and farther ones are occluded
+- keeps its server lane as one full step (kart width plus a 20% gap) and is drawn only
+  where that lane fits: near and mid opponents whose lane step exceeds the zone side
+  clearance (screen edge beside the driver, 85% of the road half-width farther ahead)
+  stay hidden instead of stacking, so phones show one neighbour per side near and two
+  per side mid; far opponents beyond the last fitting lane compress monotonically
+- scales with the driver so one kart plus its gap fits beside the driver on phones
+  (`playerKart.maxParallelWidthRatio`, 0.23 of the frame width)
 - uses full vehicle bounds for rear/side departure and pooled world-container roots
 - never changes depth for visual convenience.
 

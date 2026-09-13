@@ -162,7 +162,7 @@ public class StudentAnswerSubmissionService {
                 snapshotMapper.fromAnswerRaceImpact(
                         answerRaceImpact,
                         lockedRacePlayer,
-                        standingService.calculate(lockedRacePlayer),
+                        standingService.calculate(lockedRacePlayer, decisionEpochMs),
                         decisionEpochMs,
                         lockedRacePlayer.getRace().getLiveEventVersion()
                 );

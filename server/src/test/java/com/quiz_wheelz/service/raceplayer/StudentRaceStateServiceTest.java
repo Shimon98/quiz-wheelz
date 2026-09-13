@@ -347,7 +347,8 @@ class StudentRaceStateServiceTest {
                 raceFinishService,
                 new StudentRaceStandingService(
                         racePlayerRepository,
-                        new RaceStandingCalculator(FIXED_ZONE)
+                        new RaceStandingCalculator(FIXED_ZONE),
+                        org.mockito.Mockito.mock(StudentRaceStandingProjectionService.class)
                 ),
                 new StudentRaceRuntimeSnapshotMapper(),
                 new RaceLiveMutationTracker(
@@ -377,7 +378,8 @@ class StudentRaceStateServiceTest {
                 raceFinishService,
                 new StudentRaceStandingService(
                         racePlayerRepository,
-                        new RaceStandingCalculator(FIXED_ZONE)
+                        new RaceStandingCalculator(FIXED_ZONE),
+                        org.mockito.Mockito.mock(StudentRaceStandingProjectionService.class)
                 ),
                 new StudentRaceRuntimeSnapshotMapper(),
                 new RaceLiveMutationTracker(

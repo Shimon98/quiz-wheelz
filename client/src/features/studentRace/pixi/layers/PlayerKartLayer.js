@@ -2,8 +2,8 @@ import { StudentRaceVehicleVisual } from "../vehicles/StudentRaceVehicleVisual.j
 import { playerKartGroundTransform } from "../vehicles/studentRaceVehicleGeometry.js";
 
 export class PlayerKartLayer extends StudentRaceVehicleVisual {
-  update({ visualSpeed, deltaMs, layout, runtimeState }) {
-    this.setGroundTransform(playerKartGroundTransform(layout));
+  update({ visualSpeed, deltaMs, layout, runtimeState, playerDepth = 1, vehicleVisualScale }) {
+    this.setGroundTransform({ ...playerKartGroundTransform(layout), zIndex: playerDepth, visualScale: vehicleVisualScale });
     this.updateIdle({
       deltaMs,
       movementStrength: Math.abs(visualSpeed) / 2,

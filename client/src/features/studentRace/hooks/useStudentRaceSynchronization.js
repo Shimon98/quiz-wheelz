@@ -37,6 +37,7 @@ export default function useStudentRaceSynchronization({
   const invalidateMutations = useCallback((waitForResync = false) => {
     generationRef.current += 1;
     activeMutationsRef.current.clear();
+    arbitrationRef.current = null;
     pendingRefreshVersionRef.current = null;
     refreshScheduledRef.current = false;
     setGeneration(generationRef.current);
@@ -55,8 +56,9 @@ export default function useStudentRaceSynchronization({
   useEffect(() => {
     enabledRef.current = syncEnabled;
     finishSyncEnabledRef.current = finishSyncEnabled;
-    if (!syncEnabled || !finishSyncEnabled) {
-      invalidateMutations(getRaceView(runtimeRef.current) === RACE_VIEWS.PLAYING);
+    const playing = getRaceView(runtimeRef.current) === RACE_VIEWS.PLAYING;
+    if (!finishSyncEnabled || (!syncEnabled && playing)) {
+      invalidateMutations(playing);
     }
   }, [syncEnabled, finishSyncEnabled, invalidateMutations]);
 

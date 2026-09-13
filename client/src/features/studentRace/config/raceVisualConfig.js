@@ -1,9 +1,10 @@
 export const STUDENT_RACE_VISUAL_CONFIG = Object.freeze({
   opponents: Object.freeze({
-    laneGapKartWidths: 0.92,
-    maxPredictionMs: 2500,
-    smoothingTimeMs: 180,
-    snapCorrectionUnits: 20,
+    laneGapKartWidths: 0.2,
+    roadClearanceRatio: 0.85,
+    preloadVehicleHeights: 2,
+    density: Object.freeze({ farMaxVisible: 7, midMaxVisible: 4, nearMaxVisible: 2, zoneHysteresis: 0.025 }),
+    kartBoundsHalfWidthRatio: 0.6,
     frontEnterMarginUnits: 10,
     frontExitMarginUnits: 2,
     enterFadeMs: 180,
@@ -18,12 +19,15 @@ export const STUDENT_RACE_VISUAL_CONFIG = Object.freeze({
   playerKart: Object.freeze({
     screenXRatio: 0.5,
     maxWidthRatio: 0.34,
+    visualScale: 0.85,
+    maxParallelWidthRatio: 0.23,
   }),
   camera: Object.freeze({
     horizonYRatio: 0.34,
     vanishingPointXRatio: 0.5,
     roadTopWidthRatio: 0.09,
     roadBottomWidthRatio: 1.65,
+    roadMinBottomFrameWidthRatio: 2,
     roadWidthDepthExponent: 2,
     widthUnitWorldHeightRatio: 0.7,
   }),

@@ -114,7 +114,7 @@ public class RacePlayerGameplayTimelineService {
         expireActiveQuestionForTerminalPlayer(racePlayer);
     }
 
-    private long resolvePlayerRequestCutoff(
+    public long resolvePlayerRequestCutoff(
             Instant decisionInstant,
             GameplayPresenceDecision presenceDecision
     ) {

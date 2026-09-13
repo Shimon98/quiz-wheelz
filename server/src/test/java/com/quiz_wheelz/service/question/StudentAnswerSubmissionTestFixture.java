@@ -22,6 +22,7 @@ import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.service.raceplayer.RaceStandingCalculator;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStandingService;
+import com.quiz_wheelz.service.raceplayer.StudentRaceStandingProjectionService;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -66,7 +67,8 @@ final class StudentAnswerSubmissionTestFixture {
                     gameplayRequestGuard,
                     new StudentRaceStandingService(
                             racePlayerRepository,
-                            new RaceStandingCalculator(FIXED_ZONE)
+                            new RaceStandingCalculator(FIXED_ZONE),
+                            org.mockito.Mockito.mock(StudentRaceStandingProjectionService.class)
                     ),
                     new StudentRaceRuntimeSnapshotMapper(),
                     liveEventRecorder,

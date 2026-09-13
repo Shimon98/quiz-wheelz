@@ -1,6 +1,7 @@
 export const STUDENT_RACE_FINISH_EXPERIENCE = Object.freeze({
   arbitrationLeadMs: 4000,
-  arbitrationRetryMs: 350,
+  approachRetryMs: 900,
+  proofRetryMs: 400,
   releaseGapMs: 120,
   visualHoldUnits: 0.15,
   slowdownDistanceUnits: 6,

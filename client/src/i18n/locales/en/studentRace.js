@@ -51,6 +51,8 @@ export default {
     scoreLabel: "Score",
     rankLabel: "Place",
     rankValue: "Place {{rank}} of {{count}}",
+    sharedRankLabel: "Place — tied",
+    sharedRankValue: "Place {{rank}} of {{count}} — tied",
     streakLabel: "Correct answer streak",
     streakShortLabel: "Streak",
     streakValue: "{{count}} correct answers in a row",

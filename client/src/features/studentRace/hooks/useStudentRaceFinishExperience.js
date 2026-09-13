@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useReducedMotion } from "@mantine/hooks";
 import { RACE_VIEWS } from "../../../shared/racePlayer/getRaceView.js";
 import { RACE_PLAYER_STATUSES } from "../../../constants/raceStatusConstants.js";
 import { STUDENT_RACE_ANIMATION_CONFIG } from "../config/raceAnimationConfig.js";
@@ -13,6 +14,8 @@ export default function useStudentRaceFinishExperience({
   runtimeState, view, finishOrder, finishSyncEnabled, requestFinishArbitration,
 }) {
   const identity = `${runtimeState?.race?.id}:${runtimeState?.player?.racePlayerId}`;
+  const reducedMotion = useReducedMotion();
+  const duration = reducedMotion ? 0 : DURATION;
   const [tracked, setTracked] = useState(() => initial(identity, view === RACE_VIEWS.PLAYING));
   const state = tracked.identity === identity ? tracked : initial(identity, view === RACE_VIEWS.PLAYING);
   if (tracked.identity !== identity) setTracked(state);
@@ -34,6 +37,7 @@ export default function useStudentRaceFinishExperience({
     !confirmed.some((player) => player.racePlayerId === opponent.racePlayerId));
   const needsArbitration = active && !state.complete &&
     (((state.approaching || liveFinished) && !ownConfirmed) || opponentNeedsProof);
+  const retryMs = liveFinished || opponentNeedsProof ? CONFIG.proofRetryMs : CONFIG.approachRetryMs;
 
   useEffect(() => {
     const timers = releaseTimers.current;
@@ -66,12 +70,12 @@ export default function useStudentRaceFinishExperience({
       try {
         await requestFinishArbitration();
       } finally {
-        if (!cancelled) timer = setTimeout(request, CONFIG.arbitrationRetryMs);
+        if (!cancelled) timer = setTimeout(request, retryMs);
       }
     }
     void request();
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [identity, finishSyncEnabled, needsArbitration, requestFinishArbitration]);
+  }, [identity, finishSyncEnabled, needsArbitration, retryMs, requestFinishArbitration]);
 
   useEffect(() => {
     if (!active || !finishOrder) return;
@@ -100,9 +104,9 @@ export default function useStudentRaceFinishExperience({
     if (!ownCrossingReleased || state.complete) return;
     const timer = setTimeout(() => {
       setTracked((previous) => previous.identity === identity ? { ...previous, complete: true } : previous);
-    }, DURATION);
+    }, duration);
     return () => clearTimeout(timer);
-  }, [identity, ownCrossingReleased, state.complete]);
+  }, [identity, ownCrossingReleased, state.complete, duration]);
 
   const phase = state.complete ? PHASES.COMPLETE : ownCrossingReleased ? PHASES.PRESENTING
     : liveFinished ? PHASES.AWAITING_AUTHORITY : state.approaching ? PHASES.APPROACHING : PHASES.RACING;

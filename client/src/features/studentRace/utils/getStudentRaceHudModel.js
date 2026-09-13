@@ -18,14 +18,20 @@ function getRewardModel(feedback, playerFinished, formatter) {
   };
 }
 
+function hasSharedRank(player, playerCount, opponents) {
+  if (!Array.isArray(opponents) || opponents.length + 1 !== playerCount) return false;
+  return opponents.some((opponent) => opponent?.rank === player.rank);
+}
+
 export function getStudentRaceHudModel(runtimeState, language = "he", answerFeedback = null) {
   if (runtimeState?.player == null) return null;
 
-  const { player, totalDistance, playerCount } = runtimeState;
+  const { player, totalDistance, playerCount, opponents } = runtimeState;
   const progressRatio = getRaceProgressRatio(player.position, totalDistance);
   const progressPercent = progressRatio == null ? null : Math.round(progressRatio * 100);
   const hasStanding = Number.isSafeInteger(player.rank) && player.rank > 0
     && Number.isSafeInteger(playerCount) && playerCount >= player.rank;
+  const sharedRank = hasStanding && hasSharedRank(player, playerCount, opponents);
   const isCombo = Number.isSafeInteger(player.streak) && player.streak >= 2;
   const reward = getRewardModel(
     answerFeedback,
@@ -38,6 +44,9 @@ export function getStudentRaceHudModel(runtimeState, language = "he", answerFeed
     rank: hasStanding ? player.rank : null,
     playerCount: hasStanding ? playerCount : null,
     rankText: hasStanding ? `${player.rank} / ${playerCount}` : null,
+    sharedRank,
+    rankLabelKey: sharedRank ? "hud.sharedRankLabel" : "hud.rankLabel",
+    rankValueKey: sharedRank ? "hud.sharedRankValue" : "hud.rankValue",
     streak: player.streak,
     streakText: new Intl.NumberFormat(language).format(player.streak),
     streakLabelKey: isCombo ? "hud.comboLabel" : "hud.streakShortLabel",

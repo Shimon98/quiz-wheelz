@@ -78,6 +78,12 @@ Required gameplay tests:
 - standings use competition rank for exact ties, deterministic ordering without
   lane/ID rank influence, and a full `opponents` roster that excludes self and is
   verified for 1/2/4/8-player races
+- one decision-instant comparison model: online opponents project to the requester
+  decision instant, absent/grace-expired opponents stop at their trusted cutoff,
+  active question deadlines cap the projection, crossings stop at the finish instant,
+  degraded presence fails open, non-RACING/finished-race rosters stay raw, active
+  questions load in one batch, different anchors of one position tie for either
+  requester, and arbitration ranks the settled roster without projection
 - race-state, submit-answer and finish-arbitration serialize the same non-null
   rank/player-count/opponents/eventVersion vocabulary after current-request
   mutation, with exact-field opponent no-leak coverage
@@ -200,10 +206,17 @@ C1-04):
 
 - new client behavior ships with focused automated tests when meaningful
 - pure logic → unit tests; React UI behavior → component tests
+- test files live in a `__tests__` folder next to the code they cover; Vitest finds
+  them by the `*.test.js(x)` name, so no configuration lists test paths
 - protect behavior and contracts, not implementation trivia (class order,
   decorative icons, private structure, Pixi frame animation)
 - no retroactive full-suite backfill; touched high-risk legacy behavior
   gains regression tests when practical.
+
+Multiplayer QA helper: `cd client && npm run dev:bots` creates a race as the dev
+teacher with six online bots (two free slots for real browsers) and prints the room
+code; `--answer=<seconds>` makes the bots answer correctly, `--start` starts without
+the dashboard, `--seconds=<n>` exits automatically, `QW_API_BASE` targets another port.
 
 Manual viewport matrix:
 

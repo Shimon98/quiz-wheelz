@@ -1,25 +1,22 @@
 import { STUDENT_RACE_ANIMATION_CONFIG } from "../../config/raceAnimationConfig";
-import { advanceFinishRunout, smoothstep } from "./advanceFinishRunout.js";
-
-const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+import { RACE_PLAYER_STATUSES } from "../../../../constants/raceStatusConstants.js";
+import { advanceFinishRunout } from "./advanceFinishRunout.js";
+import { createRaceVisualMotionTracker, normalizeMotionAuthority } from "./createRaceVisualMotionTracker.js";
 
 export function createStudentRaceMotion(config = STUDENT_RACE_ANIMATION_CONFIG.motion) {
+  const motion = createRaceVisualMotionTracker(config);
   let initialized = false;
-  let position = 0;
   let speed = 0;
-  let predictedPosition = 0;
-  let movementRate = 0;
   let targetSpeed = 0;
   let totalDistance = null;
-  let baseVelocity = 0;
-  let correctionVelocity = 0;
-  let previousSnapshotKey = null;
-  let previousTargetPosition = null;
   let previousRaceId = null;
   let previousPlayerId = null;
   let finish = null;
+  let finishPosition = null;
   let finishPresentation = null;
   let finishReleased = false;
+  let reducedMotion = false;
+  const position = () => finishPosition ?? motion.position();
 
   function authorityLimit() {
     return Math.max(0, totalDistance - (finishPresentation?.active ? finishPresentation.visualHoldUnits : 0));
@@ -29,94 +26,47 @@ export function createStudentRaceMotion(config = STUDENT_RACE_ANIMATION_CONFIG.m
     finishPresentation = next;
     if (next?.active && next.ownCrossingReleased && !finishReleased && initialized) {
       finishReleased = true;
-      finish = { start: position, finishLine: totalDistance, target: totalDistance + next.runoutUnits,
+      finish = { start: position(), finishLine: totalDistance, target: totalDistance + next.runoutUnits,
         elapsedMs: 0, durationMs: next.runoutDurationMs };
     }
-    if (initialized && !finishReleased) position = Math.min(position, authorityLimit());
+    if (initialized && !finishReleased) motion.limitPosition(authorityLimit());
   }
 
   function updateRuntimeState(runtimeState) {
     const visual = runtimeState?.visual;
     if (!Number.isFinite(visual?.targetPosition) || !Number.isFinite(runtimeState.totalDistance)) return;
-
-    const targetPosition = visual.targetPosition;
-    const snapshotKey = runtimeState.lastSnapshotAtEpochMs ?? targetPosition;
+    reducedMotion = visual.reducedMotion === true;
+    const authority = normalizeMotionAuthority({
+      position: visual.targetPosition,
+      positionAtEpochMs: runtimeState.player?.positionAtEpochMs ?? null,
+      movementRate: visual.movementUnitsPerSecond ?? 0,
+      canPredict: runtimeState.playerStatus === RACE_PLAYER_STATUSES.RACING,
+    }, runtimeState.lastSnapshotAtEpochMs, config.predictionLimitMs);
     const raceId = runtimeState.race?.id ?? null;
     const playerId = runtimeState.player?.racePlayerId ?? null;
-    movementRate = Math.max(0, visual.movementUnitsPerSecond ?? 0);
     targetSpeed = visual.targetSpeed ?? 0;
     totalDistance = runtimeState.totalDistance;
-
-    const changedRace = previousRaceId != null &&
-      (raceId !== previousRaceId || playerId !== previousPlayerId);
-    const newSnapshot = snapshotKey !== previousSnapshotKey ||
-      targetPosition !== previousTargetPosition || changedRace;
-    const wrapped = Number.isFinite(totalDistance) &&
-      targetPosition - position < -totalDistance / 2;
-    const replacedVisibleWindow = Math.abs(targetPosition - position) >
+    const changedRace = previousRaceId != null && (raceId !== previousRaceId || playerId !== previousPlayerId);
+    const newSnapshot = motion.isNewAuthority(authority) || changedRace;
+    const wrapped = authority.position - position() < -totalDistance / 2;
+    const replacedVisibleWindow = Math.abs(authority.position - position()) >
       STUDENT_RACE_ANIMATION_CONFIG.projection.viewDistanceAhead;
 
     if (!initialized || (newSnapshot && (changedRace || wrapped || replacedVisibleWindow))) {
-      position = targetPosition;
+      motion.seed(authority, authorityLimit());
       speed = targetSpeed;
-      baseVelocity = movementRate;
-      correctionVelocity = 0;
       finish = null;
+      finishPosition = null;
       finishReleased = false;
       if (changedRace) finishPresentation = null;
       initialized = true;
     }
-
+    motion.updateAuthority(authority);
     if (newSnapshot) {
-      predictedPosition = targetPosition;
-      previousSnapshotKey = snapshotKey;
-      previousTargetPosition = targetPosition;
       previousRaceId = raceId;
       previousPlayerId = playerId;
     }
-
-    if (!finishReleased) position = Math.min(position, authorityLimit());
-  }
-
-  function advanceStep(deltaMs) {
-    const seconds = deltaMs / 1000;
-    const response = 1 - Math.exp(-deltaMs / config.velocityResponseMs);
-    speed += (targetSpeed - speed) * response;
-
-    if (finish != null) {
-      position = advanceFinishRunout(finish, deltaMs);
-      baseVelocity = 0;
-      correctionVelocity = 0;
-      return;
-    }
-
-    const error = predictedPosition - position;
-    const desiredCorrection = clamp(
-      error / (config.correctionResponseMs / 1000),
-      -config.maxCorrectionUnitsPerSecond,
-      config.maxCorrectionUnitsPerSecond,
-    );
-    const limit = authorityLimit();
-    const slowdown = finishPresentation?.active
-      ? smoothstep(clamp((limit - position) / finishPresentation.slowdownDistanceUnits, 0, 1)) : 1;
-    baseVelocity += (movementRate * slowdown - baseVelocity) * response;
-    correctionVelocity += (desiredCorrection - correctionVelocity) *
-      (1 - Math.exp(-deltaMs / config.correctionVelocityResponseMs));
-    predictedPosition += movementRate * seconds;
-    const nextPosition = position + Math.max(0, baseVelocity + correctionVelocity) * seconds;
-    position = movementRate === 0
-      ? Math.min(nextPosition, Math.max(position, predictedPosition))
-      : nextPosition;
-
-    if (movementRate === 0 && position >= predictedPosition) {
-      baseVelocity = 0;
-      correctionVelocity = 0;
-    }
-
-    if (Number.isFinite(totalDistance)) {
-      predictedPosition = Math.min(predictedPosition, limit);
-      position = Math.min(position, limit);
-    }
+    if (!finishReleased) motion.limitPosition(authorityLimit());
   }
 
   return {
@@ -125,17 +75,17 @@ export function createStudentRaceMotion(config = STUDENT_RACE_ANIMATION_CONFIG.m
     advance(deltaMs) {
       if (initialized && Number.isFinite(deltaMs) && deltaMs > 0) {
         if (finish != null) {
-          advanceStep(deltaMs);
-          return { position, speed };
-        }
-        let remainingMs = Math.min(deltaMs, config.maxFrameDeltaMs);
-        while (remainingMs > 0.000001) {
-          const stepMs = Math.min(remainingMs, config.maxStepMs);
-          advanceStep(stepMs);
-          remainingMs -= stepMs;
+          speed += (targetSpeed - speed) * (1 - Math.exp(-deltaMs / config.velocityResponseMs));
+          finishPosition = advanceFinishRunout(finish, reducedMotion ? finish.durationMs : deltaMs);
+        } else {
+          motion.advance(deltaMs, {
+            maxPosition: authorityLimit(),
+            slowdownDistance: finishPresentation?.active ? finishPresentation.slowdownDistanceUnits : null,
+            onStep: (_stepMs, response) => { speed += (targetSpeed - speed) * response; },
+          });
         }
       }
-      return { position, speed };
+      return { position: position(), speed };
     },
   };
 }

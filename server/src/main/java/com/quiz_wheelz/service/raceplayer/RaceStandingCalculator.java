@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.ToDoubleFunction;
 
 @Component
 public class RaceStandingCalculator {
@@ -37,11 +38,19 @@ public class RaceStandingCalculator {
     }
 
     public List<RankedRacePlayer> calculate(List<RacePlayer> racePlayers) {
+        return calculate(racePlayers, RaceStandingCalculator::storedPosition);
+    }
+
+    public List<RankedRacePlayer> calculate(
+            List<RacePlayer> racePlayers,
+            ToDoubleFunction<RacePlayer> comparedPosition
+    ) {
+        Objects.requireNonNull(comparedPosition);
         List<RacePlayer> orderedPlayers = new ArrayList<>(
                 Objects.requireNonNull(racePlayers)
         );
         orderedPlayers.forEach(Objects::requireNonNull);
-        orderedPlayers.sort(this::compareStanding);
+        orderedPlayers.sort((left, right) -> compareStanding(left, right, comparedPosition));
 
         List<RankedRacePlayer> rankedPlayers = new ArrayList<>(orderedPlayers.size());
         int rank = 1;
@@ -49,7 +58,8 @@ public class RaceStandingCalculator {
         for (int index = 0; index < orderedPlayers.size(); index++) {
             if (index > 0 && !sharesCompetitiveStanding(
                     orderedPlayers.get(index - 1),
-                    orderedPlayers.get(index)
+                    orderedPlayers.get(index),
+                    comparedPosition
             )) {
                 rank = index + 1;
             }
@@ -72,15 +82,27 @@ public class RaceStandingCalculator {
         return UNKNOWN_FINISH_ORDER_KEY;
     }
 
-    private int compareStanding(RacePlayer left, RacePlayer right) {
-        int competitiveOrder = compareCompetitiveStanding(left, right);
+    public static double storedPosition(RacePlayer racePlayer) {
+        return racePlayer.getPosition() == null ? 0.0 : racePlayer.getPosition();
+    }
+
+    private int compareStanding(
+            RacePlayer left,
+            RacePlayer right,
+            ToDoubleFunction<RacePlayer> comparedPosition
+    ) {
+        int competitiveOrder = compareCompetitiveStanding(left, right, comparedPosition);
 
         return competitiveOrder != 0
                 ? competitiveOrder
                 : STABLE_TIE_ORDER.compare(left, right);
     }
 
-    private int compareCompetitiveStanding(RacePlayer left, RacePlayer right) {
+    private int compareCompetitiveStanding(
+            RacePlayer left,
+            RacePlayer right,
+            ToDoubleFunction<RacePlayer> comparedPosition
+    ) {
         boolean leftFinished = isFinished(left);
         boolean rightFinished = isFinished(right);
 
@@ -92,10 +114,17 @@ public class RaceStandingCalculator {
             return Long.compare(finishOrderKey(left), finishOrderKey(right));
         }
 
-        return Double.compare(safePosition(right), safePosition(left));
+        return Double.compare(
+                comparedPosition.applyAsDouble(right),
+                comparedPosition.applyAsDouble(left)
+        );
     }
 
-    private boolean sharesCompetitiveStanding(RacePlayer left, RacePlayer right) {
+    private boolean sharesCompetitiveStanding(
+            RacePlayer left,
+            RacePlayer right,
+            ToDoubleFunction<RacePlayer> comparedPosition
+    ) {
         boolean leftFinished = isFinished(left);
         boolean rightFinished = isFinished(right);
 
@@ -107,15 +136,14 @@ public class RaceStandingCalculator {
             return finishOrderKey(left) == finishOrderKey(right);
         }
 
-        return Double.compare(safePosition(left), safePosition(right)) == 0;
+        return Double.compare(
+                comparedPosition.applyAsDouble(left),
+                comparedPosition.applyAsDouble(right)
+        ) == 0;
     }
 
     private boolean isFinished(RacePlayer racePlayer) {
         return racePlayer.getStatus() == RacePlayerStatus.FINISHED;
-    }
-
-    private double safePosition(RacePlayer racePlayer) {
-        return racePlayer.getPosition() == null ? 0.0 : racePlayer.getPosition();
     }
 
     public record RankedRacePlayer(RacePlayer racePlayer, int rank) {

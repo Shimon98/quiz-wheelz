@@ -767,6 +767,21 @@ C2-04 is locally implemented (2026-09-11): passive finish synchronization,
 ETA/opponent arbitration triggers, ordered proof-gated crossing and shared visual
 runout. Direct FINISHED reloads do not replay a crossing. Fifteen focused tests
 were added; live multiplayer/browser/device QA remains open before C2 acceptance.
+Follow-up hardening: shared player/opponent motion, full-bounds preload, 2/4/7 depth
+budgets and static color assets pass the client tests, lint and build. Prior road/scenery
+and finish recovery fixes remain. Consistency closure (2026-09-11): server standings
+compare all participants at one decision instant, one normalized motion authority and
+5-second prediction limit for local and remote karts, the local kart draws inside the
+sorted world by ground depth, lane slots keep full steps with soft side saturation, and
+the HUD names a server-assigned shared place. Lane-fit closure (2026-09-13): vehicles scale so one kart plus a 20% gap fits beside the
+driver on phones, and an opponent is drawn only where its own lane step fits the zone side
+clearance (one neighbour per side near and two per side mid on phones, compressed far pack),
+so level cars never touch or stack; capped server projections disable further client
+prediction. 530 client tests,
+729 server tests (2 MySQL skips), lint/build and responsive renderer checks pass.
+C2 implementation is ready for PR review; final live/device acceptance and merge remain open.
+Future S4 effects reuse server-owned movement, snapshot identity/version and existing
+visual effect owners; luck/assistance policies and their durable effect contract remain S4 work.
 
 - validate/map `opponents` snapshots through the existing runtime boundary,
   retaining snapshot freshness (`snapshotAtEpochMs`, `eventVersion`,
@@ -776,7 +791,7 @@ were added; live multiplayer/browser/device QA remains open before C2 acceptance
 - opponent interpolation keyed by RacePlayer ID
 - hidden/entering/visible/exiting state machine
 - hysteresis/fades
-- bounded prediction (2.5 seconds), shared calibrated perspective and full-bounds culling
+- bounded prediction (one shared 5-second limit), shared calibrated perspective and full-bounds culling
 - object pooling
 - server color keys
 - no visual depth cheating.

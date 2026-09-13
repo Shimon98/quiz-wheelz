@@ -111,7 +111,12 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
   runtime snapshot
 - authoritative standings in the shared race-state, submit-answer and
   finish-arbitration snapshot: competition rank, actual joined-player count and the
-  full safe `opponents` roster (every other joined player, 0..7, standing order).
+  full safe `opponents` roster (every other joined player, 0..7, standing order),
+  compared at one decision instant: `StudentRaceStandingProjectionService` projects
+  each RACING opponent read-only to its own request cutoff (presence, grace, active
+  question deadline, finish crossing) with the shared calculator and emits that
+  projected position/anchor; a cutoff before the decision time or finish crossing emits
+  zero predictive movement without changing stored speed. Arbitration ranks the already settled roster.
   FINISHED uses the canonical `finishedAtEpochMs` (legacy `finishedAt` fallback); all
   other statuses, including DISCONNECTED, use stored position. Lane/ID stabilize
   tied output only and never decide public rank

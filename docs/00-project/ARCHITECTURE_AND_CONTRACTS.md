@@ -346,6 +346,12 @@ presentation/movement fields and contains every other joined player (0..7) in
 standing order, each with its own `rank`, `positionAtEpochMs` anchor, effective
 `movementUnitsPerSecond` and `finishedAtEpochMs`.
 
+Standings compare every participant at the same decision instant: the requester is
+settled by the request itself, and each RACING opponent is projected read-only to
+the instant its own request would have settled to (its trusted presence cutoff, or
+its active question deadline when earlier), with the finish crossing as the limit.
+The emitted opponent `position`/`positionAtEpochMs` describe that projection, so
+rank, positions and anchors share one comparison model for every viewer.
 `positionAtEpochMs` is the durable movement anchor of the reported `position`.
 `playerFinishedAtEpochMs` is the canonical finish time: the answer decision instant
 for an answer finish, the deterministic crossing instant for a movement finish.

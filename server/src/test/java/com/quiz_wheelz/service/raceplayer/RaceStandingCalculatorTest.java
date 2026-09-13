@@ -133,6 +133,24 @@ class RaceStandingCalculatorTest {
     }
 
     @Test
+    void suppliedComparisonModelDecidesActiveOrderAndTiesWithoutMutatingEntities() {
+        RacePlayer storedLeader = player(1L, 500.0, RacePlayerStatus.RACING);
+        RacePlayer projectedLeader = player(2L, 400.0, RacePlayerStatus.RACING);
+        RacePlayer projectedTie = player(3L, 300.0, RacePlayerStatus.RACING);
+        java.util.Map<Long, Double> model = java.util.Map.of(1L, 500.0, 2L, 640.0, 3L, 500.0);
+
+        List<RaceStandingCalculator.RankedRacePlayer> standings = calculator.calculate(
+                List.of(storedLeader, projectedLeader, projectedTie),
+                racePlayer -> model.get(racePlayer.getId())
+        );
+
+        assertEquals(List.of(2L, 1L, 3L), ids(standings));
+        assertEquals(List.of(1, 2, 2), ranks(standings));
+        assertEquals(400.0, projectedLeader.getPosition());
+        assertEquals(300.0, projectedTie.getPosition());
+    }
+
+    @Test
     void calculationDoesNotMutateTheInputList() {
         RacePlayer behind = player(1L, 100.0, RacePlayerStatus.RACING);
         RacePlayer ahead = player(2L, 200.0, RacePlayerStatus.RACING);

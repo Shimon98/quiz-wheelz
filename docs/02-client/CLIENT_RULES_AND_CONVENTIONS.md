@@ -87,11 +87,13 @@ features/<feature>/
   config/
   runtime/
   utils/
-  pixi/       # game feature only
-  styles/     # only when feature-specific CSS is justified
+  pixi/       # game feature only  styles/     # only when feature-specific CSS is justified
+  __tests__/  # Vitest files beside the code they cover, in any folder
 ```
 
-Create only folders that are needed.
+Create only folders that are needed. Test files live in a `__tests__` folder inside
+the folder of the code they cover (`components/__tests__/Foo.test.jsx`); shared test
+fixtures stay beside their owners (`runtime/studentRaceTestFixtures.js`).
 
 ## Constants and configuration
 

@@ -89,7 +89,7 @@ public class StudentRaceStateService {
 
         StudentRaceRuntimeSnapshotResponse snapshot = snapshotMapper.fromRacePlayer(
                 racePlayer,
-                standingService.calculate(racePlayer),
+                standingService.calculate(racePlayer, decisionEpochMs),
                 decisionEpochMs,
                 eventVersion
         );

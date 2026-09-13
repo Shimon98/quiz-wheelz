@@ -45,4 +45,9 @@ public interface PlayerQuestionRepository extends JpaRepository<PlayerQuestion, 
             RacePlayer racePlayer,
             PlayerQuestionStatus status
     );
+
+    List<PlayerQuestion> findByRacePlayerInAndStatus(
+            Collection<RacePlayer> racePlayers,
+            PlayerQuestionStatus status
+    );
 }

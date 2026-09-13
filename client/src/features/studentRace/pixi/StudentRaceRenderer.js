@@ -30,12 +30,10 @@ export class StudentRaceRenderer {
     this.loadingSurface = new Graphics();
     this.backgroundContainer = new Container();
     this.worldContainer = new Container();
-    this.playerContainer = new Container();
     this.effectsContainer = new Container();
     this.sceneContainers = [
       this.backgroundContainer,
       this.worldContainer,
-      this.playerContainer,
       this.effectsContainer,
     ];
     this.sceneContainers.forEach((container) => { container.visible = false; });
@@ -57,7 +55,7 @@ export class StudentRaceRenderer {
     this.finishLineLayer = new FinishLineLayer(this.worldContainer);
     this.sceneryLayer = new SceneryLayer(this.worldContainer);
     this.opponentLayer = new OpponentLayer(this.worldContainer);
-    this.playerKartLayer = new PlayerKartLayer(this.playerContainer);
+    this.playerKartLayer = new PlayerKartLayer(this.worldContainer);
     this.effectsLayer = new EffectsLayer(this.effectsContainer);
     this.layers = [
       this.jungleLayer,
@@ -152,7 +150,6 @@ export class StudentRaceRenderer {
     this.loadingSurface.destroy();
     this.backgroundContainer.destroy({ children: true });
     this.worldContainer.destroy({ children: true });
-    this.playerContainer.destroy({ children: true });
     this.effectsContainer.destroy({ children: true });
   }
 }

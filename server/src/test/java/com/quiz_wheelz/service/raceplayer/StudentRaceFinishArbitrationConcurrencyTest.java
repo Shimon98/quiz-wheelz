@@ -102,6 +102,7 @@ import static org.mockito.Mockito.when;
         TeacherRaceLivePlayerSnapshotService.class,
         RaceStandingCalculator.class,
         StudentRaceStandingService.class,
+        StudentRaceStandingProjectionService.class,
         StudentRaceRuntimeSnapshotMapper.class,
         RaceFinishOrderPolicy.class,
         RaceMovementSettlementWorker.class,

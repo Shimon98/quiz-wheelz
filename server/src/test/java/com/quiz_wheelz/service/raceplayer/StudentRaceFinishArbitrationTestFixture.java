@@ -107,7 +107,11 @@ final class StudentRaceFinishArbitrationTestFixture {
                 timelineService,
                 finishService,
                 new RaceLiveEventChangeRecorder(liveEventRecorder),
-                new StudentRaceStandingService(racePlayerRepository, standingCalculator),
+                new StudentRaceStandingService(
+                        racePlayerRepository,
+                        standingCalculator,
+                        org.mockito.Mockito.mock(StudentRaceStandingProjectionService.class)
+                ),
                 new StudentRaceRuntimeSnapshotMapper(),
                 new RaceFinishOrderPolicy(standingCalculator, movementCalculator),
                 new RaceDecisionTimeService(raceRepository),
