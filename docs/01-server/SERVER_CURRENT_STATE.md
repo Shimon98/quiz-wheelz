@@ -279,7 +279,11 @@ recovery never subtracts movement awarded in degraded mode.
 
 ## Partial or missing
 
-- C2-04 finish presentation and subsequent teacher race UI remain deferred.
+- Teacher live race client and results remain client work (C3/C4). The C2 server
+  contract is complete for student competition truth, synchronization and finish
+  arbitration (decision-instant standings, signal-only student SSE, proof-gated
+  arbitration); the teacher live-state/durable-event/SSE foundation for C3 already
+  exists, so further server work is driven only by actual C3/results requirements.
 - Durable final-results query/model closure.
 - Event/effect system for junction/luck/announcements.
 - Catch-up-assistance policy.
@@ -310,6 +314,7 @@ Changing this lifecycle/port behavior is outside S0-02.
 Infrastructure reliability
 → student playable-loop contract closure
 → teacher live-state/SSE
+→ C2 competition truth and finish arbitration (done 2026-09-10)
 → results
 → game events
 → full auth/2FA

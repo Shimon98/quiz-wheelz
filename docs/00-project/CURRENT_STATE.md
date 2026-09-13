@@ -21,6 +21,16 @@ world, HUD, accepted-answer/combo feedback and real server flow are implemented.
 audited `main` baseline or claim a production release. Remaining browser/device
 QA and near-term audio polish are tracked in the canonical client plan.
 
+Local C2 closure checkpoint, 2026-09-13 (branch
+`feature/C2-01-competition-truth-finish-arbitration`): C2 core is implemented and
+closed for PR review — server competition truth with decision-instant standings and
+finish arbitration (C2-01), student live stream and snapshot accumulator (C2-02),
+pooled opponent rendering with shared motion, 2/4/7 density, lane-fit and static
+per-color vehicle art (C2-03), and proof-gated finish presentation (C2-04). 530 client
+tests/60 files and 729 server tests pass; live two-player and eight-player browser QA
+on the final build passed the closure scenarios. Physical-device acceptance and the
+merge remain open; C2-A race sound is deferred polish; C3 teacher live race is next.
+
 ## Executive summary
 
 QuizWheelz is not an early prototype. Most backend gameplay foundations and the
@@ -33,7 +43,8 @@ with time, correct answers boost speed and add progress bonuses, and timeouts
 slow more than wrong answers. Real absence freezes position without pausing
 question deadlines; reconnect never awards offline catch-up, and absent
 players do not keep the class race open. The main missing product slices are
-opponents and the teacher live race client screen and results.
+the teacher live race client screen and results; opponents are implemented on the
+C2 branch pending merge.
 
 ## Product status board
 
@@ -56,7 +67,8 @@ opponents and the teacher live race client screen and results.
 | Heartbeat/leave/reconnect | DONE | heartbeat + reconnect lifecycle DONE (C1-05); leave deliberately unwired | DONE |
 | Student Pixi race foundation | N/A | UI-10A–G DONE | PARTIAL feature |
 | Student question panel/HUD | server data exists | panel + timer DONE (C1-02); HUD stats DONE (C1-04) | DONE |
-| Opponent vehicles/nearby players | DONE authoritative snapshot contract | planned renderer | PARTIAL |
+| Opponent vehicles/nearby players | DONE snapshot contract + decision-instant standings (C2-01) | DONE pooled renderer, shared motion, 2/4/7 density, lane-fit, static colors (C2-03) | DONE on C2 branch (device acceptance open) |
+| Student live stream + finish arbitration | DONE signal-only SSE, proof-gated arbitration | DONE SSE invalidation + polling fallback, proof-gated finish presentation (C2-02/C2-04) | DONE on C2 branch |
 | Teacher live-state query | DONE | route constant only | PARTIAL feature |
 | Teacher durable live-event model | DONE | N/A | SERVER FOUNDATION |
 | Teacher SSE | DONE | PLANNED | PARTIAL feature |
@@ -184,7 +196,8 @@ Teacher creates and starts a race
 No teacher client projector, luck event, junction or 2FA work should interrupt this
 slice unless it is required to make the slice run safely.
 
-For the locally accepted C1 client implementation, the next work is C2
-opponent rendering against the existing S1-02 contract, followed by C2-A
-race sound polish. Required physical-device/recovery QA remains visible in
-the client plan and must pass before release.
+C2 core (competition truth, student synchronization, opponents, proof-gated finish
+presentation) is implemented on the C2 branch and closed for PR review; the next
+client stage is C3 — Teacher live race, started from updated `main` after the merge.
+C2-A race sound polish is deferred polish backlog. Required physical-device/recovery
+QA remains visible in the client plan and must pass before release.

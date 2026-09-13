@@ -218,6 +218,19 @@ teacher with six online bots (two free slots for real browsers) and prints the r
 code; `--answer=<seconds>` makes the bots answer correctly, `--start` starts without
 the dashboard, `--seconds=<n>` exits automatically, `QW_API_BASE` targets another port.
 
+C2 closure live QA (2026-09-13, build `d1df840`, local server running the branch, two
+isolated RacePlayer sessions per run plus API drivers, GPU headless Chrome): A two-player
+bonus in both directions (remote kart at most 0.28 units per frame at about 165 fps, no
+backward step, convergence within about 4 s); B/C eight players from lanes 1/4 on 390×844
+and 8/5 on 1440×1040 with staggered driver answers (NEAR never shows the whole field,
+MID/FAR grow as the field stretches, at most two visibility flips per opponent);
+D overtake ahead → alongside → behind → rear exit and E rear entry with frame-continuous
+position and a fade starting near zero; F all eight static colors loaded at 768×768 with no
+tint or filter; G photo finish 610 ms apart with no visual crossing before the confirmed
+proof and the same order on both screens; H mid-race reload (reconnect before race-state,
+same question and deadline, same RacePlayer, an already FINISHED opponent never replayed).
+Not produced live: an exact finish tie (unit-tested) and the hide/restore-tab variant of H.
+
 Manual viewport matrix:
 
 ```text

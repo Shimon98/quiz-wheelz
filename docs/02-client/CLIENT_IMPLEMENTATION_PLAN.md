@@ -751,7 +751,14 @@ local development handoff to C2; not yet verified on a physical device/browser):
 
 ## C2 — Opponents
 
-Next implementation stage after the accepted local C1 checkpoint. Server S1-02 and
+**Status:** `C2 CORE — DONE / ACCEPTED (2026-09-13)` — C2-01 competition truth
+integration, C2-02 student synchronization, C2-03 opponents, C2-04 finish
+presentation and the visual hardening (shared motion, lane-fit, static colors) are
+implemented; the closure pass ran live two-player and eight-player browser QA on the
+final build (see `TESTING_AND_DEFINITION_OF_DONE.md`). C2-A sound is deferred polish;
+C3 is the next stage. Physical-device acceptance and merge remain open.
+
+Implemented after the accepted local C1 checkpoint. Server S1-02 and
 C2-01 are DONE: race-state, answer and finish-arbitration snapshots provide
 authoritative `rank`, `playerCount`, `eventVersion`, `positionAtEpochMs`,
 `playerFinishedAtEpochMs` and the full `opponents` roster (every other joined
@@ -799,11 +806,10 @@ visual effect owners; luck/assistance policies and their durable effect contract
 Player/opponents share `StudentRaceVehicleVisual` and the existing asset loader;
 pooled opponent roots interleave with scenery directly in the world container.
 
-### C2-A — Race sound polish — PLANNED
+### C2-A — Race sound polish — DEFERRED / PLANNED POLISH
 
-Next near-term polish slice after the first integrated opponent renderer,
-before the student-side final demonstration. No sound playback or assets
-are implemented by this planning checkpoint.
+Deferred polish backlog: it does not block C3. Return to it before the
+student-side final demonstration. No sound playback or assets are implemented.
 
 - A quiet hover-engine loop changes pitch/volume gradually with the real
   server speed and remains at the new level while that speed is sustained.
@@ -827,9 +833,10 @@ are implemented by this planning checkpoint.
   repeated answers/reconnect, sustained speed changes, and comfortable
   balance with classroom use. Retest the carried-forward device checklist.
 
-## C3 — Teacher live race
+## C3 — Teacher live race — NEXT
 
-Depends on S2.
+Start from updated `main` after the C2 merge. Depends on S2 (teacher live-state,
+durable events and SSE are DONE on the server).
 
 ### C3-01 — Route and initial state
 

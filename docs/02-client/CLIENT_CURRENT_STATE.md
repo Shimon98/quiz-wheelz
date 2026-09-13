@@ -8,6 +8,15 @@
 > The code is authoritative for what is implemented. This document is authoritative
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
+Local checkpoint, 2026-09-13: **C2 core implemented and closed for PR review** on
+`feature/C2-01-competition-truth-finish-arbitration` (4 commits ahead of `main`):
+full opponents roster, shared local/opponent motion, pooled opponents by RacePlayer
+ID, NEAR/MID/FAR density with lane-fit, static per-color vehicle art, student SSE
+with polling fallback and proof-gated finish presentation. 530 tests/60 files, lint
+and build pass; live two-player and eight-player browser QA on the final build passed
+the closure scenarios (see `TESTING_AND_DEFINITION_OF_DONE.md`). Physical-device
+acceptance and merge remain open; C2-A race sound is deferred.
+
 Local checkpoint, 2026-09-08: **C1 development milestone closed and accepted
 for C2** on `feature/C1-Student-playable-loop`, following Shimon's request.
 This is a local implementation checkpoint, not a claim of merge or release.
@@ -211,8 +220,9 @@ Implemented A–G:
 - `PlayerKartLayer` shows the real `TOY_CAR_GREEN` static sprite; the kart
   area stays empty while art loads and the Graphics placeholder appears only
   after a definitive fallback (unknown key / malformed entry / load failure)
-- every server color key renders the GREEN master until per-color art
-  lands (interim manifest decision 2026-09-05).
+- every server color key maps to its own static WebP (GREEN, PURPLE, RED, BLUE,
+  ORANGE, PINK, YELLOW, CYAN) with identical crop, anchor and scale; the GREEN-master
+  interim of 2026-09-05 is closed (C2, 2026-09-11). No runtime recolor.
 
 ### Student race visual feedback (C1-06E — done 2026-08-23; local revision accepted 2026-09-08)
 
@@ -349,19 +359,28 @@ Implemented A–G:
   a fresh race-preview tab produced no console errors or warnings.
 
 ## Missing integration
-- opponent vehicles
-- teacher live page
-- SSE
+- teacher live page (C3) and its SSE client
 - results pages
 - full auth server flows.
-- race audio: planned immediately after the initial C2 opponent integration;
-  engine/ambience, accepted-answer/combo/finish cues, mute and volume. The
-  detailed ownership and acceptance contract is C2-A in the client plan.
+- race audio: deferred polish backlog (C2-A in the client plan); it does not block C3.
 
-S1-02 and server C2-01 supply authoritative `rank`, `playerCount`, `eventVersion`
-and the full `opponents` roster (renamed from `nearbyPlayers`) in runtime
-snapshots, including answer snapshots. The HUD consumes standing; the client still
-needs to map opponents and render pooled opponents in C2.
+## Opponents and live synchronization (C2 — implemented 2026-09-10/13)
+
+- the full `opponents` roster (0..7, standing order) is consumed from race-state and
+  answer snapshots through one snapshot accumulator ordered by (`eventVersion`,
+  `snapshotAtEpochMs`); rank and count come from the server, never computed locally
+- student SSE signals (`version`, `type`, `occurredAtEpochMs`) only invalidate and
+  trigger guarded refreshes; the 2-second race-state poll remains the fallback
+- local kart and opponents share one motion authority (`createRaceVisualMotionTracker`,
+  5-second prediction limit); opponents are pooled by RacePlayer ID with
+  hidden → entering → visible → exiting states and hysteresis
+- NEAR/MID/FAR density 2/4/7 and lane-fit selection are presentation-only: an
+  opponent is drawn only where its full lane step fits the zone side clearance and
+  never moves along the track for visual convenience
+- eight static per-color vehicle WebPs share one manifest and one vehicle visual
+- finish presentation is proof-gated: crossings and runouts wait for the confirmed
+  finish-order prefix from the server; an opponent first seen FINISHED never replays
+- `npm run dev:bots` provides six online bots for manual multiplayer QA.
 The C1 completion checklist is in `CLIENT_IMPLEMENTATION_PLAN.md`; future
 teacher/SSE/results/auth work does not belong to that single-player gate.
 
@@ -372,7 +391,7 @@ teacher/SSE/results/auth work does not belong to that single-player gate.
 ## Immediate client priority
 
 ```text
-Closed local C1 development milestone → opponents using the existing S1-02 contract (C2)
-→ race sound polish (C2-A) and carried-forward pre-release device/recovery QA
-→ teacher live/SSE (C3)
+Closed C2 core (competition truth, synchronization, opponents, proof-gated finish)
+→ teacher live race (C3) → results (C4)
+→ race sound polish (C2-A, deferred) and carried-forward pre-release device/recovery QA
 ```
