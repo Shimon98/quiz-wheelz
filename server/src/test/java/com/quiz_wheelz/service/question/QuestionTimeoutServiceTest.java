@@ -12,6 +12,7 @@ import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceengine.DifficultyProgressionService;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
 import com.quiz_wheelz.service.raceengine.RaceFinishService;
+import com.quiz_wheelz.service.raceengine.RaceMovementCalculator;
 import com.quiz_wheelz.service.raceengine.RaceMovementService;
 import com.quiz_wheelz.service.raceengine.RaceProgressService;
 import com.quiz_wheelz.service.raceengine.ScoringService;
@@ -28,6 +29,8 @@ import java.time.ZoneId;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,6 +56,7 @@ class QuestionTimeoutServiceTest {
 
         questionTimeoutService = new QuestionTimeoutService(
                 new RaceMovementService(
+                        new RaceMovementCalculator(),
                         raceFinishService,
                         playerQuestionRepository,
                         fixedClock
@@ -137,7 +141,7 @@ class QuestionTimeoutServiceTest {
 
         questionTimeoutService.settleWithOverdueTimeout(
                 player,
-                localTimeAfterSeconds(10),
+                afterSeconds(10),
                 afterSeconds(10)
         );
 
@@ -158,7 +162,7 @@ class QuestionTimeoutServiceTest {
 
         questionTimeoutService.settleWithOverdueTimeout(
                 player,
-                localTimeAfterSeconds(20),
+                afterSeconds(20),
                 afterSeconds(20)
         );
 
@@ -168,7 +172,7 @@ class QuestionTimeoutServiceTest {
     }
 
     @Test
-    void absentPlayerTimeoutShouldUseWallClockButRespectMovementCutoffExactlyOnce() {
+    void absentPlayerTimeoutShouldWaitForTheTrustedTimelineToReachTheDeadline() {
         RacePlayer player = racingPlayer(25.0, 1.0);
         PlayerQuestion question = activeQuestionExpiringAfterSeconds(10);
         LocalDateTime originalExpiresAt = question.getExpiresAt();
@@ -180,23 +184,22 @@ class QuestionTimeoutServiceTest {
 
         questionTimeoutService.settleWithOverdueTimeout(
                 player,
-                localTimeAfterSeconds(30),
                 afterSeconds(30),
                 ANCHOR_EPOCH_MS
         );
         questionTimeoutService.settleWithOverdueTimeout(
                 player,
-                localTimeAfterSeconds(31),
                 afterSeconds(31),
                 ANCHOR_EPOCH_MS
         );
 
         assertEquals(25.0, player.getPosition(), 1e-9);
-        assertEquals(0.6, player.getSpeed(), 1e-9);
-        assertEquals(1, player.getWrongAnswers());
-        assertEquals(PlayerQuestionStatus.EXPIRED, question.getStatus());
+        assertEquals(1.0, player.getSpeed(), 1e-9);
+        assertEquals(0, player.getWrongAnswers());
+        assertEquals(PlayerQuestionStatus.ACTIVE, question.getStatus());
         assertEquals(originalExpiresAt, question.getExpiresAt());
         assertEquals(ANCHOR_EPOCH_MS, player.getMovementUpdatedAtEpochMs());
+        verify(playerQuestionRepository, never()).save(question);
     }
 
     @Test
@@ -216,6 +219,25 @@ class QuestionTimeoutServiceTest {
         assertEquals(1, player.getWrongAnswers());
         assertEquals(PlayerQuestionStatus.EXPIRED, question.getStatus());
         assertEquals(afterSeconds(10), player.getMovementUpdatedAtEpochMs());
+    }
+
+    @Test
+    void terminalPlayerQuestionIsExpiredWithoutAnyGameplayConsequence() {
+        RacePlayer player = racingPlayer(25.0, 1.0);
+        player.setStatus(RacePlayerStatus.DISCONNECTED);
+        PlayerQuestion question = activeQuestionExpiringAfterSeconds(10);
+        when(playerQuestionRepository.findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(
+                player,
+                PlayerQuestionStatus.ACTIVE
+        )).thenReturn(Optional.of(question));
+
+        questionTimeoutService.expireActiveQuestionWithoutConsequence(player);
+
+        assertEquals(PlayerQuestionStatus.EXPIRED, question.getStatus());
+        assertEquals(25.0, player.getPosition(), 1e-9);
+        assertEquals(1.0, player.getSpeed(), 1e-9);
+        assertEquals(0, player.getWrongAnswers());
+        verify(playerQuestionRepository).save(question);
     }
 
     private RacePlayer racingPlayer(double position, double speed) {

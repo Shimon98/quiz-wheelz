@@ -45,6 +45,7 @@ export const STUDENT_RACE_WORLD_ART = Object.freeze({
     assetUrl: roadLoop,
     surfaceInsetURatio: 0.12,
     edgeFeatherHalfWidthRatio: 0.04,
+    horizonFadeDepth: 0.18,
     tileWorldLength: 960,
     meshRows: 48,
     meshColumns: 8,

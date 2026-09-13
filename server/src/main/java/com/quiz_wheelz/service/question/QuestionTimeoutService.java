@@ -15,7 +15,6 @@ import com.quiz_wheelz.utils.DateTimeUtils;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
-import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -62,15 +61,17 @@ public class QuestionTimeoutService {
             return;
         }
 
-        long expiryEpochMs = DateTimeUtils.toEpochMilli(
-                question.getExpiresAt(),
-                clock.getZone()
-        );
+        long expiryEpochMs = expiryEpochMs(question);
+
+        if (movementCutoffEpochMs < expiryEpochMs) {
+            raceMovementService.settleTo(lockedRacePlayer, movementCutoffEpochMs);
+            return;
+        }
 
         applyTimeoutConsequence(
                 lockedRacePlayer,
                 question,
-                Math.min(expiryEpochMs, movementCutoffEpochMs),
+                expiryEpochMs,
                 Math.min(decisionEpochMs, movementCutoffEpochMs)
         );
     }
@@ -98,6 +99,34 @@ public class QuestionTimeoutService {
         );
     }
 
+    public void settleWithOverdueTimeout(
+            RacePlayer lockedRacePlayer,
+            long decisionEpochMs,
+            long movementCutoffEpochMs
+    ) {
+        Optional<PlayerQuestion> activeQuestion = findActiveQuestion(lockedRacePlayer);
+
+        if (activeQuestion.isPresent()
+                && expiryEpochMs(activeQuestion.get()) <= movementCutoffEpochMs) {
+            processExpiredActiveQuestion(
+                    lockedRacePlayer,
+                    activeQuestion.get(),
+                    decisionEpochMs,
+                    movementCutoffEpochMs
+            );
+            return;
+        }
+
+        raceMovementService.settleTo(lockedRacePlayer, movementCutoffEpochMs);
+    }
+
+    public void expireActiveQuestionWithoutConsequence(RacePlayer terminalRacePlayer) {
+        findActiveQuestion(terminalRacePlayer).ifPresent(question -> {
+            question.setStatus(PlayerQuestionStatus.EXPIRED);
+            playerQuestionRepository.save(question);
+        });
+    }
+
     private void applyTimeoutConsequence(
             RacePlayer lockedRacePlayer,
             PlayerQuestion question,
@@ -122,46 +151,16 @@ public class QuestionTimeoutService {
         );
     }
 
-    public void settleWithOverdueTimeout(
-            RacePlayer lockedRacePlayer,
-            LocalDateTime decisionNow,
-            long decisionEpochMs
-    ) {
-        settleWithOverdueTimeout(
-                lockedRacePlayer,
-                decisionNow,
-                decisionEpochMs,
-                decisionEpochMs
-        );
-    }
-
-    public void settleWithOverdueTimeout(
-            RacePlayer lockedRacePlayer,
-            LocalDateTime decisionNow,
-            long decisionEpochMs,
-            long movementCutoffEpochMs
-    ) {
-        Optional<PlayerQuestion> activeQuestion = playerQuestionRepository
+    private Optional<PlayerQuestion> findActiveQuestion(RacePlayer racePlayer) {
+        return playerQuestionRepository
                 .findFirstByRacePlayerAndStatusOrderByCreatedAtDesc(
-                        lockedRacePlayer,
+                        racePlayer,
                         PlayerQuestionStatus.ACTIVE
                 );
+    }
 
-        if (activeQuestion.isPresent()
-                && DateTimeUtils.isExpired(
-                        activeQuestion.get().getExpiresAt(),
-                        decisionNow
-                )) {
-            processExpiredActiveQuestion(
-                    lockedRacePlayer,
-                    activeQuestion.get(),
-                    decisionEpochMs,
-                    movementCutoffEpochMs
-            );
-            return;
-        }
-
-        raceMovementService.settleTo(lockedRacePlayer, movementCutoffEpochMs);
+    private long expiryEpochMs(PlayerQuestion question) {
+        return DateTimeUtils.toEpochMilli(question.getExpiresAt(), clock.getZone());
     }
 
     private boolean isActivelyRacing(RacePlayer racePlayer) {

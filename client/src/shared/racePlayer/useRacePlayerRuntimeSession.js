@@ -31,6 +31,10 @@ const OPERATIONS = Object.freeze({
   RECONNECT: "RECONNECT",
 });
 
+const PASSIVE_REQUEST_OUTCOMES = new Set([
+  null, RACE_PLAYER_RECONNECT_OUTCOMES.PLAYER_FINISHED, RACE_PLAYER_RECONNECT_OUTCOMES.RACE_FINISHED,
+]);
+
 export default function useRacePlayerRuntimeSession() {
   const [connectionState, setConnectionState] = useState(
     RACE_PLAYER_CONNECTION_STATES.CONNECTING,
@@ -43,6 +47,7 @@ export default function useRacePlayerRuntimeSession() {
     () => !isDocumentHidden(),
   );
   const [presenceStopped, setPresenceStopped] = useState(false);
+  const [isBrowserOnline, setIsBrowserOnline] = useState(() => !isBrowserOffline());
 
   const operationRef = useRef(OPERATIONS.NONE);
   const pendingReconnectRef = useRef(false);
@@ -250,11 +255,13 @@ export default function useRacePlayerRuntimeSession() {
   );
 
   const handleBrowserOffline = useCallback(() => {
+    setIsBrowserOnline(false);
     clearRetryTimer();
     setConnectionState(RACE_PLAYER_CONNECTION_STATES.OFFLINE);
   }, [clearRetryTimer]);
 
   const handleBrowserOnline = useCallback(() => {
+    setIsBrowserOnline(true);
     if (terminalOutcomeRef.current == null && !presenceStoppedRef.current) {
       runReconnect();
     }
@@ -288,6 +295,9 @@ export default function useRacePlayerRuntimeSession() {
     resyncToken,
     reconnectNow: runReconnect,
     stopPresence,
+    isPassiveRaceRequestReady:
+      hasResolvedSession && error == null && isDocumentVisible && isBrowserOnline &&
+      PASSIVE_REQUEST_OUTCOMES.has(terminalOutcome),
     isGameplayConnectionReady:
       hasResolvedSession &&
       error == null &&

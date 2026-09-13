@@ -1,5 +1,11 @@
 package com.quiz_wheelz.service.teacher;
 
+import com.quiz_wheelz.service.livestream.RaceLiveStreamAudience;
+
+import com.quiz_wheelz.service.livestream.RaceLiveStreamConnection;
+import com.quiz_wheelz.service.livestream.RaceLiveStreamRegistry;
+import com.quiz_wheelz.service.livestream.RaceLiveStreamCursorResolver;
+
 import com.quiz_wheelz.entitys.Race;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -10,14 +16,14 @@ import java.util.Objects;
 public class TeacherRaceLiveStreamService {
 
     private final TeacherRaceAccessService raceAccessService;
-    private final TeacherRaceLiveCursorResolver cursorResolver;
-    private final TeacherRaceLiveStreamRegistry registry;
+    private final RaceLiveStreamCursorResolver cursorResolver;
+    private final RaceLiveStreamRegistry registry;
     private final TeacherRaceLiveStreamDispatcher dispatcher;
 
     public TeacherRaceLiveStreamService(
             TeacherRaceAccessService raceAccessService,
-            TeacherRaceLiveCursorResolver cursorResolver,
-            TeacherRaceLiveStreamRegistry registry,
+            RaceLiveStreamCursorResolver cursorResolver,
+            RaceLiveStreamRegistry registry,
             TeacherRaceLiveStreamDispatcher dispatcher
     ) {
         this.raceAccessService = Objects.requireNonNull(raceAccessService);
@@ -37,7 +43,9 @@ public class TeacherRaceLiveStreamService {
                 afterVersion,
                 Objects.requireNonNull(race.getLiveEventVersion())
         );
-        TeacherRaceLiveConnection connection = registry.register(race.getId(), cursor);
+        RaceLiveStreamConnection connection = registry.register(
+                RaceLiveStreamAudience.TEACHER, race.getId(), cursor
+        );
         dispatcher.dispatchConnection(connection);
         return connection.emitter();
     }

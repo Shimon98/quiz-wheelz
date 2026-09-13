@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
@@ -44,6 +45,7 @@ class RaceMovementServiceTest {
 
     private RaceMovementService service() {
         return new RaceMovementService(
+                new RaceMovementCalculator(),
                 new RaceFinishService(
                         racePlayerRepository,
                         Clock.fixed(ANCHOR_INSTANT, FIXED_ZONE)
@@ -100,7 +102,7 @@ class RaceMovementServiceTest {
     }
 
     @Test
-    void shouldClampAtTotalDistanceAndFinishThePlayer() {
+    void shouldClampAtTotalDistanceAndFinishAtTheExactCrossingInstant() {
         RacePlayer player = racingPlayer(990.0, 0.5, ANCHOR_EPOCH_MS);
         PlayerQuestion leftoverActiveQuestion = new PlayerQuestion();
         leftoverActiveQuestion.setStatus(PlayerQuestionStatus.ACTIVE);
@@ -116,8 +118,31 @@ class RaceMovementServiceTest {
         assertEquals(1000.0, player.getPosition(), 1e-9);
         assertEquals(RacePlayerStatus.FINISHED, player.getStatus());
         assertEquals(0.0, player.getSpeed());
+        assertEquals(afterSeconds(5), player.getFinishedAtEpochMs());
+        assertEquals(afterSeconds(5), player.getMovementUpdatedAtEpochMs());
+        assertEquals(
+                LocalDateTime.ofInstant(ANCHOR_INSTANT.plusSeconds(5), FIXED_ZONE),
+                player.getFinishedAt()
+        );
         assertEquals(PlayerQuestionStatus.EXPIRED, leftoverActiveQuestion.getStatus());
         verify(playerQuestionRepository).save(leftoverActiveQuestion);
+    }
+
+    @Test
+    void shouldReportTheSameCrossingWhetherSettledOnceOrInManySegments() {
+        RacePlayer single = racingPlayer(994.0, 2.0, ANCHOR_EPOCH_MS);
+        RacePlayer split = racingPlayer(994.0, 2.0, ANCHOR_EPOCH_MS);
+        RaceMovementService movementService = service();
+
+        movementService.settleTo(single, ANCHOR_EPOCH_MS + 750);
+        for (int step = 1; step <= 7; step++) {
+            assertFalse(movementService.settleTo(split, ANCHOR_EPOCH_MS + step * 100L));
+        }
+        assertTrue(movementService.settleTo(split, ANCHOR_EPOCH_MS + 750));
+
+        assertEquals(ANCHOR_EPOCH_MS + 750, single.getFinishedAtEpochMs());
+        assertEquals(single.getFinishedAtEpochMs(), split.getFinishedAtEpochMs());
+        assertEquals(RacePlayerStatus.FINISHED, split.getStatus());
     }
 
     @Test
@@ -142,6 +167,7 @@ class RaceMovementServiceTest {
         assertFalse(finished);
         assertEquals(0.0, player.getPosition(), 1e-9);
         assertEquals(afterSeconds(10), player.getMovementUpdatedAtEpochMs());
+        assertNull(player.getFinishedAtEpochMs());
     }
 
     @Test
@@ -171,6 +197,7 @@ class RaceMovementServiceTest {
         assertEquals(RacePlayerStatus.FINISHED, player.getStatus());
         assertEquals(1000.0, player.getPosition(), 1e-9);
         assertEquals(0.0, player.getSpeed());
+        assertEquals(afterSeconds(500), player.getFinishedAtEpochMs());
     }
 
     @Test

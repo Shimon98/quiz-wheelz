@@ -1,4 +1,6 @@
 import { ApiContractError } from "../../../errors/ApiContractError.js";
+import { compareRaceSnapshotFreshness } from "./compareRaceSnapshotFreshness.js";
+import { mapStudentRaceOpponents } from "./mapStudentRaceOpponents.js";
 const REQUIRED_NUMBER_FIELDS = [
   "totalDistance",
   "score",
@@ -9,7 +11,7 @@ const REQUIRED_NUMBER_FIELDS = [
   "movementUnitsPerSecond",
 ];
 
-export function assertValidRaceSnapshot(snapshot) {
+export function assertValidRaceSnapshot(snapshot, currentPlayerId = null) {
   if (snapshot == null || typeof snapshot !== "object") {
     throw new ApiContractError("Race snapshot is missing");
   }
@@ -22,6 +24,15 @@ export function assertValidRaceSnapshot(snapshot) {
 
   if (!Number.isSafeInteger(snapshot.streak) || snapshot.streak < 0) {
     throw new ApiContractError("Race snapshot streak is invalid");
+  }
+
+  if (!Number.isSafeInteger(snapshot.eventVersion) || snapshot.eventVersion < 0) {
+    throw new ApiContractError("Race snapshot event version is invalid");
+  }
+  for (const field of ["positionAtEpochMs", "playerFinishedAtEpochMs"]) {
+    if (snapshot[field] != null && (!Number.isSafeInteger(snapshot[field]) || snapshot[field] <= 0)) {
+      throw new ApiContractError(`Race snapshot ${field} is invalid`);
+    }
   }
 
   for (const field of ["rank", "playerCount"]) {
@@ -51,14 +62,15 @@ export function assertValidRaceSnapshot(snapshot) {
   ) {
     throw new ApiContractError("Race snapshot finish flags are missing");
   }
+  return mapStudentRaceOpponents(snapshot.opponents, currentPlayerId);
 }
 
 export function applyRaceSnapshot(previousState, snapshot) {
-  assertValidRaceSnapshot(snapshot);
+  const opponents = assertValidRaceSnapshot(snapshot, previousState.player.racePlayerId);
 
   if (
-    previousState.lastSnapshotAtEpochMs != null &&
-    snapshot.snapshotAtEpochMs < previousState.lastSnapshotAtEpochMs
+    compareRaceSnapshotFreshness(previousState.lastEventVersion,
+      previousState.lastSnapshotAtEpochMs, snapshot) <= 0
   ) {
     return previousState;
   }
@@ -67,10 +79,13 @@ export function applyRaceSnapshot(previousState, snapshot) {
     ...previousState,
 
     lastSnapshotAtEpochMs: snapshot.snapshotAtEpochMs,
+    lastEventVersion: snapshot.eventVersion,
+    opponents,
 
     raceStatus: snapshot.raceStatus,
     playerStatus: snapshot.playerStatus,
     playerFinished: snapshot.playerFinished,
+    playerFinishedAtEpochMs: snapshot.playerFinishedAtEpochMs ?? null,
     raceFinished: snapshot.raceFinished,
     totalDistance: snapshot.totalDistance,
     playerCount: snapshot.playerCount ?? null,
@@ -78,6 +93,7 @@ export function applyRaceSnapshot(previousState, snapshot) {
     player: {
       ...previousState.player,
       position: snapshot.position,
+      positionAtEpochMs: snapshot.positionAtEpochMs ?? null,
       speed: snapshot.speed,
       score: snapshot.score,
       streak: snapshot.streak,

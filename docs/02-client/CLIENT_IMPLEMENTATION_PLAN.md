@@ -751,29 +751,65 @@ local development handoff to C2; not yet verified on a physical device/browser):
 
 ## C2 — Opponents
 
-Next implementation stage after the accepted local C1 checkpoint. S1-02 is
-DONE: runtime and answer snapshots already
-provide authoritative `rank`, `playerCount` and up to four `nearbyPlayers`.
-The HUD consumes rank/count; nearby-player client mapping and rendering are
-not implemented yet. No new endpoint or client-calculated rank is needed.
+**Status:** `C2 CORE — DONE / ACCEPTED (2026-09-13)` — C2-01 competition truth
+integration, C2-02 student synchronization, C2-03 opponents, C2-04 finish
+presentation and the visual hardening (shared motion, lane-fit, static colors) are
+implemented; the closure pass ran live two-player and eight-player browser QA on the
+final build (see `TESTING_AND_DEFINITION_OF_DONE.md`). C2-A sound is deferred polish;
+C3 is the next stage. Physical-device acceptance and merge remain open.
 
-- validate/map nearby-player snapshots through the existing runtime boundary,
-  retaining snapshot freshness and each player's server identity/state
+Implemented after the accepted local C1 checkpoint. Server S1-02 and
+C2-01 are DONE: race-state, answer and finish-arbitration snapshots provide
+authoritative `rank`, `playerCount`, `eventVersion`, `positionAtEpochMs`,
+`playerFinishedAtEpochMs` and the full `opponents` roster (every other joined
+player, 0..7, standing order; each with `rank`, `position`, `positionAtEpochMs`,
+`movementUnitsPerSecond`, `status`, `finishedAtEpochMs` and lane/vehicle identity
+incl. `vehicleAssetKey`). `POST /api/race-players/me/finish-arbitration` returns the
+same snapshot plus the confirmed finish-order prefix. The HUD consumes rank/count;
+opponent mapping and rendering are locally implemented in C2-02/C2-03 (2026-09-10),
+pending adversarial pre-commit review and live browser/device QA. No client-calculated
+rank is needed. One snapshot accumulator orders by `(eventVersion, snapshotAtEpochMs)`;
+student SSE invalidates with mutation/generation guards and existing polling fallback.
+C2-04 is locally implemented (2026-09-11): passive finish synchronization,
+ETA/opponent arbitration triggers, ordered proof-gated crossing and shared visual
+runout. Direct FINISHED reloads do not replay a crossing. Fifteen focused tests
+were added; live multiplayer/browser/device QA remains open before C2 acceptance.
+Follow-up hardening: shared player/opponent motion, full-bounds preload, 2/4/7 depth
+budgets and static color assets pass the client tests, lint and build. Prior road/scenery
+and finish recovery fixes remain. Consistency closure (2026-09-11): server standings
+compare all participants at one decision instant, one normalized motion authority and
+5-second prediction limit for local and remote karts, the local kart draws inside the
+sorted world by ground depth, lane slots keep full steps with soft side saturation, and
+the HUD names a server-assigned shared place. Lane-fit closure (2026-09-13): vehicles scale so one kart plus a 20% gap fits beside the
+driver on phones, and an opponent is drawn only where its own lane step fits the zone side
+clearance (one neighbour per side near and two per side mid on phones, compressed far pack),
+so level cars never touch or stack; capped server projections disable further client
+prediction. 530 client tests,
+729 server tests (2 MySQL skips), lint/build and responsive renderer checks pass.
+C2 implementation is ready for PR review; final live/device acceptance and merge remain open.
+Future S4 effects reuse server-owned movement, snapshot identity/version and existing
+visual effect owners; luck/assistance policies and their durable effect contract remain S4 work.
+
+- validate/map `opponents` snapshots through the existing runtime boundary,
+  retaining snapshot freshness (`snapshotAtEpochMs`, `eventVersion`,
+  per-opponent `positionAtEpochMs`) and each player's server identity/state
 - derive `laneDelta` from server lane numbers for the existing projection's
   lateral coordinate; retain Depth Lock and the accepted road/camera/depth zones
 - opponent interpolation keyed by RacePlayer ID
 - hidden/entering/visible/exiting state machine
 - hysteresis/fades
-- depth-zone caps
+- bounded prediction (one shared 5-second limit), shared calibrated perspective and full-bounds culling
 - object pooling
 - server color keys
 - no visual depth cheating.
 
-### C2-A — Race sound polish — PLANNED
+Player/opponents share `StudentRaceVehicleVisual` and the existing asset loader;
+pooled opponent roots interleave with scenery directly in the world container.
 
-Next near-term polish slice after the first integrated opponent renderer,
-before the student-side final demonstration. No sound playback or assets
-are implemented by this planning checkpoint.
+### C2-A — Race sound polish — DEFERRED / PLANNED POLISH
+
+Deferred polish backlog: it does not block C3. Return to it before the
+student-side final demonstration. No sound playback or assets are implemented.
 
 - A quiet hover-engine loop changes pitch/volume gradually with the real
   server speed and remains at the new level while that speed is sustained.
@@ -797,9 +833,10 @@ are implemented by this planning checkpoint.
   repeated answers/reconnect, sustained speed changes, and comfortable
   balance with classroom use. Retest the carried-forward device checklist.
 
-## C3 — Teacher live race
+## C3 — Teacher live race — NEXT
 
-Depends on S2.
+Start from updated `main` after the C2 merge. Depends on S2 (teacher live-state,
+durable events and SSE are DONE on the server).
 
 ### C3-01 — Route and initial state
 

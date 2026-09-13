@@ -49,7 +49,7 @@ export class RoadLayer {
   }
 
   async requestRoadTexture(loadWorldTexture) {
-    const { assetUrl, maxAnisotropy, edgeFeatherHalfWidthRatio } = STUDENT_RACE_WORLD_ART.road;
+    const { assetUrl, maxAnisotropy, edgeFeatherHalfWidthRatio, horizonFadeDepth } = STUDENT_RACE_WORLD_ART.road;
     const result = await loadWorldTexture(assetUrl, {
       repeat: true,
       mipmaps: true,
@@ -64,7 +64,7 @@ export class RoadLayer {
       this.meshContainer,
       result.texture,
       (frameState) => this.buildRoadData(frameState),
-      { edgeFeatherHalfWidthRatio },
+      { edgeFeatherHalfWidthRatio, horizonFadeDepth },
     );
   }
 

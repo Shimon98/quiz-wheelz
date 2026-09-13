@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "dev:bots": "node scripts/devRaceBots.mjs"
   },
   "dependencies": {
     "@mantine/core": "^9.4.1",

@@ -47,7 +47,6 @@ public class CurrentRacePlayerService {
         return findRacePlayerFromIdentity(identity);
     }
 
-    @Transactional(readOnly = true)
     public RacePlayerSessionIdentity resolveCurrentRacePlayerIdentity(
             HttpServletRequest request
     ) {

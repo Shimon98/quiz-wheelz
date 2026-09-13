@@ -51,6 +51,8 @@ export default {
     scoreLabel: "ניקוד",
     rankLabel: "מקום",
     rankValue: "מקום {{rank}} מתוך {{count}}",
+    sharedRankLabel: "מקום — בשוויון",
+    sharedRankValue: "מקום {{rank}} מתוך {{count}} — בשוויון",
     streakLabel: "רצף תשובות נכונות",
     streakShortLabel: "רצף",
     streakValue: "{{count}} תשובות נכונות ברצף",

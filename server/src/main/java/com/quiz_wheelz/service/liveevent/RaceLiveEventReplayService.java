@@ -1,8 +1,9 @@
 package com.quiz_wheelz.service.liveevent;
 
-import com.quiz_wheelz.common.TeacherRaceLiveStreamRules;
+import com.quiz_wheelz.common.RaceLiveStreamRules;
 import com.quiz_wheelz.dto.liveevent.RaceLiveEventEnvelope;
 import com.quiz_wheelz.dto.liveevent.RaceLiveEventPayload;
+import com.quiz_wheelz.dto.liveevent.RaceLiveEventSignal;
 import com.quiz_wheelz.entitys.RaceLiveEvent;
 import com.quiz_wheelz.repository.RaceLiveEventRepository;
 import org.springframework.data.domain.PageRequest;
@@ -35,10 +36,23 @@ public class RaceLiveEventReplayService {
         return eventRepository.findAfterVersionOrdered(
                         raceId,
                         afterVersion,
-                        PageRequest.of(0, TeacherRaceLiveStreamRules.REPLAY_BATCH_SIZE)
+                        PageRequest.of(0, RaceLiveStreamRules.REPLAY_BATCH_SIZE)
                 )
                 .stream()
                 .map(this::toEnvelope)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<RaceLiveEventSignal> readNextSignalBatch(Long raceId, long afterVersion) {
+        Objects.requireNonNull(raceId);
+        return eventRepository.findAfterVersionOrdered(
+                        raceId, afterVersion, PageRequest.of(0, RaceLiveStreamRules.REPLAY_BATCH_SIZE)
+                )
+                .stream()
+                .map(event -> new RaceLiveEventSignal(
+                        event.getVersion(), event.getType(), event.getOccurredAtEpochMs()
+                ))
                 .toList();
     }
 

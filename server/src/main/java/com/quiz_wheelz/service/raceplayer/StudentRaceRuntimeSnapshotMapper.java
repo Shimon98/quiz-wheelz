@@ -2,7 +2,7 @@ package com.quiz_wheelz.service.raceplayer;
 
 import com.quiz_wheelz.common.RaceProgressRules;
 import com.quiz_wheelz.dto.raceengine.AnswerRaceImpact;
-import com.quiz_wheelz.dto.raceplayer.NearbyRacePlayerResponse;
+import com.quiz_wheelz.dto.raceplayer.StudentRaceOpponentResponse;
 import com.quiz_wheelz.dto.raceplayer.StudentRaceRuntimeSnapshotResponse;
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
@@ -19,7 +19,8 @@ public class StudentRaceRuntimeSnapshotMapper {
     public StudentRaceRuntimeSnapshotResponse fromRacePlayer(
             RacePlayer racePlayer,
             StudentRaceStandingResult standing,
-            long snapshotAtEpochMs
+            long snapshotAtEpochMs,
+            long eventVersion
     ) {
         Objects.requireNonNull(racePlayer);
         Objects.requireNonNull(standing);
@@ -30,6 +31,7 @@ public class StudentRaceRuntimeSnapshotMapper {
                 race.getTotalDistance(),
                 racePlayer.getScore(),
                 racePlayer.getPosition(),
+                racePlayer.getMovementUpdatedAtEpochMs(),
                 racePlayer.getSpeed(),
                 racePlayer.getStreak(),
                 racePlayer.getHighestStreak(),
@@ -38,28 +40,38 @@ public class StudentRaceRuntimeSnapshotMapper {
                 race.getStatus(),
                 racePlayer.getStatus() == RacePlayerStatus.FINISHED,
                 race.getStatus() == RaceStatus.FINISHED,
+                racePlayer.getFinishedAtEpochMs(),
                 snapshotAtEpochMs,
-                movementUnitsPerSecond(racePlayer.getSpeed()),
+                movementUnitsPerSecond(
+                        race.getStatus(),
+                        racePlayer.getStatus(),
+                        racePlayer.getSpeed()
+                ),
+                eventVersion,
                 standing.rank(),
                 standing.playerCount(),
-                mapNearbyPlayers(standing)
+                mapOpponents(race.getStatus(), standing)
         );
     }
 
     public StudentRaceRuntimeSnapshotResponse fromAnswerRaceImpact(
             AnswerRaceImpact impact,
-            Race race,
+            RacePlayer racePlayer,
             StudentRaceStandingResult standing,
-            long snapshotAtEpochMs
+            long snapshotAtEpochMs,
+            long eventVersion
     ) {
         Objects.requireNonNull(impact);
-        Objects.requireNonNull(race);
+        Objects.requireNonNull(racePlayer);
         Objects.requireNonNull(standing);
+
+        Race race = Objects.requireNonNull(racePlayer.getRace());
 
         return new StudentRaceRuntimeSnapshotResponse(
                 race.getTotalDistance(),
                 impact.getNewScore(),
                 impact.getNewPosition(),
+                racePlayer.getMovementUpdatedAtEpochMs(),
                 impact.getNewSpeed(),
                 impact.getNewStreak(),
                 impact.getHighestStreak(),
@@ -68,34 +80,57 @@ public class StudentRaceRuntimeSnapshotMapper {
                 impact.getRaceStatus(),
                 impact.isPlayerFinished(),
                 impact.isRaceFinished(),
+                racePlayer.getFinishedAtEpochMs(),
                 snapshotAtEpochMs,
-                movementUnitsPerSecond(impact.getNewSpeed()),
+                movementUnitsPerSecond(
+                        impact.getRaceStatus(),
+                        impact.getPlayerStatus(),
+                        impact.getNewSpeed()
+                ),
+                eventVersion,
                 standing.rank(),
                 standing.playerCount(),
-                mapNearbyPlayers(standing)
+                mapOpponents(impact.getRaceStatus(), standing)
         );
     }
 
-    private List<NearbyRacePlayerResponse> mapNearbyPlayers(
+    private List<StudentRaceOpponentResponse> mapOpponents(
+            RaceStatus raceStatus,
             StudentRaceStandingResult standing
     ) {
-        return standing.nearbyPlayers().stream()
-                .map(nearbyPlayer -> new NearbyRacePlayerResponse(
-                        nearbyPlayer.racePlayerId(),
-                        nearbyPlayer.displayName(),
-                        nearbyPlayer.laneNumber(),
-                        nearbyPlayer.vehicleTypeKey(),
-                        nearbyPlayer.vehicleColorKey(),
-                        nearbyPlayer.position(),
-                        nearbyPlayer.speed(),
-                        nearbyPlayer.status()
+        return standing.opponents().stream()
+                .map(opponent -> new StudentRaceOpponentResponse(
+                        opponent.racePlayerId(),
+                        opponent.displayName(),
+                        opponent.laneNumber(),
+                        opponent.vehicleTypeKey(),
+                        opponent.vehicleColorKey(),
+                        opponent.vehicleAssetKey(),
+                        opponent.rank(),
+                        opponent.position(),
+                        opponent.positionAtEpochMs(),
+                        movementUnitsPerSecond(
+                                raceStatus,
+                                opponent.status(),
+                                opponent.speed()
+                        ),
+                        opponent.status(),
+                        opponent.finishedAtEpochMs()
                 ))
                 .toList();
     }
 
-    private double movementUnitsPerSecond(Double speed) {
-        double safeSpeed = speed == null ? 0.0 : speed;
+    private double movementUnitsPerSecond(
+            RaceStatus raceStatus,
+            RacePlayerStatus playerStatus,
+            Double speed
+    ) {
+        if (raceStatus != RaceStatus.IN_PROGRESS
+                || playerStatus != RacePlayerStatus.RACING
+                || speed == null) {
+            return RaceProgressRules.FINISHED_SPEED;
+        }
 
-        return safeSpeed * RaceProgressRules.BASE_MOVEMENT_UNITS_PER_SECOND;
+        return speed * RaceProgressRules.BASE_MOVEMENT_UNITS_PER_SECOND;
     }
 }

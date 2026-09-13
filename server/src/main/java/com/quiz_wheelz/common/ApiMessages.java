@@ -45,6 +45,9 @@ public final class ApiMessages {
     public static final String STUDENT_ANSWER_SUBMITTED_SUCCESSFULLY =
             "Student answer submitted successfully";
 
+    public static final String STUDENT_RACE_FINISH_ARBITRATION_RESOLVED_SUCCESSFULLY =
+            "Student race finish arbitration resolved successfully";
+
     private ApiMessages() {
     }
 }

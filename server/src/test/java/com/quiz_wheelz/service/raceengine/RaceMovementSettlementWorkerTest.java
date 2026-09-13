@@ -388,7 +388,7 @@ class RaceMovementSettlementWorkerTest {
         assertEquals(RacePlayerStatus.DISCONNECTED, firstAbsent.getStatus());
         assertEquals(RacePlayerStatus.DISCONNECTED, secondAbsent.getStatus());
         verify(racePlayerRepository).saveAllAndFlush(players);
-        verify(liveEventChangeRecorder).recordFinalizationPlayerChanges(
+        verify(liveEventChangeRecorder).recordBatchPlayerChanges(
                 any(),
                 any()
         );

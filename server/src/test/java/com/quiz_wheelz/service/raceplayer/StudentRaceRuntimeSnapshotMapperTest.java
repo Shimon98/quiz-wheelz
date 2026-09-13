@@ -1,6 +1,7 @@
 package com.quiz_wheelz.service.raceplayer;
 
 import com.quiz_wheelz.dto.raceengine.AnswerRaceImpact;
+import com.quiz_wheelz.dto.raceplayer.StudentRaceOpponentResponse;
 import com.quiz_wheelz.dto.raceplayer.StudentRaceRuntimeSnapshotResponse;
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
@@ -13,11 +14,16 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class StudentRaceRuntimeSnapshotMapperTest {
 
     private static final long SNAPSHOT_AT_EPOCH_MS = 1_780_000_000_000L;
+    private static final long POSITION_AT_EPOCH_MS = 1_779_999_999_500L;
+    private static final long OPPONENT_POSITION_AT_EPOCH_MS = 1_779_999_999_100L;
+    private static final long FINISHED_AT_EPOCH_MS = 1_779_999_998_000L;
+    private static final long EVENT_VERSION = 42L;
 
     private final StudentRaceRuntimeSnapshotMapper mapper =
             new StudentRaceRuntimeSnapshotMapper();
@@ -30,11 +36,12 @@ class StudentRaceRuntimeSnapshotMapperTest {
         );
 
         StudentRaceRuntimeSnapshotResponse snapshot =
-                mapper.fromRacePlayer(racePlayer, standing(), SNAPSHOT_AT_EPOCH_MS);
+                mapper.fromRacePlayer(racePlayer, standing(), SNAPSHOT_AT_EPOCH_MS, EVENT_VERSION);
 
         assertEquals(1000, snapshot.getTotalDistance());
         assertEquals(50, snapshot.getScore());
         assertEquals(120.0, snapshot.getPosition());
+        assertEquals(POSITION_AT_EPOCH_MS, snapshot.getPositionAtEpochMs());
         assertEquals(1.2, snapshot.getSpeed());
         assertEquals(3, snapshot.getStreak());
         assertEquals(5, snapshot.getHighestStreak());
@@ -43,45 +50,78 @@ class StudentRaceRuntimeSnapshotMapperTest {
         assertEquals(RaceStatus.IN_PROGRESS, snapshot.getRaceStatus());
         assertFalse(snapshot.isPlayerFinished());
         assertFalse(snapshot.isRaceFinished());
+        assertNull(snapshot.getPlayerFinishedAtEpochMs());
         assertEquals(SNAPSHOT_AT_EPOCH_MS, snapshot.getSnapshotAtEpochMs());
         assertEquals(4.8, snapshot.getMovementUnitsPerSecond());
+        assertEquals(EVENT_VERSION, snapshot.getEventVersion());
         assertEquals(2, snapshot.getRank());
         assertEquals(5, snapshot.getPlayerCount());
-        assertEquals(1, snapshot.getNearbyPlayers().size());
-        assertEquals(91L, snapshot.getNearbyPlayers().get(0).getRacePlayerId());
+        assertEquals(1, snapshot.getOpponents().size());
+
+        StudentRaceOpponentResponse opponent = snapshot.getOpponents().get(0);
+        assertEquals(91L, opponent.getRacePlayerId());
+        assertEquals("Noa", opponent.getDisplayName());
+        assertEquals(3, opponent.getLaneNumber());
+        assertEquals("TOY_CAR", opponent.getVehicleTypeKey());
+        assertEquals("BLUE", opponent.getVehicleColorKey());
+        assertEquals("TOY_CAR_BLUE", opponent.getVehicleAssetKey());
+        assertEquals(1, opponent.getRank());
+        assertEquals(420.0, opponent.getPosition());
+        assertEquals(OPPONENT_POSITION_AT_EPOCH_MS, opponent.getPositionAtEpochMs());
+        assertEquals(5.2, opponent.getMovementUnitsPerSecond(), 1e-9);
+        assertEquals(RacePlayerStatus.RACING, opponent.getStatus());
+        assertNull(opponent.getFinishedAtEpochMs());
     }
 
     @Test
-    void fromRacePlayerShouldMarkPlayerFinishedWhenPlayerStatusIsFinished() {
+    void fromRacePlayerShouldExposeCanonicalFinishAndZeroRateForFinishedPlayer() {
         RacePlayer racePlayer = createRacePlayer(
                 RacePlayerStatus.FINISHED,
                 RaceStatus.IN_PROGRESS
         );
+        racePlayer.setFinishedAtEpochMs(FINISHED_AT_EPOCH_MS);
+        racePlayer.setSpeed(0.0);
 
         StudentRaceRuntimeSnapshotResponse snapshot =
-                mapper.fromRacePlayer(racePlayer, standing(), SNAPSHOT_AT_EPOCH_MS);
+                mapper.fromRacePlayer(racePlayer, standing(), SNAPSHOT_AT_EPOCH_MS, EVENT_VERSION);
 
         assertTrue(snapshot.isPlayerFinished());
         assertFalse(snapshot.isRaceFinished());
+        assertEquals(FINISHED_AT_EPOCH_MS, snapshot.getPlayerFinishedAtEpochMs());
+        assertEquals(0.0, snapshot.getMovementUnitsPerSecond());
     }
 
     @Test
-    void fromRacePlayerShouldMarkRaceFinishedWhenRaceStatusIsFinished() {
+    void terminalOpponentsAndFinishedRacesExposeZeroMovementRate() {
         RacePlayer racePlayer = createRacePlayer(
                 RacePlayerStatus.RACING,
                 RaceStatus.FINISHED
         );
+        StudentRaceStandingResult standing = new StudentRaceStandingResult(
+                2,
+                3,
+                List.of(
+                        opponent(91L, RacePlayerStatus.FINISHED, FINISHED_AT_EPOCH_MS),
+                        opponent(92L, RacePlayerStatus.DISCONNECTED, null)
+                )
+        );
 
         StudentRaceRuntimeSnapshotResponse snapshot =
-                mapper.fromRacePlayer(racePlayer, standing(), SNAPSHOT_AT_EPOCH_MS);
+                mapper.fromRacePlayer(racePlayer, standing, SNAPSHOT_AT_EPOCH_MS, EVENT_VERSION);
 
-        assertFalse(snapshot.isPlayerFinished());
         assertTrue(snapshot.isRaceFinished());
+        assertEquals(0.0, snapshot.getMovementUnitsPerSecond());
+        assertEquals(0.0, snapshot.getOpponents().get(0).getMovementUnitsPerSecond());
+        assertEquals(FINISHED_AT_EPOCH_MS, snapshot.getOpponents().get(0).getFinishedAtEpochMs());
+        assertEquals(0.0, snapshot.getOpponents().get(1).getMovementUnitsPerSecond());
     }
 
     @Test
     void fromAnswerRaceImpactShouldMapPostAnswerSnapshot() {
-        Race race = createRace(RaceStatus.IN_PROGRESS);
+        RacePlayer racePlayer = createRacePlayer(
+                RacePlayerStatus.RACING,
+                RaceStatus.IN_PROGRESS
+        );
         AnswerRaceImpact impact = new AnswerRaceImpact(
                 1L,
                 7L,
@@ -109,14 +149,16 @@ class StudentRaceRuntimeSnapshotMapperTest {
         StudentRaceRuntimeSnapshotResponse snapshot =
                 mapper.fromAnswerRaceImpact(
                         impact,
-                        race,
+                        racePlayer,
                         standing(),
-                        SNAPSHOT_AT_EPOCH_MS
+                        SNAPSHOT_AT_EPOCH_MS,
+                        EVENT_VERSION
                 );
 
         assertEquals(1000, snapshot.getTotalDistance());
         assertEquals(60, snapshot.getScore());
         assertEquals(130.0, snapshot.getPosition());
+        assertEquals(POSITION_AT_EPOCH_MS, snapshot.getPositionAtEpochMs());
         assertEquals(1.0, snapshot.getSpeed());
         assertEquals(4, snapshot.getStreak());
         assertEquals(5, snapshot.getHighestStreak());
@@ -127,12 +169,10 @@ class StudentRaceRuntimeSnapshotMapperTest {
         assertFalse(snapshot.isRaceFinished());
         assertEquals(SNAPSHOT_AT_EPOCH_MS, snapshot.getSnapshotAtEpochMs());
         assertEquals(4.0, snapshot.getMovementUnitsPerSecond());
+        assertEquals(EVENT_VERSION, snapshot.getEventVersion());
         assertEquals(2, snapshot.getRank());
         assertEquals(5, snapshot.getPlayerCount());
-        assertEquals(
-                RacePlayerStatus.DISCONNECTED,
-                snapshot.getNearbyPlayers().get(0).getStatus()
-        );
+        assertEquals(91L, snapshot.getOpponents().get(0).getRacePlayerId());
     }
 
     private RacePlayer createRacePlayer(
@@ -144,6 +184,7 @@ class StudentRaceRuntimeSnapshotMapperTest {
         racePlayer.setStatus(playerStatus);
         racePlayer.setScore(50);
         racePlayer.setPosition(120.0);
+        racePlayer.setMovementUpdatedAtEpochMs(POSITION_AT_EPOCH_MS);
         racePlayer.setSpeed(1.2);
         racePlayer.setStreak(3);
         racePlayer.setHighestStreak(5);
@@ -164,16 +205,28 @@ class StudentRaceRuntimeSnapshotMapperTest {
         return new StudentRaceStandingResult(
                 2,
                 5,
-                List.of(new StudentRaceStandingResult.NearbyPlayer(
-                        91L,
-                        "Noa",
-                        3,
-                        "HOVER_KART",
-                        "GREEN",
-                        420.0,
-                        1.3,
-                        RacePlayerStatus.DISCONNECTED
-                ))
+                List.of(opponent(91L, RacePlayerStatus.RACING, null))
+        );
+    }
+
+    private StudentRaceStandingResult.Opponent opponent(
+            Long racePlayerId,
+            RacePlayerStatus status,
+            Long finishedAtEpochMs
+    ) {
+        return new StudentRaceStandingResult.Opponent(
+                racePlayerId,
+                "Noa",
+                3,
+                "TOY_CAR",
+                "BLUE",
+                "TOY_CAR_BLUE",
+                1,
+                420.0,
+                OPPONENT_POSITION_AT_EPOCH_MS,
+                1.3,
+                status,
+                finishedAtEpochMs
         );
     }
 }

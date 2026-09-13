@@ -25,6 +25,7 @@ import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.service.raceplayer.RaceStandingCalculator;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStandingService;
+import com.quiz_wheelz.service.raceplayer.StudentRaceStandingProjectionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -102,7 +103,8 @@ class StudentAnswerTerminalLifecycleTest {
         );
         standingService = new StudentRaceStandingService(
                 racePlayerRepository,
-                new RaceStandingCalculator()
+                new RaceStandingCalculator(ZoneId.of("UTC")),
+                org.mockito.Mockito.mock(StudentRaceStandingProjectionService.class)
         );
         answerService = new StudentAnswerSubmissionService(
                 playerQuestionRepository,
@@ -117,6 +119,7 @@ class StudentAnswerTerminalLifecycleTest {
                         mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class),
                         mock(com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.class)
                 ),
+                mock(com.quiz_wheelz.service.raceengine.RaceDecisionTimeService.class),
                 Clock.fixed(NOW, ZoneId.of("UTC"))
         );
     }

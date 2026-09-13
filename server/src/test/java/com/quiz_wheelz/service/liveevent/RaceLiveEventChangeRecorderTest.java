@@ -129,7 +129,7 @@ class RaceLiveEventChangeRecorderTest {
         player.setStatus(RacePlayerStatus.DISCONNECTED);
         secondPlayer.setStatus(RacePlayerStatus.DISCONNECTED);
 
-        changeRecorder.recordFinalizationPlayerChanges(
+        changeRecorder.recordBatchPlayerChanges(
                 race,
                 List.of(firstChange, secondChange)
         );
@@ -155,7 +155,7 @@ class RaceLiveEventChangeRecorderTest {
         player.setStatus(RacePlayerStatus.FINISHED);
         secondPlayer.setStatus(RacePlayerStatus.FINISHED);
 
-        changeRecorder.recordFinalizationPlayerChanges(
+        changeRecorder.recordBatchPlayerChanges(
                 race,
                 List.of(firstChange, secondChange)
         );
@@ -174,7 +174,7 @@ class RaceLiveEventChangeRecorderTest {
         finished.setStatus(RacePlayerStatus.FINISHED);
         progressed.setStatus(RacePlayerStatus.DISCONNECTED);
 
-        changeRecorder.recordFinalizationPlayerChanges(
+        changeRecorder.recordBatchPlayerChanges(
                 race,
                 List.of(finishedChange, progressChange)
         );
@@ -194,7 +194,7 @@ class RaceLiveEventChangeRecorderTest {
         progressed.setStatus(RacePlayerStatus.DISCONNECTED);
         finished.setStatus(RacePlayerStatus.FINISHED);
 
-        changeRecorder.recordFinalizationPlayerChanges(
+        changeRecorder.recordBatchPlayerChanges(
                 race,
                 List.of(progressChange, finishedChange)
         );
@@ -217,7 +217,7 @@ class RaceLiveEventChangeRecorderTest {
         firstFinished.setStatus(RacePlayerStatus.FINISHED);
         secondFinished.setStatus(RacePlayerStatus.FINISHED);
 
-        changeRecorder.recordFinalizationPlayerChanges(
+        changeRecorder.recordBatchPlayerChanges(
                 race,
                 List.of(progressChange, firstFinishedChange, secondFinishedChange)
         );

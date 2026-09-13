@@ -1,7 +1,7 @@
 package com.quiz_wheelz.controller;
 
 import com.quiz_wheelz.common.ApiPaths;
-import com.quiz_wheelz.common.TeacherRaceLiveStreamRules;
+import com.quiz_wheelz.common.RaceLiveStreamRules;
 import com.quiz_wheelz.security.SecurityExpressions;
 import com.quiz_wheelz.service.teacher.TeacherRaceLiveStreamService;
 import org.springframework.http.MediaType;
@@ -34,11 +34,11 @@ public class TeacherRaceLiveStreamController {
     public SseEmitter stream(
             @PathVariable Long raceId,
             @RequestParam(
-                    name = TeacherRaceLiveStreamRules.AFTER_VERSION_PARAMETER,
+                    name = RaceLiveStreamRules.AFTER_VERSION_PARAMETER,
                     required = false
             ) String afterVersion,
             @RequestHeader(
-                    name = TeacherRaceLiveStreamRules.LAST_EVENT_ID_HEADER,
+                    name = RaceLiveStreamRules.LAST_EVENT_ID_HEADER,
                     required = false
             ) String lastEventId
     ) {

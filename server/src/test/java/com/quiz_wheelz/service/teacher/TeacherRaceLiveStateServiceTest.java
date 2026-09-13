@@ -54,7 +54,7 @@ class TeacherRaceLiveStateServiceTest {
                 raceAccessService,
                 new TeacherRaceLivePlayerSnapshotService(
                         racePlayerRepository,
-                        new RaceStandingCalculator()
+                        new RaceStandingCalculator(java.time.ZoneOffset.UTC)
                 ),
                 Clock.fixed(NOW, ZoneOffset.UTC)
         );

@@ -58,8 +58,7 @@ class StudentQuestionReloadHardeningTest {
         RacePlayerGameplayTimelineService timelineService =
                 new RacePlayerGameplayTimelineService(
                         timeoutService,
-                        raceMovementService,
-                        clock
+                        raceMovementService
                 );
         RacePlayerGameplayRequestGuard requestGuard =
                 new RacePlayerGameplayRequestGuard(

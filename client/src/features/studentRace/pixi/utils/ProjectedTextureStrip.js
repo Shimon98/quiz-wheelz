@@ -1,14 +1,15 @@
 import { Mesh, MeshGeometry } from "pixi.js";
 
 import { writeStripPhase } from "./buildProjectedStripMeshData";
-import { buildStripEdgeCoordinates, createStripEdgeShader } from "./createStripEdgeShader";
+import { buildStripEdgeCoordinates, buildStripDepthCoordinates, createStripEdgeShader } from "./createStripEdgeShader";
 
 export class ProjectedTextureStrip {
-  constructor(container, texture, buildData, { edgeFeatherHalfWidthRatio = 0 } = {}) {
+  constructor(container, texture, buildData, { edgeFeatherHalfWidthRatio = 0, horizonFadeDepth = 0 } = {}) {
     this.container = container;
     this.texture = texture;
     this.buildData = buildData;
     this.edgeFeatherHalfWidthRatio = edgeFeatherHalfWidthRatio;
+    this.horizonFadeDepth = horizonFadeDepth;
     this.mesh = null;
     this.data = null;
     this.sizeKey = null;
@@ -32,7 +33,11 @@ export class ProjectedTextureStrip {
             buffer: buildStripEdgeCoordinates(this.data),
             format: "float32",
           });
-          shader = createStripEdgeShader(this.texture, this.edgeFeatherHalfWidthRatio);
+          geometry.addAttribute("aEdgeDepth", {
+            buffer: buildStripDepthCoordinates(this.data),
+            format: "float32",
+          });
+          shader = createStripEdgeShader(this.texture, this.edgeFeatherHalfWidthRatio, this.horizonFadeDepth);
         }
         this.mesh = new Mesh({ geometry, texture: this.texture, shader });
         this.mesh.once("destroyed", () => {

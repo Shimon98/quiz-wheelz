@@ -8,9 +8,9 @@ import StudentRaceSpeedometer from "./StudentRaceSpeedometer";
 import StudentRaceReward from "./StudentRaceReward";
 import "../styles/studentRaceHud.css";
 
-function HudStatChip({ icon: Icon, label, value, accessibleLabel }) {
+function HudStatChip({ icon: Icon, label, value, accessibleLabel, sharedRank = false }) {
   return (
-    <div className="race-hud-stat" aria-label={accessibleLabel}>
+    <div className="race-hud-stat" aria-label={accessibleLabel} data-shared-rank={sharedRank}>
       <div className="race-hud-stat-label">
         <Icon aria-hidden="true" />
         <span>{label}</span>
@@ -34,9 +34,10 @@ export default function StudentRaceHud({ runtimeState = null, question = null, a
         {hud.rankText != null ? (
           <HudStatChip
             icon={FlagIcon}
-            label={t("hud.rankLabel")}
+            label={t(hud.rankLabelKey)}
             value={hud.rankText}
-            accessibleLabel={t("hud.rankValue", { rank: hud.rank, count: hud.playerCount })}
+            sharedRank={hud.sharedRank}
+            accessibleLabel={t(hud.rankValueKey, { rank: hud.rank, count: hud.playerCount })}
           />
         ) : <span aria-hidden="true" />}
       </div>

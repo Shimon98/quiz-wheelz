@@ -1,8 +1,8 @@
 # Testing and Definition of Done
 
 **Status:** Canonical  
-**Audit date:** 2026-08-24
-**Code baseline:** `main@c32600870902bade6c21ecec0a80777c0840e0de`
+**Audit date:** 2026-09-10
+**Code baseline:** `main@bb2d00530f4637d4d1f75849fb0397ac443bc46a`
 **This document owns:** the complete automated/manual quality bar for every feature and phase
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -76,10 +76,41 @@ Required gameplay tests:
 - authoritative student standings count all joined players and rank FINISHED players
   by finish time before position-ranked waiting/racing/disconnected players
 - standings use competition rank for exact ties, deterministic ordering without
-  lane/ID rank influence, and an immutable max-4 nearby window that excludes self
-- race-state and submit-answer serialize the same non-null rank/player-count/nearby
-  vocabulary after current-request mutation, with exact-field nearby no-leak coverage
-- question wall-clock timeout during absence, exactly once, without deadline extension
+  lane/ID rank influence, and a full `opponents` roster that excludes self and is
+  verified for 1/2/4/8-player races
+- one decision-instant comparison model: online opponents project to the requester
+  decision instant, absent/grace-expired opponents stop at their trusted cutoff,
+  active question deadlines cap the projection, crossings stop at the finish instant,
+  degraded presence fails open, non-RACING/finished-race rosters stay raw, active
+  questions load in one batch, different anchors of one position tie for either
+  requester, and arbitration ranks the settled roster without projection
+- race-state, submit-answer and finish-arbitration serialize the same non-null
+  rank/player-count/opponents/eventVersion vocabulary after current-request
+  mutation, with exact-field opponent no-leak coverage
+- deterministic movement calculator: 1/10,000-unit tick projection, partition
+  invariance, exact crossing instant, zero-speed anchor advance, non-finite guards
+- timeout chronology: expiry beyond the trusted movement cutoff defers (settle to
+  the cutoff only, ACTIVE, no penalty); expiry within the cutoff settles to the
+  expiry at the old speed, applies the exactly-once penalty and settles the
+  remainder; reconnect re-anchors and resolves the overdue question at the decision
+  instant without hidden movement; DISCONNECTED expires it without consequence;
+  submit-answer rejects an overdue ACTIVE question
+- canonical `finishedAtEpochMs` from the answer decision instant or the crossing
+  instant, `finishedAt` derived from the same instant, standing and finish event
+  fall back to legacy `finishedAt`
+- snapshot `eventVersion` equals the race version after the request's own durable
+  events (race-state and submit-answer)
+- finish arbitration: identity/preflight rejection before locks, all-players → race
+  lock order, clock-regression gate (no settlement, unproven), requester guard
+  rejection with recorded roster changes, background settlement of other RACING
+  players, FINISHED-race durable truth, confirmed prefix bounded by
+  min(T−1, earliest MAX-speed crossing − 1), unproven for FINISHED-without-epoch,
+  WAITING or anchorless RACING, latch-based concurrency (concurrent arbitrations,
+  arbitration vs player→race lock holder, arbitration vs finalizer, rollback) and
+  MockMvc security (missing/invalid/teacher cookie 401, wrong membership 404,
+  WAITING race 409, valid session 200)
+- question wall-clock timeout during absence: deadline never extended, consequence
+  exactly once and only when the trusted cutoff reaches the deadline
 - expired-current-question reload applies timeout and generation once; the next
   current-question repeat returns the same ACTIVE identity and original deadline
 - answers after DISCONNECTED, player FINISHED or race FINISHED leave question and
@@ -175,10 +206,30 @@ C1-04):
 
 - new client behavior ships with focused automated tests when meaningful
 - pure logic → unit tests; React UI behavior → component tests
+- test files live in a `__tests__` folder next to the code they cover; Vitest finds
+  them by the `*.test.js(x)` name, so no configuration lists test paths
 - protect behavior and contracts, not implementation trivia (class order,
   decorative icons, private structure, Pixi frame animation)
 - no retroactive full-suite backfill; touched high-risk legacy behavior
   gains regression tests when practical.
+
+Multiplayer QA helper: `cd client && npm run dev:bots` creates a race as the dev
+teacher with six online bots (two free slots for real browsers) and prints the room
+code; `--answer=<seconds>` makes the bots answer correctly, `--start` starts without
+the dashboard, `--seconds=<n>` exits automatically, `QW_API_BASE` targets another port.
+
+C2 closure live QA (2026-09-13, build `d1df840`, local server running the branch, two
+isolated RacePlayer sessions per run plus API drivers, GPU headless Chrome): A two-player
+bonus in both directions (remote kart at most 0.28 units per frame at about 165 fps, no
+backward step, convergence within about 4 s); B/C eight players from lanes 1/4 on 390×844
+and 8/5 on 1440×1040 with staggered driver answers (NEAR never shows the whole field,
+MID/FAR grow as the field stretches, at most two visibility flips per opponent);
+D overtake ahead → alongside → behind → rear exit and E rear entry with frame-continuous
+position and a fade starting near zero; F all eight static colors loaded at 768×768 with no
+tint or filter; G photo finish 610 ms apart with no visual crossing before the confirmed
+proof and the same order on both screens; H mid-race reload (reconnect before race-state,
+same question and deadline, same RacePlayer, an already FINISHED opponent never replayed).
+Not produced live: an exact finish tie (unit-tested) and the hide/restore-tab variant of H.
 
 Manual viewport matrix:
 

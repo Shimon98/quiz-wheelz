@@ -26,6 +26,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class RaceEngineServiceTest {
 
+    private static final long DECISION_EPOCH_MS = 1_787_045_370_000L;
+
     @Mock
     private RacePlayerRepository racePlayerRepository;
 
@@ -51,11 +53,10 @@ class RaceEngineServiceTest {
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
                 .thenReturn(List.of(player));
 
-        AnswerRaceImpact impact = raceEngineService.applyAnswerResult(player, true);
+        AnswerRaceImpact impact = raceEngineService.applyAnswerResult(player, true, DECISION_EPOCH_MS);
 
         assertEquals(10, player.getScore());
         assertEquals(10.0, player.getPosition());
-        // Cumulative boost model (C1-03M): 0.5 + EASY boost 0.20.
         assertEquals(0.7, player.getSpeed(), 1e-9);
         assertEquals(1, player.getStreak());
         assertEquals(1, player.getHighestStreak());
@@ -75,7 +76,7 @@ class RaceEngineServiceTest {
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
                 .thenReturn(List.of(player));
 
-        AnswerRaceImpact impact = raceEngineService.applyAnswerResult(player, true);
+        AnswerRaceImpact impact = raceEngineService.applyAnswerResult(player, true, DECISION_EPOCH_MS);
 
         assertEquals(15, impact.getScoreDelta());
         assertEquals(15.0, impact.getProgressDelta());
@@ -92,11 +93,10 @@ class RaceEngineServiceTest {
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
                 .thenReturn(List.of(player));
 
-        AnswerRaceImpact impact = raceEngineService.applyAnswerResult(player, true);
+        AnswerRaceImpact impact = raceEngineService.applyAnswerResult(player, true, DECISION_EPOCH_MS);
 
         assertEquals(20, impact.getScoreDelta());
         assertEquals(20.0, impact.getProgressDelta());
-        // 1.7 + HARD boost 0.40 caps at MAX_RACING_SPEED.
         assertEquals(2.0, impact.getNewSpeed());
     }
 
@@ -111,13 +111,12 @@ class RaceEngineServiceTest {
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
                 .thenReturn(List.of(player));
 
-        AnswerRaceImpact impact = raceEngineService.applyAnswerResult(player, false);
+        AnswerRaceImpact impact = raceEngineService.applyAnswerResult(player, false, DECISION_EPOCH_MS);
 
         assertEquals(0, impact.getScoreDelta());
         assertEquals(0.0, impact.getProgressDelta());
         assertEquals(25, player.getScore());
         assertEquals(30.0, player.getPosition());
-        // 1.5 - WRONG_ANSWER_SPEED_PENALTY 0.20.
         assertEquals(1.3, player.getSpeed(), 1e-9);
         assertEquals(0, player.getStreak());
         assertEquals(1, player.getWrongAnswers());
@@ -131,12 +130,26 @@ class RaceEngineServiceTest {
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
                 .thenReturn(List.of(player));
 
-        AnswerRaceImpact impact = raceEngineService.applyAnswerResult(player, true);
+        AnswerRaceImpact impact = raceEngineService.applyAnswerResult(player, true, DECISION_EPOCH_MS);
 
         assertTrue(impact.isPlayerFinished());
         assertEquals(RacePlayerStatus.FINISHED, player.getStatus());
         assertEquals(100.0, player.getPosition());
         assertEquals(0.0, player.getSpeed());
+    }
+
+    @Test
+    void finishingAnswerStampsTheAnswerDecisionInstantAsTheFinishTime() {
+        Race race = race(100, RaceStatus.IN_PROGRESS);
+        RacePlayer player = player(10L, race, Difficulty.HARD, 90.0, 1.0);
+
+        when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
+                .thenReturn(List.of(player));
+
+        raceEngineService.applyAnswerResult(player, true, DECISION_EPOCH_MS);
+
+        assertEquals(DECISION_EPOCH_MS, player.getFinishedAtEpochMs());
+        assertEquals(RacePlayerStatus.FINISHED, player.getStatus());
     }
 
     @Test
@@ -149,7 +162,7 @@ class RaceEngineServiceTest {
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
                 .thenReturn(List.of(player, disconnected));
 
-        AnswerRaceImpact impact = raceEngineService.applyAnswerResult(player, true);
+        AnswerRaceImpact impact = raceEngineService.applyAnswerResult(player, true, DECISION_EPOCH_MS);
 
         assertTrue(impact.isRaceFinished());
         assertEquals(RaceStatus.FINISHED, race.getStatus());
@@ -164,7 +177,7 @@ class RaceEngineServiceTest {
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
                 .thenReturn(List.of(player, otherPlayer));
 
-        AnswerRaceImpact impact = raceEngineService.applyAnswerResult(player, true);
+        AnswerRaceImpact impact = raceEngineService.applyAnswerResult(player, true, DECISION_EPOCH_MS);
 
         assertFalse(impact.isRaceFinished());
         assertEquals(RaceStatus.IN_PROGRESS, race.getStatus());
@@ -178,7 +191,7 @@ class RaceEngineServiceTest {
 
         ApiException exception = assertThrows(
                 ApiException.class,
-                () -> raceEngineService.applyAnswerResult(player, true)
+                () -> raceEngineService.applyAnswerResult(player, true, DECISION_EPOCH_MS)
         );
 
         assertEquals(ErrorCode.RACE_PLAYER_NOT_RACING, exception.getErrorCode());
@@ -192,7 +205,7 @@ class RaceEngineServiceTest {
 
         ApiException exception = assertThrows(
                 ApiException.class,
-                () -> raceEngineService.applyAnswerResult(player, true)
+                () -> raceEngineService.applyAnswerResult(player, true, DECISION_EPOCH_MS)
         );
 
         assertEquals(ErrorCode.RACE_PLAYER_NOT_RACING, exception.getErrorCode());
@@ -206,7 +219,7 @@ class RaceEngineServiceTest {
 
         ApiException exception = assertThrows(
                 ApiException.class,
-                () -> raceEngineService.applyAnswerResult(player, true)
+                () -> raceEngineService.applyAnswerResult(player, true, DECISION_EPOCH_MS)
         );
 
         assertEquals(ErrorCode.RACE_PLAYER_NOT_RACING, exception.getErrorCode());
@@ -219,7 +232,7 @@ class RaceEngineServiceTest {
 
         ApiException exception = assertThrows(
                 ApiException.class,
-                () -> raceEngineService.applyAnswerResult(player, true)
+                () -> raceEngineService.applyAnswerResult(player, true, DECISION_EPOCH_MS)
         );
 
         assertEquals(ErrorCode.RACE_NOT_IN_PROGRESS, exception.getErrorCode());
@@ -232,7 +245,7 @@ class RaceEngineServiceTest {
 
         ApiException exception = assertThrows(
                 ApiException.class,
-                () -> raceEngineService.applyAnswerResult(player, true)
+                () -> raceEngineService.applyAnswerResult(player, true, DECISION_EPOCH_MS)
         );
 
         assertEquals(ErrorCode.RACE_TOTAL_DISTANCE_MISSING, exception.getErrorCode());
@@ -247,14 +260,14 @@ class RaceEngineServiceTest {
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
                 .thenReturn(List.of(player));
 
-        raceEngineService.applyAnswerResult(player, false);
+        raceEngineService.applyAnswerResult(player, false, DECISION_EPOCH_MS);
         assertEquals(Difficulty.MEDIUM, player.getCurrentDifficulty());
         assertEquals(3, player.getDifficultyCorrectStreak());
 
-        raceEngineService.applyAnswerResult(player, true);
+        raceEngineService.applyAnswerResult(player, true, DECISION_EPOCH_MS);
         assertEquals(Difficulty.MEDIUM, player.getCurrentDifficulty());
 
-        raceEngineService.applyAnswerResult(player, true);
+        raceEngineService.applyAnswerResult(player, true, DECISION_EPOCH_MS);
         assertEquals(Difficulty.HARD, player.getCurrentDifficulty());
     }
 
@@ -267,14 +280,14 @@ class RaceEngineServiceTest {
         when(racePlayerRepository.findByRaceOrderByLaneNumberAsc(race))
                 .thenReturn(List.of(player));
 
-        raceEngineService.applyAnswerResult(player, false);
+        raceEngineService.applyAnswerResult(player, false, DECISION_EPOCH_MS);
         assertEquals(Difficulty.EASY, player.getCurrentDifficulty());
         assertEquals(1, player.getDifficultyCorrectStreak());
 
-        raceEngineService.applyAnswerResult(player, true);
+        raceEngineService.applyAnswerResult(player, true, DECISION_EPOCH_MS);
         assertEquals(Difficulty.EASY, player.getCurrentDifficulty());
 
-        raceEngineService.applyAnswerResult(player, true);
+        raceEngineService.applyAnswerResult(player, true, DECISION_EPOCH_MS);
         assertEquals(Difficulty.MEDIUM, player.getCurrentDifficulty());
     }
 

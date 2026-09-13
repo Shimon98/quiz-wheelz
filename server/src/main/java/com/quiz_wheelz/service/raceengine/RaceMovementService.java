@@ -1,6 +1,5 @@
 package com.quiz_wheelz.service.raceengine;
 
-import com.quiz_wheelz.common.RaceProgressRules;
 import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
@@ -9,6 +8,7 @@ import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
+import com.quiz_wheelz.service.raceengine.RaceMovementCalculator.Projection;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import org.springframework.stereotype.Service;
 
@@ -19,15 +19,18 @@ import java.util.Optional;
 @Service
 public class RaceMovementService {
 
+    private final RaceMovementCalculator movementCalculator;
     private final RaceFinishService raceFinishService;
     private final PlayerQuestionRepository playerQuestionRepository;
     private final Clock clock;
 
     public RaceMovementService(
+            RaceMovementCalculator movementCalculator,
             RaceFinishService raceFinishService,
             PlayerQuestionRepository playerQuestionRepository,
             Clock clock
     ) {
+        this.movementCalculator = Objects.requireNonNull(movementCalculator);
         this.raceFinishService = Objects.requireNonNull(raceFinishService);
         this.playerQuestionRepository = Objects.requireNonNull(playerQuestionRepository);
         this.clock = Objects.requireNonNull(clock);
@@ -45,17 +48,26 @@ public class RaceMovementService {
             return false;
         }
 
-        double elapsedSeconds = (targetEpochMs - anchorEpochMs) / 1000.0;
         double speed = racePlayer.getSpeed() == null ? 0.0 : racePlayer.getSpeed();
-        double distance =
-                elapsedSeconds * speed * RaceProgressRules.BASE_MOVEMENT_UNITS_PER_SECOND;
         double currentPosition =
                 racePlayer.getPosition() == null ? 0.0 : racePlayer.getPosition();
 
-        racePlayer.setPosition(Math.min(totalDistance, currentPosition + distance));
-        racePlayer.setMovementUpdatedAtEpochMs(targetEpochMs);
+        Projection projection = movementCalculator.project(
+                currentPosition,
+                speed,
+                anchorEpochMs,
+                targetEpochMs,
+                totalDistance
+        );
 
-        boolean finishedNow = raceFinishService.finishPlayerIfNeeded(racePlayer);
+        racePlayer.setPosition(projection.position());
+        racePlayer.setMovementUpdatedAtEpochMs(projection.effectiveAtEpochMs());
+
+        boolean finishedNow = projection.crossedFinish()
+                && raceFinishService.finishPlayerAt(
+                        racePlayer,
+                        projection.finishCrossingEpochMs()
+                );
 
         if (finishedNow) {
             expireLeftoverActiveQuestion(racePlayer);

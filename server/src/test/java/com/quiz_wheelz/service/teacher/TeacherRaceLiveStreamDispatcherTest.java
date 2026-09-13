@@ -1,6 +1,11 @@
 package com.quiz_wheelz.service.teacher;
 
-import com.quiz_wheelz.common.TeacherRaceLiveStreamRules;
+import com.quiz_wheelz.service.livestream.RaceLiveStreamAudience;
+
+import com.quiz_wheelz.service.livestream.RaceLiveStreamConnection;
+import com.quiz_wheelz.service.livestream.RaceLiveStreamRegistry;
+
+import com.quiz_wheelz.common.RaceLiveStreamRules;
 import com.quiz_wheelz.dto.liveevent.QuestionAnsweredLiveEventPayload;
 import com.quiz_wheelz.dto.liveevent.RaceLiveEventEnvelope;
 import com.quiz_wheelz.dto.liveevent.RaceLiveEventPayload;
@@ -43,7 +48,7 @@ import static org.mockito.Mockito.when;
 class TeacherRaceLiveStreamDispatcherTest {
 
     @Mock
-    private TeacherRaceLiveStreamRegistry registry;
+    private RaceLiveStreamRegistry registry;
 
     @Mock
     private RaceLiveEventReplayService replayService;
@@ -58,9 +63,22 @@ class TeacherRaceLiveStreamDispatcherTest {
     }
 
     @Test
+    void studentConnectionsAreNeverReplayedByTeacherDispatcher() {
+        var student = new RaceLiveStreamConnection(UUID.randomUUID(), RaceLiveStreamAudience.STUDENT,
+                12L, new CapturingEmitter(), 0L, 1_000L);
+        when(registry.activeConnections(RaceLiveStreamAudience.TEACHER)).thenReturn(List.of());
+
+        dispatcher.dispatchActiveConnections();
+        dispatcher.dispatchConnection(student);
+
+        org.mockito.Mockito.verifyNoInteractions(replayService);
+        verify(registry).activeConnections(RaceLiveStreamAudience.TEACHER);
+    }
+
+    @Test
     void ascendingDurableEventsUseVersionsAsIdsAndExistingEnvelopeAsData() {
         CapturingEmitter emitter = new CapturingEmitter();
-        TeacherRaceLiveConnection connection = connection(12L, 2L, emitter);
+        RaceLiveStreamConnection connection = connection(12L, 2L, emitter);
         RaceLiveEventEnvelope<RaceLiveEventPayload> third = event(12L, 3L);
         RaceLiveEventEnvelope<RaceLiveEventPayload> fourth = event(12L, 4L);
         when(registry.contains(connection.connectionId())).thenReturn(true);
@@ -77,7 +95,7 @@ class TeacherRaceLiveStreamDispatcherTest {
     @Test
     void failedSendDoesNotAdvanceAndRemovesConnection() {
         FailingEmitter emitter = new FailingEmitter();
-        TeacherRaceLiveConnection connection = connection(12L, 2L, emitter);
+        RaceLiveStreamConnection connection = connection(12L, 2L, emitter);
         when(registry.contains(connection.connectionId())).thenReturn(true);
         when(replayService.readNextBatch(12L, 2L)).thenReturn(List.of(event(12L, 3L)));
 
@@ -90,10 +108,10 @@ class TeacherRaceLiveStreamDispatcherTest {
     @Test
     void heartbeatIsACommentWithoutIdPayloadOrCursorAdvance() {
         CapturingEmitter emitter = new CapturingEmitter();
-        TeacherRaceLiveConnection connection = connection(12L, 5L, emitter);
+        RaceLiveStreamConnection connection = connection(12L, 5L, emitter);
         when(registry.contains(connection.connectionId())).thenReturn(true);
         when(replayService.readNextBatch(12L, 5L)).thenReturn(List.of());
-        clock.setMillis(1_000L + TeacherRaceLiveStreamRules.HEARTBEAT_INTERVAL_MS);
+        clock.setMillis(1_000L + RaceLiveStreamRules.HEARTBEAT_INTERVAL_MS);
 
         dispatcher.dispatchConnection(connection);
 
@@ -101,7 +119,7 @@ class TeacherRaceLiveStreamDispatcherTest {
         assertEquals(1, emitter.frames.size());
         List<Object> data = frameData(emitter.frames.getFirst());
         String controlData = textData(data);
-        assertTrue(controlData.contains(":" + TeacherRaceLiveStreamRules.HEARTBEAT_COMMENT));
+        assertTrue(controlData.contains(":" + RaceLiveStreamRules.HEARTBEAT_COMMENT));
         assertFalse(controlData.contains("id:"));
         assertFalse(data.stream().anyMatch(RaceLiveEventEnvelope.class::isInstance));
     }
@@ -110,8 +128,8 @@ class TeacherRaceLiveStreamDispatcherTest {
     void sameRaceConnectionsKeepIndependentCursors() {
         CapturingEmitter firstEmitter = new CapturingEmitter();
         CapturingEmitter secondEmitter = new CapturingEmitter();
-        TeacherRaceLiveConnection first = connection(12L, 0L, firstEmitter);
-        TeacherRaceLiveConnection second = connection(12L, 1L, secondEmitter);
+        RaceLiveStreamConnection first = connection(12L, 0L, firstEmitter);
+        RaceLiveStreamConnection second = connection(12L, 1L, secondEmitter);
         when(registry.contains(first.connectionId())).thenReturn(true);
         when(registry.contains(second.connectionId())).thenReturn(true);
         when(replayService.readNextBatch(12L, 0L))
@@ -132,8 +150,8 @@ class TeacherRaceLiveStreamDispatcherTest {
     void differentRacesAreQueriedAndDeliveredInIsolation() {
         CapturingEmitter firstEmitter = new CapturingEmitter();
         CapturingEmitter secondEmitter = new CapturingEmitter();
-        TeacherRaceLiveConnection first = connection(12L, 0L, firstEmitter);
-        TeacherRaceLiveConnection second = connection(13L, 0L, secondEmitter);
+        RaceLiveStreamConnection first = connection(12L, 0L, firstEmitter);
+        RaceLiveStreamConnection second = connection(13L, 0L, secondEmitter);
         when(registry.contains(first.connectionId())).thenReturn(true);
         when(registry.contains(second.connectionId())).thenReturn(true);
         RaceLiveEventEnvelope<RaceLiveEventPayload> raceTwelve = event(12L, 1L);
@@ -151,7 +169,7 @@ class TeacherRaceLiveStreamDispatcherTest {
     @Test
     void eventCommittedDuringAnEarlierCycleIsDeliveredOnTheNextTickWithoutLoss() {
         CapturingEmitter emitter = new CapturingEmitter();
-        TeacherRaceLiveConnection connection = connection(12L, 0L, emitter);
+        RaceLiveStreamConnection connection = connection(12L, 0L, emitter);
         when(registry.contains(connection.connectionId())).thenReturn(true);
         when(replayService.readNextBatch(12L, 0L))
                 .thenReturn(List.of(), List.of(event(12L, 1L)));
@@ -166,7 +184,7 @@ class TeacherRaceLiveStreamDispatcherTest {
 
     @Test
     void inactiveConnectionIsNotQueried() {
-        TeacherRaceLiveConnection connection = connection(12L, 0L, new CapturingEmitter());
+        RaceLiveStreamConnection connection = connection(12L, 0L, new CapturingEmitter());
         when(registry.contains(connection.connectionId())).thenReturn(false);
 
         dispatcher.dispatchConnection(connection);
@@ -178,7 +196,7 @@ class TeacherRaceLiveStreamDispatcherTest {
     void overlappingDispatchCannotReplaySendOrAdvanceTheSameConnectionTwice()
             throws Exception {
         CapturingEmitter emitter = new CapturingEmitter();
-        TeacherRaceLiveConnection connection = connection(12L, 0L, emitter);
+        RaceLiveStreamConnection connection = connection(12L, 0L, emitter);
         RaceLiveEventEnvelope<RaceLiveEventPayload> first = event(12L, 1L);
         CountDownLatch replayEntered = new CountDownLatch(1);
         CountDownLatch releaseReplay = new CountDownLatch(1);
@@ -213,13 +231,14 @@ class TeacherRaceLiveStreamDispatcherTest {
         assertEquals(1L, connection.lastDeliveredVersion());
     }
 
-    private TeacherRaceLiveConnection connection(
+    private RaceLiveStreamConnection connection(
             Long raceId,
             long cursor,
             SseEmitter emitter
     ) {
-        return new TeacherRaceLiveConnection(
+        return new RaceLiveStreamConnection(
                 UUID.randomUUID(),
+                RaceLiveStreamAudience.TEACHER,
                 raceId,
                 emitter,
                 cursor,

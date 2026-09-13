@@ -9,6 +9,7 @@ export function mapLocalRuntimeSnapshotToState(previousState, snapshot) {
     player: {
       ...previousState.player,
       position: snapshot.position,
+      positionAtEpochMs: snapshot.snapshotAtEpochMs,
       speed: snapshot.speed,
       vehicleAssetKey: snapshot.vehicleAssetKey,
     },

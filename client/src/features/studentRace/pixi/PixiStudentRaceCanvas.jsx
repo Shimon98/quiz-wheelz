@@ -6,27 +6,19 @@ import { StudentRaceRenderer } from "./StudentRaceRenderer";
 import { observeMountResize } from "./utils/pixiResize";
 import { destroyPixiStudentRace } from "./utils/pixiCleanup";
 
-/*
- * Thin React wrapper around the manual Pixi shell. The bridge is IMPERATIVE:
- * the app + renderer are created once per mount and held in refs;
- * runtimeState changes are pushed in via renderer.updateRuntimeState().
- * React never renders because of an animation frame, and the Pixi tree is
- * never expressed as JSX (feature README, master plan §5.4).
- */
 export default function PixiStudentRaceCanvas({
   runtimeState = null,
+  finishPresentation = null,
   className,
 }) {
   const mountRef = useRef(null);
   const rendererRef = useRef(null);
   const latestStateRef = useRef(runtimeState);
+  const latestFinishPresentationRef = useRef(finishPresentation);
 
   useEffect(() => {
     const mountElement = mountRef.current;
 
-    // app.init() is async — guard against unmount (or a StrictMode effect
-    // re-run) landing while init is in flight, which would otherwise mount
-    // an orphaned second canvas.
     let cancelled = false;
     let app = null;
     let renderer = null;
@@ -41,9 +33,6 @@ export default function PixiStudentRaceCanvas({
       app = createdApp;
       renderer = new StudentRaceRenderer(app);
       rendererRef.current = renderer;
-      // Dev-only inspection handle (verification in the hidden preview tab
-      // needs manual frames — rAF is paused there). Statically stripped
-      // from production builds.
       if (import.meta.env.DEV) {
         window.__studentRaceRenderer = renderer;
       }
@@ -52,6 +41,7 @@ export default function PixiStudentRaceCanvas({
       if (latestStateRef.current) {
         renderer.updateRuntimeState(latestStateRef.current);
       }
+      renderer.updateFinishPresentation(latestFinishPresentationRef.current);
     });
 
     return () => {
@@ -68,6 +58,11 @@ export default function PixiStudentRaceCanvas({
     latestStateRef.current = runtimeState;
     rendererRef.current?.updateRuntimeState(runtimeState);
   }, [runtimeState]);
+
+  useEffect(() => {
+    latestFinishPresentationRef.current = finishPresentation;
+    rendererRef.current?.updateFinishPresentation(finishPresentation);
+  }, [finishPresentation]);
 
   return <div ref={mountRef} className={cx("h-full w-full", className)} />;
 }

@@ -8,11 +8,13 @@ export function createRacePerspective({
   const horizonY = worldBottomY * camera.horizonYRatio;
   const centerX = width * camera.vanishingPointXRatio;
   const topHalf = (widthUnit * camera.roadTopWidthRatio) / 2;
-  const bottomHalf = (widthUnit * camera.roadBottomWidthRatio) / 2;
+  const bottomHalf = Math.max(widthUnit * camera.roadBottomWidthRatio,
+    width * (camera.roadMinBottomFrameWidthRatio ?? 0)) / 2;
   const depthHeight = worldBottomY - horizonY;
   const widthGrowth = bottomHalf - topHalf;
   const widthExponent = camera.roadWidthDepthExponent;
   const depthToY = (depth) => horizonY + depthHeight * depth * depth;
+  const depthAtY = (y) => Math.sqrt(Math.max(0, (y - horizonY) / depthHeight));
   const roadHalfWidthAt = (depth) => topHalf + widthGrowth * depth ** widthExponent;
   const depthAtRoadHalfWidth = (halfWidth) =>
     Math.max(0, (halfWidth - topHalf) / widthGrowth) ** (1 / widthExponent);
@@ -29,6 +31,7 @@ export function createRacePerspective({
     widthUnit,
     viewDistanceAhead,
     depthToY,
+    depthAtY,
     roadHalfWidthAt,
     depthAtRoadHalfWidth,
     distanceAtDepth,

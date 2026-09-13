@@ -19,6 +19,28 @@ public interface RaceRepository extends JpaRepository<Race, Long> {
 
     Optional<Race> findByRoomCode(String roomCode);
 
+    @Query("select r.status from Race r where r.id = :raceId")
+    RaceStatus findStatusById(@Param("raceId") Long raceId);
+
+    @Modifying(flushAutomatically = true)
+    @Query(value = """
+            update races
+            set authoritative_decision_time_floor_epoch_ms = :decisionEpochMs
+            where id = :raceId
+              and (authoritative_decision_time_floor_epoch_ms is null
+                   or authoritative_decision_time_floor_epoch_ms < :decisionEpochMs)
+            """, nativeQuery = true)
+    int advanceDecisionTimeFloor(
+            @Param("raceId") Long raceId,
+            @Param("decisionEpochMs") long decisionEpochMs
+    );
+
+    @Query(value = """
+            select authoritative_decision_time_floor_epoch_ms
+            from races where id = :raceId for update
+            """, nativeQuery = true)
+    Long findLockedDecisionTimeFloor(@Param("raceId") Long raceId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from Race r where r.id = :raceId")
     Optional<Race> findLockedById(@Param("raceId") Long raceId);

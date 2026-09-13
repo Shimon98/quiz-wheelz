@@ -475,12 +475,13 @@ finish flag remains authoritative.
 
 ## Opponents
 
-S1-02 already supplies authoritative `rank`, `playerCount` and up to four
-`nearbyPlayers` in runtime and answer snapshots. Rank/count are consumed by
-the current HUD; nearby-player mapping and opponent rendering remain C2,
-after the accepted local C1 checkpoint of 2026-09-08. Reuse the existing snapshot boundary and
-the lateral coordinate supported by `createRacePerspective`; do not create
-a second projection or alter depth to fit vehicles into the accepted road.
+S1-02 and server C2-01 supply authoritative `rank`, `playerCount` and the full
+`opponents` roster (renamed from `nearbyPlayers`, 0..7 in standing order) in
+runtime and answer snapshots. Rank/count are consumed by
+the current HUD; C2-02/C2-03 locally implement opponent mapping and rendering,
+pending review and live QA. `createRacePerspective` remains the only projection;
+its inverse calibrates the player ground reference for opponents and the finish gate.
+The shared vehicle visual reuses the existing asset loader and preserves player pixels.
 
 Each opponent:
 
@@ -489,7 +490,19 @@ Each opponent:
 - uses server lane/color/status
 - has visual states `hidden → entering → visible → exiting`
 - uses hysteresis to prevent flicker
-- is capped by zone and lateral visibility
+- shares one normalized motion authority with the local kart: checkpoint age from
+  server timestamps, one 5-second prediction limit for both, seeding at the
+  checkpoint-aged position, and duplicate checkpoints that never renew the horizon
+- sits in the shared sorted world container with the local kart, whose `zIndex` is
+  its own ground depth, so nearer opponents occlude it and farther ones are occluded
+- keeps its server lane as one full step (kart width plus a 20% gap) and is drawn only
+  where that lane fits: near and mid opponents whose lane step exceeds the zone side
+  clearance (screen edge beside the driver, 85% of the road half-width farther ahead)
+  stay hidden instead of stacking, so phones show one neighbour per side near and two
+  per side mid; far opponents beyond the last fitting lane compress monotonically
+- scales with the driver so one kart plus its gap fits beside the driver on phones
+  (`playerKart.maxParallelWidthRatio`, 0.23 of the frame width)
+- uses full vehicle bounds for rear/side departure and pooled world-container roots
 - never changes depth for visual convenience.
 
 ## Question panel
@@ -583,7 +596,10 @@ browser offline/hidden→visible recovery, reduced-motion emulation and
 physical-phone QA remain open. DEV browser checks are not a phone-performance
 benchmark. Follow the carried-forward pre-release checklist in
 `CLIENT_IMPLEMENTATION_PLAN.md`. C1 local development is closed for progression
-to C2; opponent implementation is next, with the server contract already available.
+to C2; C2-02/C2-03/C2-04 are locally implemented, pending review and live QA.
+Crossing requires confirmed finish-prefix release; same-ms cohorts release together.
+Own/opponent runout uses one interpolation with a shared crossing midpoint, so visual
+backlog cannot reverse server order. Passive finish reads do not revive gameplay presence.
 
 ## Race audio — planned C2-A
 

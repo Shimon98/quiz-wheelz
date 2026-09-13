@@ -33,6 +33,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -177,7 +179,7 @@ class RacePlayerRefreshLifecycleTest {
         );
         verify(gameplayTimelineService, never()).settleReconnect(any(), any(), any());
         verify(gameplayPresenceService, never()).recordGameplayActivity(any(), any());
-        verify(standingService, never()).calculate(any());
+        verify(standingService, never()).calculate(any(), anyLong());
         verifyNoMutationSave();
     }
 
@@ -235,7 +237,7 @@ class RacePlayerRefreshLifecycleTest {
                         ? Optional.of(racePlayer.getRace())
                         : Optional.empty()
         );
-        lenient().when(standingService.calculate(racePlayer))
+        lenient().when(standingService.calculate(eq(racePlayer), anyLong()))
                 .thenReturn(new StudentRaceStandingResult(1, 1, List.of()));
         return racePlayer;
     }

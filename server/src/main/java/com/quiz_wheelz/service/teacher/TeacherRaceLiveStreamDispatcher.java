@@ -1,6 +1,11 @@
 package com.quiz_wheelz.service.teacher;
 
-import com.quiz_wheelz.common.TeacherRaceLiveStreamRules;
+import com.quiz_wheelz.service.livestream.RaceLiveStreamAudience;
+
+import com.quiz_wheelz.service.livestream.RaceLiveStreamConnection;
+import com.quiz_wheelz.service.livestream.RaceLiveStreamRegistry;
+
+import com.quiz_wheelz.common.RaceLiveStreamRules;
 import com.quiz_wheelz.dto.liveevent.RaceLiveEventEnvelope;
 import com.quiz_wheelz.dto.liveevent.RaceLiveEventPayload;
 import com.quiz_wheelz.service.liveevent.RaceLiveEventReplayService;
@@ -23,12 +28,12 @@ public class TeacherRaceLiveStreamDispatcher {
     private static final String REPLAY_FAILURE_LOG =
             "Teacher live-event replay failed for connectionId={} raceId={}";
 
-    private final TeacherRaceLiveStreamRegistry registry;
+    private final RaceLiveStreamRegistry registry;
     private final RaceLiveEventReplayService replayService;
     private final Clock clock;
 
     public TeacherRaceLiveStreamDispatcher(
-            TeacherRaceLiveStreamRegistry registry,
+            RaceLiveStreamRegistry registry,
             RaceLiveEventReplayService replayService,
             Clock clock
     ) {
@@ -38,16 +43,17 @@ public class TeacherRaceLiveStreamDispatcher {
     }
 
     @Scheduled(
-            fixedDelay = TeacherRaceLiveStreamRules.DISPATCH_INTERVAL_MS,
-            scheduler = TeacherRaceLiveStreamRules.SCHEDULER_BEAN_NAME
+            fixedDelay = RaceLiveStreamRules.DISPATCH_INTERVAL_MS,
+            scheduler = RaceLiveStreamRules.SCHEDULER_BEAN_NAME
     )
     public void dispatchActiveConnections() {
-        registry.activeConnections().forEach(this::dispatchConnection);
+        registry.activeConnections(RaceLiveStreamAudience.TEACHER).forEach(this::dispatchConnection);
     }
 
-    public void dispatchConnection(TeacherRaceLiveConnection connection) {
+    public void dispatchConnection(RaceLiveStreamConnection connection) {
         Objects.requireNonNull(connection);
-        if (!registry.contains(connection.connectionId())
+        if (connection.audience() != RaceLiveStreamAudience.TEACHER
+                || !registry.contains(connection.connectionId())
                 || !connection.tryAcquireDispatch()) {
             return;
         }
@@ -84,7 +90,7 @@ public class TeacherRaceLiveStreamDispatcher {
     }
 
     private boolean sendEvent(
-            TeacherRaceLiveConnection connection,
+            RaceLiveStreamConnection connection,
             RaceLiveEventEnvelope<RaceLiveEventPayload> event
     ) {
         try {
@@ -101,15 +107,15 @@ public class TeacherRaceLiveStreamDispatcher {
         }
     }
 
-    private void sendHeartbeatIfDue(TeacherRaceLiveConnection connection) {
+    private void sendHeartbeatIfDue(RaceLiveStreamConnection connection) {
         long now = clock.millis();
         if (now - connection.lastWriteEpochMs()
-                < TeacherRaceLiveStreamRules.HEARTBEAT_INTERVAL_MS) {
+                < RaceLiveStreamRules.HEARTBEAT_INTERVAL_MS) {
             return;
         }
         try {
             connection.emitter().send(
-                    SseEmitter.event().comment(TeacherRaceLiveStreamRules.HEARTBEAT_COMMENT)
+                    SseEmitter.event().comment(RaceLiveStreamRules.HEARTBEAT_COMMENT)
             );
             connection.markHeartbeatDelivered(now);
         } catch (IOException | RuntimeException exception) {

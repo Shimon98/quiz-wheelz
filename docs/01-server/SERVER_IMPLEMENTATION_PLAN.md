@@ -1,8 +1,8 @@
 # Server Implementation Plan
 
 **Status:** Canonical  
-**Audit date:** 2026-08-24
-**Code baseline:** `main@c32600870902bade6c21ecec0a80777c0840e0de`
+**Audit date:** 2026-09-10
+**Code baseline:** `main@bb2d00530f4637d4d1f75849fb0397ac443bc46a`
 **This document owns:** the ordered backend task list with dependencies and integration outputs
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -211,6 +211,9 @@ Implemented rules:
 - the safe nearby DTO exposes only identity, lane/vehicle, position, speed and status;
   exact-field serialization tests prevent sensitive/internal leakage.
 
+Superseded by C2-01 (2026-09-10): the max-4 `nearbyPlayers` window became the full
+`opponents` roster and FINISHED ordering uses `finishedAtEpochMs`.
+
 **Blocks:** opponent layer and rank HUD.
 
 ### S1-03 — Runtime action hardening
@@ -385,6 +388,68 @@ Do not add luck/junction events until their engines exist.
   snapshot-to-stream race tests.
 
 **Blocks:** client teacher live screen.
+
+## C2 — Competition truth (server side of the client C2 phase)
+
+### C2-01 — Competition truth and finish arbitration
+
+**Status:** `DONE (2026-09-10)`
+
+```yaml
+id: C2-01
+status: DONE
+area: server
+depends_on: [S1-02, S2-02]
+blocks: [client C2 opponents, C2-02]
+contract_owner: server
+```
+
+- deterministic movement: `RaceMovementCalculator` projects in 1/10,000-unit
+  position ticks and 0.1 speed tenths (`ticksPerMs = 4 × speedTenths`, MAX 2.0 =
+  80 ticks/ms), is partition-invariant and stops the anchor at the exact
+  finish-crossing instant; `RaceMovementService` only applies its projection
+- canonical finish time: `RacePlayer.finishedAtEpochMs` (new nullable column
+  `finished_at_epoch_ms`, DEV `ddl-auto=update`); `finishedAt` is derived from the
+  same instant; answer finishes stamp the answer decision instant, movement finishes
+  stamp the crossing instant; standing and the finish live event fall back to legacy
+  `finishedAt` for rows written before C2-01
+- timeout chronology without a new state machine: an overdue ACTIVE question whose
+  expiry lies beyond the trusted movement cutoff is deferred (settle to the cutoff
+  only, stays ACTIVE, no penalty); an expiry at or before the cutoff settles to the
+  expiry at the old speed, marks EXPIRED, applies the exactly-once penalty and
+  settles to `min(decision, cutoff)`; reconnect re-anchors first and then resolves
+  the overdue question at the decision instant (no hidden movement); a player that
+  becomes DISCONNECTED (leave, grace expiry, finalization) has the leftover ACTIVE
+  question expired without consequence; submit-answer rejects an overdue question
+  explicitly (`QUESTION_EXPIRED`) even while its status is still ACTIVE
+- snapshot contract: `nearbyPlayers` → `opponents` (every other joined player,
+  0..7, standing order; `StudentRaceOpponentResponse` with rank, position,
+  positionAtEpochMs, movementUnitsPerSecond, status, finishedAtEpochMs and the
+  lane/vehicle identity incl. `vehicleAssetKey`); new snapshot fields
+  `positionAtEpochMs`, `playerFinishedAtEpochMs` and non-null `eventVersion`, read
+  from `Race.liveEventVersion` after the request's own durable events are recorded
+- `POST /api/race-players/me/finish-arbitration`: cookie-only identity, scalar
+  preflight (`existsByIdAndRaceId`, `findStatusById`, no entity loads), then all
+  RacePlayers locked by id → Race lock → revalidation → one decision clock read →
+  requester settled through the gameplay guard (RACING only), other RACING players
+  settled through the background presence path with their own cutoffs → batch
+  player events → race finish → race event → standing → snapshot →
+  `RaceFinishOrderPolicy` confirmed finish-order prefix (bound = min(T−1, earliest
+  MAX-speed crossing − 1); FINISHED without epoch, WAITING or anchorless RACING →
+  unproven); IN_PROGRESS settles, FINISHED returns durable truth, anything else
+  `RACE_NOT_IN_PROGRESS`; an effective decision time behind the roster settles nothing and returns
+  unproven; `noRollbackFor = ApiException`, requester-guard rejection still records
+  the roster changes
+- arbitration alone uses READ_COMMITTED; arbitration and active answers advance
+  a persisted race-local decision time floor under the existing Race lock, as
+  defined in `../00-project/ARCHITECTURE_AND_CONTRACTS.md`.
+- pre-existing fix: `resolveCurrentRacePlayerIdentity` no longer opens a read-only
+  transaction, so a missing/invalid cookie returns 401 instead of 500 on every
+  `noRollbackFor` race-player endpoint
+- deferred to later C2 phases: student SSE, accumulator, geometry and a
+  project-wide clock.
+
+**Blocks:** client C2 opponents renderer, student live stream.
 
 ## S3 — Results
 

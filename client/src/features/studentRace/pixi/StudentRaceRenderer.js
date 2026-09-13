@@ -13,11 +13,14 @@ import { FinishLineLayer } from "./layers/FinishLineLayer";
 import { SceneryLayer } from "./layers/SceneryLayer";
 import { PlayerKartLayer } from "./layers/PlayerKartLayer";
 import { EffectsLayer } from "./layers/EffectsLayer";
+import { OpponentLayer } from "./layers/OpponentLayer.js";
+import { resolveRaceObjectGeometry } from "./utils/resolveRaceObjectGeometry.js";
 
 export class StudentRaceRenderer {
   constructor(app) {
     this.app = app;
     this.runtimeState = null;
+    this.finishPresentation = null;
     this.width = app.screen.width;
     this.height = app.screen.height;
     this.motion = createStudentRaceMotion();
@@ -27,12 +30,10 @@ export class StudentRaceRenderer {
     this.loadingSurface = new Graphics();
     this.backgroundContainer = new Container();
     this.worldContainer = new Container();
-    this.playerContainer = new Container();
     this.effectsContainer = new Container();
     this.sceneContainers = [
       this.backgroundContainer,
       this.worldContainer,
-      this.playerContainer,
       this.effectsContainer,
     ];
     this.sceneContainers.forEach((container) => { container.visible = false; });
@@ -46,13 +47,15 @@ export class StudentRaceRenderer {
       height: this.height,
     });
     this.perspective = this.buildPerspective();
+    this.raceObjectGeometry = resolveRaceObjectGeometry(this.layout, this.perspective);
 
     this.jungleLayer = new JungleLayer(this.backgroundContainer);
     this.midBaseLayer = new MidBaseLayer(this.worldContainer);
     this.roadLayer = new RoadLayer(this.worldContainer, { road, viewDepthZones });
     this.finishLineLayer = new FinishLineLayer(this.worldContainer);
     this.sceneryLayer = new SceneryLayer(this.worldContainer);
-    this.playerKartLayer = new PlayerKartLayer(this.playerContainer);
+    this.opponentLayer = new OpponentLayer(this.worldContainer);
+    this.playerKartLayer = new PlayerKartLayer(this.worldContainer);
     this.effectsLayer = new EffectsLayer(this.effectsContainer);
     this.layers = [
       this.jungleLayer,
@@ -60,6 +63,7 @@ export class StudentRaceRenderer {
       this.roadLayer,
       this.finishLineLayer,
       this.sceneryLayer,
+      this.opponentLayer,
       this.playerKartLayer,
       this.effectsLayer,
     ];
@@ -91,6 +95,7 @@ export class StudentRaceRenderer {
     this.runtimeState = nextState;
     this.playerKartLayer.setVehicleAssetKey(nextState?.player?.vehicleAssetKey);
     this.motion.updateRuntimeState(nextState);
+    this.opponentLayer.applyRuntimeState(nextState);
   }
 
   resize(width, height) {
@@ -98,8 +103,16 @@ export class StudentRaceRenderer {
     this.height = height;
     this.layout = resolveStudentRaceLayoutMetrics({ width, height });
     this.perspective = this.buildPerspective();
+    this.raceObjectGeometry = resolveRaceObjectGeometry(this.layout, this.perspective);
     if (!this.worldReady) this.drawLoadingSurface();
     this.layers.forEach((layer) => layer.resize(width, height));
+  }
+
+  updateFinishPresentation(next) {
+    this.finishPresentation = next == null ? null : {
+      ...next, releasedFinisherIdsSet: new Set(next.releasedFinisherIds),
+    };
+    this.motion.updateFinishPresentation(next);
   }
 
   tick(ticker) {
@@ -107,7 +120,10 @@ export class StudentRaceRenderer {
     if (!this.worldReady) return;
 
     const frameState = {
+      ...this.raceObjectGeometry,
+      raceObjectCameraPosition: position - this.raceObjectGeometry.playerReferenceDistance,
       deltaMs: ticker.deltaMS,
+      elapsedMs: ticker.elapsedMS ?? ticker.deltaMS,
       width: this.width,
       height: this.height,
       visualPosition: position,
@@ -117,6 +133,7 @@ export class StudentRaceRenderer {
       perspective: this.perspective,
       layout: this.layout,
       runtimeState: this.runtimeState,
+      finishPresentation: this.finishPresentation,
     };
     this.layers.forEach((layer) => layer.update(frameState));
     if (this.loadingSurface.visible) {
@@ -133,7 +150,6 @@ export class StudentRaceRenderer {
     this.loadingSurface.destroy();
     this.backgroundContainer.destroy({ children: true });
     this.worldContainer.destroy({ children: true });
-    this.playerContainer.destroy({ children: true });
     this.effectsContainer.destroy({ children: true });
   }
 }

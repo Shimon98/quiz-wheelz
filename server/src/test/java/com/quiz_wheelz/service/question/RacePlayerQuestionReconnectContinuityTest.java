@@ -67,8 +67,7 @@ class RacePlayerQuestionReconnectContinuityTest {
         RacePlayerGameplayTimelineService gameplayTimelineService =
                 new RacePlayerGameplayTimelineService(
                         questionTimeoutService,
-                        raceMovementService,
-                        clock
+                        raceMovementService
                 );
         reconnectService = new RacePlayerReconnectService(
                 sessionLockService,

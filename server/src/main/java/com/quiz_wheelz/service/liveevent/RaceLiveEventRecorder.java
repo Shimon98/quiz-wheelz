@@ -89,10 +89,7 @@ public class RaceLiveEventRecorder {
                 RaceLiveEventType.PLAYER_FINISHED,
                 new PlayerFinishedLiveEventPayload(
                         findPlayer(players, racePlayer.getId()),
-                        DateTimeUtils.toEpochMilli(
-                                racePlayer.getFinishedAt(),
-                                clock.getZone()
-                        ),
+                        finishedAtEpochMs(racePlayer),
                         players
                 )
         );
@@ -122,6 +119,14 @@ public class RaceLiveEventRecorder {
                 .filter(player -> Objects.equals(player.getRacePlayerId(), racePlayerId))
                 .findFirst()
                 .orElseThrow(IllegalStateException::new);
+    }
+
+    private long finishedAtEpochMs(RacePlayer racePlayer) {
+        if (racePlayer.getFinishedAtEpochMs() != null) {
+            return racePlayer.getFinishedAtEpochMs();
+        }
+
+        return DateTimeUtils.toEpochMilli(racePlayer.getFinishedAt(), clock.getZone());
     }
 
     private Race requiredRace(RacePlayer racePlayer) {
