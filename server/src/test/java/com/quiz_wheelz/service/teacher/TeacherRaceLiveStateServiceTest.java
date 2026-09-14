@@ -29,6 +29,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -128,6 +129,52 @@ class TeacherRaceLiveStateServiceTest {
         TeacherRaceLiveStateResponse response = service.getLiveState(race.getId());
 
         assertEquals(81L, response.getEventVersion());
+    }
+
+    @Test
+    void runningRaceExposesStartEpochInTheClockZoneAndNoFinishEpoch() {
+        Race race = race(RaceStatus.IN_PROGRESS, 3L);
+        race.setStartedAt(LocalDateTime.of(2026, 8, 24, 11, 30));
+        prepareOwnedRace(race, List.of());
+
+        TeacherRaceLiveStateResponse response = service.getLiveState(race.getId());
+
+        assertEquals(
+                Instant.parse("2026-08-24T11:30:00Z").toEpochMilli(),
+                response.getStartedAtEpochMs()
+        );
+        assertNull(response.getFinishedAtEpochMs());
+        assertEquals(NOW.toEpochMilli(), response.getServerTimeEpochMs());
+    }
+
+    @Test
+    void finishedRaceExposesBothLifecycleEpochs() {
+        Race race = race(RaceStatus.FINISHED, 9L);
+        race.setStartedAt(LocalDateTime.of(2026, 8, 24, 11, 30));
+        race.setFinishedAt(LocalDateTime.of(2026, 8, 24, 11, 45, 30));
+        prepareOwnedRace(race, List.of());
+
+        TeacherRaceLiveStateResponse response = service.getLiveState(race.getId());
+
+        assertEquals(
+                Instant.parse("2026-08-24T11:30:00Z").toEpochMilli(),
+                response.getStartedAtEpochMs()
+        );
+        assertEquals(
+                Instant.parse("2026-08-24T11:45:30Z").toEpochMilli(),
+                response.getFinishedAtEpochMs()
+        );
+    }
+
+    @Test
+    void raceBeforeStartExposesNullLifecycleEpochs() {
+        Race race = race(RaceStatus.WAITING_FOR_PLAYERS, 0L);
+        prepareOwnedRace(race, List.of());
+
+        TeacherRaceLiveStateResponse response = service.getLiveState(race.getId());
+
+        assertNull(response.getStartedAtEpochMs());
+        assertNull(response.getFinishedAtEpochMs());
     }
 
     @Test

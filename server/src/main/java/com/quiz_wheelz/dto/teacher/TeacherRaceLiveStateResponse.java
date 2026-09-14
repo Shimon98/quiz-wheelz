@@ -15,6 +15,8 @@ public class TeacherRaceLiveStateResponse {
     private final String status;
     private final Integer totalDistance;
     private final RaceFocusPolicy focusPolicy;
+    private final Long startedAtEpochMs;
+    private final Long finishedAtEpochMs;
     private final Long serverTimeEpochMs;
     private final Double baseMovementUnitsPerSecond;
     private final Long eventVersion;
@@ -27,6 +29,8 @@ public class TeacherRaceLiveStateResponse {
             String status,
             Integer totalDistance,
             RaceFocusPolicy focusPolicy,
+            Long startedAtEpochMs,
+            Long finishedAtEpochMs,
             Long serverTimeEpochMs,
             Double baseMovementUnitsPerSecond,
             Long eventVersion,
@@ -38,6 +42,8 @@ public class TeacherRaceLiveStateResponse {
         this.status = status;
         this.totalDistance = totalDistance;
         this.focusPolicy = focusPolicy;
+        this.startedAtEpochMs = startedAtEpochMs;
+        this.finishedAtEpochMs = finishedAtEpochMs;
         this.serverTimeEpochMs = serverTimeEpochMs;
         this.baseMovementUnitsPerSecond = baseMovementUnitsPerSecond;
         this.eventVersion = eventVersion;

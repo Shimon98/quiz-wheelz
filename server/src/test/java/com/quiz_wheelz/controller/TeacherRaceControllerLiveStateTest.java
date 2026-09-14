@@ -53,6 +53,8 @@ class TeacherRaceControllerLiveStateTest {
                 "IN_PROGRESS",
                 1000,
                 RaceFocusPolicy.WARN,
+                1_787_567_400_000L,
+                null,
                 1_787_568_000_000L,
                 4.0,
                 0L,
