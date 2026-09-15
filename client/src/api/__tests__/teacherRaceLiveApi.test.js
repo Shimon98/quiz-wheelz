@@ -1,11 +1,27 @@
 import { afterEach, expect, it, vi } from "vitest";
 
 import httpClient from "../httpClient.js";
-import { getTeacherRaceLiveState } from "../teacherRaceLiveApi";
+import { createTeacherRaceEventSource, getTeacherRaceLiveState } from "../teacherRaceLiveApi";
 import { ApiContractError } from "../../errors/ApiContractError";
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
+
+it("opens the teacher stream on the shared API base with only a cursor and credentials", () => {
+  const EventSourceMock = vi.fn(function (url, options) { this.url = url; this.options = options; });
+  vi.stubGlobal("EventSource", EventSourceMock);
+  const baseURL = httpClient.defaults.baseURL;
+  try {
+    httpClient.defaults.baseURL = "http://localhost:8080/api";
+    createTeacherRaceEventSource(7, 12);
+    expect(EventSourceMock).toHaveBeenCalledWith(
+      "http://localhost:8080/api/teacher/races/7/events/stream?afterVersion=12", { withCredentials: true },
+    );
+  } finally {
+    httpClient.defaults.baseURL = baseURL;
+  }
 });
 
 it("reads the owned race live state through the shared client and unwraps the envelope", async () => {

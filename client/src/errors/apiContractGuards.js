@@ -40,6 +40,14 @@ export function requireFiniteNumber(
   return value;
 }
 
+export function requireBoolean(value, label) {
+  if (typeof value !== "boolean") {
+    throw new ApiContractError(`${label} is invalid`);
+  }
+
+  return value;
+}
+
 export function requireNonEmptyString(value, label) {
   if (typeof value !== "string" || value.trim() === "") {
     throw new ApiContractError(`${label} is invalid`);

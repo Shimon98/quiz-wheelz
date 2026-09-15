@@ -49,7 +49,10 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - start-race command with validation and locking.
 - teacher-owned live-state GET with exact projector/recovery fields, injected-clock
   epoch-millisecond server time, server-owned `baseMovementUnitsPerSecond`, durable event
-  version and every joined player in shared authoritative competition order
+  version and every joined player in shared authoritative competition order; since
+  C3-00 (2026-09-14) it also carries the nullable Race lifecycle epochs
+  `startedAtEpochMs` / `finishedAtEpochMs`, converted from `Race.startedAt` /
+  `Race.finishedAt` in the injected `Clock` zone with a null guard in the service
 - live-state performs one owned Race lookup plus one RacePlayer list fetch and is
   read-only: no Redis/presence/activity, movement settlement, timeout, reconnect,
   re-anchor, persistence or event publication

@@ -8,6 +8,7 @@ import { ERROR_CATEGORIES } from "../../../../errors/errorCategories";
 
 vi.mock("../../../../api/teacherRaceLiveApi", () => ({
   getTeacherRaceLiveState: vi.fn(),
+  createTeacherRaceEventSource: vi.fn(() => ({ readyState: 0, close: vi.fn() })),
 }));
 
 function deferred() {

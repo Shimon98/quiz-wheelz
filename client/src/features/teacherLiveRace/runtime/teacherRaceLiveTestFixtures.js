@@ -42,3 +42,27 @@ export function teacherLiveStateResponse(overrides = {}) {
     ...overrides,
   };
 }
+
+export function teacherLiveEvent(overrides = {}) {
+  return {
+    raceId: 7,
+    version: 13,
+    type: "PLAYER_PROGRESS_UPDATED",
+    occurredAtEpochMs: 1_755_600_001_000,
+    payload: {
+      players: [
+        teacherLivePlayer({ position: 140 }),
+        teacherLivePlayer({
+          racePlayerId: 92,
+          displayName: "Dan",
+          laneNumber: 2,
+          rank: 2,
+          position: 95,
+          score: 20,
+          streak: 0,
+        }),
+      ],
+    },
+    ...overrides,
+  };
+}

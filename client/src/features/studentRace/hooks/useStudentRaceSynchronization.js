@@ -9,8 +9,13 @@ import { requestFinishArbitration as requestArbitration } from "../../../api/stu
 import { ApiContractError } from "../../../errors/ApiContractError.js";
 import { mapStudentRaceFinishArbitration } from "../runtime/mapStudentRaceFinishArbitration.js";
 import { mergeStudentRaceFinishOrder } from "../runtime/mergeStudentRaceFinishOrder.js";
+import { RACE_LIVE_EVENT_TYPES } from "../../../constants/raceLiveEventConstants.js";
 
-const REFRESH_SIGNALS = new Set(["QUESTION_ANSWERED", "PLAYER_FINISHED", "RACE_FINISHED"]);
+const REFRESH_SIGNALS = new Set([
+  RACE_LIVE_EVENT_TYPES.QUESTION_ANSWERED,
+  RACE_LIVE_EVENT_TYPES.PLAYER_FINISHED,
+  RACE_LIVE_EVENT_TYPES.RACE_FINISHED,
+]);
 
 export default function useStudentRaceSynchronization({
   raceState, requestError, silentRefresh, syncEnabled, finishSyncEnabled = syncEnabled,

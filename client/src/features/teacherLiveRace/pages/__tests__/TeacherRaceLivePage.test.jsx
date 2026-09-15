@@ -12,6 +12,7 @@ import { teacherLiveStateResponse } from "../../runtime/teacherRaceLiveTestFixtu
 
 vi.mock("../../../../api/teacherRaceLiveApi", () => ({
   getTeacherRaceLiveState: vi.fn(),
+  createTeacherRaceEventSource: vi.fn(() => ({ readyState: 0, close: vi.fn() })),
 }));
 
 const ROOM_MARKER = "room-page-marker";

@@ -9,3 +9,12 @@ export async function getTeacherRaceLiveState(raceId) {
 
   return unwrapApiResponse(response);
 }
+
+export function createTeacherRaceEventSource(raceId, afterVersion) {
+  const url = httpClient.getUri({
+    url: API_ENDPOINTS.TEACHER.RACE_EVENTS_STREAM(raceId),
+    params: { afterVersion },
+  });
+
+  return new EventSource(url, { withCredentials: true });
+}

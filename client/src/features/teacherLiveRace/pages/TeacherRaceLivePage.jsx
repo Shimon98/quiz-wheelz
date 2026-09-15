@@ -20,6 +20,7 @@ import {
 } from "../../../constants/routeConstants";
 import { RACE_STATUSES } from "../../../constants/raceStatusConstants";
 import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
+import { TEACHER_CONNECTION_LABEL_KEYS } from "../config/teacherRaceLiveConfig";
 import useTeacherRaceLive from "../hooks/useTeacherRaceLive";
 import {
   resolveTeacherLiveView,
@@ -51,7 +52,7 @@ function FoundationFact({ label, value }) {
   );
 }
 
-function FoundationBoard({ runtime }) {
+function FoundationBoard({ runtime, recentEvents, connectionState }) {
   const { t } = useTranslation(I18N_NAMESPACES.TEACHER_LIVE_RACE);
   const statusContent = FOUNDATION_STATUS_CONTENT[runtime.race.status];
 
@@ -67,6 +68,10 @@ function FoundationBoard({ runtime }) {
       </Group>
 
       <Group gap="xl" wrap="wrap">
+        <FoundationFact
+          label={t("foundation.connection")}
+          value={t(TEACHER_CONNECTION_LABEL_KEYS[connectionState])}
+        />
         <FoundationFact
           label={t("foundation.roomCode")}
           value={runtime.race.roomCode}
@@ -105,6 +110,18 @@ function FoundationBoard({ runtime }) {
           </Table.Tbody>
         </Table>
       </Paper>
+
+      {recentEvents.length > 0 ? (
+        <Paper radius="xl" p="md" withBorder>
+          <Stack gap={4} role="log" aria-live="polite">
+            {recentEvents.map((item) => (
+              <Text key={item.id} size="sm">
+                {t(item.messageKey, item.values)}
+              </Text>
+            ))}
+          </Stack>
+        </Paper>
+      ) : null}
     </Stack>
   );
 }
@@ -112,7 +129,8 @@ function FoundationBoard({ runtime }) {
 export default function TeacherRaceLivePage() {
   const { raceId } = useParams();
   const navigate = useNavigate();
-  const { runtime, isLoading, error, retry } = useTeacherRaceLive(raceId);
+  const { runtime, recentEvents, connectionState, isLoading, error, retry } =
+    useTeacherRaceLive(raceId);
   const view = resolveTeacherLiveView({ isLoading, error, runtime });
 
   const handleBackToRaces = useCallback(() => {
@@ -128,7 +146,11 @@ export default function TeacherRaceLivePage() {
   return (
     <Container size="xl">
       {view === TEACHER_LIVE_VIEWS.PROJECTOR ? (
-        <FoundationBoard runtime={runtime} />
+        <FoundationBoard
+          runtime={runtime}
+          recentEvents={recentEvents}
+          connectionState={connectionState}
+        />
       ) : (
         <TeacherRaceLiveStates
           view={view}
