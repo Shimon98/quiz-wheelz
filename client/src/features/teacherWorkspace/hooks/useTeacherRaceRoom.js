@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import { getTeacherRaceRoom, startTeacherRace } from "../../../api/teacherApi";
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
+import { buildTeacherRaceLivePath } from "../../../constants/routeConstants";
 import {
   showApiErrorNotification,
   showSuccessNotification,
 } from "../../../shared/notifications/appNotifications";
 import { RACE_STATUSES } from "../config/raceStatusConfig";
 
-// Temporary waiting-room polling until SSE / live events are implemented.
 const WAITING_ROOM_POLL_MS = 4000;
 
 const POLLABLE_STATUSES = [
@@ -17,14 +18,11 @@ const POLLABLE_STATUSES = [
   RACE_STATUSES.READY,
 ];
 
-/**
- * useTeacherRaceRoom — all race-room logic: loads the room, quietly polls
- * for joining players while the race is still waiting (temporary until SSE),
- * and owns the start-race command. The server decides whether a race may
- * start — the client only asks and shows the outcome.
- */
+function ignorePollFailure() {}
+
 export default function useTeacherRaceRoom(raceId) {
   const { t } = useTranslation(I18N_NAMESPACES.TEACHER_WORKSPACE);
+  const navigate = useNavigate();
 
   const [room, setRoom] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,7 +36,6 @@ export default function useTeacherRaceRoom(raceId) {
     setReloadToken((token) => token + 1);
   }, []);
 
-  // Initial load + manual refetches.
   useEffect(() => {
     let isActive = true;
 
@@ -68,8 +65,6 @@ export default function useTeacherRaceRoom(raceId) {
     };
   }, [raceId, reloadToken]);
 
-  // Quiet background poll while waiting for players — no spinners, no error
-  // toasts (a single failed poll just tries again on the next tick).
   const shouldPoll = POLLABLE_STATUSES.includes(room?.status);
 
   useEffect(() => {
@@ -77,12 +72,8 @@ export default function useTeacherRaceRoom(raceId) {
       return undefined;
     }
 
-    const pollTimer = setInterval(async () => {
-      try {
-        setRoom(await getTeacherRaceRoom(raceId));
-      } catch {
-        // ignore — next tick retries; real errors surface on user actions
-      }
+    const pollTimer = setInterval(() => {
+      getTeacherRaceRoom(raceId).then(setRoom).catch(ignorePollFailure);
     }, WAITING_ROOM_POLL_MS);
 
     return () => clearInterval(pollTimer);
@@ -99,15 +90,9 @@ export default function useTeacherRaceRoom(raceId) {
         message: t("raceRoom.startedBody"),
       });
 
-      // No live screen yet — stay in the room with the fresh status. When
-      // the live route ships, navigating there becomes the natural next
-      // step (buildTeacherRaceLivePath already exists).
-      setRoom((currentRoom) =>
-        currentRoom
-          ? { ...currentRoom, status: startResponse?.status ?? currentRoom.status }
-          : currentRoom,
-      );
-      refetch();
+      navigate(buildTeacherRaceLivePath(startResponse?.raceId ?? raceId), {
+        replace: true,
+      });
     } catch (requestError) {
       showApiErrorNotification(requestError, {
         fallbackKey: "teacher.startRaceFailed",

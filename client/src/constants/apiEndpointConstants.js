@@ -27,5 +27,7 @@ export const API_ENDPOINTS = {
     RACES: "/teacher/races",
     RACE_ROOM: (raceId) => `/teacher/races/${raceId}/room`,
     RACE_START: (raceId) => `/teacher/races/${raceId}/start`,
+    RACE_LIVE_STATE: (raceId) => `/teacher/races/${raceId}/live-state`,
+    RACE_EVENTS_STREAM: (raceId) => `/teacher/races/${raceId}/events/stream`,
   },
 };

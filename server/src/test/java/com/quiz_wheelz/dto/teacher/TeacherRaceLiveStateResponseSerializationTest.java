@@ -29,6 +29,8 @@ class TeacherRaceLiveStateResponseSerializationTest {
                 "IN_PROGRESS",
                 1000,
                 RaceFocusPolicy.STRICT,
+                1_787_567_400_000L,
+                1_787_567_940_000L,
                 1_787_568_000_000L,
                 4.0,
                 4L,
@@ -46,6 +48,8 @@ class TeacherRaceLiveStateResponseSerializationTest {
                         "status",
                         "totalDistance",
                         "focusPolicy",
+                        "startedAtEpochMs",
+                        "finishedAtEpochMs",
                         "serverTimeEpochMs",
                         "baseMovementUnitsPerSecond",
                         "eventVersion",
@@ -73,6 +77,8 @@ class TeacherRaceLiveStateResponseSerializationTest {
         assertEquals("HOVER_KART_GREEN", player.get("vehicleAssetKey").asText());
         assertEquals(2, player.get("rank").asInt());
         assertEquals(4.0, json.get("baseMovementUnitsPerSecond").asDouble());
+        assertEquals(1_787_567_400_000L, json.get("startedAtEpochMs").asLong());
+        assertEquals(1_787_567_940_000L, json.get("finishedAtEpochMs").asLong());
         assertFalse(json.has("movementUnitsPerSecond"));
     }
 

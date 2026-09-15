@@ -152,8 +152,17 @@ and recovery query for the future projector screen. It exposes exactly:
 
 ```text
 raceId, title, roomCode, status, totalDistance, focusPolicy,
+startedAtEpochMs, finishedAtEpochMs,
 serverTimeEpochMs, baseMovementUnitsPerSecond, eventVersion, players
 ```
+
+`startedAtEpochMs` and `finishedAtEpochMs` (C3-00, 2026-09-14) expose the Race-owned
+lifecycle instants `Race.startedAt` / `Race.finishedAt` as Unix epoch milliseconds
+converted in the injected `Clock` zone, so they share the time base of
+`serverTimeEpochMs`. Each is `null` until the server sets that instant:
+WAITING_FOR_PLAYERS/READY → both `null`, IN_PROGRESS → started only, FINISHED → both.
+They are the only time base for the teacher projector elapsed/duration display; the
+client never derives them from player finish times, live events or its own clock.
 
 Each player exposes exactly:
 

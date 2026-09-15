@@ -1,15 +1,5 @@
 import { RACE_STATUSES } from "./raceStatusConfig";
 
-/*
- * The primary action of a race row, by status — ONE config every list uses,
- * so "what does clicking a race do" is never re-decided per component.
- *
- * kind:
- *   "room"        — navigate to the race waiting room (real today)
- *   "liveSoon"    — live screen not built yet: honest "coming soon" toast
- *   "summarySoon" — summary screen not built yet: honest "coming soon" toast
- *   "none"        — no action (cancelled races)
- */
 export const RACE_PRIMARY_ACTIONS = Object.freeze({
   [RACE_STATUSES.WAITING_FOR_PLAYERS]: {
     kind: "room",
@@ -20,7 +10,7 @@ export const RACE_PRIMARY_ACTIONS = Object.freeze({
     labelKey: "racesPage.actions.openRoom",
   },
   [RACE_STATUSES.IN_PROGRESS]: {
-    kind: "liveSoon",
+    kind: "live",
     labelKey: "racesPage.actions.watchLive",
   },
   [RACE_STATUSES.FINISHED]: {

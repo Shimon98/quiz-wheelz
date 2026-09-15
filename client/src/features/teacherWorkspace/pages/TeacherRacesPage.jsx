@@ -16,7 +16,10 @@ import { useDisclosure } from "@mantine/hooks";
 import { Plus } from "lucide-react";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
-import { buildTeacherRaceRoomPath } from "../../../constants/routeConstants";
+import {
+  buildTeacherRaceLivePath,
+  buildTeacherRaceRoomPath,
+} from "../../../constants/routeConstants";
 import { useLanguageStore } from "../../../stores/languageStore";
 import { showInfoNotification } from "../../../shared/notifications/appNotifications";
 import useTeacherRaces from "../hooks/useTeacherRaces";
@@ -30,13 +33,6 @@ import {
   DashboardErrorState,
 } from "../components/DashboardStates";
 
-/**
- * TeacherRacesPage — the full race-management page (/teacher/races), reached
- * from the navbar and from the dashboard's "view all races". Reuses the SAME
- * table/cards/badges as the dashboard preview and the SAME CreateRaceModal
- * from UI-07 — only the row action differs (status-driven, via
- * raceActionsConfig).
- */
 export default function TeacherRacesPage() {
   const { t } = useTranslation(I18N_NAMESPACES.TEACHER_WORKSPACE);
   const navigate = useNavigate();
@@ -63,8 +59,8 @@ export default function TeacherRacesPage() {
         return;
       }
 
-      if (action.kind === "liveSoon") {
-        showInfoNotification({ message: t("racesPage.liveSoon") });
+      if (action.kind === "live") {
+        navigate(buildTeacherRaceLivePath(race.raceId ?? race.id));
         return;
       }
 

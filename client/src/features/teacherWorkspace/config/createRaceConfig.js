@@ -1,11 +1,13 @@
-/*
- * Create-race form knobs. The teacher never sees "distance points" — race
- * length is short/regular/long in the UI and maps to the server's
- * totalDistance ONLY in the payload mapper (utils/createRacePayload.js).
- */
+import { RACE_MAX_PLAYERS } from "../../../constants/raceRulesConstants";
 
-// Project rule: up to 8 racers per race.
-export const MAX_PLAYERS_OPTIONS = Object.freeze([2, 3, 4, 5, 6, 7, 8]);
+const MIN_PLAYERS_OPTION = 2;
+
+export const MAX_PLAYERS_OPTIONS = Object.freeze(
+  Array.from(
+    { length: RACE_MAX_PLAYERS - MIN_PLAYERS_OPTION + 1 },
+    (_, index) => MIN_PLAYERS_OPTION + index,
+  ),
+);
 
 export const RACE_LENGTH_OPTIONS = Object.freeze([
   { value: "short", labelKey: "createRace.lengths.short", totalDistance: 600 },
@@ -27,8 +29,6 @@ export const CREATE_RACE_DEFAULT_VALUES = Object.freeze({
   raceLength: "regular",
 });
 
-// Future operators — UI scaffolding ONLY: rendered disabled with a "coming
-// soon" note, never part of the payload (the server can't save them yet).
 export const FUTURE_OPERATOR_OPTIONS = Object.freeze([
   { id: "addition", symbol: "+", labelKey: "createRace.operators.addition" },
   {

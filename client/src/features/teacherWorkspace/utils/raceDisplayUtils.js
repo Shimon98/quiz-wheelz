@@ -1,14 +1,5 @@
 import { SUPPORTED_LANGUAGES } from "../../../i18n/i18nConstants";
 
-/*
- * Turns a raw race object from the dashboard API into the display values both
- * race preview layouts (desktop table + mobile cards) render — the single
- * place that knows the server's field names, so the two layouts can never
- * drift apart.
- */
-
-// The server sends subject names/codes in English; Hebrew display names live
-// here until the server localizes subjects itself.
 const HEBREW_SUBJECT_LABELS = {
   MATH: "חשבון",
   MATHEMATICS: "מתמטיקה",
@@ -57,7 +48,6 @@ export function formatRaceDate(value, language) {
   }).format(date);
 }
 
-// Server subjects -> Mantine Select options, localized like the race rows.
 export function buildSubjectOptions(subjects, language) {
   return (Array.isArray(subjects) ? subjects : []).map((subject) => ({
     value: String(subject.id),
@@ -71,7 +61,6 @@ export function buildSubjectOptions(subjects, language) {
   }));
 }
 
-// Normalized subject identifier for icon lookup (RaceSubjectLabel).
 export function getSubjectKey(race) {
   const raw =
     race?.subjectCode ??
@@ -85,7 +74,7 @@ export function getSubjectKey(race) {
 
 export function buildRaceViewModel(race, language) {
   return {
-    id: race?.id,
+    id: race?.raceId ?? race?.id,
     title: race?.title ?? "",
     roomCode: race?.roomCode ?? null,
     subjectName: getSubjectDisplayName(race, language),

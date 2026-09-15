@@ -1,40 +1,31 @@
-import { useEffect, useRef } from "react";
+import { useCallback } from "react";
 import { createStudentRaceEventSource } from "../../../api/studentRaceLiveApi.js";
 import { normalizeApiError } from "../../../errors/normalizeApiError.js";
+import useEventSourceStream from "../../../shared/live/useEventSourceStream.js";
 import { mapStudentRaceLiveSignal } from "../runtime/mapStudentRaceLiveSignal.js";
 
-export default function useStudentRaceEventStream({ enabled, afterVersion, onSignal, onError, generation = 0 }) {
-  const latest = useRef({ afterVersion, onSignal, onError });
-  useEffect(() => {
-    latest.current = { afterVersion, onSignal, onError };
-  }, [afterVersion, onSignal, onError]);
+const STREAM_UNAVAILABLE_MESSAGE = "Student live stream unavailable";
 
-  useEffect(() => {
-    if (!enabled) return;
-    let source;
-    let closed = false;
+export default function useStudentRaceEventStream({ enabled, afterVersion, onSignal, onError, generation = 0 }) {
+  const createSource = useCallback(() => createStudentRaceEventSource(afterVersion), [afterVersion]);
+
+  const handleMessage = useCallback((message) => {
     try {
-      source = createStudentRaceEventSource(latest.current.afterVersion);
+      onSignal(mapStudentRaceLiveSignal(JSON.parse(message.data)));
     } catch (error) {
-      latest.current.onError?.(normalizeApiError(error));
-      return;
+      onError?.(normalizeApiError(error));
     }
-    source.onmessage = (event) => {
-      if (closed) return;
-      try {
-        latest.current.onSignal(mapStudentRaceLiveSignal(JSON.parse(event.data)));
-      } catch (error) {
-        latest.current.onError?.(normalizeApiError(error));
-      }
-    };
-    source.onerror = () => {
-      if (!closed) latest.current.onError?.(normalizeApiError(new Error("Student live stream unavailable")));
-    };
-    return () => {
-      closed = true;
-      source.onmessage = null;
-      source.onerror = null;
-      source.close();
-    };
-  }, [enabled, generation]);
+  }, [onSignal, onError]);
+
+  const handleError = useCallback(({ error }) => {
+    onError?.(normalizeApiError(error ?? new Error(STREAM_UNAVAILABLE_MESSAGE)));
+  }, [onError]);
+
+  useEventSourceStream({
+    enabled,
+    generation,
+    createSource,
+    onMessage: handleMessage,
+    onError: handleError,
+  });
 }

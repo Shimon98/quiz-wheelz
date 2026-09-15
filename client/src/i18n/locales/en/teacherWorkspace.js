@@ -1,7 +1,3 @@
-/*
- * English strings for the teacher workspace (teacherWorkspace namespace) —
- * mirrors locales/he/teacherWorkspace.js key-for-key.
- */
 export default {
   nav: {
     menu: "Menu",
@@ -60,7 +56,6 @@ export default {
   racesPage: {
     title: "All races",
     subtitle: "Manage and view every race you created",
-    liveSoon: "The live race screen is coming soon",
     summarySoon: "Race summary is coming soon",
     actions: {
       openRoom: "Open room",
@@ -85,7 +80,7 @@ export default {
     startRace: "Start race",
     needPlayers: "You need at least one player to start",
     startedTitle: "The race is on!",
-    startedBody: "The live race screen is coming soon",
+    startedBody: "Opening the live race screen",
     cancelRace: "Cancel race",
     cancelSoon: "Cancelling races will be available later",
     backToRaces: "Back to all races",

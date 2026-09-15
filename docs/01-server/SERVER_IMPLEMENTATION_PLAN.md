@@ -301,6 +301,12 @@ Enforce teacher ownership.
 - exact top-level and player DTO fields with `focusPolicy`, injected-clock
   `serverTimeEpochMs`, server-owned `baseMovementUnitsPerSecond`, and no
   internal/question/focus-audit/presence leakage
+- C3-00 companion (2026-09-14): the same DTO also exposes
+  `startedAtEpochMs` / `finishedAtEpochMs` from `Race.startedAt` /
+  `Race.finishedAt` through `DateTimeUtils.toEpochMilli(value, clock.getZone())`
+  behind a null guard in `TeacherRaceLiveStateService`; the serialization, service and
+  controller tests lock the 12-field set; no endpoint, entity, migration, SSE, ranking
+  or `DateTimeUtils` change
 - teacher ownership reuses the room lookup sequence and returns `RACE_NOT_FOUND` for
   missing and foreign Races
 - one RacePlayer list fetch followed by one shared pure standing calculation used by

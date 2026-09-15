@@ -21,31 +21,22 @@ import ProtectedRoute from "./ProtectedRoute";
 import RoleRoute from "./RoleRoute";
 import GuestRoute from "./GuestRoute";
 
-
-
-
-// Dev-only preview environment (standing rule: dev tools never reach
-// production). import.meta.env.DEV is statically false in a production
-// build, so this lazy chunk is never referenced there and the file is
-// excluded from the bundle entirely.
 const StudentRaceVisualPreview = import.meta.env.DEV
     ? lazy(() => import("../features/studentRace/dev/StudentRaceVisualPreview"))
     : null;
 
-// Production race page — lazy because it pulls the Pixi renderer, which the
-// landing/auth/join entry bundle must not pay for.
 const StudentRacePage = lazy(
     () => import("../features/studentRace/pages/StudentRacePage")
 );
 
-
+const TeacherRaceLivePage = lazy(
+    () => import("../features/teacherLiveRace/pages/TeacherRaceLivePage")
+);
 
 export default function AppRouter() {
     return (
         <BrowserRouter>
             <Routes>
-
-
                 {import.meta.env.DEV && (
                     <Route
                         path="/dev/race"
@@ -56,7 +47,6 @@ export default function AppRouter() {
                         }
                     />
                 )}
-
 
                 <Route
                     element={
@@ -85,8 +75,6 @@ export default function AppRouter() {
                     element={<Navigate to={ROUTES.TEACHER_LOGIN} replace />}
                 />
 
-                {/* The workspace shell is a layout route: guards + chrome
-                    render ONCE, only the page content swaps on navigation. */}
                 <Route
                     element={
                         <ProtectedRoute>
@@ -108,6 +96,14 @@ export default function AppRouter() {
                         path={ROUTES.TEACHER_RACE_ROOM}
                         element={<TeacherRaceRoomPage />}
                     />
+                    <Route
+                        path={ROUTES.TEACHER_RACE_LIVE}
+                        element={
+                            <Suspense fallback={null}>
+                                <TeacherRaceLivePage />
+                            </Suspense>
+                        }
+                    />
                 </Route>
 
                 <Route
@@ -121,8 +117,6 @@ export default function AppRouter() {
                     }
                 />
 
-                {/* Student flow — public (a student never signs in) and
-                    mobile-first; the shell is a pathless layout route. */}
                 <Route element={<StudentShell />}>
                     <Route
                         path={ROUTES.STUDENT_JOIN}
@@ -138,8 +132,6 @@ export default function AppRouter() {
                     />
                 </Route>
 
-                {/* Production game surface — deliberately OUTSIDE StudentShell:
-                    a full-screen race world, not the entry hero/card layout. */}
                 <Route
                     path={ROUTES.STUDENT_RACE}
                     element={

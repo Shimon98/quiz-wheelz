@@ -4,10 +4,12 @@ import com.quiz_wheelz.common.RaceProgressRules;
 import com.quiz_wheelz.dto.teacher.TeacherRaceLivePlayerResponse;
 import com.quiz_wheelz.dto.teacher.TeacherRaceLiveStateResponse;
 import com.quiz_wheelz.entitys.Race;
+import com.quiz_wheelz.utils.DateTimeUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -42,10 +44,18 @@ public class TeacherRaceLiveStateService {
                 race.getStatus().name(),
                 race.getTotalDistance(),
                 race.getFocusPolicy(),
+                toEpochMilliOrNull(race.getStartedAt()),
+                toEpochMilliOrNull(race.getFinishedAt()),
                 clock.millis(),
                 RaceProgressRules.BASE_MOVEMENT_UNITS_PER_SECOND,
                 race.getLiveEventVersion(),
                 players
         );
+    }
+
+    private Long toEpochMilliOrNull(LocalDateTime value) {
+        return value == null
+                ? null
+                : DateTimeUtils.toEpochMilli(value, clock.getZone());
     }
 }

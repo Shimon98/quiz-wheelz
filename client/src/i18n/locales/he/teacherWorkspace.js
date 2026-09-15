@@ -1,8 +1,3 @@
-/*
- * Hebrew strings for the teacher workspace (teacherWorkspace namespace) —
- * dashboard home, navigation and race preview, matching the new teacher
- * dashboard vision. Brand name "QuizWheelz" stays untranslated.
- */
 export default {
   nav: {
     menu: "תפריט",
@@ -61,7 +56,6 @@ export default {
   racesPage: {
     title: "כל המרוצים",
     subtitle: "ניהול וצפייה בכל המרוצים שיצרתם",
-    liveSoon: "מסך המרוץ החי יתווסף בקרוב",
     summarySoon: "סיכום מרוץ יתווסף בקרוב",
     actions: {
       openRoom: "פתיחת חדר",
@@ -86,7 +80,7 @@ export default {
     startRace: "התחלת מרוץ",
     needPlayers: "צריך לפחות תלמיד אחד כדי להתחיל",
     startedTitle: "המרוץ יצא לדרך!",
-    startedBody: "מסך המרוץ החי יתווסף בקרוב",
+    startedBody: "עוברים למסך המרוץ החי",
     cancelRace: "ביטול מרוץ",
     cancelSoon: "ביטול מרוץ יהיה זמין בהמשך",
     backToRaces: "חזרה לכל המרוצים",
