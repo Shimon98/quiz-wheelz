@@ -1,137 +1,61 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import {
-  Badge,
-  Container,
-  Group,
-  NumberFormatter,
-  Paper,
-  Stack,
-  Table,
-  Text,
-  Title,
-} from "@mantine/core";
+import { Container } from "@mantine/core";
+import { useFullscreenElement } from "@mantine/hooks";
+import { MonitorSmartphone } from "lucide-react";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import {
   ROUTES,
   buildTeacherRaceRoomPath,
 } from "../../../constants/routeConstants";
-import { RACE_STATUSES } from "../../../constants/raceStatusConstants";
-import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
-import { TEACHER_CONNECTION_LABEL_KEYS } from "../config/teacherRaceLiveConfig";
+import PreferredDeviceNotice from "../../../shared/responsive/PreferredDeviceNotice";
+import usePreferredDeviceNotice from "../../../shared/responsive/usePreferredDeviceNotice";
+import { PREFERRED_DEVICE_PROFILES } from "../../../shared/responsive/preferredDeviceProfiles";
 import useTeacherRaceLive from "../hooks/useTeacherRaceLive";
+import useTeacherRaceElapsedTime from "../hooks/useTeacherRaceElapsedTime";
+import { buildTeacherRaceProjectorViewModel } from "../utils/buildTeacherRaceProjectorViewModel";
+import { isFullscreenSupported } from "../utils/isFullscreenSupported";
 import {
   resolveTeacherLiveView,
   TEACHER_LIVE_VIEWS,
 } from "../utils/resolveTeacherLiveView";
 import TeacherRaceLiveStates from "../components/TeacherRaceLiveStates";
-
-const FOUNDATION_STATUS_CONTENT = Object.freeze({
-  [RACE_STATUSES.IN_PROGRESS]: {
-    labelKey: "foundation.live",
-    tone: UI_TONES.SUCCESS,
-  },
-  [RACE_STATUSES.FINISHED]: {
-    labelKey: "foundation.finished",
-    tone: UI_TONES.INFO,
-  },
-});
-
-function FoundationFact({ label, value }) {
-  return (
-    <Stack gap={0}>
-      <Text size="sm" c="dimmed">
-        {label}
-      </Text>
-      <Text fw={700} size="lg">
-        {value}
-      </Text>
-    </Stack>
-  );
-}
-
-function FoundationBoard({ runtime, recentEvents, connectionState }) {
-  const { t } = useTranslation(I18N_NAMESPACES.TEACHER_LIVE_RACE);
-  const statusContent = FOUNDATION_STATUS_CONTENT[runtime.race.status];
-
-  return (
-    <Stack gap="lg">
-      <Group justify="space-between" align="center" wrap="wrap">
-        <Title order={1} fz={{ base: 26, sm: 32 }}>
-          {runtime.race.title}
-        </Title>
-        <Badge size="lg" variant="filled" color={statusContent.tone}>
-          {t(statusContent.labelKey)}
-        </Badge>
-      </Group>
-
-      <Group gap="xl" wrap="wrap">
-        <FoundationFact
-          label={t("foundation.connection")}
-          value={t(TEACHER_CONNECTION_LABEL_KEYS[connectionState])}
-        />
-        <FoundationFact
-          label={t("foundation.roomCode")}
-          value={runtime.race.roomCode}
-        />
-        <FoundationFact
-          label={t("foundation.players")}
-          value={runtime.players.length}
-        />
-        <FoundationFact
-          label={t("foundation.eventVersion")}
-          value={runtime.eventVersion}
-        />
-      </Group>
-
-      <Paper radius="xl" p={{ base: "md", sm: "lg" }} withBorder>
-        <Table verticalSpacing="sm">
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>{t("foundation.rank")}</Table.Th>
-              <Table.Th>{t("foundation.playerName")}</Table.Th>
-              <Table.Th>{t("foundation.position")}</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {runtime.players.map((player) => (
-              <Table.Tr key={player.racePlayerId}>
-                <Table.Td>{player.rank}</Table.Td>
-                <Table.Td>
-                  <Text fw={700}>{player.displayName}</Text>
-                </Table.Td>
-                <Table.Td>
-                  <NumberFormatter value={player.position} decimalScale={1} />
-                </Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
-      </Paper>
-
-      {recentEvents.length > 0 ? (
-        <Paper radius="xl" p="md" withBorder>
-          <Stack gap={4} role="log" aria-live="polite">
-            {recentEvents.map((item) => (
-              <Text key={item.id} size="sm">
-                {t(item.messageKey, item.values)}
-              </Text>
-            ))}
-          </Stack>
-        </Paper>
-      ) : null}
-    </Stack>
-  );
-}
+import TeacherRaceProjector from "../components/TeacherRaceProjector";
 
 export default function TeacherRaceLivePage() {
   const { raceId } = useParams();
   const navigate = useNavigate();
-  const { runtime, recentEvents, connectionState, isLoading, error, retry } =
-    useTeacherRaceLive(raceId);
+  const { t } = useTranslation(I18N_NAMESPACES.TEACHER_LIVE_RACE);
+  const {
+    runtime,
+    serverClock,
+    recentEvents,
+    connectionState,
+    isLoading,
+    error,
+    retry,
+  } = useTeacherRaceLive(raceId);
   const view = resolveTeacherLiveView({ isLoading, error, runtime });
+  const isProjector = view === TEACHER_LIVE_VIEWS.PROJECTOR;
+
+  const { elapsedMs, serverNowEpochMs } = useTeacherRaceElapsedTime({
+    serverClock,
+    race: runtime?.race ?? null,
+  });
+  const { ref: surfaceRef, toggle: toggleFullscreen, fullscreen } =
+    useFullscreenElement();
+  const deviceNotice = usePreferredDeviceNotice({
+    profile: PREFERRED_DEVICE_PROFILES.TEACHER_LIVE,
+    enabled: isProjector,
+  });
+
+  const viewModel = useMemo(
+    () =>
+      isProjector ? buildTeacherRaceProjectorViewModel(runtime, elapsedMs) : null,
+    [isProjector, runtime, elapsedMs],
+  );
 
   const handleBackToRaces = useCallback(() => {
     navigate(ROUTES.TEACHER_RACES);
@@ -143,22 +67,40 @@ export default function TeacherRaceLivePage() {
     );
   }
 
-  return (
-    <Container size="xl">
-      {view === TEACHER_LIVE_VIEWS.PROJECTOR ? (
-        <FoundationBoard
-          runtime={runtime}
-          recentEvents={recentEvents}
-          connectionState={connectionState}
-        />
-      ) : (
+  if (!isProjector) {
+    return (
+      <Container size="xl">
         <TeacherRaceLiveStates
           view={view}
           error={error}
           onRetry={retry}
           onBackToRaces={handleBackToRaces}
         />
-      )}
+      </Container>
+    );
+  }
+
+  return (
+    <Container fluid px={0}>
+      <TeacherRaceProjector
+        surfaceRef={surfaceRef}
+        viewModel={viewModel}
+        recentEvents={recentEvents}
+        connectionState={connectionState}
+        serverNowEpochMs={serverNowEpochMs}
+        fullscreen={fullscreen}
+        fullscreenSupported={isFullscreenSupported()}
+        onToggleFullscreen={toggleFullscreen}
+        onBackToRaces={handleBackToRaces}
+      />
+      <PreferredDeviceNotice
+        open={deviceNotice.open}
+        title={t("deviceAdvice.title")}
+        body={t("deviceAdvice.body")}
+        confirmLabel={t("deviceAdvice.confirm")}
+        icon={MonitorSmartphone}
+        onDismiss={deviceNotice.dismiss}
+      />
     </Container>
   );
 }

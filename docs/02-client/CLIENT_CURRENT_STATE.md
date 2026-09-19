@@ -8,6 +8,12 @@
 > The code is authoritative for what is implemented. This document is authoritative
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
+Checkpoint, 2026-09-16: **C3 teacher live race** — C3-01 (live route and
+authoritative live-state) and C3-02 (durable teacher SSE sync) merged in PR #69;
+C3-03 (teacher projector UI) is DONE. The full client suite, lint and build pass; live QA ran on
+2/4/6/8-player bot races at six viewports, in both languages and both themes. Real
+fullscreen and reduced-motion checks remain manual in a real browser. C3-04 is next.
+
 Local checkpoint, 2026-09-13: **C2 core implemented and closed for PR review** on
 `feature/C2-01-competition-truth-finish-arbitration` (4 commits ahead of `main`):
 full opponents roster, shared local/opponent motion, pooled opponents by RacePlayer
@@ -359,7 +365,7 @@ Implemented A–G:
   a fresh race-preview tab produced no console errors or warnings.
 
 ## Missing integration
-- teacher live page (C3) and its SSE client
+- teacher projector side-view vehicle art and final motion polish (C3-04)
 - results pages
 - full auth server flows.
 - race audio: deferred polish backlog (C2-A in the client plan); it does not block C3.
@@ -384,14 +390,35 @@ Implemented A–G:
 The C1 completion checklist is in `CLIENT_IMPLEMENTATION_PLAN.md`; future
 teacher/SSE/results/auth work does not belong to that single-player gate.
 
+## Teacher live race (C3 — C3-01/C3-02 merged in PR #69, C3-03 done 2026-09-16)
+
+- `features/teacherLiveRace/`: the page only orchestrates; `useTeacherRaceLive` owns
+  the authoritative GET, the event stream and recovery; the pure engine applies
+  version-gated events through one event registry, and roster contract violations
+  (capacity, repeated ids or lanes) turn into an authoritative re-read
+- a pure view model feeds the projector: lanes by `laneNumber` on an always
+  left-to-right track, leaderboard in server order with server tie ranks
+- elapsed time comes from a server-clock anchor captured when the live-state response
+  arrives (`serverTimeEpochMs` + `performance.now()`), never the teacher's wall clock
+- one Tailwind style owner with container queries (compact, medium, three-column
+  projector); fullscreen targets the projector surface through Mantine
+  `useFullscreenElement` and hides when unsupported
+- shared owners reused by C3: `shared/live` stream and version classifier (student
+  stream too), `shared/components/stats/StatCard` (dashboard too),
+  `shared/raceVehicles/raceVehicleIdentity` (the only vehicle color owner, the student
+  vehicle manifest reads it) and `shared/responsive` preferred-device profiles with a
+  non-modal, per-session dismissable notice (teacher projector and student race)
+- deliberate temporary vehicle: a colored marker in the lane slot; side-view art and
+  final motion tuning belong to C3-04.
+
 ## Stale client state to clean
 
-- live/results route constants exist without routes.
+- results route constant exists without a route.
 
 ## Immediate client priority
 
 ```text
-Closed C2 core (competition truth, synchronization, opponents, proof-gated finish)
-→ teacher live race (C3) → results (C4)
+Teacher live race: C3-01/C3-02 merged in PR #69, C3-03 projector done
+→ C3-04 side-view vehicles, motion polish, QA and closure → results (C4)
 → race sound polish (C2-A, deferred) and carried-forward pre-release device/recovery QA
 ```

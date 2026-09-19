@@ -1,14 +1,34 @@
 export default {
-  foundation: {
+  header: {
     live: "Live",
     finished: "Race finished",
+    fullscreenEnter: "Fullscreen",
+    fullscreenExit: "Exit fullscreen",
+  },
+  stats: {
+    elapsed: "Elapsed",
+    elapsedUnavailable: "Unavailable",
+    participants: "Players",
     roomCode: "Room code",
-    players: "Players",
-    eventVersion: "Event version",
-    connection: "Connection",
-    rank: "Rank",
-    playerName: "Name",
-    position: "Track position",
+  },
+  leaderboard: {
+    title: "Leaderboard",
+    empty: "No players in the race yet",
+    points: "{{count}} points",
+    streak: "Streak {{count}}",
+  },
+  track: {
+    title: "Track",
+    start: "Start",
+    finish: "Finish",
+    lane: "Lane {{lane}}",
+    progress: "{{percent}}%",
+  },
+  playerStatus: {
+    waiting: "Waiting",
+    racing: "Racing",
+    finished: "Finished",
+    disconnected: "Disconnected",
   },
   connection: {
     connecting: "Connecting...",
@@ -19,10 +39,24 @@ export default {
     error: "Connection error",
   },
   feed: {
+    title: "Live events",
+    empty: "Events will appear here as the race unfolds",
     correctAnswer: "{{name}}: correct answer!",
     rankUp: "{{name}} is now in place {{rank}}",
     playerFinished: "{{name}} crossed the finish line!",
     raceFinished: "The race is over!",
+  },
+  footer: {
+    backToRaces: "Back to all races",
+  },
+  finished: {
+    title: "The race is over!",
+    body: "Well done, everyone. The final board stays on screen.",
+  },
+  deviceAdvice: {
+    title: "A larger screen is recommended",
+    body: "This screen works here too, but the classroom projector experience is best on a wide landscape display.",
+    confirm: "Got it, continue",
   },
   states: {
     loading: "Loading the live race...",

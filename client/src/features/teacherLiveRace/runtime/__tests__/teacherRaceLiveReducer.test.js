@@ -11,11 +11,12 @@ import { teacherLiveEvent, teacherLiveStateResponse } from "../teacherRaceLiveTe
 import { TEACHER_LIVE_RECOVERY_REASONS } from "../teacherRaceLiveConstants";
 import { TEACHER_LIVE_FEED_CONFIG } from "../../config/teacherLiveFeedConfig";
 
-function loaded(state, overrides = {}, raceId = "7") {
+function loaded(state, overrides = {}, raceId = "7", receivedAtPerformanceNow = 500) {
   return teacherRaceLiveReducer(state, {
     type: TEACHER_LIVE_ACTIONS.AUTHORITATIVE_STATE_LOADED,
     raceId,
     runtime: mapTeacherRaceLiveState(teacherLiveStateResponse(overrides)),
+    receivedAtPerformanceNow,
   });
 }
 
@@ -36,6 +37,10 @@ describe("teacherRaceLiveReducer", () => {
     expect(first.raceId).toBe("7");
     expect(first.runtime.eventVersion).toBe(12);
     expect(first.loadCount).toBe(1);
+    expect(first.serverClock).toEqual({
+      serverTimeEpochMs: 1_755_600_000_000,
+      receivedAtPerformanceNow: 500,
+    });
 
     const gapped = received(first, { version: 20 });
     expect(gapped.recovery).toEqual({ reason: TEACHER_LIVE_RECOVERY_REASONS.VERSION_GAP });

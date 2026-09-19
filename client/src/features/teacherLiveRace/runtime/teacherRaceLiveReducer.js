@@ -14,6 +14,7 @@ export const TEACHER_LIVE_ACTIONS = Object.freeze({
 export const INITIAL_TEACHER_LIVE_STATE = Object.freeze({
   raceId: null,
   runtime: null,
+  serverClock: null,
   recentEvents: EMPTY_EVENTS,
   recovery: null,
   loadCount: 0,
@@ -57,6 +58,10 @@ function loadAuthoritativeState(state, action) {
   return {
     raceId: action.raceId,
     runtime: action.runtime,
+    serverClock: {
+      serverTimeEpochMs: action.runtime.serverTimeEpochMs,
+      receivedAtPerformanceNow: action.receivedAtPerformanceNow,
+    },
     recentEvents:
       action.raceId === state.raceId ? state.recentEvents : EMPTY_EVENTS,
     recovery: null,

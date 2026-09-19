@@ -74,4 +74,10 @@ export default {
   timer: {
     label: "Time left for this question",
   },
+
+  deviceAdvice: {
+    title: "A phone is recommended",
+    body: "The race is designed for a phone screen. You can keep going here, but a phone is the most comfortable.",
+    confirm: "Continue here",
+  },
 };

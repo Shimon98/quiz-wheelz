@@ -833,31 +833,55 @@ student-side final demonstration. No sound playback or assets are implemented.
   repeated answers/reconnect, sustained speed changes, and comfortable
   balance with classroom use. Retest the carried-forward device checklist.
 
-## C3 — Teacher live race — NEXT
+## C3 — Teacher live race — IN PROGRESS
 
-Start from updated `main` after the C2 merge. Depends on S2 (teacher live-state,
-durable events and SSE are DONE on the server).
+**Status:** C3-01 and C3-02 DONE (merged with the C3-00 server lifecycle epochs in
+PR #69, `main@95fb9f5`, 2026-09-15); C3-03 DONE (2026-09-16); C3-04 is next.
 
-### C3-01 — Route and initial state
+Depends on S2 (teacher live-state, durable events and SSE are DONE on the server).
 
-Wire the existing live route constant only when the page and endpoint exist.
+### C3-01 — Route and initial state — DONE
 
-### C3-02 — SSE hook
+The lazy live route inside the teacher workspace shell loads the authoritative
+live-state through one contract mapper; Start and the race list navigate to it,
+waiting races redirect to the room, and not-found, cancelled, contract and
+retryable error states are explicit.
 
-- connect after initial query
-- apply snapshots/events
-- reconnect with last event/version when supported
-- refetch on stream recovery failure
-- clean up on unmount.
+### C3-02 — SSE hook — DONE
 
-### C3-03 — Projector UI
+- shared `useEventSourceStream` and live version classifier (the student stream uses them too)
+- teacher event registry → pure engine → reducer; stale events are ignored, and
+  version gaps or malformed payloads (roster capacity, lane collisions) trigger an
+  authoritative re-read
+- native reconnect grace, then backoff recovery that reopens the stream from the
+  recovered version
+- offline stops the stream, FINISHED closes it, cleanup on unmount.
 
-- race track/players
-- leaderboard
-- room/status/time
-- live event feed
-- responsive desktop/projector layout
-- no client rank or overtake inference.
+### C3-03 — Projector UI — DONE
+
+- pure projector view model: lanes ordered by `laneNumber` on an always left-to-right
+  track, leaderboard in server order with server tie ranks, no client rank or
+  overtake inference
+- header with room code, participants and elapsed time from a server-clock anchor
+  (`serverTimeEpochMs` + `performance.now()`), never the teacher's wall clock
+- live event feed with native relative time; connection status in the footer
+- responsive layout by container queries (compact, medium, three-column projector)
+  and fullscreen of the projector surface when the browser supports it
+- shared advisory preferred-device notice (non-modal, dismissed per session) for
+  the teacher projector and the student race
+- target-only vehicle motion: a short tween to each new server position, no
+  prediction, instant under reduced motion
+- finished presentation: banner, ended connection state and frozen elapsed time
+- the vehicle is a deliberate temporary colored marker; lane geometry and the view
+  model are ready for the C3-04 side-view art.
+
+### C3-04 — Side-view vehicles, motion polish, QA and closure — NEXT
+
+- side-view vehicle assets (GREEN master first, then the other seven colors) reusing
+  the shared C2 vehicle color identity
+- final motion and layout tuning (tween duration, container thresholds,
+  leaderboard density)
+- real-browser QA including fullscreen and reduced motion, then C3 documentation closure.
 
 ## C4 — Results
 

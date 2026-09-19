@@ -71,6 +71,7 @@ export function mapTeacherRaceLiveRoster(players) {
   requireArray(players, "Teacher live roster", { maxLength: RACE_MAX_PLAYERS });
 
   const seenIds = new Set();
+  const seenLanes = new Set();
 
   return players.map((player) => {
     const mappedPlayer = mapTeacherRaceLivePlayer(player);
@@ -79,7 +80,12 @@ export function mapTeacherRaceLiveRoster(players) {
       throw new ApiContractError("Teacher live roster repeats a racePlayerId");
     }
 
+    if (seenLanes.has(mappedPlayer.laneNumber)) {
+      throw new ApiContractError("Teacher live roster repeats a laneNumber");
+    }
+
     seenIds.add(mappedPlayer.racePlayerId);
+    seenLanes.add(mappedPlayer.laneNumber);
 
     return mappedPlayer;
   });

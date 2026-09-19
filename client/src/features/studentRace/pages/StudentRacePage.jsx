@@ -1,16 +1,24 @@
+import { useTranslation } from "react-i18next";
+import { Smartphone } from "lucide-react";
+
 import useRaceBootstrap from "../hooks/useRaceBootstrap";
 import useStudentRaceQuestion from "../hooks/useStudentRaceQuestion";
 import useStudentRaceAnswer from "../hooks/useStudentRaceAnswer";
 import useStudentRaceRecoverySync from "../hooks/useStudentRaceRecoverySync";
 import useStudentRaceFinishExperience from "../hooks/useStudentRaceFinishExperience.js";
+import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { RACE_VIEWS } from "../../../shared/racePlayer/getRaceView";
 import RacePlayerSessionGate from "../../../shared/racePlayer/RacePlayerSessionGate";
 import useRacePlayerRuntimeSession from "../../../shared/racePlayer/useRacePlayerRuntimeSession";
+import PreferredDeviceNotice from "../../../shared/responsive/PreferredDeviceNotice";
+import usePreferredDeviceNotice from "../../../shared/responsive/usePreferredDeviceNotice";
+import { PREFERRED_DEVICE_PROFILES } from "../../../shared/responsive/preferredDeviceProfiles";
 import { isRacePlayerSessionError } from "../../../errors/errorChecks";
 import StudentRaceContent from "../components/StudentRaceContent";
 import StudentRaceSessionConnecting from "../components/StudentRaceSessionConnecting";
 
 function ResolvedStudentRacePage({ runtimeSession }) {
+  const { t } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
   const {
     runtimeState,
     view,
@@ -74,6 +82,11 @@ function ResolvedStudentRacePage({ runtimeSession }) {
     authoritativeResync,
   });
 
+  const deviceNotice = usePreferredDeviceNotice({
+    profile: PREFERRED_DEVICE_PROFILES.STUDENT_RACE,
+    enabled: view === RACE_VIEWS.PLAYING,
+  });
+
   return (
     <RacePlayerSessionGate error={raceError}>
       <RacePlayerSessionGate error={questionError}>
@@ -105,6 +118,14 @@ function ResolvedStudentRacePage({ runtimeSession }) {
               connectionError: runtimeSession.error,
               onConnectionRetry: runtimeSession.reconnectNow,
             }}
+          />
+          <PreferredDeviceNotice
+            open={deviceNotice.open}
+            title={t("deviceAdvice.title")}
+            body={t("deviceAdvice.body")}
+            confirmLabel={t("deviceAdvice.confirm")}
+            icon={Smartphone}
+            onDismiss={deviceNotice.dismiss}
           />
         </RacePlayerSessionGate>
       </RacePlayerSessionGate>

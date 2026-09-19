@@ -29,7 +29,14 @@ pooled opponent rendering with shared motion, 2/4/7 density, lane-fit and static
 per-color vehicle art (C2-03), and proof-gated finish presentation (C2-04). 530 client
 tests/60 files and 729 server tests pass; live two-player and eight-player browser QA
 on the final build passed the closure scenarios. Physical-device acceptance and the
-merge remain open; C2-A race sound is deferred polish; C3 teacher live race is next.
+merge remain open; C2-A race sound is deferred polish.
+
+C3 checkpoint, 2026-09-16: C3-01 (teacher live route and authoritative live-state),
+C3-02 (durable teacher SSE sync with version gating and authoritative recovery) and the
+C3-00 server lifecycle epochs were merged to `main` in PR #69 (`95fb9f5`, 2026-09-15).
+C3-03, the teacher projector UI (track, leaderboard, live feed, server-clock elapsed
+time, responsive layouts, fullscreen, advisory device notice, finished presentation),
+is DONE. C3-04 (side-view vehicle art, motion polish, final QA and closure) is next.
 
 ## Executive summary
 
@@ -43,8 +50,8 @@ with time, correct answers boost speed and add progress bonuses, and timeouts
 slow more than wrong answers. Real absence freezes position without pausing
 question deadlines; reconnect never awards offline catch-up, and absent
 players do not keep the class race open. The main missing product slices are
-the teacher live race client screen and results; opponents are implemented on the
-C2 branch pending merge.
+results and the C3-04 closure of the teacher live projector (side-view vehicle art,
+motion polish); opponents are implemented (C2).
 
 ## Product status board
 
@@ -69,9 +76,10 @@ C2 branch pending merge.
 | Student question panel/HUD | server data exists | panel + timer DONE (C1-02); HUD stats DONE (C1-04) | DONE |
 | Opponent vehicles/nearby players | DONE snapshot contract + decision-instant standings (C2-01) | DONE pooled renderer, shared motion, 2/4/7 density, lane-fit, static colors (C2-03) | DONE on C2 branch (device acceptance open) |
 | Student live stream + finish arbitration | DONE signal-only SSE, proof-gated arbitration | DONE SSE invalidation + polling fallback, proof-gated finish presentation (C2-02/C2-04) | DONE on C2 branch |
-| Teacher live-state query | DONE | route constant only | PARTIAL feature |
+| Teacher live-state query | DONE incl. lifecycle epochs (C3-00) | DONE live route + contract mapping (C3-01) | DONE |
 | Teacher durable live-event model | DONE | N/A | SERVER FOUNDATION |
-| Teacher SSE | DONE | PLANNED | PARTIAL feature |
+| Teacher SSE | DONE | DONE durable sync + authoritative recovery (C3-02) | DONE |
+| Teacher live projector UI | N/A | DONE projector with temporary vehicle marker (C3-03); side-view art + polish in C3-04 | PARTIAL feature |
 | Results | basic finish logic exists | route constant only | PLANNED |
 | Junction/highway/dirt road | PLANNED | PLANNED | REQUIRED |
 | Fair luck/power-ups | foundation ideas only | PLANNED | REQUIRED |
@@ -177,7 +185,7 @@ C2 branch pending merge.
 
 These must be corrected during the next client integration work:
 
-- Teacher live and results client routes are constants only; they are not routed.
+- The results client route is a constant only; it is not routed.
 - Old Stage B issue tables mark completed backend work as TODO.
 
 ## Immediate next product outcome
@@ -196,8 +204,8 @@ Teacher creates and starts a race
 No teacher client projector, luck event, junction or 2FA work should interrupt this
 slice unless it is required to make the slice run safely.
 
-C2 core (competition truth, student synchronization, opponents, proof-gated finish
-presentation) is implemented on the C2 branch and closed for PR review; the next
-client stage is C3 — Teacher live race, started from updated `main` after the merge.
+C3 — Teacher live race: C3-01/C3-02 merged in PR #69 and the C3-03 projector UI is
+DONE; C3-04 (side-view vehicles, motion polish, final QA and closure) is the next
+client stage.
 C2-A race sound polish is deferred polish backlog. Required physical-device/recovery
 QA remains visible in the client plan and must pass before release.

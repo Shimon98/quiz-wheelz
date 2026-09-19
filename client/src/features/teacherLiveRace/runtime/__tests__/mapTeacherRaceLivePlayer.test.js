@@ -102,6 +102,15 @@ describe("mapTeacherRaceLiveRoster", () => {
     ).toThrow(ApiContractError);
   });
 
+  it("rejects two players on the same physical lane", () => {
+    expect(() =>
+      mapTeacherRaceLiveRoster([
+        teacherLivePlayer({ racePlayerId: 5, laneNumber: 2 }),
+        teacherLivePlayer({ racePlayerId: 6, laneNumber: 2 }),
+      ]),
+    ).toThrow(ApiContractError);
+  });
+
   it("rejects a non-array roster", () => {
     expect(() => mapTeacherRaceLiveRoster(undefined)).toThrow(ApiContractError);
   });
