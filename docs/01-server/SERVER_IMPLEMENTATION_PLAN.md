@@ -1,8 +1,8 @@
 # Server Implementation Plan
 
 **Status:** Canonical  
-**Audit date:** 2026-09-10
-**Code baseline:** `main@bb2d00530f4637d4d1f75849fb0397ac443bc46a`
+**Audit date:** 2026-09-20
+**Code baseline:** `main@b577a3b3b63142980cfdccb057d89311ce3d85a6`
 **This document owns:** the ordered backend task list with dependencies and integration outputs
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -481,7 +481,23 @@ contract_owner: server
 
 ### S3-02 — Dashboard active/finished navigation support
 
-Expose the minimal status/links required by the client without UI-specific fields.
+**Status:** `DONE (2026-09-20)`
+
+- confirmed that the existing dashboard race `raceId` and `status` are the minimal
+  server-owned navigation truth; route selection remains client-owned with
+  WAITING_FOR_PLAYERS/READY → room, IN_PROGRESS → live, FINISHED → S3-01 results and
+  CANCELLED → no primary action
+- added no navigation endpoint, navigation DTO, URL/action field, enum, table or cache
+- fixed dashboard `currentPlayers` to count all durable RacePlayer rows with one
+  grouped projection query for a non-empty race list; zero-player races default to
+  zero, empty dashboards skip the query and repository race ordering is preserved
+- fixed `waitingRaces` to include WAITING_FOR_PLAYERS and READY without changing
+  `activeRaces = IN_PROGRESS` or `finishedRaces = FINISHED`
+- retained the exact `RaceSummaryResponse` field set and the zero-player create-race
+  mapping
+- corrected the stale architecture claim for a nonexistent
+  `GET /api/teacher/races`; the dashboard remains the complete current race-list query
+- C4 still owns client route wiring and the Result Screen.
 
 ## S4 — Required game events
 

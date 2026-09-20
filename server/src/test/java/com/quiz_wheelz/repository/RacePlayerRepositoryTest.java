@@ -4,6 +4,7 @@ import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.entitys.Subject;
 import com.quiz_wheelz.entitys.User;
+import com.quiz_wheelz.enums.RacePlayerStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -11,6 +12,9 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -73,7 +77,43 @@ class RacePlayerRepositoryTest {
         assertEquals(0, updated);
     }
 
+    @Test
+    void groupedPlayerCountsReturnOnlyRequestedRacesWithPlayers() {
+        Race firstRace = persistRace("CNT001");
+        Race secondRace = persistRace("CNT002");
+        Race emptyRace = persistRace("CNT003");
+        Race outsideRace = persistRace("CNT004");
+        RacePlayer waiting = persistRacePlayer(firstRace, "Noa", 1);
+        RacePlayer finished = persistRacePlayer(firstRace, "Ari", 2);
+        RacePlayer racing = persistRacePlayer(secondRace, "Maya", 1);
+        RacePlayer disconnected = persistRacePlayer(secondRace, "Dana", 2);
+        persistRacePlayer(outsideRace, "Lior", 1);
+        waiting.setStatus(RacePlayerStatus.WAITING);
+        finished.setStatus(RacePlayerStatus.FINISHED);
+        racing.setStatus(RacePlayerStatus.RACING);
+        disconnected.setStatus(RacePlayerStatus.DISCONNECTED);
+
+        List<RacePlayerRepository.RacePlayerCountByRace> counts =
+                racePlayerRepository.countPlayersByRaceIds(
+                        List.of(firstRace.getId(), secondRace.getId(), emptyRace.getId())
+                );
+        Map<Long, Long> countsByRaceId = counts.stream()
+                .collect(Collectors.toMap(
+                        RacePlayerRepository.RacePlayerCountByRace::getRaceId,
+                        RacePlayerRepository.RacePlayerCountByRace::getPlayerCount
+                ));
+
+        assertEquals(
+                Map.of(firstRace.getId(), 2L, secondRace.getId(), 2L),
+                countsByRaceId
+        );
+    }
+
     private RacePlayer persistRacePlayer(String roomCode, String displayName) {
+        return persistRacePlayer(persistRace(roomCode), displayName, 1);
+    }
+
+    private Race persistRace(String roomCode) {
         User teacher = new User();
         teacher.setUsername("teacher-" + roomCode);
         teacher.setDisplayName("Teacher");
@@ -93,10 +133,14 @@ class RacePlayerRepositoryTest {
         race.setSubject(subject);
         entityManager.persist(race);
 
+        return race;
+    }
+
+    private RacePlayer persistRacePlayer(Race race, String displayName, int laneNumber) {
         RacePlayer racePlayer = new RacePlayer();
         racePlayer.setRace(race);
         racePlayer.setDisplayName(displayName);
-        racePlayer.setLaneNumber(1);
+        racePlayer.setLaneNumber(laneNumber);
         entityManager.persistAndFlush(racePlayer);
         return racePlayer;
     }

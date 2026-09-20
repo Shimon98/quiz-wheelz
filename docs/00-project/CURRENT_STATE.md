@@ -1,8 +1,8 @@
 # Project Current State
 
 **Status:** Canonical  
-**Audit date:** 2026-08-25
-**Code baseline:** `main@ef3cd3bac2fb10ee2f7a7e9586571f70e7127ae3`
+**Audit date:** 2026-09-20
+**Code baseline:** `main@b577a3b3b63142980cfdccb057d89311ce3d85a6`
 **This document owns:** the audited implementation status across the complete product
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -10,9 +10,9 @@
 > then update this document in the same pull request.
 ## Audit boundary
 
-This state is based on GitHub `main` at the recorded baseline plus the completed
-S0-01 development-infrastructure implementation verified on both development
-machines.
+The recorded baseline is the merged `main` used to start the S3-02 audit. The S3-02
+changes documented below are the milestone changes measured relative to that
+baseline.
 
 Local client checkpoint, 2026-09-08: C1 development is accepted for
 progression to C2 on `feature/C1-Student-playable-loop`. The single-player
@@ -80,7 +80,16 @@ Result Screen remains future client work.
 - Java 21 / Spring Boot application.
 - Spring Security with JWT cookies and role/ownership checks.
 - `User`, `Subject`, `Race`, `RacePlayer`, question and answer domains.
-- Teacher dashboard, race creation, room data and start command.
+- Teacher dashboard, race creation, room data and start command. Dashboard race
+  summaries retain their exact contract while `currentPlayers` now counts all durable
+  RacePlayer rows through one grouped query for the complete ordered race list;
+  races without players map to zero and an empty dashboard skips the count query.
+  `waitingRaces` includes WAITING_FOR_PLAYERS and READY, while `activeRaces`
+  remains IN_PROGRESS.
+- Dashboard `raceId` plus `status` are the complete server-owned navigation truth:
+  WAITING_FOR_PLAYERS/READY use room, IN_PROGRESS uses live, FINISHED uses S3-01
+  results and CANCELLED has no primary target. The client owns route selection; no
+  server URL/action fields or separate navigation endpoint exist.
 - RacePlayer join with race-specific cookie/session.
 - Idempotent question-template seeding and math generation patterns.
 - Generated-question and choice persistence before delivery.

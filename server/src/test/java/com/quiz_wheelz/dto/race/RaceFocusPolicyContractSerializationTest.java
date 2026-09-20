@@ -39,8 +39,9 @@ class RaceFocusPolicyContractSerializationTest {
     }
 
     @Test
-    void raceSummaryExposesConfiguredFocusPolicy() throws JsonProcessingException {
-        JsonNode json = serialize(RaceSummaryResponse.from(race()));
+    void raceSummaryExposesConfiguredFocusPolicyAndExplicitPlayerCount()
+            throws JsonProcessingException {
+        JsonNode json = serialize(RaceSummaryResponse.from(race(), 3));
 
         assertEquals(
                 Set.of(
@@ -60,6 +61,7 @@ class RaceFocusPolicyContractSerializationTest {
                 fieldNames(json)
         );
         assertEquals("STRICT", json.get("focusPolicy").asText());
+        assertEquals(3, json.get("currentPlayers").asInt());
     }
 
     @Test
