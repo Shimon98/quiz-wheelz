@@ -8,15 +8,13 @@ import {
 } from "../../../constants/routeConstants";
 import { useAuthStore } from "../../../stores/authStore";
 import useTeacherDashboardHome from "../hooks/useTeacherDashboardHome";
+import useTeacherRacePrimaryAction from "../hooks/useTeacherRacePrimaryAction";
 import CreateRaceModal from "../components/createRace/CreateRaceModal";
 import TeacherDashboardHomeView from "./TeacherDashboardHomeView";
 
-/**
- * TeacherDashboardHomePage — connects the data hook + app stores to the pure
- * view. All behavior lives here; the view only renders.
- */
 export default function TeacherDashboardHomePage() {
   const navigate = useNavigate();
+  const executeRacePrimaryAction = useTeacherRacePrimaryAction();
 
   const { teacherName, races, stats, isLoading, error, refetch } =
     useTeacherDashboardHome();
@@ -28,20 +26,10 @@ export default function TeacherDashboardHomePage() {
     { open: openCreateRace, close: closeCreateRace },
   ] = useDisclosure(false);
 
-  const handleOpenRace = useCallback(
-    (race) => {
-      navigate(buildTeacherRaceRoomPath(race.raceId ?? race.id));
-    },
-    [navigate],
-  );
-
   const handleViewAllRaces = useCallback(() => {
     navigate(ROUTES.TEACHER_RACES);
   }, [navigate]);
 
-  // After a successful creation the teacher heads straight to the race's
-  // waiting room (Shimon's call in the UI-07 plan); the dashboard refresh
-  // still runs so Back shows fresh data.
   const handleRaceCreated = useCallback(
     (createdRace) => {
       closeCreateRace();
@@ -65,7 +53,7 @@ export default function TeacherDashboardHomePage() {
         error={error}
         onRetry={refetch}
         onCreateRace={openCreateRace}
-        onOpenRace={handleOpenRace}
+        onOpenRace={executeRacePrimaryAction}
         onViewAllRaces={handleViewAllRaces}
       />
 
