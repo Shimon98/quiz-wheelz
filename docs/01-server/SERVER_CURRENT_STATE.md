@@ -1,8 +1,8 @@
 # Server Current State
 
 **Status:** Canonical  
-**Audit date:** 2026-09-10
-**Code baseline:** `main@bb2d00530f4637d4d1f75849fb0397ac443bc46a`
+**Audit date:** 2026-09-20
+**Code baseline:** `main@b577a3b3b63142980cfdccb057d89311ce3d85a6`
 **This document owns:** the implemented backend capabilities, gaps and stale assumptions
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -41,8 +41,14 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 
 - login/me/logout
 - subjects
-- teacher dashboard
-- race list/create
+- teacher dashboard and race list through `GET /api/teacher/dashboard`; the existing
+  `RaceSummaryResponse.raceId` and `status` are sufficient navigation truth and
+  route selection remains client-owned without URL/action fields or another endpoint
+- dashboard `currentPlayers` counts every durable RacePlayer status using one grouped
+  query for a non-empty ordered race list, defaults missing groups to zero and skips
+  the count query for an empty list; `waitingRaces` counts WAITING_FOR_PLAYERS plus
+  READY, while `activeRaces` remains IN_PROGRESS
+- race create
 - unique room code
 - teacher-owned room data
 - real RacePlayers in waiting room
@@ -333,6 +339,7 @@ Infrastructure reliability
 → teacher live-state/SSE
 → C2 competition truth and finish arbitration (done 2026-09-10)
 → S3 final-results query (done 2026-09-20, S3-01)
+→ S3 dashboard navigation/count closure (done 2026-09-20, S3-02)
 → game events
 → full auth/2FA
 ```

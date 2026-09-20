@@ -5,6 +5,7 @@ import com.quiz_wheelz.entitys.User;
 import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
@@ -67,6 +68,7 @@ public interface RaceRepository extends JpaRepository<Race, Long> {
 
     boolean existsByRoomCode(String roomCode);
 
+    @EntityGraph(attributePaths = "subject")
     List<Race> findByTeacherOrderByCreatedAtDesc(User teacher);
 
     List<Race> findByTeacherAndStatusOrderByCreatedAtDesc(User teacher, RaceStatus status);

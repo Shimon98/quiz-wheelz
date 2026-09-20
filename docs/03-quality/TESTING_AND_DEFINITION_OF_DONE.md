@@ -1,8 +1,8 @@
 # Testing and Definition of Done
 
 **Status:** Canonical  
-**Audit date:** 2026-09-10
-**Code baseline:** `main@bb2d00530f4637d4d1f75849fb0397ac443bc46a`
+**Audit date:** 2026-09-20
+**Code baseline:** `main@b577a3b3b63142980cfdccb057d89311ce3d85a6`
 **This document owns:** the complete automated/manual quality bar for every feature and phase
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -44,6 +44,11 @@ Required gameplay tests:
 - valid/invalid join
 - capacity and lane uniqueness
 - start ownership/status/player-count
+- dashboard exact RaceSummary field set and explicit non-zero `currentPlayers`
+- dashboard one grouped all-status RacePlayer count for multiple races, zero fallback
+  without invented rows, preserved race ordering and no count query for an empty list
+- dashboard counters keep IN_PROGRESS active and FINISHED finished while waiting
+  includes both WAITING_FOR_PLAYERS and READY
 - question generation constraints
 - exactly four unique choices
 - no correct-answer leak

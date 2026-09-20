@@ -26,6 +26,10 @@ public class RaceSummaryResponse {
     private LocalDateTime createdAt;
 
     public static RaceSummaryResponse from(Race race) {
+        return from(race, RaceRules.DEFAULT_CURRENT_PLAYERS);
+    }
+
+    public static RaceSummaryResponse from(Race race, int currentPlayers) {
         return new RaceSummaryResponse(
                 race.getId(),
                 race.getTitle(),
@@ -35,7 +39,7 @@ public class RaceSummaryResponse {
                 race.getSubject().getCode(),
                 race.getStatus().name(),
                 race.getMaxPlayers(),
-                RaceRules.DEFAULT_CURRENT_PLAYERS,
+                currentPlayers,
                 race.getTotalDistance(),
                 race.getFocusPolicy(),
                 race.getCreatedAt()

@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,6 +24,12 @@ public interface RacePlayerRepository extends JpaRepository<RacePlayer, Long> {
         Long getRaceId();
     }
 
+    interface RacePlayerCountByRace {
+        Long getRaceId();
+
+        Long getPlayerCount();
+    }
+
     @Query("""
             select racePlayer.id as playerId, racePlayer.race.id as raceId
             from RacePlayer racePlayer
@@ -32,6 +39,16 @@ public interface RacePlayerRepository extends JpaRepository<RacePlayer, Long> {
     List<RacePlayerMovementCandidate> findMovementSettlementCandidates(
             @Param("playerStatus") RacePlayerStatus playerStatus,
             @Param("raceStatus") RaceStatus raceStatus
+    );
+
+    @Query("""
+            select racePlayer.race.id as raceId, count(racePlayer.id) as playerCount
+            from RacePlayer racePlayer
+            where racePlayer.race.id in :raceIds
+            group by racePlayer.race.id
+            """)
+    List<RacePlayerCountByRace> countPlayersByRaceIds(
+            @Param("raceIds") Collection<Long> raceIds
     );
 
     List<RacePlayer> findByRaceOrderByLaneNumberAsc(Race race);

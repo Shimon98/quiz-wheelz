@@ -1,8 +1,8 @@
 # Architecture and Contracts
 
 **Status:** Canonical  
-**Audit date:** 2026-09-10
-**Code baseline:** `main@bb2d00530f4637d4d1f75849fb0397ac443bc46a`
+**Audit date:** 2026-09-20
+**Code baseline:** `main@b577a3b3b63142980cfdccb057d89311ce3d85a6`
 **This document owns:** the cross-system architecture, data ownership, API boundaries and runtime contracts
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -131,7 +131,6 @@ Exact future paths must be agreed in `ApiPaths` before client wiring.
 ```http
 GET  /api/subjects
 GET  /api/teacher/dashboard
-GET  /api/teacher/races
 POST /api/teacher/races
 GET  /api/teacher/races/{raceId}/room
 GET  /api/teacher/races/{raceId}/live-state
@@ -139,6 +138,29 @@ GET  /api/teacher/races/{raceId}/events/stream
 GET  /api/teacher/races/{raceId}/results
 POST /api/teacher/races/{raceId}/start
 ```
+
+`GET /api/teacher/dashboard` is the implemented complete teacher race-list query;
+there is no dedicated `GET /api/teacher/races` collection endpoint. Each existing
+`RaceSummaryResponse` supplies the minimal server-owned navigation truth through
+`raceId` and `status`. Route selection remains client-owned and requires no server
+URL, action or permission fields:
+
+```text
+WAITING_FOR_PLAYERS → room
+READY               → room
+IN_PROGRESS         → live
+FINISHED            → results
+CANCELLED           → no primary action
+```
+
+The FINISHED target uses the S3-01 results endpoint, while IN_PROGRESS uses the
+existing teacher live route/API; the C4 client Result Screen remains future work.
+Dashboard `currentPlayers` is the durable count of every RacePlayer row for that
+Race, regardless of player status. A non-empty dashboard loads those counts with one
+grouped repository query and maps races without a count row to zero; an empty
+dashboard performs no player-count query. `waitingRaces` includes both
+`WAITING_FOR_PLAYERS` and `READY`, while `activeRaces` remains
+`IN_PROGRESS`. Newly created Race command responses continue to report zero players.
 
 ### Teacher live-state snapshot
 
