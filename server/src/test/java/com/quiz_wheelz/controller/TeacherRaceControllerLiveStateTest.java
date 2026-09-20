@@ -9,6 +9,7 @@ import com.quiz_wheelz.security.SecurityExpressions;
 import com.quiz_wheelz.service.race.RaceService;
 import com.quiz_wheelz.service.teacher.TeacherRaceLiveStateService;
 import com.quiz_wheelz.service.teacher.TeacherRaceRoomService;
+import com.quiz_wheelz.service.teacher.TeacherRaceResultsService;
 import com.quiz_wheelz.service.teacher.TeacherRaceStartService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,6 +44,9 @@ class TeacherRaceControllerLiveStateTest {
 
     @Mock
     private TeacherRaceLiveStateService teacherRaceLiveStateService;
+
+    @Mock
+    private TeacherRaceResultsService teacherRaceResultsService;
 
     @Test
     void controllerReturnsTheTeacherLiveStateEnvelope() {
@@ -108,7 +112,8 @@ class TeacherRaceControllerLiveStateTest {
                 raceService,
                 teacherRaceRoomService,
                 teacherRaceStartService,
-                teacherRaceLiveStateService
+                teacherRaceLiveStateService,
+                teacherRaceResultsService
         );
     }
 }

@@ -8,10 +8,12 @@ import com.quiz_wheelz.dto.race.RaceSummaryResponse;
 import com.quiz_wheelz.dto.teacher.StartRaceResponse;
 import com.quiz_wheelz.dto.teacher.TeacherRaceLiveStateResponse;
 import com.quiz_wheelz.dto.teacher.TeacherRaceRoomResponse;
+import com.quiz_wheelz.dto.teacher.TeacherRaceResultsResponse;
 import com.quiz_wheelz.security.SecurityExpressions;
 import com.quiz_wheelz.service.race.RaceService;
 import com.quiz_wheelz.service.teacher.TeacherRaceLiveStateService;
 import com.quiz_wheelz.service.teacher.TeacherRaceRoomService;
+import com.quiz_wheelz.service.teacher.TeacherRaceResultsService;
 import com.quiz_wheelz.service.teacher.TeacherRaceStartService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -27,17 +29,20 @@ public class TeacherRaceController {
     private final TeacherRaceRoomService teacherRaceRoomService;
     private final TeacherRaceStartService teacherRaceStartService;
     private final TeacherRaceLiveStateService teacherRaceLiveStateService;
+    private final TeacherRaceResultsService teacherRaceResultsService;
 
     public TeacherRaceController(
             RaceService raceService,
             TeacherRaceRoomService teacherRaceRoomService,
             TeacherRaceStartService teacherRaceStartService,
-            TeacherRaceLiveStateService teacherRaceLiveStateService
+            TeacherRaceLiveStateService teacherRaceLiveStateService,
+            TeacherRaceResultsService teacherRaceResultsService
     ) {
         this.raceService = raceService;
         this.teacherRaceRoomService = teacherRaceRoomService;
         this.teacherRaceStartService = teacherRaceStartService;
         this.teacherRaceLiveStateService = teacherRaceLiveStateService;
+        this.teacherRaceResultsService = teacherRaceResultsService;
     }
 
     @PostMapping
@@ -64,6 +69,16 @@ public class TeacherRaceController {
                 teacherRaceLiveStateService.getLiveState(raceId);
         return ResponseEntity.ok(
                 ApiResponse.ok(ApiMessages.RACE_LIVE_STATE_LOADED_SUCCESSFULLY, liveState)
+        );
+    }
+
+    @GetMapping(ApiPaths.TEACHER_RACE_RESULTS)
+    public ResponseEntity<ApiResponse<TeacherRaceResultsResponse>> getRaceResults(
+            @PathVariable Long raceId
+    ) {
+        TeacherRaceResultsResponse results = teacherRaceResultsService.getResults(raceId);
+        return ResponseEntity.ok(
+                ApiResponse.ok(ApiMessages.RACE_RESULTS_LOADED_SUCCESSFULLY, results)
         );
     }
 

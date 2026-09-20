@@ -45,7 +45,7 @@ Owns durable data:
 - generated questions and choices
 - submitted answers
 - durable progress/finish state
-- future effects/events/results
+- future effects plus durable live events and result queries
 - `lastSeenAt` fallback for reconnect.
 
 ### Redis
@@ -136,13 +136,8 @@ POST /api/teacher/races
 GET  /api/teacher/races/{raceId}/room
 GET  /api/teacher/races/{raceId}/live-state
 GET  /api/teacher/races/{raceId}/events/stream
+GET  /api/teacher/races/{raceId}/results
 POST /api/teacher/races/{raceId}/start
-```
-
-Planned:
-
-```http
-GET /api/teacher/races/{raceId}/results
 ```
 
 ### Teacher live-state snapshot
@@ -198,6 +193,42 @@ positions; it must not calculate or advance authoritative gameplay progress from
 baseline, player speed and an event/server timestamp.
 The column is DEV `ddl-auto=update` safety, not a production migration; migrations
 remain Phase 6 debt.
+
+### Teacher final-results read model
+
+`GET /api/teacher/races/{raceId}/results` is TEACHER-only, ownership-hidden, and
+available only for `FINISHED` Races. Missing and foreign Races both return
+`RACE_NOT_FOUND`; every other Race status returns `RACE_RESULTS_NOT_AVAILABLE`.
+The top-level data fields are exactly:
+
+```text
+raceId, title, roomCode, subject, status, maxPlayers, playerCount, totalDistance,
+startedAtEpochMs, finishedAtEpochMs, winnerRacePlayerIds, summary, awards, players
+```
+
+`subject` reuses `SubjectResponse` and contains `id, name, code`. Lifecycle values use the application-zone
+epoch-millisecond conversion shared with teacher live-state. Players expose exactly
+`racePlayerId, displayName, laneNumber, vehicleTypeKey, vehicleColorKey,
+vehicleAssetKey, rank, score, correctAnswers, wrongAnswers, bestStreak, position,
+status, finishedAtEpochMs`.
+
+`RaceStandingCalculator` remains the only ranking owner. All RacePlayers are included
+in its deterministic final order; exact competitive ties share rank. Winners are all
+FINISHED players at rank 1, in that order, so a real tie returns multiple IDs and no
+finisher returns an empty list. A FINISHED player's persisted `finishedAtEpochMs` is
+returned exactly, with legacy `finishedAt` converted in the application zone; a
+non-finisher has no result finish timestamp.
+
+The summary contains exactly finished/disconnected counts and total correct/wrong
+answers, with zeroes for an empty roster. Awards are factual positive maxima across
+all joined players for `HIGHEST_SCORE`,
+`MOST_CORRECT_ANSWERS`, and `BEST_STREAK`. Every tied player is returned in final
+standing order, and one player may truthfully receive multiple awards. Zero-value
+awards are omitted.
+
+The GET reads the existing Race/RacePlayer durable truth once and never settles
+movement, arbitrates or changes finish state, touches Redis or presence, appends live
+events, increments `liveEventVersion`, or creates duplicate RaceResult persistence.
 
 ### Durable teacher live events
 

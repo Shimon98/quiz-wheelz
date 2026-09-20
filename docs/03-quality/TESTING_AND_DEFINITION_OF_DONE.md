@@ -152,6 +152,17 @@ Required gameplay tests:
 - exact teacher live-state `baseMovementUnitsPerSecond` serialization, absence of the
   student-only `movementUnitsPerSecond` field, and sourcing from
   `RaceProgressRules.BASE_MOVEMENT_UNITS_PER_SECOND`
+- teacher final-results exact top-level, subject, summary, award and player field sets
+  with no runtime/internal leakage; canonical path, GET method, success envelope and
+  TEACHER controller security
+- final-results missing/foreign ownership hiding, FINISHED-only availability for
+  every other Race status, one player-list read and read-only repeat stability
+- final-results shared standing order/ranks, precise finish epoch plus legacy fallback,
+  unique/tied/no-finisher winners, all-status participant inclusion, disconnected
+  position, highest-streak and shared vehicle-asset-key mapping
+- exact four-field zero-safe final summary and factual positive-value score/correct/streak
+  awards, including unique leaders, every tie, DISCONNECTED eligibility, zero-value
+  omission and same-player multi-award truth
 - exact six-value durable live-event vocabulary, table/column/unique/index metadata
   and ordered after-version repository retrieval
 - exact typed envelope/payload serialization; `QUESTION_ANSWERED` leaks no choice,

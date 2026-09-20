@@ -461,10 +461,23 @@ contract_owner: server
 
 ### S3-01 — Final ranking and result query
 
-- deterministic ranking
-- final score, correct/wrong, best streak, finish time
-- race winner
-- idempotent race completion.
+**Status:** `DONE (2026-09-20)`
+
+- added TEACHER-only `GET /api/teacher/races/{raceId}/results` with existing ownership
+  hiding and FINISHED-only availability; every other status returns 3030/409
+- reused the single `RaceStandingCalculator` owner once per response, including exact
+  epoch finish ordering, legacy application-zone fallback, competition ties and
+  stable output order
+- reuses `SubjectResponse`, returns lifecycle epochs and every participant with final
+  rank/result fields, all rank-1 FINISHED winner IDs, and a zero-safe summary containing
+  only finished/disconnected counts plus total correct/wrong answers,
+  and factual positive maximum awards for score, correct answers and best streak
+- award ties include every tied participant in final standing order, DISCONNECTED
+  participants remain eligible, and the same factual leader may receive all awards
+- reads the existing durable Race/RacePlayer model with one player query; no result
+  entity/table/cache, migration, Redis truth, live event or gameplay mutation exists
+- repeated reads are stable and the service transaction is read-only; existing
+  `RaceFinishServiceTest` idempotence coverage remains the completion owner.
 
 ### S3-02 — Dashboard active/finished navigation support
 
