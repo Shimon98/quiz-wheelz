@@ -106,9 +106,9 @@ manual refresh, and reconnect restores current state.
 **Goal:** the core race has a complete start-to-results lifecycle.
 
 Server:
-- durable result model/query if not already sufficient
-- final ranking and statistics
-- idempotent finish behavior.
+- durable final-result query from existing Race/RacePlayer truth — DONE (S3-01)
+- final ranking, summary and factual awards — DONE (S3-01)
+- idempotent finish behavior — DONE and reused by S3-01.
 
 Client:
 - student finish state
