@@ -26,3 +26,8 @@ export const TEACHER_FEED_PRESENTATION = Object.freeze({
 export const TEACHER_LIVE_FEED_CONFIG = Object.freeze({
   maxItems: 5,
 });
+
+export const TEACHER_FEED_ACCENT_PULSE = Object.freeze({
+  animate: Object.freeze({ scale: [1, 1.28, 1] }),
+  transition: Object.freeze({ duration: 0.7, ease: "easeOut" }),
+});

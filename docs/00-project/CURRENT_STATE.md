@@ -31,12 +31,19 @@ tests/60 files and 729 server tests pass; live two-player and eight-player brows
 on the final build passed the closure scenarios. Physical-device acceptance and the
 merge remain open; C2-A race sound is deferred polish.
 
-C3 checkpoint, 2026-09-16: C3-01 (teacher live route and authoritative live-state),
-C3-02 (durable teacher SSE sync with version gating and authoritative recovery) and the
-C3-00 server lifecycle epochs were merged to `main` in PR #69 (`95fb9f5`, 2026-09-15).
-C3-03, the teacher projector UI (track, leaderboard, live feed, server-clock elapsed
-time, responsive layouts, fullscreen, advisory device notice, finished presentation),
-is DONE. C3-04 (side-view vehicle art, motion polish, final QA and closure) is next.
+C3 checkpoint, 2026-09-24: the teacher live race is COMPLETE on the client. C3-01
+(live route and authoritative live-state), C3-02 (durable teacher SSE sync with version
+gating and authoritative recovery) and the C3-00 server lifecycle epochs were merged to
+`main` in PR #69 (`95fb9f5`, 2026-09-15). C3-03 (projector UI: track, leaderboard, live
+feed, server-clock elapsed time, responsive layouts, fullscreen, advisory device notice,
+finished presentation) and C3-04 (eight production side-view vehicles with a
+Teacher-specific manifest and fallback, single-source responsive geometry, leaderboard
+density, brand stability) and C3-05 … C3-08 (real jungle projector art, UI art accents
+and title plaque, animated authoritative leaderboard with podium tiers and medals,
+waiting-room art preload, live-route workspace navigation) are DONE. Release QA items
+needing a live backend and a real browser: an overtake observed with bots, fullscreen →
+Esc → fullscreen, reconnect without replayed pulses, phone rotation inside the
+workspace shell. C4 Results is next.
 
 ## Executive summary
 
@@ -49,9 +56,8 @@ server-authoritative movement (C1-03M/S1-01B) and hardened repeat-action semanti
 with time, correct answers boost speed and add progress bonuses, and timeouts
 slow more than wrong answers. Real absence freezes position without pausing
 question deadlines; reconnect never awards offline catch-up, and absent
-players do not keep the class race open. The main missing product slices are
-results and the C3-04 closure of the teacher live projector (side-view vehicle art,
-motion polish); opponents are implemented (C2).
+players do not keep the class race open. The main missing product slice is
+results; opponents (C2) and the teacher live projector (C3) are implemented.
 
 ## Product status board
 
@@ -79,7 +85,7 @@ motion polish); opponents are implemented (C2).
 | Teacher live-state query | DONE incl. lifecycle epochs (C3-00) | DONE live route + contract mapping (C3-01) | DONE |
 | Teacher durable live-event model | DONE | N/A | SERVER FOUNDATION |
 | Teacher SSE | DONE | DONE durable sync + authoritative recovery (C3-02) | DONE |
-| Teacher live projector UI | N/A | DONE projector with temporary vehicle marker (C3-03); side-view art + polish in C3-04 | PARTIAL feature |
+| Teacher live projector UI | N/A | DONE jungle-art projector with eight side-view vehicles, animated server-ordered leaderboard with podium medals, responsive workspace navigation (C3-03 … C3-08) | DONE |
 | Results | basic finish logic exists | route constant only | PLANNED |
 | Junction/highway/dirt road | PLANNED | PLANNED | REQUIRED |
 | Fair luck/power-ups | foundation ideas only | PLANNED | REQUIRED |
@@ -204,8 +210,10 @@ Teacher creates and starts a race
 No teacher client projector, luck event, junction or 2FA work should interrupt this
 slice unless it is required to make the slice run safely.
 
-C3 — Teacher live race: C3-01/C3-02 merged in PR #69 and the C3-03 projector UI is
-DONE; C3-04 (side-view vehicles, motion polish, final QA and closure) is the next
-client stage.
+C3 — Teacher live race is COMPLETE on the client (C3-01/C3-02 merged in PR #69;
+C3-03 … C3-08 projector, production art, leaderboard dynamics and responsive polish
+DONE). C4 Results is the next
+client stage: it consumes the teacher results endpoint after the branch is synchronized
+with `main`.
 C2-A race sound polish is deferred polish backlog. Required physical-device/recovery
 QA remains visible in the client plan and must pass before release.

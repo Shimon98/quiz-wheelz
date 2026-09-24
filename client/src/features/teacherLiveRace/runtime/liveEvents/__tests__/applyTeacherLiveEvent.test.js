@@ -215,4 +215,32 @@ describe("applyTeacherLiveEvent known events", () => {
     expect(raceFinished.runtime.race.finishedAtEpochMs).toBe(1_755_600_090_000);
     expect(raceFinished.runtime.eventVersion).toBe(14);
   });
+
+  it("replaces the roster in the incoming server standings order instead of keeping old array positions", () => {
+    const runtime = mapTeacherRaceLiveState(
+      teacherLiveStateResponse({
+        players: [
+          teacherLivePlayer({ racePlayerId: 1, displayName: "Dan", laneNumber: 1, rank: 1, position: 300 }),
+          teacherLivePlayer({ racePlayerId: 2, displayName: "Maya", laneNumber: 2, rank: 2, position: 200 }),
+          teacherLivePlayer({ racePlayerId: 3, displayName: "Lior", laneNumber: 3, rank: 3, position: 100 }),
+        ],
+      }),
+    );
+
+    const reordered = applyTeacherLiveEvent(
+      runtime,
+      event({
+        payload: {
+          players: [
+            teacherLivePlayer({ racePlayerId: 2, displayName: "Maya", laneNumber: 2, rank: 1, position: 320 }),
+            teacherLivePlayer({ racePlayerId: 1, displayName: "Dan", laneNumber: 1, rank: 2, position: 310 }),
+            teacherLivePlayer({ racePlayerId: 3, displayName: "Lior", laneNumber: 3, rank: 3, position: 100 }),
+          ],
+        },
+      }),
+    );
+
+    expect(reordered.runtime.players.map((player) => player.racePlayerId)).toEqual([2, 1, 3]);
+    expect(reordered.runtime.players.map((player) => player.rank)).toEqual([1, 2, 3]);
+  });
 });

@@ -3,7 +3,11 @@ import { Affix, Button, Group, Paper, Stack, Text, ThemeIcon } from "@mantine/co
 
 import { UI_TONES } from "../../app/theme/quizWheelzTheme";
 
-const NOTICE_POSITION = Object.freeze({ top: "md", left: "md", right: "md" });
+const NOTICE_POSITION = Object.freeze({
+  top: "calc(var(--app-shell-header-offset, 0rem) + var(--mantine-spacing-md))",
+  left: "md",
+  right: "md",
+});
 const NOTICE_MAX_WIDTH = "26rem";
 
 export default function PreferredDeviceNotice({

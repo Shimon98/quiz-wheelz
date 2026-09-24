@@ -24,6 +24,7 @@ export const TEACHER_CONNECTION_PRESENTATION = Object.freeze({
     labelKey: "connection.live",
     icon: Wifi,
     tone: UI_TONES.SUCCESS,
+    artKey: "connectionWifi",
   },
   [TEACHER_CONNECTION_STATES.RECOVERING]: {
     labelKey: "connection.recovering",

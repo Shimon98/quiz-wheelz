@@ -10,16 +10,19 @@ export default function TeacherRaceProgressScale() {
 
   return (
     <div className={S.scale} aria-hidden="true">
-      {TEACHER_RACE_PROJECTOR_CONFIG.progressMarkers.map((marker) => (
-        <span
-          key={marker.value}
-          className={cx(S.scaleMarker, !marker.compact && S.scaleMarkerWide)}
-          style={{ left: `${marker.value}%` }}
-          data-marker={marker.value}
-        >
-          {t("track.progress", { percent: marker.value })}
-        </span>
-      ))}
+      <span />
+      <div className={S.scaleTrack}>
+        {TEACHER_RACE_PROJECTOR_CONFIG.progressMarkers.map((marker) => (
+          <span
+            key={marker.value}
+            className={cx(S.scaleMarker, !marker.compact && S.scaleMarkerWide)}
+            style={{ left: `${marker.value}%` }}
+            data-marker={marker.value}
+          >
+            {t("track.progress", { percent: marker.value })}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

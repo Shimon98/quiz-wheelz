@@ -3,7 +3,7 @@ import { Button, ThemeIcon } from "@mantine/core";
 import { Undo2 } from "lucide-react";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
-import BrandLockup from "../../../shared/components/brand/BrandLockup";
+import { TEACHER_RACE_PROJECTOR_ART } from "../assets/teacherRaceProjectorArt";
 import { TEACHER_CONNECTION_PRESENTATION } from "../config/teacherRaceLiveConfig";
 import { TEACHER_PROJECTOR_STYLES as S } from "../styles/teacherRaceProjectorStyles";
 
@@ -14,6 +14,9 @@ export default function TeacherRaceProjectorFooter({
   const { t } = useTranslation(I18N_NAMESPACES.TEACHER_LIVE_RACE);
   const connection = TEACHER_CONNECTION_PRESENTATION[connectionState];
   const ConnectionIcon = connection?.icon;
+  const connectionArt = connection?.artKey
+    ? TEACHER_RACE_PROJECTOR_ART.uiAccents[connection.artKey]
+    : null;
 
   return (
     <footer className={S.footer}>
@@ -28,13 +31,22 @@ export default function TeacherRaceProjectorFooter({
         </Button>
       </div>
 
-      <BrandLockup className={S.footerBrand} />
-
       {connection ? (
         <div className={S.footerConnection} role="status">
-          <ThemeIcon variant="light" color={connection.tone} size="md" radius="xl">
-            <ConnectionIcon size={16} aria-hidden="true" />
-          </ThemeIcon>
+          {connectionArt ? (
+            <img
+              className={S.footerConnectionArt}
+              src={connectionArt}
+              alt=""
+              aria-hidden="true"
+              draggable={false}
+              data-connection-art={connectionState}
+            />
+          ) : (
+            <ThemeIcon variant="light" color={connection.tone} size="md" radius="xl">
+              <ConnectionIcon size={16} aria-hidden="true" />
+            </ThemeIcon>
+          )}
           <span>{t(connection.labelKey)}</span>
         </div>
       ) : null}

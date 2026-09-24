@@ -3,13 +3,24 @@ import { ActionIcon, Badge, Tooltip } from "@mantine/core";
 import { Maximize2, Minimize2 } from "lucide-react";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
+import { cx } from "../../../utils/classNameUtils";
 import BrandLockup from "../../../shared/components/brand/BrandLockup";
 import StatCard from "../../../shared/components/stats/StatCard";
+import { TEACHER_RACE_PROJECTOR_ART } from "../assets/teacherRaceProjectorArt";
 import {
   TEACHER_HEADER_STATS,
+  TEACHER_RACE_PROJECTOR_CONFIG,
   TEACHER_RACE_STATUS_PRESENTATION,
 } from "../config/teacherRaceProjectorConfig";
-import { TEACHER_PROJECTOR_STYLES as S } from "../styles/teacherRaceProjectorStyles";
+import {
+  buildTitleBadgeStyles,
+  TEACHER_PROJECTOR_STYLES as S,
+} from "../styles/teacherRaceProjectorStyles";
+
+const TITLE_BADGE_STYLES = buildTitleBadgeStyles(
+  TEACHER_RACE_PROJECTOR_ART.uiAccents.titleBadge,
+  TEACHER_RACE_PROJECTOR_CONFIG.titleBadge,
+);
 
 function resolveStatValues(header, t) {
   return {
@@ -34,15 +45,35 @@ export default function TeacherRaceProjectorHeader({
   const FullscreenIcon = fullscreen ? Minimize2 : Maximize2;
 
   return (
-    <header className={S.header}>
-      <BrandLockup className={S.headerBrand} />
+    <header
+      className={cx(
+        S.header,
+        fullscreen ? S.headerColumnsWithBrand : S.headerColumns,
+      )}
+    >
+      {fullscreen ? (
+        <BrandLockup
+          className={S.headerBrand}
+          shuffleIntervalMs={TEACHER_RACE_PROJECTOR_CONFIG.brandShuffleIntervalMs}
+        />
+      ) : null}
 
       <div className={S.headerIdentity}>
-        <h1 className={S.headerTitle}>{header.title}</h1>
+        <h1 className={S.headerTitle} style={TITLE_BADGE_STYLES.title}>
+          <span
+            className={S.headerTitleArt}
+            style={TITLE_BADGE_STYLES.art}
+            aria-hidden="true"
+            data-title-badge-art
+          />
+          <span className={S.headerTitleText}>{header.title}</span>
+        </h1>
         {statusPresentation ? (
-          <Badge size="lg" variant="filled" color={statusPresentation.tone}>
-            {t(statusPresentation.labelKey)}
-          </Badge>
+          <span className={S.headerStatus}>
+            <Badge size="lg" variant="filled" color={statusPresentation.tone}>
+              {t(statusPresentation.labelKey)}
+            </Badge>
+          </span>
         ) : null}
       </div>
 

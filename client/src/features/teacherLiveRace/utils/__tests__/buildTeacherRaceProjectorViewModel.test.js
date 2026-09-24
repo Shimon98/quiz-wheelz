@@ -90,4 +90,17 @@ describe("buildTeacherRaceProjectorViewModel", () => {
     expect(finished.header.elapsedLabel).toBeNull();
     expect(finished.race).toEqual({ totalDistance: 1000, status: "FINISHED", isFinished: true });
   });
+
+  it("passes the runtime order to the leaderboard untouched, even when it is not sorted by rank or lane", () => {
+    const runtime = runtimeWithPlayers([
+      teacherLivePlayer({ racePlayerId: 7, laneNumber: 3, rank: 3, position: 100 }),
+      teacherLivePlayer({ racePlayerId: 8, laneNumber: 1, rank: 1, position: 300 }),
+      teacherLivePlayer({ racePlayerId: 9, laneNumber: 2, rank: 2, position: 200 }),
+    ]);
+
+    const { leaderboard, lanes } = buildTeacherRaceProjectorViewModel(runtime, null);
+
+    expect(leaderboard.map((row) => row.racePlayerId)).toEqual([7, 8, 9]);
+    expect(lanes.map((lane) => lane.racePlayerId)).toEqual([8, 9, 7]);
+  });
 });

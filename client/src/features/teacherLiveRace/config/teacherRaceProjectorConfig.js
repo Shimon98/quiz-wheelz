@@ -6,9 +6,16 @@ import {
   RACE_STATUSES,
 } from "../../../constants/raceStatusConstants";
 
+export const TRACK_SIGN_KINDS = Object.freeze({
+  START: "start",
+  FINISH: "finish",
+});
+
 export const TEACHER_RACE_PROJECTOR_CONFIG = Object.freeze({
   vehicleTweenMs: 1000,
-  leaderboardLayoutMs: 400,
+  leaderboardLayoutMs: 320,
+  leaderboardLayoutEase: "easeOut",
+  brandShuffleIntervalMs: 30_000,
   progressMarkers: Object.freeze([
     { value: 0, compact: true },
     { value: 25, compact: false },
@@ -17,10 +24,46 @@ export const TEACHER_RACE_PROJECTOR_CONFIG = Object.freeze({
     { value: 100, compact: true },
   ]),
   laneGeometry: Object.freeze({
-    vehicleWidthRem: 3,
-    vehicleHeightRem: 1.5,
-    railInsetRem: 1.5,
+    vehicleAspectRatio: 384 / 226,
+    compactVehicleHeightRem: 2.5,
+    wideVehicleHeightRem: 2.75,
+    vehicleEdgeGapRem: 0.25,
   }),
+  signBoards: Object.freeze({
+    [TRACK_SIGN_KINDS.START]: Object.freeze({
+      aspectRatio: 640 / 616,
+      textBox: Object.freeze({ left: 31.8, top: 31.12, width: 55.91, height: 16.23 }),
+    }),
+    [TRACK_SIGN_KINDS.FINISH]: Object.freeze({
+      aspectRatio: 640 / 626,
+      textBox: Object.freeze({ left: 12.22, top: 31.31, width: 55.91, height: 16.49 }),
+    }),
+  }),
+  titleBadge: Object.freeze({
+    aspectRatio: 1024 / 329,
+    sliceLeftPx: 536,
+    sliceRightPx: 450,
+    capLeft: 1.6292,
+    capRight: 1.3678,
+    textPadLeft: 0.7964,
+    textPadRight: 0.7538,
+    textShift: 0.0972,
+    fontScale: 0.3,
+  }),
+});
+
+export const TEACHER_LEADERBOARD_RANK_TIERS = Object.freeze({
+  1: "first",
+  2: "second",
+  3: "third",
+});
+
+export const TEACHER_LEADERBOARD_DEFAULT_TIER = "none";
+
+export const TEACHER_LEADERBOARD_TIER_MEDALS = Object.freeze({
+  first: "gold",
+  second: "silver",
+  third: "bronze",
 });
 
 export const TEACHER_RACE_STATUS_PRESENTATION = Object.freeze({

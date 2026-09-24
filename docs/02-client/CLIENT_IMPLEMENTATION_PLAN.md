@@ -756,7 +756,7 @@ integration, C2-02 student synchronization, C2-03 opponents, C2-04 finish
 presentation and the visual hardening (shared motion, lane-fit, static colors) are
 implemented; the closure pass ran live two-player and eight-player browser QA on the
 final build (see `TESTING_AND_DEFINITION_OF_DONE.md`). C2-A sound is deferred polish;
-C3 is the next stage. Physical-device acceptance and merge remain open.
+C2 was merged in PR #68 (2026-09-14); physical-device acceptance remains a release QA item.
 
 Implemented after the accepted local C1 checkpoint. Server S1-02 and
 C2-01 are DONE: race-state, answer and finish-arbitration snapshots provide
@@ -833,10 +833,15 @@ student-side final demonstration. No sound playback or assets are implemented.
   repeated answers/reconnect, sustained speed changes, and comfortable
   balance with classroom use. Retest the carried-forward device checklist.
 
-## C3 — Teacher live race — IN PROGRESS
+## C3 — Teacher live race — COMPLETE
 
 **Status:** C3-01 and C3-02 DONE (merged with the C3-00 server lifecycle epochs in
-PR #69, `main@95fb9f5`, 2026-09-15); C3-03 DONE (2026-09-16); C3-04 is next.
+PR #69, `main@95fb9f5`, 2026-09-15); C3-03 DONE (2026-09-16); C3-04 DONE (2026-09-22);
+C3-05 … C3-08 projector art, dynamics and responsive polish DONE (2026-09-24).
+C3 is complete on the client; C4 Results is next. The projector was reviewed live by
+Shimon; remaining environment-dependent checks are release QA items, not implementation
+gaps: an overtake observed with bots, fullscreen → Esc → fullscreen, reconnect without
+replayed feed pulses, and phone rotation inside the workspace shell.
 
 Depends on S2 (teacher live-state, durable events and SSE are DONE on the server).
 
@@ -872,18 +877,82 @@ retryable error states are explicit.
 - target-only vehicle motion: a short tween to each new server position, no
   prediction, instant under reduced motion
 - finished presentation: banner, ended connection state and frozen elapsed time
-- the vehicle is a deliberate temporary colored marker; lane geometry and the view
-  model are ready for the C3-04 side-view art.
+- the vehicle slot renders the C3-04 side-view art; the colored marker stays as the
+  fallback for unknown asset keys.
 
-### C3-04 — Side-view vehicles, motion polish, QA and closure — NEXT
+### C3-04 — Side-view vehicles, geometry, polish and final QA — DONE
 
-- side-view vehicle assets (GREEN master first, then the other seven colors) reusing
-  the shared C2 vehicle color identity
-- final motion and layout tuning (tween duration, container thresholds,
-  leaderboard density)
-- real-browser QA including fullscreen and reduced motion, then C3 documentation closure.
+- eight production side-view hover karts (`assets/game/teacherRace/hoverKarts/`,
+  384×226 transparent WebP, ~29 KB each) derived from one approved GREEN master by a
+  deterministic recolor pipeline kept privately under `docs/vision`; body colors come
+  from the shared `raceVehicleIdentity` owner, Student rear-view art is never reused
+- Teacher-specific asset manifest and resolver (`vehicleAssetKey` → side-view image);
+  an unknown key still renders the CSS marker
+- vehicle geometry from one source: asset aspect ratio, compact/wide heights and an
+  edge gap; width and rail inset are derived, and the tier switches with the same
+  container query that grows the lane strip, so the whole kart stays inside the strip
+  at 0% and 100% and adjacent karts never collide with 8 players
+- motion kept at the accepted 1000 ms linear tween to the latest server target (no
+  defect observed, no prediction added)
+- responsive leaderboard density: on narrow side panels streak and then progress are
+  hidden by a container query; rank, name, score and status always stay, and nothing
+  leaves the view model
+- disconnected players: label and status muted, the kart itself stays readable (80%)
+- shared brand lockup stability: stable segments (parent re-renders no longer restart
+  the shuffle), width-reserving character cells (the scramble cannot move neighbors),
+  10 s default replay and 30 s on the projector; the projector shows its own logo only
+  in fullscreen and never in the footer
+- QA matrix passed at 1920/1366/1024/820/844/390 with 2/4/6/8 players, HE/EN,
+  light/dark, LIVE/FINISHED and the unknown-asset fallback.
 
-## C4 — Results
+### C3-05 — Real jungle projector art — DONE
+
+- production world art in `assets/game/teacherRace/projector/` (jungle arena backdrop,
+  START and FINISH wooden signs, foreground verge) processed from approved masters by a
+  private pipeline under `docs/vision`; one art owner (`teacherRaceProjectorArt.js`)
+- the backdrop covers the projector surface; dark mode reuses the same art with a
+  night tint and filter from theme tokens; the offered lane texture was tested and
+  not shipped because it washed out the player colors
+- START/FINISH are single track-level props; the translated label is real DOM text
+  placed on the measured blank board; decoration steps down on narrow layouts
+- the projector fills the available workspace height through the AppShell variables
+
+### C3-06 — UI art accents — DONE
+
+- trophy (leaderboard heading and the finished card), lightning (live events heading)
+  and Wi-Fi (connection, only while LIVE; other states keep their state icon)
+- the race title stays DOM text on a stretchable wooden plaque (CSS 3-slice),
+  centered on wide and fullscreen headers
+- `useFreshFeedItem` marks only feed items that arrive after mount; it drives a
+  one-shot lightning pulse and is the seam for future sound cues
+
+### C3-07 — Leaderboard dynamics — DONE
+
+- the server sends every roster in standings order and the client replaces the whole
+  roster; the view model and the panel never sort (regression tests pin this)
+- rows keep their identity by `racePlayerId` and slide with a 320 ms ease-out layout
+  transition; rapid updates retarget from the current position without a queue;
+  reduced motion reorders instantly
+- rank 1/2/3 get gold/silver/bronze row tiers derived from the server rank only; ties
+  share a tier
+- the waiting room preloads the projector and vehicle art once, opportunistically;
+  it never blocks Start and a failed request can retry
+
+### C3-08 — Responsive workspace navigation and podium medals — DONE
+
+- the live route collapses the workspace navbar at `lg` instead of `sm`: with the
+  280 px sidebar the projector otherwise fell back to its phone layout from 768 to
+  about 1100 px; header, burger and navbar derive from one breakpoint key, other
+  workspace pages keep `sm`
+- the preferred-device notice sits below the workspace header, so it can no longer
+  cover the burger on phones
+- ranks 1/2/3 render as gold/silver/bronze medals with the number as real text; rank
+  4 and below keep the player-colored circle.
+
+## C4 — Results — NEXT
+
+Starts after this branch is synchronized with `main`; consumes the teacher results
+endpoint from the server results work and does not duplicate it.
 
 - student finish state
 - teacher results route/page

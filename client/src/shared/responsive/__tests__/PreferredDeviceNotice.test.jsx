@@ -47,4 +47,15 @@ describe("PreferredDeviceNotice", () => {
     fireEvent.click(within(notice).getByRole("button", { name: CONFIRM }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
+
+  it("sits below a workspace header so it never covers the navigation burger", () => {
+    render(
+      <MantineProvider>
+        <PreferredDeviceNotice open title={TITLE} body={BODY} confirmLabel={CONFIRM} onDismiss={() => {}} />
+      </MantineProvider>,
+    );
+
+    const affix = screen.getByRole("dialog").closest(".mantine-Affix-root");
+    expect(affix.style.getPropertyValue("--affix-top")).toContain("--app-shell-header-offset");
+  });
 });

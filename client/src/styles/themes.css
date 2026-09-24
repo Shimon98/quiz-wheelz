@@ -47,6 +47,24 @@ html[data-theme="light"] {
   --qw-answer-green-contrast: #ffffff;
   --qw-answer-amber-contrast: var(--qw-ink);
   --qw-answer-violet-contrast: #ffffff;
+
+  /* Teacher projector world skin (daylight jungle) */
+  --qw-projector-sky: #b7e2ff;
+  --qw-projector-horizon: #eaf7ff;
+  --qw-projector-ground: #b9e5b1;
+  --qw-projector-glass: rgba(255, 255, 255, 0.84);
+  --qw-projector-glass-border: rgba(255, 255, 255, 0.92);
+  --qw-projector-lane: rgba(255, 255, 255, 0.78);
+  --qw-projector-lane-line: rgba(15, 42, 67, 0.16);
+  --qw-projector-track-glass: rgba(255, 255, 255, 0.62);
+  --qw-projector-tint: rgba(255, 255, 255, 0.06);
+  --qw-projector-backdrop-filter: none;
+  --qw-projector-rank-1-ring: rgba(240, 170, 20, 1);
+  --qw-projector-rank-1-glow: rgba(255, 190, 40, 0.6);
+  --qw-projector-rank-2-ring: rgba(120, 124, 130, 0.75);
+  --qw-projector-rank-2-glow: rgba(120, 124, 130, 0.28);
+  --qw-projector-rank-3-ring: rgba(176, 101, 45, 0.6);
+  --qw-projector-rank-3-glow: rgba(176, 101, 45, 0.18);
 }
 
 html[data-theme="dark"] {
@@ -85,4 +103,22 @@ html[data-theme="dark"] {
   --qw-answer-green-contrast: #06192b;
   --qw-answer-amber-contrast: #06192b;
   --qw-answer-violet-contrast: #06192b;
+
+  /* Teacher projector world skin (night jungle) */
+  --qw-projector-sky: #0c2d4f;
+  --qw-projector-horizon: #123c5c;
+  --qw-projector-ground: #0f3a2e;
+  --qw-projector-glass: rgba(17, 43, 61, 0.84);
+  --qw-projector-glass-border: rgba(255, 255, 255, 0.12);
+  --qw-projector-lane: rgba(255, 255, 255, 0.1);
+  --qw-projector-lane-line: rgba(255, 255, 255, 0.2);
+  --qw-projector-track-glass: rgba(17, 43, 61, 0.66);
+  --qw-projector-tint: rgba(6, 26, 44, 0.58);
+  --qw-projector-backdrop-filter: brightness(0.72) saturate(0.82);
+  --qw-projector-rank-1-ring: rgba(255, 200, 60, 1);
+  --qw-projector-rank-1-glow: rgba(255, 200, 60, 0.5);
+  --qw-projector-rank-2-ring: rgba(214, 218, 224, 0.7);
+  --qw-projector-rank-2-glow: rgba(214, 218, 224, 0.2);
+  --qw-projector-rank-3-ring: rgba(214, 140, 76, 0.6);
+  --qw-projector-rank-3-glow: rgba(214, 140, 76, 0.16);
 }

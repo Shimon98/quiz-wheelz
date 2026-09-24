@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Container, Grid, Skeleton, Stack } from "@mantine/core";
 
@@ -11,13 +11,8 @@ import RoomCodeCard from "../components/raceRoom/RoomCodeCard";
 import RacePlayersPanel from "../components/raceRoom/RacePlayersPanel";
 import RaceRoomActions from "../components/raceRoom/RaceRoomActions";
 import { DashboardErrorState } from "../components/DashboardStates";
+import { preloadTeacherProjectorArt } from "../../teacherLiveRace/assets/preloadTeacherProjectorArt";
 
-/**
- * TeacherRaceRoomPage — the waiting room after creating/opening a race:
- * room code for the classroom board, live-ish RacePlayers list (quiet
- * polling until SSE), and the start action. NOT the game screen — when the
- * live screen ships, start's success will navigate there.
- */
 export default function TeacherRaceRoomPage() {
   const { raceId } = useParams();
   const navigate = useNavigate();
@@ -34,6 +29,14 @@ export default function TeacherRaceRoomPage() {
   const handleBackToRaces = useCallback(() => {
     navigate(ROUTES.TEACHER_RACES);
   }, [navigate]);
+
+  const hasRoom = room != null;
+
+  useEffect(() => {
+    if (hasRoom) {
+      preloadTeacherProjectorArt();
+    }
+  }, [hasRoom]);
 
   if (isLoading) {
     return (
