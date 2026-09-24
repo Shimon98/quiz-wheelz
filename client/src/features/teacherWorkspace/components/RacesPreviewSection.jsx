@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Button, Group, Paper, Title } from "@mantine/core";
 
@@ -8,12 +8,8 @@ import { buildRaceViewModel } from "../utils/raceDisplayUtils";
 import { RACES_PREVIEW_LIMIT } from "../config/teacherWorkspaceConfig";
 import RacePreviewTable from "./RacePreviewTable";
 import RacePreviewMobileList from "./RacePreviewMobileList";
+import RacePrimaryActionButton from "./RacePrimaryActionButton";
 
-/**
- * RacesPreviewSection — a SHORT preview of the latest races (the full list
- * lives on the dedicated races page). Builds the shared view models once and
- * hands them to the desktop table / mobile cards.
- */
 export default function RacesPreviewSection({
   races,
   onOpenRace,
@@ -30,6 +26,11 @@ export default function RacesPreviewSection({
     [races, language],
   );
 
+  const renderRowAction = useCallback(
+    (item) => <RacePrimaryActionButton race={item.race} onAction={onOpenRace} />,
+    [onOpenRace],
+  );
+
   return (
     <Paper radius="xl" p={{ base: "md", sm: "lg" }} withBorder>
       <Group justify="space-between" align="center" mb="md">
@@ -41,10 +42,14 @@ export default function RacesPreviewSection({
       </Group>
 
       <Box visibleFrom="md">
-        <RacePreviewTable items={items} onOpenRace={onOpenRace} />
+        <RacePreviewTable
+          items={items}
+          onOpenRace={onOpenRace}
+          renderRowAction={renderRowAction}
+        />
       </Box>
       <Box hiddenFrom="md">
-        <RacePreviewMobileList items={items} onOpenRace={onOpenRace} />
+        <RacePreviewMobileList items={items} renderRowAction={renderRowAction} />
       </Box>
     </Paper>
   );

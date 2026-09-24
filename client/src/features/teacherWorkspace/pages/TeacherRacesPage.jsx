@@ -16,17 +16,14 @@ import { useDisclosure } from "@mantine/hooks";
 import { Plus } from "lucide-react";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
-import {
-  buildTeacherRaceLivePath,
-  buildTeacherRaceRoomPath,
-} from "../../../constants/routeConstants";
+import { buildTeacherRaceRoomPath } from "../../../constants/routeConstants";
 import { useLanguageStore } from "../../../stores/languageStore";
-import { showInfoNotification } from "../../../shared/notifications/appNotifications";
 import useTeacherRaces from "../hooks/useTeacherRaces";
+import useTeacherRacePrimaryAction from "../hooks/useTeacherRacePrimaryAction";
 import { buildRaceViewModel } from "../utils/raceDisplayUtils";
-import { getRacePrimaryAction } from "../config/raceActionsConfig";
 import RacePreviewTable from "../components/RacePreviewTable";
 import RacePreviewMobileList from "../components/RacePreviewMobileList";
+import RacePrimaryActionButton from "../components/RacePrimaryActionButton";
 import CreateRaceModal from "../components/createRace/CreateRaceModal";
 import {
   DashboardEmptyState,
@@ -36,6 +33,7 @@ import {
 export default function TeacherRacesPage() {
   const { t } = useTranslation(I18N_NAMESPACES.TEACHER_WORKSPACE);
   const navigate = useNavigate();
+  const executeRacePrimaryAction = useTeacherRacePrimaryAction();
   const language = useLanguageStore((state) => state.language);
 
   const { races, isLoading, error, refetch } = useTeacherRaces();
@@ -50,43 +48,14 @@ export default function TeacherRacesPage() {
     [races, language],
   );
 
-  const handlePrimaryAction = useCallback(
-    (race) => {
-      const action = getRacePrimaryAction(race?.status);
-
-      if (action.kind === "room") {
-        navigate(buildTeacherRaceRoomPath(race.raceId ?? race.id));
-        return;
-      }
-
-      if (action.kind === "live") {
-        navigate(buildTeacherRaceLivePath(race.raceId ?? race.id));
-        return;
-      }
-
-      if (action.kind === "summarySoon") {
-        showInfoNotification({ message: t("racesPage.summarySoon") });
-      }
-    },
-    [navigate, t],
-  );
-
   const renderRowAction = useCallback(
-    (item) => {
-      const action = getRacePrimaryAction(item.status);
-
-      return (
-        <Button
-          variant="light"
-          size="xs"
-          disabled={action.kind === "none"}
-          onClick={() => handlePrimaryAction(item.race)}
-        >
-          {t(action.labelKey)}
-        </Button>
-      );
-    },
-    [handlePrimaryAction, t],
+    (item) => (
+      <RacePrimaryActionButton
+        race={item.race}
+        onAction={executeRacePrimaryAction}
+      />
+    ),
+    [executeRacePrimaryAction],
   );
 
   const handleRaceCreated = useCallback(
@@ -133,7 +102,7 @@ export default function TeacherRacesPage() {
             <Box visibleFrom="md">
               <RacePreviewTable
                 items={items}
-                onOpenRace={handlePrimaryAction}
+                onOpenRace={executeRacePrimaryAction}
                 renderRowAction={renderRowAction}
               />
             </Box>

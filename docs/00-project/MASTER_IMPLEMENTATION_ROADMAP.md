@@ -101,6 +101,13 @@ Client:
 **Gate:** an answer on the student device visibly changes the teacher display without
 manual refresh, and reconnect restores current state.
 
+Client checkpoint (2026-09-24): the Phase 2 client scope is COMPLETE (C3-01 … C3-08 in
+`../02-client/CLIENT_IMPLEMENTATION_PLAN.md`); the gate was exercised live with bot
+races during C3-02/C3-03 QA and the final projector was reviewed live. Environment-
+dependent release checks (an observed overtake, real fullscreen, reconnect, phone
+rotation in the shell) stay in the client plan. The
+next client phase is Phase 3 results (C4) on top of the S3-01 final-results read model.
+
 ## Phase 3 — Results and integration closure
 
 **Goal:** the core race has a complete start-to-results lifecycle.

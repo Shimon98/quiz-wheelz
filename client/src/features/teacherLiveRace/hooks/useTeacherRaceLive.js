@@ -43,6 +43,7 @@ export default function useTeacherRaceLive(raceId) {
 
   const isCurrentRace = state.raceId === raceId;
   const runtime = isCurrentRace ? state.runtime : null;
+  const serverClock = isCurrentRace ? state.serverClock : null;
   const recentEvents = isCurrentRace ? state.recentEvents : EMPTY_EVENTS;
   const recovery = isCurrentRace ? state.recovery : null;
   const error = failure?.raceId === raceId ? failure.error : null;
@@ -95,6 +96,7 @@ export default function useTeacherRaceLive(raceId) {
             type: TEACHER_LIVE_ACTIONS.AUTHORITATIVE_STATE_LOADED,
             raceId,
             runtime: nextRuntime,
+            receivedAtPerformanceNow: performance.now(),
           });
         }
       } catch (rawError) {
@@ -224,6 +226,7 @@ export default function useTeacherRaceLive(raceId) {
 
   return {
     runtime,
+    serverClock,
     recentEvents,
     connectionState: resolveTeacherConnectionState({
       runtime,

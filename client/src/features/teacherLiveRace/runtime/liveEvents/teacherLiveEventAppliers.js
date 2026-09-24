@@ -1,16 +1,30 @@
 import { ApiContractError } from "../../../../errors/ApiContractError";
 import { RACE_MAX_PLAYERS } from "../../../../constants/raceRulesConstants";
 
+function requireFreeLane(players, player) {
+  const laneTaken = players.some(
+    (candidate) =>
+      candidate.laneNumber === player.laneNumber &&
+      candidate.racePlayerId !== player.racePlayerId,
+  );
+
+  if (laneTaken) {
+    throw new ApiContractError("Teacher live roster lane belongs to another player");
+  }
+}
+
 function upsertPlayer(players, player) {
   const index = players.findIndex(
     (candidate) => candidate.racePlayerId === player.racePlayerId,
   );
 
-  if (index === -1) {
-    if (players.length >= RACE_MAX_PLAYERS) {
-      throw new ApiContractError("Teacher live roster is already at capacity");
-    }
+  if (index === -1 && players.length >= RACE_MAX_PLAYERS) {
+    throw new ApiContractError("Teacher live roster is already at capacity");
+  }
 
+  requireFreeLane(players, player);
+
+  if (index === -1) {
     return [...players, player];
   }
 

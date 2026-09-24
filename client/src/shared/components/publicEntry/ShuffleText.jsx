@@ -1,31 +1,43 @@
 import { useEffect, useMemo, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 
-const GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+import { cx } from "../../../utils/classNameUtils";
 
-/*
- * ShuffleText — a lightweight "shuffle / decode" text effect in the spirit of
- * ReactBits Shuffle, with no GSAP (uses only React + a timer). Characters
- * scramble through random glyphs then settle into place, staggered start→end,
- * and the whole thing replays every `interval` ms ("occasionally moves").
- *
- * `segments` keeps colored parts intact, e.g.
- *   [{ text: "Quiz" }, { text: "Wheelz", className: "text-[var(--qw-primary)]" }]
- *
- * Accessible: the container exposes the real text via aria-label and the
- * animated per-character spans are aria-hidden, so screen readers only ever get
- * the real word, never the scramble. Honors reduced-motion (renders static).
- *
- * The displayed text ALWAYS settles back to the real text (initial render, end
- * of each cycle, reduced-motion, and unmount) — only the brief scramble differs.
- */
+const GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+const DEFAULT_STAGGER_MS = 45;
+const DEFAULT_SCRAMBLE_MS = 520;
+const DEFAULT_TICK_MS = 55;
+const DEFAULT_REPLAY_INTERVAL_MS = 10_000;
+const FIRST_RUN_DELAY_MS = 400;
+
+const CHARACTER_CELL = "relative inline-block whitespace-pre";
+const CHARACTER_SIZER_HIDDEN = "invisible";
+const CHARACTER_GLYPH = "absolute left-1/2 top-0 -translate-x-1/2";
+
+function ShuffleCharacter({ target, glyph, className }) {
+  const isScrambling = glyph !== target;
+
+  return (
+    <span
+      aria-hidden="true"
+      data-shuffle-character={target}
+      className={cx(CHARACTER_CELL, className)}
+    >
+      <span className={isScrambling ? CHARACTER_SIZER_HIDDEN : undefined}>
+        {target}
+      </span>
+      {isScrambling ? <span className={CHARACTER_GLYPH}>{glyph}</span> : null}
+    </span>
+  );
+}
+
 export default function ShuffleText({
   segments,
   className = "",
-  stagger = 45, // ms between each character settling
-  scramble = 520, // ms a character scrambles before it settles
-  tick = 55, // ms between glyph swaps while scrambling
-  interval = 6500, // ms between replays
+  stagger = DEFAULT_STAGGER_MS,
+  scramble = DEFAULT_SCRAMBLE_MS,
+  tick = DEFAULT_TICK_MS,
+  interval = DEFAULT_REPLAY_INTERVAL_MS,
 }) {
   const reduce = useReducedMotion();
 
@@ -69,7 +81,7 @@ export default function ShuffleText({
       }, tick);
     };
 
-    delayTimer = window.setTimeout(run, 400);
+    delayTimer = window.setTimeout(run, FIRST_RUN_DELAY_MS);
 
     return () => {
       window.clearInterval(scrambleTimer);
@@ -81,9 +93,12 @@ export default function ShuffleText({
   return (
     <span className={className} aria-label={fullText}>
       {chars.map((c, i) => (
-        <span key={i} aria-hidden="true" className={c.className}>
-          {display[i] === " " ? " " : display[i]}
-        </span>
+        <ShuffleCharacter
+          key={i}
+          target={c.target}
+          glyph={display[i]}
+          className={c.className}
+        />
       ))}
     </span>
   );

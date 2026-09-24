@@ -27,6 +27,20 @@ initial/recovery state, durable SSE synchronization and projector UI foundation
 merged through PR #69. Physical-device acceptance and C2-A race sound remain open
 polish; the C4 Result Screen remains future client work.
 
+C3 checkpoint, 2026-09-24: the teacher live race is COMPLETE on the client. C3-01
+(live route and authoritative live-state), C3-02 (durable teacher SSE sync with version
+gating and authoritative recovery) and the C3-00 server lifecycle epochs were merged to
+`main` in PR #69 (`95fb9f5`, 2026-09-15). C3-03 (projector UI: track, leaderboard, live
+feed, server-clock elapsed time, responsive layouts, fullscreen, advisory device notice,
+finished presentation) and C3-04 (eight production side-view vehicles with a
+Teacher-specific manifest and fallback, single-source responsive geometry, leaderboard
+density, brand stability) and C3-05 … C3-08 (real jungle projector art, UI art accents
+and title plaque, animated authoritative leaderboard with podium tiers and medals,
+waiting-room art preload, live-route workspace navigation) are DONE. Release QA items
+needing a live backend and a real browser: an overtake observed with bots, fullscreen →
+Esc → fullscreen, reconnect without replayed pulses, phone rotation inside the
+workspace shell. C4 Results is next and consumes the S3-01 final-results read model.
+
 ## Executive summary
 
 QuizWheelz is not an early prototype. Most backend gameplay foundations and the
@@ -39,8 +53,9 @@ with time, correct answers boost speed and add progress bonuses, and timeouts
 slow more than wrong answers. Real absence freezes position without pausing
 question deadlines; reconnect never awards offline catch-up, and absent
 players do not keep the class race open. C2 multiplayer competition and C3 Teacher
-Live are merged. The server final-results read model is implemented by S3-01; the C4
-Result Screen remains future client work.
+Live are implemented: C3-01/C3-02 merged in PR #69 and C3-03 … C3-08 are complete on
+the client. The server final-results read model is implemented by S3-01; the C4 Result
+Screen is the next client stage.
 
 ## Product status board
 
@@ -65,10 +80,11 @@ Result Screen remains future client work.
 | Student question panel/HUD | server data exists | panel + timer DONE (C1-02); HUD stats DONE (C1-04) | DONE |
 | Opponent vehicles/nearby players | DONE snapshot contract + decision-instant standings (C2-01) | DONE pooled renderer, shared motion, 2/4/7 density, lane-fit, static colors (C2-03) | DONE (device acceptance open) |
 | Student live stream + finish arbitration | DONE signal-only SSE, proof-gated arbitration | DONE SSE invalidation + polling fallback, proof-gated finish presentation (C2-02/C2-04) | DONE |
-| Teacher live-state query | DONE | DONE initial/recovery integration | DONE |
+| Teacher live-state query | DONE incl. lifecycle epochs (C3-00) | DONE live route, initial/recovery integration (C3-01) | DONE |
 | Teacher durable live-event model | DONE | N/A | SERVER FOUNDATION |
-| Teacher SSE | DONE | DONE recovery/fallback integration | DONE |
-| Results | DONE final read model (S3-01) | C4 PLANNED | PARTIAL feature |
+| Teacher SSE | DONE | DONE durable sync, authoritative recovery/fallback (C3-02) | DONE |
+| Teacher live projector UI | N/A | DONE jungle-art projector with eight side-view vehicles, animated server-ordered leaderboard with podium medals, responsive workspace navigation (C3-03 … C3-08) | DONE |
+| Results | DONE final read model (S3-01) | C4 NEXT | PARTIAL feature |
 | Junction/highway/dirt road | PLANNED | PLANNED | REQUIRED |
 | Fair luck/power-ups | foundation ideas only | PLANNED | REQUIRED |
 | Catch-up assistance | foundation ideas only | PLANNED | REQUIRED |
@@ -205,6 +221,8 @@ Teacher completes a multi-player race
 → navigation returns to race history/dashboard
 ```
 
-C2 and the C3 Teacher Live foundation are merged. S3-01 provides the server
-final-results read model; C4 is the next client results stage. C2-A race sound and
-required physical-device/recovery QA remain visible pre-release polish.
+C2 and C3 Teacher Live are implemented: C3-01/C3-02 merged in PR #69 and C3-03 … C3-08
+(projector, production art, leaderboard dynamics and responsive polish) are COMPLETE on
+the client. S3-01 provides the server final-results read model; C4 Results is the next
+client stage and consumes it. C2-A race sound and required physical-device/recovery QA
+remain visible pre-release polish.

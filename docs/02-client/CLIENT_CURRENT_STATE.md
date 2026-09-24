@@ -8,6 +8,19 @@
 > The code is authoritative for what is implemented. This document is authoritative
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
+Checkpoint, 2026-09-24: **C3 teacher live race COMPLETE on the client** — C3-01 (live
+route and authoritative live-state) and C3-02 (durable teacher SSE sync) merged in
+PR #69; C3-03 (projector UI), C3-04 (eight production side-view vehicles, responsive
+geometry, leaderboard density, brand stability), C3-05 (real jungle projector art),
+C3-06 (UI art accents and title plaque), C3-07 (animated authoritative leaderboard,
+rank tiers, waiting-room art preload) and C3-08 (live-route navbar breakpoint,
+notice below the header, podium medals) are DONE. 851 tests/104 files, lint and build
+pass; QA ran on 2/4/6/8-player races at six viewports plus a continuous width sweep of
+the workspace shell, in both languages and both themes, and Shimon reviewed the live
+projector. Release QA items: an overtake observed with bots, fullscreen → Esc →
+fullscreen, reconnect without replayed pulses, phone rotation inside the workspace
+shell. C4 Results is next.
+
 Local checkpoint, 2026-09-13: **C2 core implemented and closed for PR review** on
 `feature/C2-01-competition-truth-finish-arbitration` (4 commits ahead of `main`):
 full opponents roster, shared local/opponent motion, pooled opponents by RacePlayer
@@ -359,7 +372,6 @@ Implemented A–G:
   a fresh race-preview tab produced no console errors or warnings.
 
 ## Missing integration
-- teacher live page (C3) and its SSE client
 - results pages
 - full auth server flows.
 - race audio: deferred polish backlog (C2-A in the client plan); it does not block C3.
@@ -384,14 +396,60 @@ Implemented A–G:
 The C1 completion checklist is in `CLIENT_IMPLEMENTATION_PLAN.md`; future
 teacher/SSE/results/auth work does not belong to that single-player gate.
 
+## Teacher live race (C3 — COMPLETE 2026-09-24; C3-01/C3-02 merged in PR #69)
+
+- `features/teacherLiveRace/`: the page only orchestrates; `useTeacherRaceLive` owns
+  the authoritative GET, the event stream and recovery; the pure engine applies
+  version-gated events through one event registry, and roster contract violations
+  (capacity, repeated ids or lanes) turn into an authoritative re-read
+- a pure view model feeds the projector: lanes by `laneNumber` on an always
+  left-to-right track, leaderboard in server order with server tie ranks
+- elapsed time comes from a server-clock anchor captured when the live-state response
+  arrives (`serverTimeEpochMs` + `performance.now()`), never the teacher's wall clock
+- one Tailwind style owner with container queries (compact, medium, three-column
+  projector); fullscreen targets the projector surface through Mantine
+  `useFullscreenElement` and hides when unsupported
+- shared owners reused by C3: `shared/live` stream and version classifier (student
+  stream too), `shared/components/stats/StatCard` (dashboard too),
+  `shared/raceVehicles/raceVehicleIdentity` (the only vehicle color owner, the student
+  vehicle manifest reads it) and `shared/responsive` preferred-device profiles with a
+  non-modal, per-session dismissable notice (teacher projector and student race)
+- vehicles: a Teacher-specific manifest maps the eight server `vehicleAssetKey` values
+  to side-view WebPs under `assets/game/teacherRace/hoverKarts/` (384×226, derived from
+  one approved GREEN master by a deterministic recolor pipeline; Student rear-view art
+  is never reused); an unknown key renders the colored CSS marker
+- vehicle geometry has one source (asset aspect ratio, compact/wide heights, edge gap);
+  width and rail inset are derived, so the kart stays inside the strip at 0% and 100%
+- movement is target-only: a 1000 ms linear tween to the latest server position, no
+  prediction; immediate under reduced motion
+- leaderboard density is responsive: narrow side panels hide streak, then progress,
+  through a container query; rank, name, score and status always stay
+- disconnected players mute the label and status while the kart stays readable
+- the shared brand lockup keeps a stable shuffle (no restart on parent re-renders, no
+  layout shift while scrambling, 10 s default / 30 s on the projector); the projector
+  shows its own logo only in fullscreen, never in the footer
+- world art: one art owner (`teacherRaceProjectorArt.js`) for the jungle backdrop,
+  START/FINISH signs, verge and UI accents; translated labels and the race title stay
+  DOM text over the art; dark mode tints the same art; decoration steps down on narrow
+  layouts; the projector fills the workspace height through the AppShell variables
+- the leaderboard renders the server roster order untouched; rows slide by
+  `racePlayerId` identity (320 ms ease-out, instant under reduced motion); ranks 1/2/3
+  get gold/silver/bronze row tiers and medals from the server rank only, ties share
+  them
+- `useFreshFeedItem` is the "something new happened" seam (lightning pulse today,
+  future sound cues); the connection footer shows the Wi-Fi art only while LIVE
+- the waiting room preloads the projector and vehicle art once and never blocks Start
+- the workspace shell collapses its navbar at `lg` on the live route (`sm` elsewhere)
+  from one breakpoint key; the preferred-device notice sits below the header.
+
 ## Stale client state to clean
 
-- live/results route constants exist without routes.
+- results route constant exists without a route.
 
 ## Immediate client priority
 
 ```text
-Closed C2 core (competition truth, synchronization, opponents, proof-gated finish)
-→ teacher live race (C3) → results (C4)
+Teacher live race (C3) complete
+→ branch synchronized with main (S3-01 results, S3-02 player counts) → results (C4)
 → race sound polish (C2-A, deferred) and carried-forward pre-release device/recovery QA
 ```

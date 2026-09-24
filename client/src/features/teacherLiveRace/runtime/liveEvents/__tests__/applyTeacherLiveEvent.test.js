@@ -130,6 +130,35 @@ describe("applyTeacherLiveEvent known events", () => {
     expect(replaced.runtime.players.map((player) => player.displayName)).toEqual(["Noa", "Dan", "Lior B"]);
   });
 
+  it.each([
+    ["a new player", teacherLivePlayer({ racePlayerId: 93, displayName: "Lior", laneNumber: 2, rank: 3 })],
+    ["an existing player moving", teacherLivePlayer({ laneNumber: 2 })],
+  ])("recovers when %s claims another player's lane", (_label, player) => {
+    const runtime = runtimeAt(12);
+
+    const result = applyTeacherLiveEvent(
+      runtime,
+      event({ type: "PLAYER_JOINED", payload: { player } }),
+    );
+
+    expect(result.kind).toBe(TEACHER_LIVE_EVENT_OUTCOMES.RECOVERY_REQUIRED);
+    expect(result.recoveryReason).toBe(TEACHER_LIVE_RECOVERY_REASONS.MALFORMED_PAYLOAD);
+    expect(result.runtime).toBe(runtime);
+    expect(result.feedItems).toEqual([]);
+  });
+
+  it("accepts an existing player updated on its own lane", () => {
+    const result = applyTeacherLiveEvent(
+      runtimeAt(12),
+      event({ type: "PLAYER_JOINED", payload: { player: teacherLivePlayer({ displayName: "Noa B" }) } }),
+    );
+
+    expect(result.kind).toBe(TEACHER_LIVE_EVENT_OUTCOMES.APPLIED);
+    expect(
+      result.runtime.players.map(({ racePlayerId, laneNumber, displayName }) => [racePlayerId, laneNumber, displayName]),
+    ).toEqual([[91, 1, "Noa B"], [92, 2, "Dan"]]);
+  });
+
   it("applies race start, keeps unrelated race metadata and replaces the roster", () => {
     const runtime = mapTeacherRaceLiveState(
       teacherLiveStateResponse({ status: "WAITING_FOR_PLAYERS", eventVersion: 2 }),
@@ -185,5 +214,33 @@ describe("applyTeacherLiveEvent known events", () => {
     expect(raceFinished.runtime.race.status).toBe("FINISHED");
     expect(raceFinished.runtime.race.finishedAtEpochMs).toBe(1_755_600_090_000);
     expect(raceFinished.runtime.eventVersion).toBe(14);
+  });
+
+  it("replaces the roster in the incoming server standings order instead of keeping old array positions", () => {
+    const runtime = mapTeacherRaceLiveState(
+      teacherLiveStateResponse({
+        players: [
+          teacherLivePlayer({ racePlayerId: 1, displayName: "Dan", laneNumber: 1, rank: 1, position: 300 }),
+          teacherLivePlayer({ racePlayerId: 2, displayName: "Maya", laneNumber: 2, rank: 2, position: 200 }),
+          teacherLivePlayer({ racePlayerId: 3, displayName: "Lior", laneNumber: 3, rank: 3, position: 100 }),
+        ],
+      }),
+    );
+
+    const reordered = applyTeacherLiveEvent(
+      runtime,
+      event({
+        payload: {
+          players: [
+            teacherLivePlayer({ racePlayerId: 2, displayName: "Maya", laneNumber: 2, rank: 1, position: 320 }),
+            teacherLivePlayer({ racePlayerId: 1, displayName: "Dan", laneNumber: 1, rank: 2, position: 310 }),
+            teacherLivePlayer({ racePlayerId: 3, displayName: "Lior", laneNumber: 3, rank: 3, position: 100 }),
+          ],
+        },
+      }),
+    );
+
+    expect(reordered.runtime.players.map((player) => player.racePlayerId)).toEqual([2, 1, 3]);
+    expect(reordered.runtime.players.map((player) => player.rank)).toEqual([1, 2, 3]);
   });
 });

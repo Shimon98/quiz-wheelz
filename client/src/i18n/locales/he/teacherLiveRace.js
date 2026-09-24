@@ -1,14 +1,34 @@
 export default {
-  foundation: {
+  header: {
     live: "בשידור חי",
     finished: "המרוץ הסתיים",
+    fullscreenEnter: "מסך מלא",
+    fullscreenExit: "יציאה ממסך מלא",
+  },
+  stats: {
+    elapsed: "זמן שעבר",
+    elapsedUnavailable: "לא זמין",
+    participants: "משתתפים",
     roomCode: "קוד חדר",
-    players: "משתתפים",
-    eventVersion: "גרסת אירועים",
-    connection: "חיבור",
-    rank: "מקום",
-    playerName: "שם",
-    position: "מיקום במסלול",
+  },
+  leaderboard: {
+    title: "טבלת הדירוג",
+    empty: "עדיין אין משתתפים במרוץ",
+    points: "{{count}} נקודות",
+    streak: "רצף {{count}}",
+  },
+  track: {
+    title: "המסלול",
+    start: "זינוק",
+    finish: "סיום",
+    lane: "נתיב {{lane}}",
+    progress: "{{percent}}%",
+  },
+  playerStatus: {
+    waiting: "ממתין",
+    racing: "במרוץ",
+    finished: "סיים",
+    disconnected: "מנותק",
   },
   connection: {
     connecting: "מתחברים...",
@@ -19,10 +39,24 @@ export default {
     error: "שגיאת חיבור",
   },
   feed: {
+    title: "אירועים חיים",
+    empty: "כשהמרוץ יתקדם, האירועים יופיעו כאן",
     correctAnswer: "{{name}}: תשובה נכונה!",
     rankUp: "{{name}} עכשיו במקום {{rank}}",
     playerFinished: "{{name}} בקו הסיום!",
     raceFinished: "המרוץ הסתיים!",
+  },
+  footer: {
+    backToRaces: "חזרה לכל המרוצים",
+  },
+  finished: {
+    title: "המרוץ הסתיים!",
+    body: "כל הכבוד לכל המשתתפים. הלוח הסופי נשאר על המסך.",
+  },
+  deviceAdvice: {
+    title: "מומלץ מסך גדול",
+    body: "המסך הזה עובד גם כאן, אבל למקרן בכיתה מומלץ מסך רחב במצב לרוחב.",
+    confirm: "הבנתי, ממשיכים",
   },
   states: {
     loading: "טוענים את המרוץ החי...",
