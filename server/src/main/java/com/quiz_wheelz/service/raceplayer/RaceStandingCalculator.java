@@ -71,15 +71,20 @@ public class RaceStandingCalculator {
     }
 
     public long finishOrderKey(RacePlayer racePlayer) {
+        Long finishedAtEpochMs = resolveFinishedAtEpochMs(racePlayer);
+        return finishedAtEpochMs == null ? UNKNOWN_FINISH_ORDER_KEY : finishedAtEpochMs;
+    }
+
+    public Long resolveFinishedAtEpochMs(RacePlayer racePlayer) {
+        Objects.requireNonNull(racePlayer);
+
         if (racePlayer.getFinishedAtEpochMs() != null) {
             return racePlayer.getFinishedAtEpochMs();
         }
 
-        if (racePlayer.getFinishedAt() != null) {
-            return DateTimeUtils.toEpochMilli(racePlayer.getFinishedAt(), zoneId);
-        }
-
-        return UNKNOWN_FINISH_ORDER_KEY;
+        return racePlayer.getFinishedAt() == null
+                ? null
+                : DateTimeUtils.toEpochMilli(racePlayer.getFinishedAt(), zoneId);
     }
 
     public static double storedPosition(RacePlayer racePlayer) {

@@ -1,8 +1,8 @@
 # Testing and Definition of Done
 
 **Status:** Canonical  
-**Audit date:** 2026-09-10
-**Code baseline:** `main@bb2d00530f4637d4d1f75849fb0397ac443bc46a`
+**Audit date:** 2026-09-20
+**Code baseline:** `main@b577a3b3b63142980cfdccb057d89311ce3d85a6`
 **This document owns:** the complete automated/manual quality bar for every feature and phase
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -44,6 +44,11 @@ Required gameplay tests:
 - valid/invalid join
 - capacity and lane uniqueness
 - start ownership/status/player-count
+- dashboard exact RaceSummary field set and explicit non-zero `currentPlayers`
+- dashboard one grouped all-status RacePlayer count for multiple races, zero fallback
+  without invented rows, preserved race ordering and no count query for an empty list
+- dashboard counters keep IN_PROGRESS active and FINISHED finished while waiting
+  includes both WAITING_FOR_PLAYERS and READY
 - question generation constraints
 - exactly four unique choices
 - no correct-answer leak
@@ -152,6 +157,17 @@ Required gameplay tests:
 - exact teacher live-state `baseMovementUnitsPerSecond` serialization, absence of the
   student-only `movementUnitsPerSecond` field, and sourcing from
   `RaceProgressRules.BASE_MOVEMENT_UNITS_PER_SECOND`
+- teacher final-results exact top-level, subject, summary, award and player field sets
+  with no runtime/internal leakage; canonical path, GET method, success envelope and
+  TEACHER controller security
+- final-results missing/foreign ownership hiding, FINISHED-only availability for
+  every other Race status, one player-list read and read-only repeat stability
+- final-results shared standing order/ranks, precise finish epoch plus legacy fallback,
+  unique/tied/no-finisher winners, all-status participant inclusion, disconnected
+  position, highest-streak and shared vehicle-asset-key mapping
+- exact four-field zero-safe final summary and factual positive-value score/correct/streak
+  awards, including unique leaders, every tie, DISCONNECTED eligibility, zero-value
+  omission and same-player multi-award truth
 - exact six-value durable live-event vocabulary, table/column/unique/index metadata
   and ordered after-version repository retrieval
 - exact typed envelope/payload serialization; `QUESTION_ANSWERED` leaks no choice,

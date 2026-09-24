@@ -1,8 +1,8 @@
 # Server Current State
 
 **Status:** Canonical  
-**Audit date:** 2026-09-10
-**Code baseline:** `main@bb2d00530f4637d4d1f75849fb0397ac443bc46a`
+**Audit date:** 2026-09-20
+**Code baseline:** `main@b577a3b3b63142980cfdccb057d89311ce3d85a6`
 **This document owns:** the implemented backend capabilities, gaps and stale assumptions
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -41,8 +41,14 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 
 - login/me/logout
 - subjects
-- teacher dashboard
-- race list/create
+- teacher dashboard and race list through `GET /api/teacher/dashboard`; the existing
+  `RaceSummaryResponse.raceId` and `status` are sufficient navigation truth and
+  route selection remains client-owned without URL/action fields or another endpoint
+- dashboard `currentPlayers` counts every durable RacePlayer status using one grouped
+  query for a non-empty ordered race list, defaults missing groups to zero and skips
+  the count query for an empty list; `waitingRaces` counts WAITING_FOR_PLAYERS plus
+  READY, while `activeRaces` remains IN_PROGRESS
+- race create
 - unique room code
 - teacher-owned room data
 - real RacePlayers in waiting room
@@ -59,6 +65,21 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - `Race.liveEventVersion` persists as non-null `live_event_version` with entity and
   database default `0`; S2-02 atomically increments it with each same-transaction
   durable event. Production migration remains Phase 6 debt.
+- Teacher-owned `GET /api/teacher/races/{raceId}/results` is a read-only final-results
+  query available only when the Race is FINISHED. Missing and foreign Races remain
+  hidden as `RACE_NOT_FOUND`; every other status returns
+  `RACE_RESULTS_NOT_AVAILABLE`. It reuses `SubjectResponse`, exposes Race lifecycle
+  epochs, and includes all participants in the shared `RaceStandingCalculator` order.
+  `winnerRacePlayerIds` contains every FINISHED rank-1 player, preserving real ties
+  and returning empty when nobody finished. The summary contains exactly
+  `finishedPlayers`, `disconnectedPlayers`, `totalCorrectAnswers` and
+  `totalWrongAnswers`. Positive factual awards are limited to `HIGHEST_SCORE`,
+  `MOST_CORRECT_ANSWERS` and `BEST_STREAK`; all ties are preserved in final-standing
+  order, DISCONNECTED players remain eligible and one player may receive multiple
+  awards. Player finish epochs prefer durable `finishedAtEpochMs` and fall back to
+  legacy `finishedAt` in the application zone. The query reads existing RacePlayer
+  truth once and adds no RaceResult persistence, Redis state, gameplay mutation or
+  live event.
 
 ### Durable live-event model
 
@@ -287,7 +308,6 @@ recovery never subtracts movement awarded in degraded mode.
   arbitration (decision-instant standings, signal-only student SSE, proof-gated
   arbitration); the teacher live-state/durable-event/SSE foundation for C3 already
   exists, so further server work is driven only by actual C3/results requirements.
-- Durable final-results query/model closure.
 - Event/effect system for junction/luck/announcements.
 - Catch-up-assistance policy.
 - Registration, email verification, reset and 2FA.
@@ -318,7 +338,8 @@ Infrastructure reliability
 → student playable-loop contract closure
 → teacher live-state/SSE
 → C2 competition truth and finish arbitration (done 2026-09-10)
-→ results
+→ S3 final-results query (done 2026-09-20, S3-01)
+→ S3 dashboard navigation/count closure (done 2026-09-20, S3-02)
 → game events
 → full auth/2FA
 ```

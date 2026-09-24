@@ -1,8 +1,8 @@
 # Project Current State
 
 **Status:** Canonical  
-**Audit date:** 2026-08-25
-**Code baseline:** `main@ef3cd3bac2fb10ee2f7a7e9586571f70e7127ae3`
+**Audit date:** 2026-09-20
+**Code baseline:** `main@b577a3b3b63142980cfdccb057d89311ce3d85a6`
 **This document owns:** the audited implementation status across the complete product
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -10,9 +10,9 @@
 > then update this document in the same pull request.
 ## Audit boundary
 
-This state is based on GitHub `main` at the recorded baseline plus the completed
-S0-01 development-infrastructure implementation verified on both development
-machines.
+The recorded baseline is the merged `main` used to start the S3-02 audit. The S3-02
+changes documented below are the milestone changes measured relative to that
+baseline.
 
 Local client checkpoint, 2026-09-08: C1 development is accepted for
 progression to C2 on `feature/C1-Student-playable-loop`. The single-player
@@ -21,15 +21,11 @@ world, HUD, accepted-answer/combo feedback and real server flow are implemented.
 audited `main` baseline or claim a production release. Remaining browser/device
 QA and near-term audio polish are tracked in the canonical client plan.
 
-Local C2 closure checkpoint, 2026-09-13 (branch
-`feature/C2-01-competition-truth-finish-arbitration`): C2 core is implemented and
-closed for PR review — server competition truth with decision-instant standings and
-finish arbitration (C2-01), student live stream and snapshot accumulator (C2-02),
-pooled opponent rendering with shared motion, 2/4/7 density, lane-fit and static
-per-color vehicle art (C2-03), and proof-gated finish presentation (C2-04). 530 client
-tests/60 files and 729 server tests pass; live two-player and eight-player browser QA
-on the final build passed the closure scenarios. Physical-device acceptance and the
-merge remain open; C2-A race sound is deferred polish.
+Repository checkpoint, 2026-09-20: C2 competition truth, synchronization, opponents
+and proof-gated finish presentation merged through PR #68. C3 Teacher Live route,
+initial/recovery state, durable SSE synchronization and projector UI foundation
+merged through PR #69. Physical-device acceptance and C2-A race sound remain open
+polish; the C4 Result Screen remains future client work.
 
 C3 checkpoint, 2026-09-24: the teacher live race is COMPLETE on the client. C3-01
 (live route and authoritative live-state), C3-02 (durable teacher SSE sync with version
@@ -43,7 +39,7 @@ and title plaque, animated authoritative leaderboard with podium tiers and medal
 waiting-room art preload, live-route workspace navigation) are DONE. Release QA items
 needing a live backend and a real browser: an overtake observed with bots, fullscreen →
 Esc → fullscreen, reconnect without replayed pulses, phone rotation inside the
-workspace shell. C4 Results is next.
+workspace shell. C4 Results is next and consumes the S3-01 final-results read model.
 
 ## Executive summary
 
@@ -56,8 +52,10 @@ server-authoritative movement (C1-03M/S1-01B) and hardened repeat-action semanti
 with time, correct answers boost speed and add progress bonuses, and timeouts
 slow more than wrong answers. Real absence freezes position without pausing
 question deadlines; reconnect never awards offline catch-up, and absent
-players do not keep the class race open. The main missing product slice is
-results; opponents (C2) and the teacher live projector (C3) are implemented.
+players do not keep the class race open. C2 multiplayer competition and C3 Teacher
+Live are implemented: C3-01/C3-02 merged in PR #69 and C3-03 … C3-08 are complete on
+the client. The server final-results read model is implemented by S3-01; the C4 Result
+Screen is the next client stage.
 
 ## Product status board
 
@@ -80,13 +78,13 @@ results; opponents (C2) and the teacher live projector (C3) are implemented.
 | Heartbeat/leave/reconnect | DONE | heartbeat + reconnect lifecycle DONE (C1-05); leave deliberately unwired | DONE |
 | Student Pixi race foundation | N/A | UI-10A–G DONE | PARTIAL feature |
 | Student question panel/HUD | server data exists | panel + timer DONE (C1-02); HUD stats DONE (C1-04) | DONE |
-| Opponent vehicles/nearby players | DONE snapshot contract + decision-instant standings (C2-01) | DONE pooled renderer, shared motion, 2/4/7 density, lane-fit, static colors (C2-03) | DONE on C2 branch (device acceptance open) |
-| Student live stream + finish arbitration | DONE signal-only SSE, proof-gated arbitration | DONE SSE invalidation + polling fallback, proof-gated finish presentation (C2-02/C2-04) | DONE on C2 branch |
-| Teacher live-state query | DONE incl. lifecycle epochs (C3-00) | DONE live route + contract mapping (C3-01) | DONE |
+| Opponent vehicles/nearby players | DONE snapshot contract + decision-instant standings (C2-01) | DONE pooled renderer, shared motion, 2/4/7 density, lane-fit, static colors (C2-03) | DONE (device acceptance open) |
+| Student live stream + finish arbitration | DONE signal-only SSE, proof-gated arbitration | DONE SSE invalidation + polling fallback, proof-gated finish presentation (C2-02/C2-04) | DONE |
+| Teacher live-state query | DONE incl. lifecycle epochs (C3-00) | DONE live route, initial/recovery integration (C3-01) | DONE |
 | Teacher durable live-event model | DONE | N/A | SERVER FOUNDATION |
-| Teacher SSE | DONE | DONE durable sync + authoritative recovery (C3-02) | DONE |
+| Teacher SSE | DONE | DONE durable sync, authoritative recovery/fallback (C3-02) | DONE |
 | Teacher live projector UI | N/A | DONE jungle-art projector with eight side-view vehicles, animated server-ordered leaderboard with podium medals, responsive workspace navigation (C3-03 … C3-08) | DONE |
-| Results | basic finish logic exists | route constant only | PLANNED |
+| Results | DONE final read model (S3-01) | C4 NEXT | PARTIAL feature |
 | Junction/highway/dirt road | PLANNED | PLANNED | REQUIRED |
 | Fair luck/power-ups | foundation ideas only | PLANNED | REQUIRED |
 | Catch-up assistance | foundation ideas only | PLANNED | REQUIRED |
@@ -98,7 +96,16 @@ results; opponents (C2) and the teacher live projector (C3) are implemented.
 - Java 21 / Spring Boot application.
 - Spring Security with JWT cookies and role/ownership checks.
 - `User`, `Subject`, `Race`, `RacePlayer`, question and answer domains.
-- Teacher dashboard, race creation, room data and start command.
+- Teacher dashboard, race creation, room data and start command. Dashboard race
+  summaries retain their exact contract while `currentPlayers` now counts all durable
+  RacePlayer rows through one grouped query for the complete ordered race list;
+  races without players map to zero and an empty dashboard skips the count query.
+  `waitingRaces` includes WAITING_FOR_PLAYERS and READY, while `activeRaces`
+  remains IN_PROGRESS.
+- Dashboard `raceId` plus `status` are the complete server-owned navigation truth:
+  WAITING_FOR_PLAYERS/READY use room, IN_PROGRESS uses live, FINISHED uses S3-01
+  results and CANCELLED has no primary target. The client owns route selection; no
+  server URL/action fields or separate navigation endpoint exist.
 - RacePlayer join with race-specific cookie/session.
 - Idempotent question-template seeding and math generation patterns.
 - Generated-question and choice persistence before delivery.
@@ -160,6 +167,14 @@ results; opponents (C2) and the teacher live projector (C3) are implemented.
   initial/recovery snapshot. The legacy generic `/api/sse` implementation is
   unchanged and unused by S2; production cross-node fanout and schema migrations
   remain later production work.
+- Teacher-owned `GET /api/teacher/races/{raceId}/results` exposes a FINISHED-only,
+  read-only durable result model from the existing Race/RacePlayer truth. It includes
+  the subject, lifecycle epoch timestamps, every participant in shared authoritative
+  standing order, competition ranks, all rank-1 finishers, zero-safe summary totals,
+  and factual positive-value score/correct-answer/streak awards with all ties. Missing
+  and foreign Races remain hidden as `RACE_NOT_FOUND`; non-finished statuses return
+  `RACE_RESULTS_NOT_AVAILABLE`. No RaceResult persistence, Redis state, result event,
+  movement settlement or finish mutation is introduced.
 
 ## Client implemented
 
@@ -169,6 +184,8 @@ results; opponents (C2) and the teacher live projector (C3) are implemented.
 - i18next Hebrew/English namespaces.
 - Landing and teacher authentication screens.
 - Teacher workspace, dashboard, race list, create-race flow and waiting room.
+- Teacher Live route/page with initial snapshot, durable SSE updates, recovery and
+  projector-oriented track, leaderboard and activity presentation.
 - Student join and waiting flow.
 - Student race UI-10A–G:
   - common runtime contract
@@ -191,29 +208,21 @@ results; opponents (C2) and the teacher live projector (C3) are implemented.
 
 These must be corrected during the next client integration work:
 
-- The results client route is a constant only; it is not routed.
+- The results route constant exists without the C4 Result Screen route/page.
 - Old Stage B issue tables mark completed backend work as TODO.
 
 ## Immediate next product outcome
 
 ```text
-Teacher creates and starts a race
-→ RacePlayer joins
-→ student race route loads real race-state
-→ real question appears
-→ answer is submitted
-→ server snapshot moves the hover kart
-→ HUD updates
-→ refresh/reconnect recovers the same player
+Teacher completes a multi-player race
+→ server exposes durable final ranking, winners, summary and factual awards
+→ C4 loads the final result read model
+→ teacher sees the complete Result Screen
+→ navigation returns to race history/dashboard
 ```
 
-No teacher client projector, luck event, junction or 2FA work should interrupt this
-slice unless it is required to make the slice run safely.
-
-C3 — Teacher live race is COMPLETE on the client (C3-01/C3-02 merged in PR #69;
-C3-03 … C3-08 projector, production art, leaderboard dynamics and responsive polish
-DONE). C4 Results is the next
-client stage: it consumes the teacher results endpoint after the branch is synchronized
-with `main`.
-C2-A race sound polish is deferred polish backlog. Required physical-device/recovery
-QA remains visible in the client plan and must pass before release.
+C2 and C3 Teacher Live are implemented: C3-01/C3-02 merged in PR #69 and C3-03 … C3-08
+(projector, production art, leaderboard dynamics and responsive polish) are COMPLETE on
+the client. S3-01 provides the server final-results read model; C4 Results is the next
+client stage and consumes it. C2-A race sound and required physical-device/recovery QA
+remain visible pre-release polish.

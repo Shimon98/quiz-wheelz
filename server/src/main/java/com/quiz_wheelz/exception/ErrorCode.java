@@ -63,6 +63,11 @@ public enum ErrorCode {
             ErrorMessages.RACE_LIVE_EVENT_CURSOR_INVALID,
             HttpStatus.BAD_REQUEST
     ),
+    RACE_RESULTS_NOT_AVAILABLE(
+            3030,
+            ErrorMessages.RACE_RESULTS_NOT_AVAILABLE,
+            HttpStatus.CONFLICT
+    ),
 
     INTERNAL_ERROR(9999, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
 

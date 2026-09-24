@@ -1,8 +1,8 @@
 # Architecture and Contracts
 
 **Status:** Canonical  
-**Audit date:** 2026-09-10
-**Code baseline:** `main@bb2d00530f4637d4d1f75849fb0397ac443bc46a`
+**Audit date:** 2026-09-20
+**Code baseline:** `main@b577a3b3b63142980cfdccb057d89311ce3d85a6`
 **This document owns:** the cross-system architecture, data ownership, API boundaries and runtime contracts
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -45,7 +45,7 @@ Owns durable data:
 - generated questions and choices
 - submitted answers
 - durable progress/finish state
-- future effects/events/results
+- future effects plus durable live events and result queries
 - `lastSeenAt` fallback for reconnect.
 
 ### Redis
@@ -131,19 +131,36 @@ Exact future paths must be agreed in `ApiPaths` before client wiring.
 ```http
 GET  /api/subjects
 GET  /api/teacher/dashboard
-GET  /api/teacher/races
 POST /api/teacher/races
 GET  /api/teacher/races/{raceId}/room
 GET  /api/teacher/races/{raceId}/live-state
 GET  /api/teacher/races/{raceId}/events/stream
+GET  /api/teacher/races/{raceId}/results
 POST /api/teacher/races/{raceId}/start
 ```
 
-Planned:
+`GET /api/teacher/dashboard` is the implemented complete teacher race-list query;
+there is no dedicated `GET /api/teacher/races` collection endpoint. Each existing
+`RaceSummaryResponse` supplies the minimal server-owned navigation truth through
+`raceId` and `status`. Route selection remains client-owned and requires no server
+URL, action or permission fields:
 
-```http
-GET /api/teacher/races/{raceId}/results
+```text
+WAITING_FOR_PLAYERS → room
+READY               → room
+IN_PROGRESS         → live
+FINISHED            → results
+CANCELLED           → no primary action
 ```
+
+The FINISHED target uses the S3-01 results endpoint, while IN_PROGRESS uses the
+existing teacher live route/API; the C4 client Result Screen remains future work.
+Dashboard `currentPlayers` is the durable count of every RacePlayer row for that
+Race, regardless of player status. A non-empty dashboard loads those counts with one
+grouped repository query and maps races without a count row to zero; an empty
+dashboard performs no player-count query. `waitingRaces` includes both
+`WAITING_FOR_PLAYERS` and `READY`, while `activeRaces` remains
+`IN_PROGRESS`. Newly created Race command responses continue to report zero players.
 
 ### Teacher live-state snapshot
 
@@ -198,6 +215,42 @@ positions; it must not calculate or advance authoritative gameplay progress from
 baseline, player speed and an event/server timestamp.
 The column is DEV `ddl-auto=update` safety, not a production migration; migrations
 remain Phase 6 debt.
+
+### Teacher final-results read model
+
+`GET /api/teacher/races/{raceId}/results` is TEACHER-only, ownership-hidden, and
+available only for `FINISHED` Races. Missing and foreign Races both return
+`RACE_NOT_FOUND`; every other Race status returns `RACE_RESULTS_NOT_AVAILABLE`.
+The top-level data fields are exactly:
+
+```text
+raceId, title, roomCode, subject, status, maxPlayers, playerCount, totalDistance,
+startedAtEpochMs, finishedAtEpochMs, winnerRacePlayerIds, summary, awards, players
+```
+
+`subject` reuses `SubjectResponse` and contains `id, name, code`. Lifecycle values use the application-zone
+epoch-millisecond conversion shared with teacher live-state. Players expose exactly
+`racePlayerId, displayName, laneNumber, vehicleTypeKey, vehicleColorKey,
+vehicleAssetKey, rank, score, correctAnswers, wrongAnswers, bestStreak, position,
+status, finishedAtEpochMs`.
+
+`RaceStandingCalculator` remains the only ranking owner. All RacePlayers are included
+in its deterministic final order; exact competitive ties share rank. Winners are all
+FINISHED players at rank 1, in that order, so a real tie returns multiple IDs and no
+finisher returns an empty list. A FINISHED player's persisted `finishedAtEpochMs` is
+returned exactly, with legacy `finishedAt` converted in the application zone; a
+non-finisher has no result finish timestamp.
+
+The summary contains exactly finished/disconnected counts and total correct/wrong
+answers, with zeroes for an empty roster. Awards are factual positive maxima across
+all joined players for `HIGHEST_SCORE`,
+`MOST_CORRECT_ANSWERS`, and `BEST_STREAK`. Every tied player is returned in final
+standing order, and one player may truthfully receive multiple awards. Zero-value
+awards are omitted.
+
+The GET reads the existing Race/RacePlayer durable truth once and never settles
+movement, arbitrates or changes finish state, touches Redis or presence, appends live
+events, increments `liveEventVersion`, or creates duplicate RaceResult persistence.
 
 ### Durable teacher live events
 

@@ -450,6 +450,6 @@ teacher/SSE/results/auth work does not belong to that single-player gate.
 
 ```text
 Teacher live race (C3) complete
-→ synchronize the branch with main → results (C4)
+→ branch synchronized with main (S3-01 results, S3-02 player counts) → results (C4)
 → race sound polish (C2-A, deferred) and carried-forward pre-release device/recovery QA
 ```

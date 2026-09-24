@@ -25,6 +25,8 @@ public final class ErrorMessages {
             "Focus event was already recorded with a different type";
     public static final String RACE_LIVE_EVENT_CURSOR_INVALID =
             "Race live event cursor is invalid";
+    public static final String RACE_RESULTS_NOT_AVAILABLE =
+            "Race results are not available until the race is finished";
 
     public static final String QUESTION_TEMPLATE_NOT_FOUND =
             "Active question template not found";

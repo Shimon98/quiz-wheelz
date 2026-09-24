@@ -951,8 +951,9 @@ retryable error states are explicit.
 
 ## C4 — Results — NEXT
 
-Starts after this branch is synchronized with `main`; consumes the teacher results
-endpoint from the server results work and does not duplicate it.
+The branch is synchronized with `main` (S3-01 final results, S3-02 dashboard player
+counts). C4 consumes the teacher results endpoint from the server results work and
+does not duplicate it.
 
 - student finish state
 - teacher results route/page

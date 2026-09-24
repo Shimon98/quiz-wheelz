@@ -106,16 +106,16 @@ Client checkpoint (2026-09-24): the Phase 2 client scope is COMPLETE (C3-01 … 
 races during C3-02/C3-03 QA and the final projector was reviewed live. Environment-
 dependent release checks (an observed overtake, real fullscreen, reconnect, phone
 rotation in the shell) stay in the client plan. The
-next client phase is Phase 3 results (C4), after synchronizing the branch with `main`.
+next client phase is Phase 3 results (C4) on top of the S3-01 final-results read model.
 
 ## Phase 3 — Results and integration closure
 
 **Goal:** the core race has a complete start-to-results lifecycle.
 
 Server:
-- durable result model/query if not already sufficient
-- final ranking and statistics
-- idempotent finish behavior.
+- durable final-result query from existing Race/RacePlayer truth — DONE (S3-01)
+- final ranking, summary and factual awards — DONE (S3-01)
+- idempotent finish behavior — DONE and reused by S3-01.
 
 Client:
 - student finish state
