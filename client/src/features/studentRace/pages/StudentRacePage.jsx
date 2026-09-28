@@ -6,6 +6,7 @@ import useStudentRaceQuestion from "../hooks/useStudentRaceQuestion";
 import useStudentRaceAnswer from "../hooks/useStudentRaceAnswer";
 import useStudentRaceRecoverySync from "../hooks/useStudentRaceRecoverySync";
 import useStudentRaceFinishExperience from "../hooks/useStudentRaceFinishExperience.js";
+import useStudentResultsProof from "../hooks/useStudentResultsProof.js";
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { RACE_VIEWS } from "../../../shared/racePlayer/getRaceView";
 import RacePlayerSessionGate from "../../../shared/racePlayer/RacePlayerSessionGate";
@@ -32,12 +33,16 @@ function ResolvedStudentRacePage({ runtimeSession }) {
     isMutationCurrent,
     finishOrder,
     requestFinishArbitration,
+    resultsWatch,
   } = useRaceBootstrap({ syncEnabled: runtimeSession.isGameplayConnectionReady,
     finishSyncEnabled: runtimeSession.isPassiveRaceRequestReady });
 
   const finishExperience = useStudentRaceFinishExperience({ runtimeState, view, finishOrder,
     finishSyncEnabled: runtimeSession.isPassiveRaceRequestReady && !isRacePlayerSessionError(raceError),
     requestFinishArbitration });
+
+  useStudentResultsProof({ enabled: resultsWatch && !finishExperience.keepRaceScreen, runtimeState,
+    finishOrder, requestFinishArbitration });
 
   const questionEnabled =
     runtimeSession.isGameplayConnectionReady &&
