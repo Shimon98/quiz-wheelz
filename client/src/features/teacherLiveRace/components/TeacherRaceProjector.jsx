@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
-import { Text, Title } from "@mantine/core";
+import { Link } from "react-router-dom";
+import { Button, Text, Title } from "@mantine/core";
 import { motion, useReducedMotion } from "framer-motion";
+import { Trophy } from "lucide-react";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { TEACHER_RACE_PROJECTOR_ART } from "../assets/teacherRaceProjectorArt";
@@ -10,6 +12,7 @@ import {
   TEACHER_PROJECTOR_STYLES as S,
 } from "../styles/teacherRaceProjectorStyles";
 import TeacherRaceProjectorHeader from "./TeacherRaceProjectorHeader";
+import TeacherRaceWorld from "./TeacherRaceWorld";
 import TeacherRaceProjectorFooter from "./TeacherRaceProjectorFooter";
 import TeacherLeaderboardPanel from "./leaderboard/TeacherLeaderboardPanel";
 import TeacherRaceTrack from "./track/TeacherRaceTrack";
@@ -25,7 +28,7 @@ const FINISHED_TROPHY_ENTRANCE = Object.freeze({
   transition: { type: "spring", stiffness: 260, damping: 16 },
 });
 
-function TeacherRaceFinishedBanner() {
+function TeacherRaceFinishedBanner({ resultsPath }) {
   const { t } = useTranslation(I18N_NAMESPACES.TEACHER_LIVE_RACE);
   const reduce = useReducedMotion();
 
@@ -47,30 +50,17 @@ function TeacherRaceFinishedBanner() {
           <Text size="sm" c="dimmed">
             {t("finished.body")}
           </Text>
+          <Button
+            component={Link}
+            to={resultsPath}
+            mt="xs"
+            radius="xl"
+            leftSection={<Trophy size={18} aria-hidden="true" />}
+          >
+            {t("finished.viewResults")}
+          </Button>
         </div>
       </div>
-    </div>
-  );
-}
-
-function TeacherRaceWorld() {
-  return (
-    <div className={S.decorLayer} aria-hidden="true">
-      <img
-        className={S.worldBackdrop}
-        src={TEACHER_RACE_PROJECTOR_ART.backdrop}
-        alt=""
-        draggable={false}
-        decoding="async"
-        data-projector-backdrop
-      />
-      <span className={S.worldTint} />
-      <span className={S.worldVergeStart}>
-        <img className={S.worldVerge} src={TEACHER_RACE_PROJECTOR_ART.verge} alt="" draggable={false} decoding="async" />
-      </span>
-      <span className={S.worldVergeEnd}>
-        <img className={S.worldVerge} src={TEACHER_RACE_PROJECTOR_ART.verge} alt="" draggable={false} decoding="async" />
-      </span>
     </div>
   );
 }
@@ -85,6 +75,7 @@ export default function TeacherRaceProjector({
   fullscreenSupported,
   onToggleFullscreen,
   onBackToRaces,
+  resultsPath,
 }) {
   return (
     <section
@@ -102,7 +93,7 @@ export default function TeacherRaceProjector({
         onToggleFullscreen={onToggleFullscreen}
       />
 
-      {viewModel.race.isFinished ? <TeacherRaceFinishedBanner /> : null}
+      {viewModel.race.isFinished ? <TeacherRaceFinishedBanner resultsPath={resultsPath} /> : null}
 
       <div className={S.main}>
         <div className={S.leaderboardPanel}>

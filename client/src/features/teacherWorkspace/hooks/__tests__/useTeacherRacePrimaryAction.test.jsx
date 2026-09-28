@@ -1,20 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
 
-import i18n from "../../../../i18n/i18n";
-import { I18N_NAMESPACES } from "../../../../i18n/i18nConstants";
 import useTeacherRacePrimaryAction from "../useTeacherRacePrimaryAction";
-import { showInfoNotification } from "../../../../shared/notifications/appNotifications";
 
 const { navigateMock } = vi.hoisted(() => ({ navigateMock: vi.fn() }));
 
 vi.mock("react-router-dom", async (importOriginal) => ({
   ...(await importOriginal()),
   useNavigate: () => navigateMock,
-}));
-
-vi.mock("../../../../shared/notifications/appNotifications", () => ({
-  showInfoNotification: vi.fn(),
 }));
 
 function execute(race) {
@@ -27,24 +20,26 @@ beforeEach(() => {
 });
 
 describe("useTeacherRacePrimaryAction", () => {
-  it("announces the upcoming summary for a finished race without navigating", () => {
-    execute({ raceId: 7, status: "FINISHED" });
+  it.each([
+    ["a waiting race", { raceId: 7, status: "WAITING_FOR_PLAYERS" }, "/teacher/races/7/room"],
+    ["a ready race", { raceId: 7, status: "READY" }, "/teacher/races/7/room"],
+    ["a live race", { raceId: 7, status: "IN_PROGRESS" }, "/teacher/races/7/live"],
+    ["a finished race", { raceId: 7, status: "FINISHED" }, "/teacher/races/7/results"],
+    ["a finished dashboard race keyed by id", { id: 9, status: "FINISHED" }, "/teacher/races/9/results"],
+  ])("opens the right screen for %s", (_label, race, path) => {
+    execute(race);
 
-    expect(showInfoNotification).toHaveBeenCalledExactlyOnceWith({
-      message: i18n.t(`${I18N_NAMESPACES.TEACHER_WORKSPACE}:racesPage.summarySoon`),
-    });
-    expect(navigateMock).not.toHaveBeenCalled();
+    expect(navigateMock).toHaveBeenCalledExactlyOnceWith(path);
   });
 
   it.each([
     ["a cancelled race", { raceId: 7, status: "CANCELLED" }],
     ["an unknown status", { raceId: 7, status: "ARCHIVED" }],
     ["a missing race", null],
-    ["a waiting race without an id", { status: "WAITING_FOR_PLAYERS" }],
+    ["a finished race without an id", { status: "FINISHED" }],
   ])("does nothing for %s", (_label, race) => {
     expect(() => execute(race)).not.toThrow();
 
     expect(navigateMock).not.toHaveBeenCalled();
-    expect(showInfoNotification).not.toHaveBeenCalled();
   });
 });

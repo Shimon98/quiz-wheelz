@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TEACHER_RACE_PROJECTOR_ART } from "../teacherRaceProjectorArt";
-import { TEACHER_RACE_VEHICLE_MANIFEST } from "../teacherRaceVehicleManifest";
+import { RACE_VEHICLE_SIDE_ART } from "../../../../shared/raceVehicles/raceVehicleSideArt";
 
 async function loadPreloader() {
   vi.resetModules();
@@ -29,7 +29,7 @@ describe("preloadTeacherProjectorArt", () => {
       verge,
       ...Object.values(signs),
       ...Object.values(uiAccents),
-      ...Object.values(TEACHER_RACE_VEHICLE_MANIFEST),
+      ...Object.values(RACE_VEHICLE_SIDE_ART),
     ]);
 
     const urls = collectTeacherProjectorArtUrls();

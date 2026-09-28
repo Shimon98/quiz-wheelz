@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   isNotFoundError,
   isRacePlayerReconnectRequiredError,
+  isRaceResultsNotAvailableError,
   isReconnectWindowExpiredError,
 } from "../errorChecks";
+import { normalizeApiError } from "../normalizeApiError";
 
 describe("not-found error check", () => {
   it("classifies by the normalized NOT_FOUND category, whatever the error name", () => {
@@ -43,5 +45,19 @@ describe("RacePlayer reconnect error checks", () => {
     expect(isRacePlayerReconnectRequiredError(reconnectWindowExpired)).toBe(false);
     expect(isReconnectWindowExpiredError(reconnectWindowExpired)).toBe(true);
     expect(isReconnectWindowExpiredError(reconnectRequired)).toBe(false);
+  });
+});
+
+describe("race results availability check", () => {
+  it("recognizes the finished-only results conflict by its server name, not by its status", () => {
+    const notAvailable = normalizeApiError({
+      response: { status: 409, data: { error: "RACE_RESULTS_NOT_AVAILABLE", code: 3030 } },
+    });
+    const otherConflict = normalizeApiError({ response: { status: 409, data: {} } });
+
+    expect(notAvailable.category).toBe("CONFLICT");
+    expect(isRaceResultsNotAvailableError(notAvailable)).toBe(true);
+    expect(isRaceResultsNotAvailableError(otherConflict)).toBe(false);
+    expect(isRaceResultsNotAvailableError(null)).toBe(false);
   });
 });

@@ -4,6 +4,6 @@ export const WORKSPACE_NAVBAR_WIDTH = 280;
 
 export const WORKSPACE_MOBILE_BREAKPOINT = "sm";
 
-export const WORKSPACE_LIVE_RACE_BREAKPOINT = "lg";
+export const WORKSPACE_PROJECTOR_BREAKPOINT = "lg";
 
 export const WORKSPACE_MOBILE_HEADER_HEIGHT = 56;

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { MantineProvider } from "@mantine/core";
 
 import i18n from "../../../../i18n/i18n";
@@ -40,17 +41,20 @@ function renderProjector({ runtime = rosterRuntime(), elapsedMs = 61_000, ...pro
 
   render(
     <MantineProvider>
-      <TeacherRaceProjector
-        viewModel={viewModel}
-        recentEvents={[]}
-        connectionState={TEACHER_CONNECTION_STATES.LIVE}
-        serverNowEpochMs={1_755_600_100_000}
-        fullscreen={false}
-        fullscreenSupported
-        onToggleFullscreen={onToggleFullscreen}
-        onBackToRaces={onBackToRaces}
-        {...props}
-      />
+      <MemoryRouter>
+        <TeacherRaceProjector
+          viewModel={viewModel}
+          recentEvents={[]}
+          connectionState={TEACHER_CONNECTION_STATES.LIVE}
+          serverNowEpochMs={1_755_600_100_000}
+          fullscreen={false}
+          fullscreenSupported
+          onToggleFullscreen={onToggleFullscreen}
+          onBackToRaces={onBackToRaces}
+          resultsPath="/teacher/races/7/results"
+          {...props}
+        />
+      </MemoryRouter>
     </MantineProvider>,
   );
 
@@ -134,6 +138,21 @@ describe("TeacherRaceProjector", () => {
     expect(screen.getByText(text("finished.title"))).toBeInTheDocument();
     expect(screen.getByText(text("header.finished"))).toBeInTheDocument();
     expect(screen.getByText(text("connection.ended"))).toBeInTheDocument();
+  });
+
+  it("links a finished race to its results and leaves the choice to the teacher", () => {
+    renderProjector({ runtime: rosterRuntime({ status: "FINISHED" }) });
+
+    expect(screen.getByRole("link", { name: text("finished.viewResults") })).toHaveAttribute(
+      "href",
+      "/teacher/races/7/results",
+    );
+  });
+
+  it("shows no results link while the race is still live", () => {
+    renderProjector();
+
+    expect(screen.queryByRole("link", { name: text("finished.viewResults") })).toBeNull();
   });
 
   it("shows the brand once and only in fullscreen, where the workspace navbar is hidden", () => {

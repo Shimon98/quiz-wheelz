@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
 import TeacherRaceVehicle from "../track/TeacherRaceVehicle";
-import { resolveTeacherRaceVehicleAsset } from "../../assets/teacherRaceVehicleManifest";
+import { resolveRaceVehicleSideArt } from "../../../../shared/raceVehicles/raceVehicleSideArt";
 import { TEACHER_PROJECTOR_STYLES as S } from "../../styles/teacherRaceProjectorStyles";
 
-vi.mock("../../assets/teacherRaceVehicleManifest", () => ({
-  resolveTeacherRaceVehicleAsset: vi.fn(),
+vi.mock("../../../../shared/raceVehicles/raceVehicleSideArt", () => ({
+  resolveRaceVehicleSideArt: vi.fn(),
 }));
 
 const SIDE_VIEW_URL = "/assets/hover-kart-blue-side.webp";
@@ -26,11 +26,11 @@ beforeEach(() => {
 
 describe("TeacherRaceVehicle", () => {
   it("renders the mapped side-view image as a decorative, non-draggable picture", () => {
-    resolveTeacherRaceVehicleAsset.mockReturnValue(SIDE_VIEW_URL);
+    resolveRaceVehicleSideArt.mockReturnValue(SIDE_VIEW_URL);
 
     const vehicle = renderVehicle();
 
-    expect(resolveTeacherRaceVehicleAsset).toHaveBeenCalledExactlyOnceWith("TOY_CAR_BLUE");
+    expect(resolveRaceVehicleSideArt).toHaveBeenCalledExactlyOnceWith("TOY_CAR_BLUE");
     expect(vehicle.tagName).toBe("IMG");
     expect(vehicle).toHaveAttribute("src", SIDE_VIEW_URL);
     expect(vehicle).toHaveAttribute("alt", "");
@@ -42,7 +42,7 @@ describe("TeacherRaceVehicle", () => {
   });
 
   it("falls back to the colored marker for an unmapped vehicleAssetKey", () => {
-    resolveTeacherRaceVehicleAsset.mockReturnValue(null);
+    resolveRaceVehicleSideArt.mockReturnValue(null);
 
     const vehicle = renderVehicle({ vehicleAssetKey: "TOY_CAR_GOLD" });
 
@@ -55,7 +55,7 @@ describe("TeacherRaceVehicle", () => {
   });
 
   it("keeps the neutral marker when neither the asset nor the color is known", () => {
-    resolveTeacherRaceVehicleAsset.mockReturnValue(null);
+    resolveRaceVehicleSideArt.mockReturnValue(null);
 
     const vehicle = renderVehicle({ accentColor: null });
 

@@ -56,11 +56,10 @@ export default {
   racesPage: {
     title: "All races",
     subtitle: "Manage and view every race you created",
-    summarySoon: "Race summary is coming soon",
     actions: {
       openRoom: "Open room",
       watchLive: "Watch race",
-      viewSummary: "Race summary",
+      viewResults: "Race results",
       cancelled: "Cancelled",
     },
   },

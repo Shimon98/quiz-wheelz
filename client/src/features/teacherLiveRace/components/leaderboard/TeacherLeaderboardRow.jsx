@@ -2,11 +2,12 @@ import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
 
 import { I18N_NAMESPACES } from "../../../../i18n/i18nConstants";
+import RaceRankMedal from "../../../../shared/components/raceRank/RaceRankMedal";
+import { resolveRaceRankMedal } from "../../../../shared/components/raceRank/raceRankMedalConfig";
 import { cx } from "../../../../utils/classNameUtils";
 import {
   TEACHER_LEADERBOARD_DEFAULT_TIER,
   TEACHER_LEADERBOARD_RANK_TIERS,
-  TEACHER_LEADERBOARD_TIER_MEDALS,
   TEACHER_PLAYER_STATUS_PRESENTATION,
   TEACHER_RACE_PROJECTOR_CONFIG,
 } from "../../config/teacherRaceProjectorConfig";
@@ -25,21 +26,6 @@ const LAYOUT_TRANSITION = Object.freeze({
 const BAR_TRANSITION_STYLE = Object.freeze({
   transitionDuration: `${TEACHER_RACE_PROJECTOR_CONFIG.vehicleTweenMs}ms`,
 });
-
-function RankBadge({ rank, medal }) {
-  if (!medal) {
-    return <span className={S.leaderboardRank}>{rank}</span>;
-  }
-
-  const tone = S.leaderboardMedalTone[medal];
-
-  return (
-    <span className={S.leaderboardMedal} data-medal={medal}>
-      <span className={cx(S.leaderboardMedalRibbon, tone.ribbon)} aria-hidden="true" />
-      <span className={cx(S.leaderboardMedalDisk, tone.disk)}>{rank}</span>
-    </span>
-  );
-}
 
 export default function TeacherLeaderboardRow({ row }) {
   const { t } = useTranslation(I18N_NAMESPACES.TEACHER_LIVE_RACE);
@@ -63,7 +49,7 @@ export default function TeacherLeaderboardRow({ row }) {
       data-race-player-id={row.racePlayerId}
       data-rank-tier={rankTier}
     >
-      <RankBadge rank={row.rank} medal={TEACHER_LEADERBOARD_TIER_MEDALS[rankTier]} />
+      <RaceRankMedal rank={row.rank} medal={resolveRaceRankMedal(row.rank)} />
       <span
         className={cx(S.leaderboardSwatch, !row.accentColor && S.vehicleFallback)}
         style={row.accentColor ? { backgroundColor: row.accentColor } : undefined}

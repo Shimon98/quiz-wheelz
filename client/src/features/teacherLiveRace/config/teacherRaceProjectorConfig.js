@@ -60,12 +60,6 @@ export const TEACHER_LEADERBOARD_RANK_TIERS = Object.freeze({
 
 export const TEACHER_LEADERBOARD_DEFAULT_TIER = "none";
 
-export const TEACHER_LEADERBOARD_TIER_MEDALS = Object.freeze({
-  first: "gold",
-  second: "silver",
-  third: "bronze",
-});
-
 export const TEACHER_RACE_STATUS_PRESENTATION = Object.freeze({
   [RACE_STATUSES.IN_PROGRESS]: {
     labelKey: "header.live",

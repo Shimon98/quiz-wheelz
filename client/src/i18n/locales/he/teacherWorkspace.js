@@ -56,11 +56,10 @@ export default {
   racesPage: {
     title: "כל המרוצים",
     subtitle: "ניהול וצפייה בכל המרוצים שיצרתם",
-    summarySoon: "סיכום מרוץ יתווסף בקרוב",
     actions: {
       openRoom: "פתיחת חדר",
       watchLive: "צפייה במרוץ",
-      viewSummary: "סיכום המרוץ",
+      viewResults: "תוצאות המרוץ",
       cancelled: "בוטל",
     },
   },
