@@ -6,6 +6,7 @@ import hoverKartOrangeSide from "../../assets/game/teacherRace/hoverKarts/hover-
 import hoverKartPinkSide from "../../assets/game/teacherRace/hoverKarts/hover-kart-pink-side.webp";
 import hoverKartYellowSide from "../../assets/game/teacherRace/hoverKarts/hover-kart-yellow-side.webp";
 import hoverKartCyanSide from "../../assets/game/teacherRace/hoverKarts/hover-kart-cyan-side.webp";
+import { resolveRaceVehicleArt } from "./resolveRaceVehicleArt";
 
 export const RACE_VEHICLE_SIDE_ART = Object.freeze({
   TOY_CAR_GREEN: hoverKartGreenSide,
@@ -19,9 +20,5 @@ export const RACE_VEHICLE_SIDE_ART = Object.freeze({
 });
 
 export function resolveRaceVehicleSideArt(vehicleAssetKey, art = RACE_VEHICLE_SIDE_ART) {
-  if (typeof vehicleAssetKey !== "string" || vehicleAssetKey === "") {
-    return null;
-  }
-
-  return Object.hasOwn(art, vehicleAssetKey) ? art[vehicleAssetKey] : null;
+  return resolveRaceVehicleArt(vehicleAssetKey, art);
 }

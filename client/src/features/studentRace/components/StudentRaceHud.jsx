@@ -1,18 +1,17 @@
 import { useTranslation } from "react-i18next";
-import { FlagIcon, FlameIcon, TrophyIcon } from "lucide-react";
-
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
+import { RACE_RESULTS_ART } from "../../../shared/raceResults/raceResultsArt";
 import { getStudentRaceHudModel } from "../utils/getStudentRaceHudModel";
 import StudentRaceQuestionTimer from "./StudentRaceQuestionTimer";
 import StudentRaceSpeedometer from "./StudentRaceSpeedometer";
 import StudentRaceReward from "./StudentRaceReward";
 import "../styles/studentRaceHud.css";
 
-function HudStatChip({ icon: Icon, label, value, accessibleLabel, sharedRank = false }) {
+function HudStatChip({ art, label, value, accessibleLabel, sharedRank = false }) {
   return (
     <div className="race-hud-stat" aria-label={accessibleLabel} data-shared-rank={sharedRank}>
       <div className="race-hud-stat-label">
-        <Icon aria-hidden="true" />
+        <img className="race-hud-stat-art" src={art} alt="" aria-hidden="true" draggable={false} />
         <span>{label}</span>
       </div>
       <span className="race-hud-stat-value" dir="ltr" title={value}>{value}</span>
@@ -29,11 +28,16 @@ export default function StudentRaceHud({ runtimeState = null, question = null, a
   return (
     <div className="student-race-hud" style={hud.style} data-reward={hud.reward != null}>
       <div className="race-hud-top">
-        <HudStatChip key={hud.rewardKey} icon={TrophyIcon} label={t("hud.scoreLabel")} value={hud.scoreText} />
+        <HudStatChip
+          key={hud.rewardKey}
+          art={RACE_RESULTS_ART.stats.score}
+          label={t("hud.scoreLabel")}
+          value={hud.scoreText}
+        />
         {question ? <StudentRaceQuestionTimer {...question} /> : <span aria-hidden="true" />}
         {hud.rankText != null ? (
           <HudStatChip
-            icon={FlagIcon}
+            art={hud.rankArt}
             label={t(hud.rankLabelKey)}
             value={hud.rankText}
             sharedRank={hud.sharedRank}
@@ -49,7 +53,13 @@ export default function StudentRaceHud({ runtimeState = null, question = null, a
           data-celebrating={hud.reward != null}
           aria-label={t("hud.streakValue", { count: hud.streak })}
         >
-          <FlameIcon aria-hidden="true" />
+          <img
+            className="race-hud-combo-art"
+            src={RACE_RESULTS_ART.stats.streak}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+          />
           <div className="race-hud-combo-copy">
             <span className="race-hud-combo-label">{t(hud.streakLabelKey)}</span>
             <strong dir="ltr">{hud.streakText}</strong>

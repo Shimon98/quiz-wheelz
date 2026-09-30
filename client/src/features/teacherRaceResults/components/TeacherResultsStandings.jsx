@@ -4,14 +4,18 @@ import { Table } from "@mantine/core";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { cx } from "../../../utils/classNameUtils";
-import RaceRankMedal from "../../../shared/components/raceRank/RaceRankMedal";
+import RacePlacementBadge from "../../../shared/components/raceRank/RacePlacementBadge";
 import { TEACHER_RESULTS_STYLES as S } from "../styles/teacherRaceResultsStyles";
 
 function TeacherResultsStandingRow({ row, t }) {
   return (
     <Table.Tr data-race-player-id={row.racePlayerId}>
       <Table.Td>
-        <RaceRankMedal rank={row.rank} medal={row.medal} accentColor={row.accentColor} />
+        <RacePlacementBadge
+          rank={row.rank}
+          placementArtEligible={row.placementArtEligible}
+          accentColor={row.accentColor}
+        />
       </Table.Td>
       <Table.Th scope="row" className={S.nameCell}>
         <span className={S.playerCell}>
@@ -24,9 +28,9 @@ function TeacherResultsStandingRow({ row, t }) {
               draggable={false}
             />
           ) : null}
-          <span className={S.standingName} title={row.displayName}>
+          <bdi className={S.standingName} title={row.displayName}>
             {row.displayName}
-          </span>
+          </bdi>
         </span>
       </Table.Th>
       <Table.Td>{row.score}</Table.Td>

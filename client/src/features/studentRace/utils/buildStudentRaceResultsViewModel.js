@@ -1,5 +1,8 @@
 import { RACE_PLAYER_STATUSES } from "../../../constants/raceStatusConstants.js";
-import { STUDENT_RESULTS_PHASES } from "../config/studentRaceResultsConfig.js";
+import { resolveRaceVehicleFrontArt } from "../../../shared/raceVehicles/raceVehicleFrontArt.js";
+import { resolveVehicleCssColor } from "../../../shared/raceVehicles/raceVehicleIdentity.js";
+import { resolveRaceVehicleSideArt } from "../../../shared/raceVehicles/raceVehicleSideArt.js";
+import { STUDENT_RESULT_GROUPS, STUDENT_RESULTS_PHASES } from "../config/studentRaceResultsConfig.js";
 import { isStudentSelfFinished, resolveStudentResultsPhase } from "./studentRaceResultsStatus.js";
 
 const { DISCONNECTED, FINISHED } = RACE_PLAYER_STATUSES;
@@ -20,9 +23,12 @@ function toParticipant(source, rank, status = source.status) {
     displayName: source.displayName,
     vehicleColorKey: source.vehicleColorKey,
     vehicleAssetKey: source.vehicleAssetKey,
+    vehicleSrc: resolveRaceVehicleSideArt(source.vehicleAssetKey),
+    accentColor: resolveVehicleCssColor(source.vehicleColorKey),
     status,
     isMe: source.isMe,
     rank,
+    placementArtEligible: status === FINISHED && rank != null,
   });
 }
 
@@ -56,10 +62,10 @@ function buildWatchingGroups(participants, confirmedFinishers) {
   const pick = (predicate) => Object.freeze(unranked.filter(predicate).map((participant) => toParticipant(participant, null)));
 
   return Object.freeze({
-    ranked: Object.freeze(ranked),
-    confirming: pick((participant) => participant.status === FINISHED),
-    racing: pick(isStillRacing),
-    out: pick((participant) => participant.status === DISCONNECTED),
+    [STUDENT_RESULT_GROUPS.RANKED]: Object.freeze(ranked),
+    [STUDENT_RESULT_GROUPS.CONFIRMING]: pick((participant) => participant.status === FINISHED),
+    [STUDENT_RESULT_GROUPS.RACING]: pick(isStillRacing),
+    [STUDENT_RESULT_GROUPS.OUT]: pick((participant) => participant.status === DISCONNECTED),
   });
 }
 
@@ -127,10 +133,12 @@ export function buildStudentRaceResultsViewModel(runtimeState, finishOrder) {
   const participants = listParticipants(runtimeState);
   const confirmedFinishers = finishOrder?.confirmedFinishers ?? [];
   const ownRank = resolveOwnRank(runtimeState, phase, confirmedFinishers);
+  const ownFinished = isStudentSelfFinished(runtimeState);
   const { player } = runtimeState;
 
   return Object.freeze({
     phase,
+    raceTitle: runtimeState.race.title,
     raceFinished: final,
     passiveSyncNeeded: !final,
     playerCount: runtimeState.playerCount ?? participants.length,
@@ -140,12 +148,16 @@ export function buildStudentRaceResultsViewModel(runtimeState, finishOrder) {
       displayName: player.displayName,
       vehicleColorKey: player.vehicleColorKey,
       vehicleAssetKey: player.vehicleAssetKey,
+      vehicleSrc: resolveRaceVehicleSideArt(player.vehicleAssetKey),
+      heroVehicleSrc: resolveRaceVehicleFrontArt(player.vehicleAssetKey),
+      accentColor: resolveVehicleCssColor(player.vehicleColorKey),
       score: player.score,
       highestStreak: player.highestStreak,
-      finished: isStudentSelfFinished(runtimeState),
+      finished: ownFinished,
       rank: ownRank.rank,
       rankConfirmed: ownRank.confirmed,
       rankTied: ownRank.tied,
+      placementArtEligible: ownFinished && ownRank.confirmed,
     }),
     groups: final ? null : buildWatchingGroups(participants, confirmedFinishers),
     finalCohorts: final ? buildFinalCohorts(participants) : null,

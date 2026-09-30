@@ -1,7 +1,9 @@
-import { CircleCheck, CircleX, Flag, Flame, Target, Timer, Trophy, UserX, UsersRound } from "lucide-react";
+import { CircleCheck, CircleX, Flag, Timer, UserX, UsersRound } from "lucide-react";
 
 import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
 import { RACE_RESULT_AWARD_TYPES } from "../../../constants/raceResultConstants";
+import { RACE_PLACEMENT_SIZES } from "../../../shared/components/raceRank/racePlacementConfig";
+import { RACE_RESULTS_ART } from "../../../shared/raceResults/raceResultsArt";
 
 export const TEACHER_RESULTS_SUMMARY_STATS = Object.freeze([
   { id: "participants", labelKey: "summary.participants", icon: UsersRound, tone: UI_TONES.INFO },
@@ -16,24 +18,30 @@ export const TEACHER_RESULTS_AWARD_PRESENTATION = Object.freeze({
   [RACE_RESULT_AWARD_TYPES.HIGHEST_SCORE]: {
     labelKey: "awards.highestScore",
     valueKey: "awards.points",
-    icon: Trophy,
-    tone: UI_TONES.WARNING,
+    art: RACE_RESULTS_ART.awards.trophy,
   },
   [RACE_RESULT_AWARD_TYPES.MOST_CORRECT_ANSWERS]: {
     labelKey: "awards.mostCorrect",
     valueKey: "awards.answers",
-    icon: Target,
-    tone: UI_TONES.SUCCESS,
+    art: RACE_RESULTS_ART.awards.target,
   },
   [RACE_RESULT_AWARD_TYPES.BEST_STREAK]: {
     labelKey: "awards.bestStreak",
     valueKey: "awards.streak",
-    icon: Flame,
-    tone: UI_TONES.DANGER,
+    art: RACE_RESULTS_ART.awards.streak,
   },
 });
 
 export const TEACHER_RESULTS_AWARD_VISIBLE_NAMES = 2;
+
+export const TEACHER_RESULTS_WINNER_LAYOUTS = Object.freeze({
+  solo: Object.freeze({ id: "solo", placementSize: RACE_PLACEMENT_SIZES.LG }),
+  tied: Object.freeze({ id: "tied", placementSize: RACE_PLACEMENT_SIZES.MD }),
+});
+
+export function resolveTeacherWinnerLayout(winnerCount) {
+  return winnerCount > 1 ? TEACHER_RESULTS_WINNER_LAYOUTS.tied : TEACHER_RESULTS_WINNER_LAYOUTS.solo;
+}
 
 export const TEACHER_RESULTS_WINNER_ENTRANCE = Object.freeze({
   initial: Object.freeze({ scale: 0.85, opacity: 0, y: 12 }),

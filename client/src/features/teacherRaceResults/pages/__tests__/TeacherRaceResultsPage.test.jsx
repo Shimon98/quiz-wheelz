@@ -108,14 +108,50 @@ describe("TeacherRaceResultsPage", () => {
     const rows = within(standingsTable()).getAllByRole("row").slice(1);
 
     expect(within(rows[0]).getByText("02:14")).toHaveAttribute("dir", "ltr");
-    expect(rows.map((row) => row.querySelector("[data-medal]")?.getAttribute("data-medal") ?? null)).toEqual([
+    expect(rows.map((row) => row.querySelector("[data-placement]").dataset.placement)).toEqual([
       "gold",
       "silver",
       "bronze",
-      null,
+      "quiet",
     ]);
     expect(screen.getByText(text("summary.didNotFinish"))).toBeInTheDocument();
     expect(screen.getByText("02:33")).toBeInTheDocument();
+  });
+
+  it("isolates every standing name for mixed-direction text", async () => {
+    getTeacherRaceResults.mockResolvedValue(teacherRaceResultsResponse());
+    await renderResultsPage();
+
+    const names = within(standingsTable())
+      .getAllByRole("rowheader")
+      .map((cell) => cell.querySelector("bdi"));
+
+    expect(names.map((name) => name.getAttribute("title"))).toEqual(["Noa", "Dan", "Maya", "Adi"]);
+    expect(names.every((name) => name.classList.contains("truncate"))).toBe(true);
+  });
+
+  it("draws one placement language: medals and wood for finishers, a quiet number for everyone else", async () => {
+    const players = [
+      teacherResultPlayer(),
+      teacherResultPlayer({ racePlayerId: 12, displayName: "Dan", laneNumber: 2, rank: 2 }),
+      teacherResultPlayer({ racePlayerId: 13, displayName: "Maya", laneNumber: 3, rank: 3, status: "DISCONNECTED", finishedAtEpochMs: null }),
+      teacherResultPlayer({ racePlayerId: 14, displayName: "Adi", laneNumber: 4, rank: 4 }),
+      teacherResultPlayer({ racePlayerId: 15, displayName: "Lior", laneNumber: 5, rank: 7, status: "DISCONNECTED", finishedAtEpochMs: null }),
+    ];
+    getTeacherRaceResults.mockResolvedValue(teacherRaceResultsResponse({ players, awards: [] }));
+    await renderResultsPage();
+
+    const rows = within(standingsTable()).getAllByRole("row").slice(1);
+
+    expect(standingNames()).toEqual(["Noa", "Dan", "Maya", "Adi", "Lior"]);
+    expect(rows.map((row) => row.querySelector("[data-placement]").dataset.placement)).toEqual([
+      "gold",
+      "silver",
+      "quiet",
+      "wood",
+      "quiet",
+    ]);
+    expect(within(rows[3]).getByText("4")).not.toHaveClass("sr-only");
   });
 
   it("shows every tied winner with a gold medal", async () => {
@@ -130,7 +166,7 @@ describe("TeacherRaceResultsPage", () => {
 
     const winners = screen.getByRole("heading", { level: 2, name: text("winners.title", { count: 2 }) }).closest("section");
 
-    expect(winners.querySelectorAll('li [data-medal="gold"]')).toHaveLength(2);
+    expect(winners.querySelectorAll('li [data-placement="gold"]')).toHaveLength(2);
   });
 
   it("says honestly that nobody finished and that there are no awards", async () => {

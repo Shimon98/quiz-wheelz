@@ -36,7 +36,7 @@ export default {
   awards: {
     title: "הישגים מיוחדים",
     none: "אין הישגים להצגה במרוץ הזה.",
-    namesAndMore: "{{names}} ועוד {{count}}",
+    andMore: "ועוד {{count}}",
     highestScore: "הכי הרבה נקודות",
     mostCorrect: "הכי הרבה תשובות נכונות",
     bestStreak: "רצף התשובות הנכונות הארוך ביותר",

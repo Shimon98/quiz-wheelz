@@ -36,7 +36,7 @@ export default {
   awards: {
     title: "Special achievements",
     none: "No achievements to show for this race.",
-    namesAndMore: "{{names}} + {{count}} more",
+    andMore: "+ {{count}} more",
     highestScore: "Most points",
     mostCorrect: "Most correct answers",
     bestStreak: "Longest correct streak",

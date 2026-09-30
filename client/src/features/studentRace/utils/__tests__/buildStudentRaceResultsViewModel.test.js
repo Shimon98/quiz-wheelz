@@ -164,3 +164,92 @@ describe("buildStudentRaceResultsViewModel once the race is final", () => {
     expect(model.finalCohorts.at(-1).participants).toEqual([expect.objectContaining({ isMe: true, status: "DISCONNECTED" })]);
   });
 });
+
+describe("buildStudentRaceResultsViewModel presentation fields", () => {
+  const allParticipants = (model) => [
+    ...Object.values(model.groups ?? {}).flat(),
+    ...(model.finalCohorts ?? []).flatMap((cohort) => cohort.participants),
+  ];
+
+  it("carries the race title for the results header", () => {
+    expect(buildStudentRaceResultsViewModel(resultsRuntime(), null).raceTitle).toBe("Jungle Cup");
+  });
+
+  it("gives every participant and me the shared side-view art and the lane color", () => {
+    const model = buildStudentRaceResultsViewModel(resultsRuntime(), resultsFinishOrder([1, 1]));
+
+    for (const participant of [...allParticipants(model), model.me]) {
+      expect(participant.vehicleSrc).toContain("-side");
+      expect(participant.accentColor).toMatch(/^#[0-9a-f]{6}$/);
+    }
+  });
+
+  it("gives only me the front hero art of my own vehicle, never the rows", () => {
+    const model = buildStudentRaceResultsViewModel(resultsRuntime(), resultsFinishOrder([1, 1]));
+
+    expect(model.me.heroVehicleSrc).toContain("hover-kart-green-front");
+    for (const participant of allParticipants(model)) {
+      expect(participant).not.toHaveProperty("heroVehicleSrc");
+    }
+  });
+
+  it("leaves the hero art empty for a vehicle without front art", () => {
+    const runtime = resultsRuntime();
+    const unknown = { ...runtime, player: { ...runtime.player, vehicleAssetKey: "TOY_CAR_FUTURE" } };
+
+    expect(buildStudentRaceResultsViewModel(unknown, null).me.heroVehicleSrc).toBeNull();
+  });
+
+  it("makes placement art eligible only for finishers whose place is proven", () => {
+    const runtime = resultsRuntime({
+      playerCount: 7,
+      opponents: [
+        resultsOpponent(2, "FINISHED", 2),
+        resultsOpponent(3, "FINISHED", 3),
+        resultsOpponent(4, "FINISHED", 4),
+        resultsOpponent(5, "FINISHED", 5),
+        resultsOpponent(6, "RACING", 6),
+        resultsOpponent(7, "DISCONNECTED", 7),
+      ],
+    });
+    const model = buildStudentRaceResultsViewModel(
+      runtime,
+      resultsFinishOrder([1, 1, 9_001], [2, 2, 9_002], [3, 3, 9_003], [4, 4, 9_004]),
+    );
+    const eligibleOf = (id) =>
+      allParticipants(model).find((participant) => participant.racePlayerId === id).placementArtEligible;
+
+    expect([1, 2, 3, 4].map(eligibleOf)).toEqual([true, true, true, true]);
+    expect([5, 6, 7].map(eligibleOf)).toEqual([false, false, false]);
+    expect(model.me.placementArtEligible).toBe(true);
+  });
+
+  it("keeps my placement art back until my own place is proven", () => {
+    expect(
+      buildStudentRaceResultsViewModel(resultsRuntime(), resultsFinishOrder([2, 1, 9_000])).me.placementArtEligible,
+    ).toBe(false);
+  });
+
+  it("never makes a non-finisher eligible for placement art, even with a top-three final rank", () => {
+    const runtime = resultsRuntime({
+      ...FINAL,
+      playerStatus: "DISCONNECTED",
+      playerFinished: false,
+      playerFinishedAtEpochMs: null,
+      position: 640,
+      rank: 3,
+      opponents: [
+        resultsOpponent(2, "FINISHED", 1),
+        resultsOpponent(3, "FINISHED", 2),
+        resultsOpponent(4, "DISCONNECTED", 4),
+        resultsOpponent(5, "DISCONNECTED", 5),
+      ],
+    });
+    const model = buildStudentRaceResultsViewModel(runtime, null);
+
+    expect(model.me).toMatchObject({ rank: 3, placementArtEligible: false });
+    expect(
+      model.finalCohorts.map((cohort) => cohort.participants.map((participant) => participant.placementArtEligible)),
+    ).toEqual([[true], [true], [false], [false], [false]]);
+  });
+});

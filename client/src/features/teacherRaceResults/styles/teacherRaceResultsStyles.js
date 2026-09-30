@@ -27,8 +27,24 @@ export const TEACHER_RESULTS_STYLES = Object.freeze({
 
   emptyText: "text-sm text-[var(--qw-text-muted)]",
 
-  winnersList: "m-0 grid list-none grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] gap-3 p-0",
-  winnerCard: `${CARD} flex flex-col items-center gap-2 p-3 text-center`,
+  winnerLayout: Object.freeze({
+    solo: Object.freeze({
+      list: "m-0 flex list-none flex-col gap-3 p-0",
+      card: `${CARD} flex flex-col items-center gap-2 p-3 text-center`,
+      art: "flex w-full flex-col items-center gap-2",
+      placement: "grid place-items-center",
+      stage: "w-[min(100%,15rem)]",
+      text: "flex min-w-0 max-w-full flex-col items-center gap-1",
+    }),
+    tied: Object.freeze({
+      list: "m-0 flex list-none flex-col gap-2 p-0",
+      card: `${CARD} grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 p-2 text-start`,
+      art: "relative grid place-items-center pl-3 pt-3",
+      placement: "absolute left-0 top-0 z-10 grid place-items-center",
+      stage: "w-24",
+      text: "flex min-w-0 flex-col gap-0.5",
+    }),
+  }),
   winnerKart: "h-16 w-auto select-none object-contain drop-shadow-[0_3px_3px_rgba(15,42,67,0.35)] @6xl:h-20",
   winnerName: "max-w-full truncate text-lg font-extrabold",
   winnerScore: "text-base font-bold",
@@ -47,8 +63,15 @@ export const TEACHER_RESULTS_STYLES = Object.freeze({
 
   awardList: "m-0 flex list-none flex-col gap-2 p-0",
   awardCard: `${CARD} grid grid-cols-[auto_1fr] items-center gap-3 px-3 py-2`,
+  awardLead: "grid size-11 shrink-0 place-items-center",
+  awardArt:
+    "pointer-events-none block h-full w-full select-none object-contain drop-shadow-[0_1px_1.5px_rgba(15,42,67,0.4)]",
   awardText: "flex min-w-0 flex-col",
   awardLabel: "text-sm font-extrabold",
-  awardNames: "truncate text-sm",
+  awardNames: "min-w-0 text-sm",
+  awardNameList: "grid min-w-0 grid-flow-col auto-cols-auto justify-start",
+  awardName: "min-w-0 truncate",
+  awardNameGlue: "whitespace-pre",
+  awardNameMore: "whitespace-nowrap",
   awardValue: "text-xs text-[var(--qw-text-muted)]",
 });

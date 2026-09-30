@@ -16,7 +16,7 @@ describe("buildTeacherRaceResultsViewModel", () => {
     expect(viewModel().standings.map((row) => row.racePlayerId)).toEqual([11, 12, 13, 14]);
   });
 
-  it("gives medals only to players who finished", () => {
+  it("makes placement art eligible only for players who finished", () => {
     const players = [
       teacherResultPlayer(),
       teacherResultPlayer({ racePlayerId: 12, displayName: "Dan", laneNumber: 2, rank: 2 }),
@@ -30,10 +30,10 @@ describe("buildTeacherRaceResultsViewModel", () => {
       }),
     ];
 
-    expect(viewModel({ players }).standings.map((row) => row.medal)).toEqual(["gold", "silver", null]);
+    expect(viewModel({ players }).standings.map((row) => row.placementArtEligible)).toEqual([true, true, false]);
   });
 
-  it("shares gold between tied leaders and never invents a silver", () => {
+  it("keeps tied server ranks for every finisher without inventing a second place", () => {
     const players = [
       teacherResultPlayer(),
       teacherResultPlayer({ racePlayerId: 12, displayName: "Maya", laneNumber: 2, rank: 1 }),
@@ -47,7 +47,11 @@ describe("buildTeacherRaceResultsViewModel", () => {
     ];
     const model = viewModel({ players, winnerRacePlayerIds: [11, 12] });
 
-    expect(model.standings.map((row) => row.medal)).toEqual(["gold", "gold", "bronze"]);
+    expect(model.standings.map((row) => [row.rank, row.placementArtEligible])).toEqual([
+      [1, true],
+      [1, true],
+      [3, true],
+    ]);
     expect(model.winners.map((row) => row.displayName)).toEqual(["Noa", "Maya"]);
   });
 
@@ -104,7 +108,7 @@ describe("buildTeacherRaceResultsViewModel", () => {
 
     expect(award.players.map((row) => row.displayName)).toEqual(["Adi", "Noa", "Maya", "Dan"]);
     expect(award.namesLabel).toBe("Adi, Noa, Maya, and Dan");
-    expect(award.visibleNamesLabel).toBe("Adi, Noa");
+    expect(award.visibleNameParts.map((part) => part.value).join("")).toBe("Adi, Noa");
     expect(award.hiddenNameCount).toBe(2);
   });
 
@@ -112,7 +116,7 @@ describe("buildTeacherRaceResultsViewModel", () => {
     const awards = [{ type: "MOST_CORRECT_ANSWERS", racePlayerIds: [11, 12], value: 9 }];
     const [award] = viewModel({ awards }, "he").awards;
 
-    expect(award.visibleNamesLabel).toBe(award.namesLabel);
+    expect(award.visibleNameParts.map((part) => part.value).join("")).toBe(award.namesLabel);
     expect(award.hiddenNameCount).toBe(0);
   });
 
@@ -136,6 +140,15 @@ describe("buildTeacherRaceResultsViewModel", () => {
 
     expect(first.accentColor).toMatch(/^#[0-9a-f]{6}$/);
     expect(first.vehicleSrc).toContain("hover-kart-green-side");
+  });
+
+  it("carries the front hero art of each vehicle for the winner stage", () => {
+    const model = viewModel();
+
+    expect(model.winners.map((row) => row.heroVehicleSrc)).toEqual([
+      expect.stringContaining("hover-kart-green-front"),
+    ]);
+    expect(model.standings[1].heroVehicleSrc).toContain("hover-kart-blue-front");
   });
 
   it("shows the subject in the active language", () => {

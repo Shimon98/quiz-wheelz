@@ -41,6 +41,20 @@ needing a live backend and a real browser: an overtake observed with bots, fulls
 Esc → fullscreen, reconnect without replayed pulses, phone rotation inside the
 workspace shell. C4 Results is next and consumes the S3-01 final-results read model.
 
+C4 checkpoint, 2026-09-29: Results are COMPLETE on the client (`feature/C4-results`).
+C4-A: the teacher Result Screen at `/teacher/races/:raceId/results` reads the S3-01 model
+once, keeps the server order, ranks, winners and awards untouched, and is reached from
+the dashboard, All Races and an explicit link on the finished projector. C4-B1/C4-B2: on
+the same `/student/race` route a finished student watches the race (WATCHING) and then
+sees the final standings (FINAL), with the student EventSource kept open as a passive
+watcher, heartbeat stopped, a 5-second fallback poll and staggered finish-proof requests.
+C4-C: shared results art (front hero karts on a podium, medals, a neutral placement badge,
+award emblems, title plaque) and per-name bidi isolation in teacher results. Live review
+covered teacher results (race 131) and student results (bot races 133/136/137), and the
+final build passed live closure QA on 2026-09-30 (bot races 138–140 with a real student
+and a real teacher browser). Next: Phase 4, starting with the S4-01 effect/event contract
+that C5 consumes.
+
 ## Executive summary
 
 QuizWheelz is not an early prototype. Most backend gameplay foundations and the
@@ -54,8 +68,9 @@ slow more than wrong answers. Real absence freezes position without pausing
 question deadlines; reconnect never awards offline catch-up, and absent
 players do not keep the class race open. C2 multiplayer competition and C3 Teacher
 Live are implemented: C3-01/C3-02 merged in PR #69 and C3-03 … C3-08 are complete on
-the client. The server final-results read model is implemented by S3-01; the C4 Result
-Screen is the next client stage.
+the client. The server final-results read model is implemented by S3-01 and the C4
+teacher Result Screen and student progressive results are complete on the client; the
+next stage is Phase 4 (server S4 game events, then the C5 gameplay UI).
 
 ## Product status board
 
@@ -83,8 +98,8 @@ Screen is the next client stage.
 | Teacher live-state query | DONE incl. lifecycle epochs (C3-00) | DONE live route, initial/recovery integration (C3-01) | DONE |
 | Teacher durable live-event model | DONE | N/A | SERVER FOUNDATION |
 | Teacher SSE | DONE | DONE durable sync, authoritative recovery/fallback (C3-02) | DONE |
-| Teacher live projector UI | N/A | DONE jungle-art projector with eight side-view vehicles, animated server-ordered leaderboard with podium medals, responsive workspace navigation (C3-03 … C3-08) | DONE |
-| Results | DONE final read model (S3-01) | C4 NEXT | PARTIAL feature |
+| Teacher live projector UI | N/A | DONE jungle-art projector with eight side-view vehicles, animated server-ordered leaderboard with the shared placement art, responsive workspace navigation (C3-03 … C3-08) | DONE |
+| Results | DONE final read model (S3-01) | DONE teacher Result Screen + student progressive results (C4) | DONE |
 | Junction/highway/dirt road | PLANNED | PLANNED | REQUIRED |
 | Fair luck/power-ups | foundation ideas only | PLANNED | REQUIRED |
 | Catch-up assistance | foundation ideas only | PLANNED | REQUIRED |
@@ -186,6 +201,12 @@ Screen is the next client stage.
 - Teacher workspace, dashboard, race list, create-race flow and waiting room.
 - Teacher Live route/page with initial snapshot, durable SSE updates, recovery and
   projector-oriented track, leaderboard and activity presentation.
+- Teacher Result Screen (C4-A): winners, factual awards and final standings exactly as the
+  S3-01 read model orders them, with explicit not-found, not-ready and retry states.
+- Student results on the race route (C4-B1/C4-B2): WATCHING groups while the race runs,
+  FINAL rank cohorts afterwards, finish proof before any place is shown.
+- Shared results art (C4-C): front hero karts on a podium, medals, a neutral placement
+  badge and award emblems; the rank and every name stay real DOM text.
 - Student join and waiting flow.
 - Student race UI-10A–G:
   - common runtime contract
@@ -208,21 +229,19 @@ Screen is the next client stage.
 
 These must be corrected during the next client integration work:
 
-- The results route constant exists without the C4 Result Screen route/page.
 - Old Stage B issue tables mark completed backend work as TODO.
 
 ## Immediate next product outcome
 
 ```text
-Teacher completes a multi-player race
-→ server exposes durable final ranking, winners, summary and factual awards
-→ C4 loads the final result read model
-→ teacher sees the complete Result Screen
-→ navigation returns to race history/dashboard
+Server S4-01 defines the shared game effect/event contract
+→ junction, highway/dirt-road, luck and assistance rules stay server-authoritative
+→ C5 renders those server events on the student race and the projector
+→ every effect survives refresh and is never recalculated on the client
 ```
 
-C2 and C3 Teacher Live are implemented: C3-01/C3-02 merged in PR #69 and C3-03 … C3-08
-(projector, production art, leaderboard dynamics and responsive polish) are COMPLETE on
-the client. S3-01 provides the server final-results read model; C4 Results is the next
-client stage and consumes it. C2-A race sound and required physical-device/recovery QA
-remain visible pre-release polish.
+C2, C3 Teacher Live and C4 Results are implemented on the client: C3-01/C3-02 merged in
+PR #69, C3-03 … C3-08 are COMPLETE, and C4-A … C4-C (teacher Result Screen, student
+progressive results, results art) are COMPLETE on `feature/C4-results`. The next stage is
+Phase 4: the server S4-01 contract first, then C5. C2-A race sound and the required
+physical-device/recovery QA remain visible pre-release polish.

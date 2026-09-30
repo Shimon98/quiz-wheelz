@@ -56,6 +56,22 @@ describe("buildTeacherRaceProjectorViewModel", () => {
     expect(leaderboard[0].progressPercent).toBe(50);
   });
 
+  it("keeps live placement art for racers and finishers but not for a disconnected player", () => {
+    const runtime = runtimeWithPlayers([
+      teacherLivePlayer({ racePlayerId: 1, laneNumber: 1, rank: 1, status: "FINISHED" }),
+      teacherLivePlayer({ racePlayerId: 2, laneNumber: 2, rank: 2, status: "RACING" }),
+      teacherLivePlayer({ racePlayerId: 3, laneNumber: 3, rank: 3, status: "DISCONNECTED" }),
+    ]);
+
+    const { leaderboard } = buildTeacherRaceProjectorViewModel(runtime, null);
+
+    expect(leaderboard.map((row) => [row.rank, row.placementArtEligible])).toEqual([
+      [1, true],
+      [2, true],
+      [3, false],
+    ]);
+  });
+
   it("resolves the vehicle accent from the shared color identity", () => {
     const runtime = runtimeWithPlayers([
       teacherLivePlayer({ racePlayerId: 1, laneNumber: 1, vehicleColorKey: "GREEN" }),

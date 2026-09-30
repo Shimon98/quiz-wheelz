@@ -16,6 +16,7 @@ export default function StatCard({
   value,
   tone,
   icon: Icon,
+  art = null,
   description,
   valueDir,
   isLoading = false,
@@ -42,9 +43,19 @@ export default function StatCard({
           style={{ display: "inline-flex" }}
           whileHover={reduce ? undefined : ICON_WOBBLE}
         >
-          <ThemeIcon variant="light" color={tone} size={preset.iconBox} radius="xl">
-            <Icon size={preset.iconGlyph} aria-hidden="true" />
-          </ThemeIcon>
+          {art ? (
+            <img
+              src={art}
+              alt=""
+              aria-hidden="true"
+              draggable={false}
+              style={{ width: preset.iconBox, height: preset.iconBox, objectFit: "contain" }}
+            />
+          ) : (
+            <ThemeIcon variant="light" color={tone} size={preset.iconBox} radius="xl">
+              <Icon size={preset.iconGlyph} aria-hidden="true" />
+            </ThemeIcon>
+          )}
         </motion.div>
 
         <Stack gap={0} align="flex-end" miw={0}>

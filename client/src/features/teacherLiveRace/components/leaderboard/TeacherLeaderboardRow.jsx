@@ -2,8 +2,7 @@ import { useTranslation } from "react-i18next";
 import { motion, useReducedMotion } from "framer-motion";
 
 import { I18N_NAMESPACES } from "../../../../i18n/i18nConstants";
-import RaceRankMedal from "../../../../shared/components/raceRank/RaceRankMedal";
-import { resolveRaceRankMedal } from "../../../../shared/components/raceRank/raceRankMedalConfig";
+import RacePlacementBadge from "../../../../shared/components/raceRank/RacePlacementBadge";
 import { cx } from "../../../../utils/classNameUtils";
 import {
   TEACHER_LEADERBOARD_DEFAULT_TIER,
@@ -49,13 +48,15 @@ export default function TeacherLeaderboardRow({ row }) {
       data-race-player-id={row.racePlayerId}
       data-rank-tier={rankTier}
     >
-      <RaceRankMedal rank={row.rank} medal={resolveRaceRankMedal(row.rank)} />
+      <RacePlacementBadge rank={row.rank} placementArtEligible={row.placementArtEligible} />
       <span
         className={cx(S.leaderboardSwatch, !row.accentColor && S.vehicleFallback)}
         style={row.accentColor ? { backgroundColor: row.accentColor } : undefined}
         aria-hidden="true"
       />
-      <span className={S.leaderboardName}>{row.displayName}</span>
+      <bdi className={S.leaderboardName} title={row.displayName}>
+        {row.displayName}
+      </bdi>
       <span className={S.leaderboardMeta}>
         <span>{t("leaderboard.points", { count: row.score })}</span>
         {row.streak > 0 ? (

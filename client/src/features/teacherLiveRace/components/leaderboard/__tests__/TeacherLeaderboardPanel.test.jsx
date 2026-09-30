@@ -22,6 +22,7 @@ function row(racePlayerId, rank, overrides = {}) {
     score: 10,
     streak: 0,
     status: "RACING",
+    placementArtEligible: true,
     ...overrides,
   };
 }
@@ -131,17 +132,15 @@ describe("TeacherLeaderboardPanel rank tiers", () => {
   });
 });
 
-describe("TeacherLeaderboardPanel podium medals", () => {
+describe("TeacherLeaderboardPanel placement art", () => {
   function medals() {
-    return screen.getAllByRole("listitem").map(
-      (item) => item.querySelector("[data-medal]")?.getAttribute("data-medal") ?? null,
-    );
+    return screen.getAllByRole("listitem").map((item) => item.querySelector("[data-placement]")?.dataset.placement ?? null);
   }
 
-  it("shows gold, silver and bronze medals for server ranks 1, 2 and 3 and the plain badge after that", () => {
+  it("shows gold, silver and bronze for server ranks 1, 2 and 3 and the wooden badge after that", () => {
     render(panel([row(1, 1), row(2, 2), row(3, 3), row(4, 4)]));
 
-    expect(medals()).toEqual(["gold", "silver", "bronze", null]);
+    expect(medals()).toEqual(["gold", "silver", "bronze", "wood"]);
     expect(screen.getAllByRole("listitem").map((item) => item.children[0].textContent)).toEqual([
       "1",
       "2",
@@ -163,8 +162,8 @@ describe("TeacherLeaderboardPanel podium medals", () => {
     rerender(panel([row(4, 1), row(1, 2), row(2, 3), row(3, 4)]));
 
     expect(rowElement(4)).toBe(climber);
-    expect(medals()).toEqual(["gold", "silver", "bronze", null]);
-    expect(rowElement(3).querySelector("[data-medal]")).toBeNull();
+    expect(medals()).toEqual(["gold", "silver", "bronze", "wood"]);
+    expect(rowElement(3).querySelector("[data-placement]")).toHaveAttribute("data-placement", "wood");
   });
 
   it("renders the correct medals immediately with reduced motion", () => {
@@ -175,5 +174,21 @@ describe("TeacherLeaderboardPanel podium medals", () => {
 
     expect(renderedIds()).toEqual([3, 1, 2]);
     expect(medals()).toEqual(["gold", "silver", "bronze"]);
+  });
+
+  it("keeps a disconnected racer quiet instead of celebrating a live place", () => {
+    render(panel([row(1, 1), row(2, 2, { status: "DISCONNECTED", placementArtEligible: false }), row(3, 5)]));
+
+    expect(medals()).toEqual(["gold", "quiet", "wood"]);
+    expect(rowElement(2).querySelector("img")).toBeNull();
+    expect(within(rowElement(2)).getByText("2")).toBeInTheDocument();
+  });
+
+  it("isolates a long Latin name so it shortens from its own end", () => {
+    render(panel([row(1, 1, { displayName: "Maximilian Alexander Winters" })]));
+    const name = within(rowElement(1)).getByText("Maximilian Alexander Winters");
+
+    expect(name.tagName).toBe("BDI");
+    expect(name).toHaveAttribute("title", "Maximilian Alexander Winters");
   });
 });

@@ -1,5 +1,5 @@
 import { RACE_PLAYER_STATUSES } from "../../../constants/raceStatusConstants";
-import { resolveRaceRankMedal } from "../../../shared/components/raceRank/raceRankMedalConfig";
+import { resolveRaceVehicleFrontArt } from "../../../shared/raceVehicles/raceVehicleFrontArt";
 import { resolveVehicleCssColor } from "../../../shared/raceVehicles/raceVehicleIdentity";
 import { resolveRaceVehicleSideArt } from "../../../shared/raceVehicles/raceVehicleSideArt";
 import { formatElapsedClock } from "../../teacherLiveRace/utils/formatElapsedClock";
@@ -23,9 +23,10 @@ function buildStandingRow(player, startedAtEpochMs) {
     racePlayerId: player.racePlayerId,
     displayName: player.displayName,
     rank: player.rank,
-    medal: finished ? resolveRaceRankMedal(player.rank) : null,
+    placementArtEligible: finished,
     accentColor: resolveVehicleCssColor(player.vehicleColorKey),
     vehicleSrc: resolveRaceVehicleSideArt(player.vehicleAssetKey),
+    heroVehicleSrc: resolveRaceVehicleFrontArt(player.vehicleAssetKey),
     score: player.score,
     correctAnswers: player.correctAnswers,
     wrongAnswers: player.wrongAnswers,
@@ -61,7 +62,7 @@ export function buildTeacherRaceResultsViewModel(results, language) {
       results.awards.map((award) => {
         const players = pickRows(award.racePlayerIds);
         const names = players.map((player) => player.displayName);
-        const { visibleLabel, hiddenCount } = compactResultNameList(
+        const { visibleParts, hiddenCount } = compactResultNameList(
           names,
           language,
           TEACHER_RESULTS_AWARD_VISIBLE_NAMES,
@@ -71,7 +72,7 @@ export function buildTeacherRaceResultsViewModel(results, language) {
           type: award.type,
           value: award.value,
           namesLabel: formatResultNameList(names, language),
-          visibleNamesLabel: visibleLabel,
+          visibleNameParts: Object.freeze(visibleParts),
           hiddenNameCount: hiddenCount,
           players,
         });

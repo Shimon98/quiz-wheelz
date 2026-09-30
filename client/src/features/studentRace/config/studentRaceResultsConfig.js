@@ -4,10 +4,10 @@ export const STUDENT_RESULTS_PHASES = Object.freeze({
 });
 
 export const STUDENT_RESULT_GROUPS = Object.freeze({
-  RANKED: "RANKED",
-  CONFIRMING: "CONFIRMING",
-  RACING: "RACING",
-  OUT: "OUT",
+  RANKED: "ranked",
+  CONFIRMING: "confirming",
+  RACING: "racing",
+  OUT: "out",
 });
 
 export const STUDENT_RACE_RESULTS_CONFIG = Object.freeze({
