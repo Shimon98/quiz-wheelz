@@ -1,5 +1,6 @@
 import { MantineProvider } from "@mantine/core";
 import { render, screen, act } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import i18n from "../../../../i18n/i18n";
@@ -7,6 +8,8 @@ import { RACE_VIEWS } from "../../../../shared/racePlayer/getRaceView";
 import { STUDENT_RACE_ANIMATION_CONFIG } from "../../config/raceAnimationConfig";
 import { createInitialRaceRuntimeState } from "../../runtime/createInitialRaceRuntimeState";
 import { STUDENT_RACE_FEEDBACK } from "../../runtime/studentRaceRuntimeConstants";
+import { resultsFinishOrder, resultsRuntime } from "../../runtime/studentRaceResultsTestFixtures";
+import { buildStudentRaceResultsViewModel } from "../../utils/buildStudentRaceResultsViewModel";
 import StudentRaceContent from "../StudentRaceContent";
 
 vi.mock("../../pixi/PixiStudentRaceCanvas", () => ({
@@ -22,20 +25,27 @@ function runtime(overrides = {}) {
 function content(props) {
   return (
     <MantineProvider>
-      <StudentRaceContent
-        runtimeState={runtime({ playerFinished: props.view === RACE_VIEWS.FINISHED })}
-        isLoading={false}
-        error={null}
-        retry={() => {}}
-        keepRaceScreen={false}
-        questionProps={{ feedbackState: STUDENT_RACE_FEEDBACK.IDLE }}
-        {...props}
-      />
+      <MemoryRouter>
+        <StudentRaceContent
+          runtimeState={runtime({ playerFinished: props.view === RACE_VIEWS.FINISHED })}
+          isLoading={false}
+          error={null}
+          retry={() => {}}
+          keepRaceScreen={false}
+          questionProps={{ feedbackState: STUDENT_RACE_FEEDBACK.IDLE }}
+          {...props}
+        />
+      </MemoryRouter>
     </MantineProvider>
   );
 }
 
 const finishedTitle = () => i18n.t("studentRace:status.finishedTitle");
+const liveBadge = () => i18n.t("studentRace:results.liveBadge");
+const finalBadge = () => i18n.t("studentRace:results.finalBadge");
+const watchingModel = () => buildStudentRaceResultsViewModel(resultsRuntime(), resultsFinishOrder([1, 1]));
+const finalModel = () =>
+  buildStudentRaceResultsViewModel(resultsRuntime({ raceStatus: "FINISHED", raceFinished: true }), null);
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -99,5 +109,43 @@ describe("StudentRaceContent finish presentation", () => {
     unmount();
 
     expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+describe("StudentRaceContent screen selection", () => {
+  it("keeps the race screen while playing", () => {
+    render(content({ view: RACE_VIEWS.PLAYING, resultsModel: watchingModel() }));
+
+    expect(screen.getByTestId("race-canvas")).toBeInTheDocument();
+    expect(screen.queryByText(liveBadge())).not.toBeInTheDocument();
+  });
+
+  it("keeps the race screen through the finish ceremony even when results are ready", () => {
+    render(content({ view: RACE_VIEWS.FINISHED, keepRaceScreen: true, resultsModel: watchingModel() }));
+
+    expect(screen.getByTestId("race-canvas")).toBeInTheDocument();
+    expect(screen.queryByText(liveBadge())).not.toBeInTheDocument();
+  });
+
+  it("shows live results on the same route once the ceremony ends while others still race", () => {
+    render(content({ view: RACE_VIEWS.FINISHED, resultsModel: watchingModel() }));
+
+    expect(screen.queryByTestId("race-canvas")).not.toBeInTheDocument();
+    expect(screen.getByText(liveBadge())).toBeInTheDocument();
+    expect(screen.queryByText(finishedTitle())).not.toBeInTheDocument();
+  });
+
+  it("shows final results once the race is over", () => {
+    render(content({ view: RACE_VIEWS.FINISHED, resultsModel: finalModel() }));
+
+    expect(screen.getByText(finalBadge())).toBeInTheDocument();
+    expect(screen.queryByText(finishedTitle())).not.toBeInTheDocument();
+  });
+
+  it("keeps the status view for states that have no results", () => {
+    render(content({ view: RACE_VIEWS.CANCELLED, resultsModel: null }));
+
+    expect(screen.getByText(i18n.t("studentRace:status.cancelledTitle"))).toBeInTheDocument();
+    expect(screen.queryByText(liveBadge())).not.toBeInTheDocument();
   });
 });

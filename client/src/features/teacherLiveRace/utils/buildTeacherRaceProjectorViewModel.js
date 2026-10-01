@@ -1,4 +1,4 @@
-import { RACE_STATUSES } from "../../../constants/raceStatusConstants";
+import { RACE_PLAYER_STATUSES, RACE_STATUSES } from "../../../constants/raceStatusConstants";
 import { resolveVehicleCssColor } from "../../../shared/raceVehicles/raceVehicleIdentity";
 import { formatElapsedClock } from "./formatElapsedClock";
 
@@ -45,6 +45,7 @@ function buildLeaderboardViewModel(player, totalDistance) {
     score: player.score,
     streak: player.streak,
     status: player.status,
+    placementArtEligible: player.status !== RACE_PLAYER_STATUSES.DISCONNECTED,
   };
 }
 

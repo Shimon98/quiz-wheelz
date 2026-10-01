@@ -97,6 +97,32 @@ Only QuizWheelz-specific visuals:
 - Pixi world and game effects
 - question-panel decorative frame.
 
+## Race art language
+
+Every race surface (student race HUD, Teacher Live projector, Teacher Results, Student
+Results) speaks one visual vocabulary. Art files live in `client/src/assets/game/raceResults/`
+behind one manifest, `shared/raceResults/raceResultsArt.js`; placement is drawn only by
+`shared/components/raceRank/RacePlacementBadge` and its resolver.
+
+| Meaning | Art | Surfaces |
+|---|---|---|
+| Place 1 / 2 / 3 | gold / silver / bronze medal | live leaderboard, HUD rank chip, results lists, heroes, winner cards |
+| Place 4 and below | wooden badge with the number as DOM text | the same surfaces |
+| Place without celebration (disconnected, did not finish) | quiet number in the lane color | the same surfaces |
+| Score | star | HUD score chip, student results stat card |
+| Streak | flame, dim until a combo in the HUD | HUD combo, student results stat card |
+| Awards | trophy, target, flame emblem | teacher awards |
+| Player identity | lane color plus vehicle art (front view on the podium, side view in rows) | every surface |
+
+- Callers pass only `rank` and `placementArtEligible` from their own game truth (finished
+  in results, not disconnected while live); the shared resolver chooses the art. Features
+  never map ranks to medal tones themselves.
+- One size variable per badge: compact rows use `sm` so every row keeps one height, heroes
+  use `xl`.
+- Art is decorative (`alt=""`); ranks, names and values stay DOM text. Art is never
+  recolored with CSS filters; grayscale is allowed only for an inactive state.
+- New race art goes into the manifest first; features never import art files directly.
+
 ## Responsive rules
 
 ### Student

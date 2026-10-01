@@ -57,3 +57,7 @@ export function isApiContractError(error) {
 export function isTransientError(error) {
   return isNetworkError(error) || isServerError(error);
 }
+
+export function isRaceResultsNotAvailableError(error) {
+  return error?.errorName === SERVER_ERROR_NAMES.RACE_RESULTS_NOT_AVAILABLE;
+}

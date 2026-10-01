@@ -74,4 +74,16 @@ describe("TeacherDashboardHomePage recent race actions", () => {
       ["/teacher/races/7/room"],
     ]);
   });
+
+  it("offers the race results for a finished race and opens them from the button and the row", () => {
+    renderDashboard([teacherRaceSummary({ status: "FINISHED" })]);
+
+    fireEvent.click(screen.getAllByRole("button", { name: text("racesPage.actions.viewResults") })[0]);
+    fireEvent.click(screen.getByRole("row", { name: /Jungle Cup/ }));
+
+    expect(navigateMock.mock.calls).toEqual([
+      ["/teacher/races/7/results"],
+      ["/teacher/races/7/results"],
+    ]);
+  });
 });

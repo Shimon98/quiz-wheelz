@@ -1,9 +1,9 @@
 import { cx } from "../../../../utils/classNameUtils";
-import { resolveTeacherRaceVehicleAsset } from "../../assets/teacherRaceVehicleManifest";
+import { resolveRaceVehicleSideArt } from "../../../../shared/raceVehicles/raceVehicleSideArt";
 import { TEACHER_PROJECTOR_STYLES as S } from "../../styles/teacherRaceProjectorStyles";
 
 export default function TeacherRaceVehicle({ accentColor, vehicleAssetKey }) {
-  const sideViewAsset = resolveTeacherRaceVehicleAsset(vehicleAssetKey);
+  const sideViewAsset = resolveRaceVehicleSideArt(vehicleAssetKey);
 
   if (sideViewAsset) {
     return (

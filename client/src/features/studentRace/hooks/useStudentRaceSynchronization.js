@@ -10,12 +10,23 @@ import { ApiContractError } from "../../../errors/ApiContractError.js";
 import { mapStudentRaceFinishArbitration } from "../runtime/mapStudentRaceFinishArbitration.js";
 import { mergeStudentRaceFinishOrder } from "../runtime/mergeStudentRaceFinishOrder.js";
 import { RACE_LIVE_EVENT_TYPES } from "../../../constants/raceLiveEventConstants.js";
+import { STUDENT_RESULTS_PHASES } from "../config/studentRaceResultsConfig.js";
+import { resolveStudentResultsPhase } from "../utils/studentRaceResultsStatus.js";
 
-const REFRESH_SIGNALS = new Set([
+const PLAYING_REFRESH_SIGNALS = new Set([
   RACE_LIVE_EVENT_TYPES.QUESTION_ANSWERED,
   RACE_LIVE_EVENT_TYPES.PLAYER_FINISHED,
   RACE_LIVE_EVENT_TYPES.RACE_FINISHED,
 ]);
+
+const RESULTS_WATCH_REFRESH_SIGNALS = new Set([
+  RACE_LIVE_EVENT_TYPES.PLAYER_FINISHED,
+  RACE_LIVE_EVENT_TYPES.RACE_FINISHED,
+]);
+
+function isResultsWatchState(runtimeState) {
+  return resolveStudentResultsPhase(runtimeState) === STUDENT_RESULTS_PHASES.WATCHING;
+}
 
 export default function useStudentRaceSynchronization({
   raceState, requestError, silentRefresh, syncEnabled, finishSyncEnabled = syncEnabled,
@@ -108,17 +119,20 @@ export default function useStudentRaceSynchronization({
     return () => { cancelled = true; };
   }, [raceState, ingestRaceState]);
 
+  const isRefreshAllowed = useCallback(() => enabledRef.current ||
+    (finishSyncEnabledRef.current && isResultsWatchState(runtimeRef.current)), []);
+
   const flushPendingRefresh = useCallback(() => {
     const applied = runtimeRef.current?.lastEventVersion ?? 0;
     if (pendingRefreshVersionRef.current <= applied) pendingRefreshVersionRef.current = null;
     if (pendingRefreshVersionRef.current == null || refreshScheduledRef.current ||
-        activeMutationsRef.current.size > 0 || !enabledRef.current || awaitingResyncRef.current) return;
+        activeMutationsRef.current.size > 0 || !isRefreshAllowed() || awaitingResyncRef.current) return;
     refreshScheduledRef.current = true;
     const generationAtSchedule = generationRef.current;
     Promise.resolve().then(async () => {
       if (generationAtSchedule !== generationRef.current || !mountedRef.current) return;
       try {
-        if (enabledRef.current && !awaitingResyncRef.current && activeMutationsRef.current.size === 0 &&
+        if (isRefreshAllowed() && !awaitingResyncRef.current && activeMutationsRef.current.size === 0 &&
             pendingRefreshVersionRef.current > (runtimeRef.current?.lastEventVersion ?? 0)) {
           await silentRefresh();
         }
@@ -130,7 +144,7 @@ export default function useStudentRaceSynchronization({
         if (generationAtSchedule === generationRef.current) refreshScheduledRef.current = false;
       }
     });
-  }, [silentRefresh]);
+  }, [silentRefresh, isRefreshAllowed]);
 
   const requestRefreshForVersion = useCallback((version) => {
     if (version <= (runtimeRef.current?.lastEventVersion ?? 0)) return;
@@ -142,7 +156,9 @@ export default function useStudentRaceSynchronization({
     const previous = lastObservedStreamVersionRef.current;
     if (signal.version <= previous) return;
     lastObservedStreamVersionRef.current = signal.version;
-    if ((previous > 0 && signal.version > previous + 1) || REFRESH_SIGNALS.has(signal.type)) {
+    const refreshSignals = isResultsWatchState(runtimeRef.current) ? RESULTS_WATCH_REFRESH_SIGNALS
+      : PLAYING_REFRESH_SIGNALS;
+    if ((previous > 0 && signal.version > previous + 1) || refreshSignals.has(signal.type)) {
       requestRefreshForVersion(signal.version);
     }
   }, [requestRefreshForVersion]);
@@ -206,9 +222,12 @@ export default function useStudentRaceSynchronization({
     return pending;
   }, [beginAuthoritativeMutation, endAuthoritativeMutation, isMutationCurrent, applyAuthoritativeSnapshot]);
 
+  const sessionFailed = isRacePlayerSessionError(requestError ?? error);
+  const resultsWatch = finishSyncEnabled && isResultsWatchState(runtimeState) && !sessionFailed;
+
   useStudentRaceEventStream({
-    enabled: syncEnabled && !awaitingResync && getRaceView(runtimeState) === RACE_VIEWS.PLAYING &&
-      !isRacePlayerSessionError(requestError ?? error),
+    enabled: ((syncEnabled && getRaceView(runtimeState) === RACE_VIEWS.PLAYING) || resultsWatch) &&
+      !awaitingResync && !sessionFailed,
     afterVersion: runtimeState?.lastEventVersion ?? 0,
     generation,
     onSignal: observeSignal,
@@ -217,5 +236,5 @@ export default function useStudentRaceSynchronization({
 
   return { runtimeState, finishOrder, requestFinishArbitration, error, streamError, applyAuthoritativeSnapshot,
     beginAuthoritativeMutation, endAuthoritativeMutation, isMutationCurrent,
-    prepareAuthoritativeResync, observeSignal };
+    prepareAuthoritativeResync, observeSignal, resultsWatch };
 }

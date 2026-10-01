@@ -1,7 +1,7 @@
-import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { readWebpHeader, WEBP_CHUNKS, WEBP_RIFF_SIGNATURE } from "../../../../test/readWebpHeader";
 import { TEACHER_RACE_PROJECTOR_CONFIG } from "../../config/teacherRaceProjectorConfig";
 import { TEACHER_CONNECTION_PRESENTATION } from "../../config/teacherRaceLiveConfig";
 import { TEACHER_RACE_PROJECTOR_ART } from "../teacherRaceProjectorArt";
@@ -10,10 +10,8 @@ const ASSET_DIRECTORY = path.resolve(
   import.meta.dirname,
   "../../../../assets/game/teacherRace/projector",
 );
-const EXTENDED_CHUNK = "VP8X";
-const SIMPLE_LOSSY_CHUNK = "VP8 ";
-const ALPHA_FLAG = 0x10;
-const VP8_DIMENSION_MASK = 0x3fff;
+const EXTENDED_CHUNK = WEBP_CHUNKS.EXTENDED;
+const SIMPLE_LOSSY_CHUNK = WEBP_CHUNKS.SIMPLE_LOSSY;
 
 const EXPECTED_FILES = Object.freeze({
   "teacher-jungle-backdrop.webp": { chunk: SIMPLE_LOSSY_CHUNK, hasAlpha: false, width: 1672, height: 941 },
@@ -26,38 +24,18 @@ const EXPECTED_FILES = Object.freeze({
   "teacher-title-badge.webp": { chunk: EXTENDED_CHUNK, hasAlpha: true, width: 1024, height: 329 },
 });
 
-function readWebpHeader(fileName) {
-  const bytes = readFileSync(path.join(ASSET_DIRECTORY, fileName));
-  const riff = bytes.toString("latin1", 0, 4) + bytes.toString("latin1", 8, 12);
-  const chunk = bytes.toString("latin1", 12, 16);
-
-  if (chunk === EXTENDED_CHUNK) {
-    return {
-      riff,
-      chunk,
-      hasAlpha: (bytes[20] & ALPHA_FLAG) !== 0,
-      width: bytes.readUIntLE(24, 3) + 1,
-      height: bytes.readUIntLE(27, 3) + 1,
-    };
-  }
-
-  return {
-    riff,
-    chunk,
-    hasAlpha: false,
-    width: bytes.readUInt16LE(26) & VP8_DIMENSION_MASK,
-    height: bytes.readUInt16LE(28) & VP8_DIMENSION_MASK,
-  };
+function readProjectorArtHeader(fileName) {
+  return readWebpHeader(path.join(ASSET_DIRECTORY, fileName));
 }
 
 describe("teacher projector world art files", () => {
   it.each(Object.entries(EXPECTED_FILES))("ships %s at its production size", (fileName, expected) => {
-    expect(readWebpHeader(fileName)).toEqual({ riff: "RIFFWEBP", ...expected });
+    expect(readProjectorArtHeader(fileName)).toEqual({ riff: WEBP_RIFF_SIGNATURE, ...expected });
   });
 
   it("keeps the sign board configuration in sync with the shipped props", () => {
-    const start = readWebpHeader("teacher-start-sign.webp");
-    const finish = readWebpHeader("teacher-finish-sign.webp");
+    const start = readProjectorArtHeader("teacher-start-sign.webp");
+    const finish = readProjectorArtHeader("teacher-finish-sign.webp");
     const { signBoards } = TEACHER_RACE_PROJECTOR_CONFIG;
 
     expect(signBoards.start.aspectRatio).toBeCloseTo(start.width / start.height, 6);
@@ -69,7 +47,7 @@ describe("teacher projector world art files", () => {
   });
 
   it("keeps the title plaque slices inside the shipped image and its caps wider than the text padding", () => {
-    const badge = readWebpHeader("teacher-title-badge.webp");
+    const badge = readProjectorArtHeader("teacher-title-badge.webp");
     const { titleBadge } = TEACHER_RACE_PROJECTOR_CONFIG;
 
     expect(titleBadge.aspectRatio).toBeCloseTo(badge.width / badge.height, 6);

@@ -8,6 +8,7 @@ import { MonitorSmartphone } from "lucide-react";
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import {
   ROUTES,
+  buildTeacherRaceResultsPath,
   buildTeacherRaceRoomPath,
 } from "../../../constants/routeConstants";
 import PreferredDeviceNotice from "../../../shared/responsive/PreferredDeviceNotice";
@@ -92,6 +93,7 @@ export default function TeacherRaceLivePage() {
         fullscreenSupported={isFullscreenSupported()}
         onToggleFullscreen={toggleFullscreen}
         onBackToRaces={handleBackToRaces}
+        resultsPath={buildTeacherRaceResultsPath(raceId)}
       />
       <PreferredDeviceNotice
         open={deviceNotice.open}

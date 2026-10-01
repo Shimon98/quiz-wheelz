@@ -52,6 +52,7 @@ export default {
   finished: {
     title: "המרוץ הסתיים!",
     body: "כל הכבוד לכל המשתתפים. הלוח הסופי נשאר על המסך.",
+    viewResults: "הצגת התוצאות",
   },
   deviceAdvice: {
     title: "מומלץ מסך גדול",

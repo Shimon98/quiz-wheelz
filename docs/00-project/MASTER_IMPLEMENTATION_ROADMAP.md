@@ -124,6 +124,14 @@ Client:
 
 **Gate:** a complete multi-player race can be demonstrated from login through results.
 
+Client checkpoint (2026-09-29): the Phase 3 client scope is COMPLETE (C4-A … C4-C in
+`../02-client/CLIENT_IMPLEMENTATION_PLAN.md`): the student finish state becomes live
+results on the race route, the teacher results screen consumes S3-01 without reordering
+anything, and the dashboard, All Races and the finished projector navigate to it. The
+gate was exercised with bot races during C4-A/C4-B2 QA and passed again on the final C4
+build (bot races 138–140, 2026-09-30). The next phase is Phase 4, starting with the S4-01
+effect/event contract that the client C5 stage consumes.
+
 ## Phase 4 — Lecturer gameplay requirements
 
 **Goal:** implement required strategic/fairness gameplay without destabilizing the

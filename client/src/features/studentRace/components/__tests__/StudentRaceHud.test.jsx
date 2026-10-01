@@ -199,6 +199,32 @@ describe("StudentRaceHud", () => {
     expect(screen.queryByText(i18n.t("studentRace:reward.points"))).not.toBeInTheDocument();
   });
 
+  it.each([
+    [1, "race-medal-gold"],
+    [3, "race-medal-bronze"],
+    [5, "race-placement-badge"],
+  ])("marks live place %s with the shared placement art while the number stays text", (rank, file) => {
+    render(<StudentRaceHud runtimeState={buildRuntimeState({ rank, playerCount: 7 })} />);
+    const chip = screen.getByLabelText(i18n.t("studentRace:hud.rankValue", { rank, count: 7 }));
+
+    expect(chip.querySelector("img").getAttribute("src")).toContain(file);
+    expect(chip.querySelector("img")).toHaveAttribute("alt", "");
+    expect(screen.getByText(`${rank} / 7`)).toBeInTheDocument();
+  });
+
+  it("uses the shared score star and streak flame art and lights the flame only during a combo", () => {
+    const { container, rerender } = render(<StudentRaceHud runtimeState={buildRuntimeState({ streak: 1 })} />);
+    const combo = () => container.querySelector(".race-hud-combo");
+
+    expect(container.querySelector(".race-hud-stat img").getAttribute("src")).toContain("stat-score");
+    expect(combo().querySelector("img").getAttribute("src")).toContain("stat-streak");
+    expect(combo()).toHaveAttribute("data-active", "false");
+
+    rerender(<StudentRaceHud runtimeState={buildRuntimeState({ streak: 3 })} />);
+    expect(combo()).toHaveAttribute("data-active", "true");
+    expect(container.querySelector(".race-hud-stat svg, .race-hud-combo svg")).toBeNull();
+  });
+
   it("lets the finish presentation take precedence over a final correct answer", () => {
     const runtimeState = { ...buildRuntimeState(), playerFinished: true };
     render(

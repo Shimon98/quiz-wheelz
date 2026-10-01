@@ -1,3 +1,4 @@
+import { resolveRacePlacement } from "../../../shared/components/raceRank/racePlacementConfig";
 import { getRaceProgressRatio } from "./getRaceProgressRatio";
 import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig";
 
@@ -44,6 +45,7 @@ export function getStudentRaceHudModel(runtimeState, language = "he", answerFeed
     rank: hasStanding ? player.rank : null,
     playerCount: hasStanding ? playerCount : null,
     rankText: hasStanding ? `${player.rank} / ${playerCount}` : null,
+    rankArt: resolveRacePlacement(player.rank, hasStanding).art,
     sharedRank,
     rankLabelKey: sharedRank ? "hud.sharedRankLabel" : "hud.rankLabel",
     rankValueKey: sharedRank ? "hud.sharedRankValue" : "hud.rankValue",

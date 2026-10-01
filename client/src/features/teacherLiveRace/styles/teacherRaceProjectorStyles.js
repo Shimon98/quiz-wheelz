@@ -1,3 +1,4 @@
+import { RACE_CHECKERED_PATTERN } from "../../../shared/styles/raceAccentStyles";
 import { resolveTeacherVehicleGeometry } from "../utils/resolveTeacherVehicleGeometry";
 
 const VEHICLE_GEOMETRY_TIERS =
@@ -18,9 +19,6 @@ const LANE_ACCENT_FALLBACK = "var(--qw-secondary)";
 
 const GLASS =
   "rounded-[var(--qw-radius-xl)] border border-[var(--qw-projector-glass-border)] bg-[var(--qw-projector-glass)] shadow-[var(--qw-shadow-card)] backdrop-blur-sm";
-
-const CHECKERED =
-  "bg-[repeating-conic-gradient(var(--qw-ink)_0_25%,#ffffff_0_50%)] bg-[length:0.5rem_0.5rem]";
 
 const WORLD_VERGE =
   "absolute bottom-0 hidden w-[clamp(16rem,34cqw,38rem)] max-w-[48%] translate-y-[16%] @3xl:block";
@@ -90,7 +88,7 @@ export const TEACHER_PROJECTOR_STYLES = Object.freeze({
   laneGuide:
     "absolute inset-y-1.5 w-0 -translate-x-1/2 border-l border-dashed border-[var(--qw-projector-lane-line)]",
   laneGuideStart: "border-l-2 border-solid border-[var(--qw-primary)]",
-  laneGuideFinish: `${CHECKERED} inset-y-1 w-2 rounded-sm border-0`,
+  laneGuideFinish: `${RACE_CHECKERED_PATTERN} inset-y-1 w-2 rounded-sm border-0`,
   laneProgressFill:
     "absolute left-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[color:var(--qw-lane-accent)] shadow-[0_0_6px_var(--qw-lane-accent)]",
   laneVehicleSlot:
@@ -113,7 +111,7 @@ export const TEACHER_PROJECTOR_STYLES = Object.freeze({
 
   leaderboardList: "m-0 flex list-none flex-col gap-1.5 p-0",
   leaderboardRow:
-    "relative grid grid-cols-[2rem_0.75rem_1fr_auto] items-center gap-2 overflow-hidden rounded-[var(--qw-radius-md)] border border-[var(--qw-projector-glass-border)] bg-[var(--qw-surface-alt)] px-2 pb-2.5 pt-1.5 transition-shadow duration-300 ease-out motion-reduce:transition-none",
+    "relative grid grid-cols-[2rem_0.75rem_1fr_auto] items-center gap-2 overflow-hidden rounded-[var(--qw-radius-md)] border border-[var(--qw-projector-glass-border)] bg-[var(--qw-surface-alt)] px-2 pb-2 pt-1 transition-shadow duration-300 ease-out motion-reduce:transition-none",
   leaderboardRowTier: Object.freeze({
     first:
       "shadow-[var(--qw-shadow-sm),0_0_0_2px_var(--qw-projector-rank-1-ring),0_0_18px_2px_var(--qw-projector-rank-1-glow)]",
@@ -122,27 +120,6 @@ export const TEACHER_PROJECTOR_STYLES = Object.freeze({
     third:
       "shadow-[var(--qw-shadow-sm),0_0_0_1px_var(--qw-projector-rank-3-ring),0_0_6px_var(--qw-projector-rank-3-glow)]",
     none: "shadow-[var(--qw-shadow-sm)]",
-  }),
-  leaderboardRank:
-    "grid h-7 w-7 place-items-center justify-self-center rounded-full bg-[var(--qw-surface)] text-sm font-extrabold ring-2 ring-[color:var(--qw-lane-accent)]",
-  leaderboardMedal: "relative grid h-7 w-7 place-items-center justify-self-center",
-  leaderboardMedalRibbon:
-    "absolute left-1/2 top-[52%] h-[1.2rem] w-[1.45rem] -translate-x-1/2 [clip-path:polygon(0_0,100%_0,100%_100%,72%_100%,50%_62%,28%_100%,0_100%)]",
-  leaderboardMedalDisk:
-    "relative grid h-7 w-7 place-items-center rounded-full text-sm font-extrabold leading-none ring-2 shadow-[0_1px_2px_rgba(15,42,67,0.45),inset_0_-2px_0_rgba(0,0,0,0.2),inset_0_2px_0_rgba(255,255,255,0.6)]",
-  leaderboardMedalTone: Object.freeze({
-    gold: Object.freeze({
-      disk: "bg-[radial-gradient(circle_at_35%_28%,#fff7cc_0%,#ffd84d_32%,#f2a91c_66%,#b36b06_100%)] text-[#5c3700] ring-[#ffe58f]",
-      ribbon: "bg-[linear-gradient(90deg,#e5484d_0_50%,#b8282d_50%_100%)]",
-    }),
-    silver: Object.freeze({
-      disk: "bg-[radial-gradient(circle_at_35%_28%,#ffffff_0%,#e6eaef_34%,#b9c1cb_68%,#7f8894_100%)] text-[#27303a] ring-[#f3f5f8]",
-      ribbon: "bg-[linear-gradient(90deg,#3ba9f4_0_50%,#1e6fb8_50%_100%)]",
-    }),
-    bronze: Object.freeze({
-      disk: "bg-[radial-gradient(circle_at_35%_28%,#ffe3c6_0%,#eba56a_34%,#bb6c2f_68%,#7c4115_100%)] text-[#3b1d05] ring-[#f7cda6]",
-      ribbon: "bg-[linear-gradient(90deg,#2fa84f_0_50%,#1d7a39_50%_100%)]",
-    }),
   }),
   leaderboardSwatch: "h-3 w-3 rounded-full",
   leaderboardName: "min-w-0 truncate text-sm font-bold @6xl:text-base",

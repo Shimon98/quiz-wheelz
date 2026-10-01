@@ -4,6 +4,7 @@ import useRacePlayerState from "../../../shared/racePlayer/useRacePlayerState.js
 import { getRaceView, RACE_VIEWS } from "../../../shared/racePlayer/getRaceView.js";
 import { isRacePlayerSessionError } from "../../../errors/errorChecks.js";
 import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig.js";
+import { STUDENT_RACE_RESULTS_CONFIG } from "../config/studentRaceResultsConfig.js";
 import useStudentRaceSynchronization from "./useStudentRaceSynchronization.js";
 
 export default function useRaceBootstrap({ syncEnabled = true, finishSyncEnabled = syncEnabled } = {}) {
@@ -26,6 +27,8 @@ export default function useRaceBootstrap({ syncEnabled = true, finishSyncEnabled
 
   useIntervalWhen(loader.silentRefresh, STUDENT_RACE_CONFIG.raceStatePollMs,
     syncEnabled && view === RACE_VIEWS.PLAYING && !isRacePlayerSessionError(error));
+  useIntervalWhen(loader.silentRefresh, STUDENT_RACE_RESULTS_CONFIG.watchPollMs,
+    synchronization.resultsWatch && !isRacePlayerSessionError(error));
 
   return { ...synchronization, view, error, isLoading: loader.isLoading,
     retry: loader.retry, authoritativeResync };

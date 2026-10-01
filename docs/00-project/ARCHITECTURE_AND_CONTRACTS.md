@@ -154,7 +154,8 @@ CANCELLED           → no primary action
 ```
 
 The FINISHED target uses the S3-01 results endpoint, while IN_PROGRESS uses the
-existing teacher live route/API; the C4 client Result Screen remains future work.
+existing teacher live route/API; the C4 client Result Screen at
+`/teacher/races/:raceId/results` consumes it.
 Dashboard `currentPlayers` is the durable count of every RacePlayer row for that
 Race, regardless of player status. A non-empty dashboard loads those counts with one
 grouped repository query and maps races without a count row to zero; an empty

@@ -54,10 +54,11 @@
   white-space: nowrap;
 }
 
-.race-hud-stat-label svg {
-  width: 12px;
-  height: 12px;
+.race-hud-stat-art {
+  width: 16px;
+  height: 16px;
   flex: none;
+  object-fit: contain;
 }
 
 .race-hud-stat-value {
@@ -157,14 +158,19 @@
   color: var(--race-hud-gold);
 }
 
-.race-hud-combo svg {
-  width: 23px;
-  height: 29px;
+.race-hud-combo-art {
+  width: 28px;
+  height: 28px;
   flex: none;
+  object-fit: contain;
+  opacity: .45;
+  filter: grayscale(1);
+  transition: opacity 200ms var(--qw-ease-standard), filter 200ms var(--qw-ease-standard);
 }
 
-.race-hud-combo[data-active="true"] svg {
-  fill: color-mix(in srgb, var(--qw-accent) 24%, transparent);
+.race-hud-combo[data-active="true"] .race-hud-combo-art {
+  opacity: 1;
+  filter: none;
 }
 
 .race-hud-combo-copy {
@@ -306,7 +312,7 @@
   .race-hud-timer-value { font-size: 22px; }
   .race-hud-telemetry { gap: 8px; padding: 3px 8px; }
   .race-hud-combo { min-width: 56px; gap: 3px; }
-  .race-hud-combo svg { width: 20px; }
+  .race-hud-combo-art { width: 24px; height: 24px; }
   .race-hud-combo-copy strong { font-size: 21px; }
   .race-hud-reward { top: calc(100% + 8px); padding: 6px 10px; gap: 7px; }
   .race-hud-reward-copy strong { font-size: 17px; }

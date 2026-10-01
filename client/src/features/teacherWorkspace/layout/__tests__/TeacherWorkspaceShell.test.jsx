@@ -8,8 +8,8 @@ import i18n from "../../../../i18n/i18n";
 import { I18N_NAMESPACES } from "../../../../i18n/i18nConstants";
 import { ROUTES } from "../../../../constants/routeConstants";
 import {
-  WORKSPACE_LIVE_RACE_BREAKPOINT,
   WORKSPACE_MOBILE_BREAKPOINT,
+  WORKSPACE_PROJECTOR_BREAKPOINT,
 } from "../../config/teacherWorkspaceConfig";
 import TeacherWorkspaceShell from "../TeacherWorkspaceShell";
 
@@ -25,6 +25,7 @@ function renderShellAt(pathname) {
         <Routes>
           <Route element={<TeacherWorkspaceShell />}>
             <Route path={ROUTES.TEACHER_RACE_LIVE} element={<p>live page</p>} />
+            <Route path={ROUTES.TEACHER_RACE_RESULTS} element={<p>results page</p>} />
             <Route path={ROUTES.TEACHER_RACES} element={<p>races page</p>} />
           </Route>
         </Routes>
@@ -64,7 +65,8 @@ afterEach(() => {
 
 describe("TeacherWorkspaceShell navigation breakpoint", () => {
   it.each([
-    ["/teacher/races/7/live", WORKSPACE_LIVE_RACE_BREAKPOINT],
+    ["/teacher/races/7/live", WORKSPACE_PROJECTOR_BREAKPOINT],
+    ["/teacher/races/7/results", WORKSPACE_PROJECTOR_BREAKPOINT],
     [ROUTES.TEACHER_RACES, WORKSPACE_MOBILE_BREAKPOINT],
   ])("on %s the header, the burger and the navbar all switch at %s", (pathname, breakpoint) => {
     renderShellAt(pathname);

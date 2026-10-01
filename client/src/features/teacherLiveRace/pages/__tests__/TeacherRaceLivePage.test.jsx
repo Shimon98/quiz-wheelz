@@ -17,6 +17,7 @@ vi.mock("../../../../api/teacherRaceLiveApi", () => ({
 
 const ROOM_MARKER = "room-page-marker";
 const RACES_MARKER = "races-page-marker";
+const RESULTS_MARKER = "results-page-marker";
 
 function text(key) {
   return i18n.t(`${I18N_NAMESPACES.TEACHER_LIVE_RACE}:${key}`);
@@ -35,6 +36,10 @@ function renderLivePage(raceId = 7) {
           <Route
             path={ROUTES.TEACHER_RACES}
             element={<div data-testid={RACES_MARKER} />}
+          />
+          <Route
+            path={ROUTES.TEACHER_RACE_RESULTS}
+            element={<div data-testid={RESULTS_MARKER} />}
           />
         </Routes>
       </MemoryRouter>
@@ -95,6 +100,10 @@ describe("TeacherRaceLivePage", () => {
     expect(screen.getByText(text("finished.title"))).toBeInTheDocument();
     expect(screen.getByText(text("connection.ended"))).toBeInTheDocument();
     expect(screen.getAllByText("Noa")).toHaveLength(2);
+
+    fireEvent.click(screen.getByRole("link", { name: text("finished.viewResults") }));
+
+    expect(screen.getByTestId(RESULTS_MARKER)).toBeInTheDocument();
   });
 
   it("wires the fullscreen action to the projector surface and follows the browser state", async () => {

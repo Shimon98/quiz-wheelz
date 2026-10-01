@@ -3,7 +3,7 @@ import { RACE_STATUSES } from "./raceStatusConfig";
 export const RACE_ACTION_KINDS = Object.freeze({
   ROOM: "room",
   LIVE: "live",
-  SUMMARY_SOON: "summarySoon",
+  RESULTS: "results",
   NONE: "none",
 });
 
@@ -21,8 +21,8 @@ export const RACE_PRIMARY_ACTIONS = Object.freeze({
     labelKey: "racesPage.actions.watchLive",
   },
   [RACE_STATUSES.FINISHED]: {
-    kind: RACE_ACTION_KINDS.SUMMARY_SOON,
-    labelKey: "racesPage.actions.viewSummary",
+    kind: RACE_ACTION_KINDS.RESULTS,
+    labelKey: "racesPage.actions.viewResults",
   },
   [RACE_STATUSES.CANCELLED]: {
     kind: RACE_ACTION_KINDS.NONE,

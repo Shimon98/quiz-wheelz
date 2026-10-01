@@ -52,6 +52,7 @@ export default {
   finished: {
     title: "The race is over!",
     body: "Well done, everyone. The final board stays on screen.",
+    viewResults: "View results",
   },
   deviceAdvice: {
     title: "A larger screen is recommended",

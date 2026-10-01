@@ -8,6 +8,15 @@
 > The code is authoritative for what is implemented. This document is authoritative
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
+Checkpoint, 2026-09-29: **C4 Results COMPLETE on the client** on `feature/C4-results` —
+C4-A teacher Result Screen (`fd8dedf`), C4-B1 student progressive results engine
+(`cba8056`), C4-B2 student results UI and C4-C results art, final assets and teacher name
+isolation. 1121 tests/128 files, lint and build pass. Teacher results were reviewed live
+(race 131) and student results with bot races (133/136/137); the C4-C closure ran fixture
+QA at 320–1920 px, HE/EN, light/dark, and the final build passed live closure QA on
+2026-09-30 (bot races 138–140, real student and teacher browsers). C5 is next once the
+server S4-01 effect/event contract exists.
+
 Checkpoint, 2026-09-24: **C3 teacher live race COMPLETE on the client** — C3-01 (live
 route and authoritative live-state) and C3-02 (durable teacher SSE sync) merged in
 PR #69; C3-03 (projector UI), C3-04 (eight production side-view vehicles, responsive
@@ -372,7 +381,6 @@ Implemented A–G:
   a fresh race-preview tab produced no console errors or warnings.
 
 ## Missing integration
-- results pages
 - full auth server flows.
 - race audio: deferred polish backlog (C2-A in the client plan); it does not block C3.
 
@@ -442,14 +450,49 @@ teacher/SSE/results/auth work does not belong to that single-player gate.
 - the workspace shell collapses its navbar at `lg` on the live route (`sm` elsewhere)
   from one breakpoint key; the preferred-device notice sits below the header.
 
+## Results (C4 — COMPLETE 2026-09-29)
+
+- teacher (`features/teacherRaceResults/`): lazy route `/teacher/races/:raceId/results`
+  inside the workspace shell (projector `lg` breakpoint); one final-results read through a
+  contract mapper; the view model never sorts, ranks or chooses winners, so standings,
+  ties, winners (none, one or many) and awards (including disconnected recipients) stay
+  exactly as the server sends them; dashboard and All Races open FINISHED races here and
+  the finished projector offers an explicit link; 404, 409 (not ready, with retry) and
+  network/contract errors have their own states
+- student (`features/studentRace/`, same `/student/race` route): after the own finish
+  ceremony the screen becomes results — WATCHING (groups RANKED/CONFIRMING/RACING/OUT) and
+  FINAL (server rank cohorts, ties kept); the one student EventSource stays open as a
+  passive watcher, heartbeat and gameplay stay stopped, a 5-second race-state poll is the
+  fallback, and unproven finishers are proven through the existing single-flight
+  finish-arbitration request with per-player stagger and backoff, never after the race ends
+- results art: one owner (`shared/raceResults/raceResultsArt.js`) for
+  `assets/game/raceResults/`; front hero karts per server `vehicleAssetKey`
+  (`shared/raceVehicles/raceVehicleFrontArt.js`) stand on the podium in
+  `shared/components/raceResults/RaceResultsStage`; lists keep the side-view karts
+- one placement owner for every race surface, `RacePlacementBadge`
+  (`shared/components/raceRank/`): callers pass only `rank` and `placementArtEligible`
+  (finished in results, not disconnected while live) and one resolver draws the medal art
+  for places 1–3, the wooden badge around a real DOM number for 4+, or a quiet
+  lane-colored number; the Teacher Live leaderboard, the student race HUD rank chip, both
+  results lists, the student hero and the winner cards all use it (the old CSS medals are
+  gone) and compact rows keep one height
+- stat icons: the score star and the streak flame in the race HUD and the student results
+  stat cards (`StatCard` `art`); the HUD flame stays dim until a combo
+- award emblems: trophy (highest score), target (most correct answers), flame (best streak)
+- names: student results and teacher results isolate each name in `<bdi>` (per recipient in
+  award lists), so a long Latin name in RTL keeps its beginning and ends with the ellipsis;
+  the live projector leaderboard does the same (lane labels sit on the always left-to-right
+  track and were already correct).
+
 ## Stale client state to clean
 
-- results route constant exists without a route.
+- none recorded; the results route constant now backs the C4 Result Screen route.
 
 ## Immediate client priority
 
 ```text
-Teacher live race (C3) complete
-→ branch synchronized with main (S3-01 results, S3-02 player counts) → results (C4)
-→ race sound polish (C2-A, deferred) and carried-forward pre-release device/recovery QA
+Results (C4) complete
+→ C5 required gameplay UI once the server S4-01 effect/event contract exists
+→ meanwhile: race sound polish (C2-A) and the carried-forward pre-release
+  device/recovery QA
 ```

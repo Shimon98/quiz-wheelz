@@ -949,18 +949,97 @@ retryable error states are explicit.
 - ranks 1/2/3 render as gold/silver/bronze medals with the number as real text; rank
   4 and below keep the player-colored circle.
 
-## C4 — Results — NEXT
+## C4 — Results — COMPLETE
 
-The branch is synchronized with `main` (S3-01 final results, S3-02 dashboard player
-counts). C4 consumes the teacher results endpoint from the server results work and
-does not duplicate it.
+**Status:** C4-A (teacher results, `fd8dedf`) and C4-B1 (student progressive results
+engine, `cba8056`) DONE; C4-B2 (student results UI) and C4-C (results art, final assets,
+teacher name isolation, closure) DONE on `feature/C4-results` (2026-09-29). C4 is complete
+on the client; C5 is next. Teacher results were reviewed live on race 131 and student
+results on bot races 133/136/137. The final build passed live closure QA on 2026-09-30:
+bot races 138, 139 and 140, each with a real student browser and a real teacher browser
+(Hebrew and English, light and dark). Verified: the real vehicle color on the podium and in
+the rows, results only after the finish ceremony, progressive groups, refresh recovery, a
+real final tie, a non-finisher without medal, the placement badge at place 4, teacher
+results equal to the server model, and bounded finish-arbitration traffic (one request per
+opponent finish while racing, 6–10 per student over a whole race, none after the race
+ended).
 
-- student finish state
-- teacher results route/page
-- final ranking/statistics
-- return to dashboard/race history.
+Depends on S3-01 (final results read model, DONE on the server). C4 made no server change.
 
-## C5 — Required gameplay UI
+### C4-A — Teacher results — DONE
+
+- lazy route `/teacher/races/:raceId/results` inside the teacher workspace shell, with the
+  projector `lg` navbar breakpoint; FINISHED races open it from the dashboard and All Races
+  through the single race primary-action owner, and the finished projector offers an
+  explicit "View results" link (the projector never navigates by itself)
+- one read, `GET /api/teacher/races/{raceId}/results`, through a contract mapper; the view
+  model keeps the server order, ranks, winners (none, one or many) and awards (positive
+  values, ties, disconnected recipients) exactly as sent; the client never sorts, ranks or
+  chooses a winner
+- explicit states: loading, not found (404), not available yet (409: explanation, retry and
+  back, no guessed Live link), retryable network error, contract error; finish times come
+  from the server epochs and show as unavailable when missing
+- summary cards, winners, awards (a large tie shows two names and "and N more", the full
+  list stays in the tooltip and for screen readers), a semantic standings table with scoped
+  headers, back to All Races and fullscreen of the results surface.
+
+### C4-B1 — Student progressive results engine — DONE
+
+- the same `/student/race` route: after the own finish ceremony the race screen turns into
+  results, WATCHING while the race runs and FINAL once it is finished
+- the one student EventSource stays open as a passive watcher after the own finish (refresh
+  on player/race finished and version gaps); heartbeat and gameplay stay stopped; a 5-second
+  race-state poll is the fallback and the only source of disconnects
+- finish proof: unproven finishers are confirmed through the existing single-flight
+  finish-arbitration request with a per-player stagger and exponential backoff (1.5 s up to
+  15 s); nothing is requested after the race ends or while the C2 finish ceremony still owns
+  arbitration
+- view model: WATCHING groups RANKED (proven order), CONFIRMING, RACING and OUT; FINAL rank
+  cohorts from the server ranks without an invented tie order; the own place stays pending
+  until proven; opponents never expose private numbers.
+
+### C4-B2 — Student results UI — DONE
+
+- hero with four honest states: confirming, proven place, final place, did not finish
+- progress from status counts, final summary and "join another race"
+- one standings board with the four groups or the final cohorts; rows slide by identity
+  (instant under reduced motion); names isolated in `<bdi>` and truncated from their own end
+- focus moves to the race heading once and the personal result is announced politely.
+
+### C4-C — Results art and closure — DONE
+
+- one art owner, `shared/raceResults/raceResultsArt.js`, for `assets/game/raceResults/`
+  (19 WebPs, about 882 KB): eight front hero karts, gold/silver/bronze medals, the neutral
+  placement badge, trophy/target/streak award emblems, score/streak stat icons, the podium
+  and the title plaque,
+  processed privately under `docs/vision` from approved masters; the seven extra hero colors
+  are recolors of the GREEN master by the side-view kart pipeline, never CSS filters
+- `shared/raceVehicles/raceVehicleFrontArt.js` maps the server `vehicleAssetKey` to the front
+  hero kart; rows keep the side-view karts
+- `shared/components/raceResults/RaceResultsStage`: the player's own kart stands on the
+  podium from measured geometry (podium 1.45 × kart width) with a glow in the lane color
+- one placement language everywhere (unified 2026-09-30): `RacePlacementBadge` and its
+  resolver draw medal art for places 1–3, the wooden badge around a real DOM number for 4+
+  and a quiet lane-colored number when the caller says the place is not eligible (did not
+  finish, disconnected while live); used by the Teacher Live leaderboard, the student race
+  HUD rank chip, both results lists, the student hero and the winner cards; the old CSS
+  medals were removed and compact rows keep one height; the rank is always real text
+- the score star and the streak flame appear in the race HUD and the student results stat
+  cards
+- student: wooden title plaque carrying the DOM results title, podium hero, one race board;
+  teacher: winners on the podium (compact cards for ties), award emblems, medal art in the
+  standings; the existing teacher title plaque stays
+- teacher results isolate every name in `<bdi>` (one per recipient in award lists), so a long
+  Latin name in RTL keeps its beginning and ends with the ellipsis
+- fixture QA from 320 to 1920 px, phone landscape and tablet, HE/EN, light/dark, all eight
+  colors, single/tied/no winner and long names: no horizontal overflow, no broken images.
+
+## C5 — Required gameplay UI — NEXT
+
+**Status:** NEXT client stage. It renders server-owned game events and effects, so it starts
+from the S4-01 effect/event contract (Phase 4 in the master roadmap); do not build it against
+an imagined contract. Client-only work that can proceed meanwhile: C2-A race sound polish and
+the carried-forward release QA.
 
 - junction offer
 - highway/dirt-road question modes

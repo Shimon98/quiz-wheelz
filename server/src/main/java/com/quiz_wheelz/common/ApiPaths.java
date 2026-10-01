@@ -1,5 +1,7 @@
 package com.quiz_wheelz.common;
 
+import java.util.List;
+
 public final class ApiPaths {
 
     public static final String AUTH_BASE = AppConstants.API_PREFIX + "/auth";
@@ -68,6 +70,11 @@ public final class ApiPaths {
     public static final String TEACHER_RACE_LIVE_STATE = RACE_ID + LIVE_STATE;
     public static final String TEACHER_RACE_RESULTS = RACE_ID + RESULTS;
     public static final String TEACHER_RACE_EVENTS_STREAM = RACE_ID + EVENTS + STREAM;
+    // Long-lived SSE endpoints; excluded from open-in-view in OpenEntityManagerInViewConfig.
+    public static final List<String> LIVE_EVENT_STREAMS = List.of(
+            TEACHER_RACES + TEACHER_RACE_EVENTS_STREAM,
+            RACE_PLAYERS_EVENTS_STREAM
+    );
 
     public static final String ACTUATOR_HEALTH = "/actuator/health";
     public static final String SWAGGER_UI = "/swagger-ui/**";

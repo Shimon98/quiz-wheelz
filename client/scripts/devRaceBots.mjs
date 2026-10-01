@@ -4,8 +4,10 @@ const POLL_MS = 2000;
 const HEARTBEAT_EVERY_POLLS = 7;
 const RUNNING_RACE_STATUSES = new Set(["IN_PROGRESS"]);
 const ENDED_RACE_STATUSES = new Set(["FINISHED", "COMPLETED", "CANCELLED"]);
+const TERMINAL_ERROR_CODES = ["RACE_PLAYER_NOT_RACING", "RACE_NOT_IN_PROGRESS"];
 
-const options = { bots: 6, maxPlayers: 8, distance: 1000, title: "Dev bots race", answerEverySeconds: 0, start: false, seconds: 0 };
+const options = { bots: 6, maxPlayers: 8, distance: 1000, title: "Dev bots race", answerEverySeconds: 0, staggerSeconds: 0,
+  wrongEvery: 0, leaveCount: 0, leaveAfterSeconds: 0, start: false, seconds: 0 };
 for (const argument of process.argv.slice(2)) {
   const [key, value] = argument.replace(/^--/, "").split("=");
   if (key === "bots") options.bots = Number(value);
@@ -13,16 +15,22 @@ for (const argument of process.argv.slice(2)) {
   else if (key === "distance") options.distance = Number(value);
   else if (key === "title") options.title = value;
   else if (key === "answer") options.answerEverySeconds = Number(value);
+  else if (key === "stagger") options.staggerSeconds = Number(value);
+  else if (key === "wrongEvery") options.wrongEvery = Number(value);
+  else if (key === "leave") [options.leaveCount, options.leaveAfterSeconds] = value.split("@").map(Number);
   else if (key === "start") options.start = true;
   else if (key === "seconds") options.seconds = Number(value);
   else if (key === "help") { printHelp(); process.exit(0); }
 }
 
 function printHelp() {
-  console.log(`node scripts/devRaceBots.mjs [--bots=6] [--maxPlayers=8] [--distance=1000] [--title=...] [--answer=<seconds>] [--start] [--seconds=<n>]
+  console.log(`node scripts/devRaceBots.mjs [--bots=6] [--maxPlayers=8] [--distance=1000] [--title=...] [--answer=<seconds>] [--stagger=<seconds>] [--wrongEvery=<n>] [--leave=<count>@<seconds>] [--start] [--seconds=<n>]
 Creates a race as the dev teacher, joins the bots and keeps them online (polling + heartbeat) until Ctrl+C.
 Join the free slots from real browsers with the printed room code, then start the race from the teacher dashboard (or pass --start).
 --answer=N makes every bot answer its current question correctly every N seconds. --seconds=N exits automatically after N seconds.
+A bot that finishes (or is told it is no longer racing) stops answering and heartbeating; the script exits when the race ends.
+--stagger=S adds S seconds per bot index to the answer interval so bots finish at different times.
+--wrongEvery=K makes every Kth answer of a bot wrong (offset by bot index); --leave=K@T makes the last K bots leave T seconds after the start.
 Env: QW_API_BASE (default ${API}), QW_TEACHER_USER, QW_TEACHER_PASSWORD.`);
 }
 
@@ -51,13 +59,13 @@ function solve(questionText) {
   try { return Function(`return (${expression})`)(); } catch { return null; }
 }
 
-async function answerCurrentQuestion(bot) {
+async function answerCurrentQuestion(bot, wrong) {
   const { data: question } = await call("/race-players/me/question/current", { method: "POST", cookie: bot.cookie });
   const value = solve(question.questionText ?? "");
-  const choice = question.choices?.find((candidate) => Number(candidate.choiceText) === value);
+  const choice = question.choices?.find((candidate) => (Number(candidate.choiceText) === value) !== wrong);
   if (choice == null) return `no matching choice for "${question.questionText}"`;
   await call("/race-players/me/answers", { method: "POST", cookie: bot.cookie, body: { questionId: question.questionId, choiceId: choice.choiceId } });
-  return `answered ${question.questionText} ${value}`;
+  return `${wrong ? "answered wrong" : "answered"} ${question.questionText} ${value}`;
 }
 
 async function raceStateWithReconnect(bot) {
@@ -82,31 +90,69 @@ const bots = [];
 for (let index = 1; index <= options.bots; index += 1) {
   const displayName = `Bot ${index}`;
   const { data, response } = await call("/race-players/join", { method: "POST", body: { roomCode: race.roomCode, displayName } });
-  bots.push({ displayName, cookie: cookieFrom(response, "RACE_PLAYER_TOKEN"), lane: data.player?.laneNumber });
+  bots.push({ index, displayName, cookie: cookieFrom(response, "RACE_PLAYER_TOKEN"), lane: data.player?.laneNumber,
+    answerEveryMs: (options.answerEverySeconds + (index - 1) * options.staggerSeconds) * 1000, lastAnswerAt: 0, answered: 0, left: false,
+    done: false });
 }
 console.log(`race ${race.raceId} room code ${race.roomCode}: ${bots.length} bots joined (lanes ${bots.map((bot) => bot.lane).join(", ")}), ${options.maxPlayers - bots.length} free slots`);
 console.log(options.start ? "starting the race now" : "join the free slots from real browsers, then start the race from the teacher dashboard; Ctrl+C stops the bots");
 if (options.start) await call(`/teacher/races/${race.raceId}/start`, { method: "POST", cookie: teacherCookie });
 
+async function leaveDueBots(raceStartedAt) {
+  if (options.leaveCount <= 0 || Date.now() - raceStartedAt < options.leaveAfterSeconds * 1000) return;
+  for (const bot of bots.slice(-options.leaveCount)) {
+    if (bot.left) continue;
+    bot.left = true;
+    console.log(`${bot.displayName}: ${await call("/race-players/me/leave", { method: "POST", cookie: bot.cookie }).then(() => "left the race").catch((error) => error.message)}`);
+  }
+}
+
+function markDone(bot, reason) {
+  if (bot.done) return;
+  bot.done = true;
+  console.log(`${bot.displayName}: ${reason}, no more answers or heartbeats`);
+}
+
+function stopOnTerminalError(bot, error) {
+  const code = TERMINAL_ERROR_CODES.find((candidate) => error.message.includes(candidate));
+  if (code) markDone(bot, code);
+  return error.message;
+}
+
+async function answerDueBots() {
+  if (options.answerEverySeconds <= 0) return;
+  for (const bot of bots) {
+    if (bot.left || bot.done || Date.now() - bot.lastAnswerAt < bot.answerEveryMs) continue;
+    bot.lastAnswerAt = Date.now();
+    bot.answered += 1;
+    const wrong = options.wrongEvery > 0 && (bot.answered + bot.index) % options.wrongEvery === 0;
+    const outcome = await answerCurrentQuestion(bot, wrong).catch((error) => stopOnTerminalError(bot, error));
+    if (!bot.done) console.log(`${bot.displayName}: ${outcome}`);
+  }
+}
+
 const startedAt = Date.now();
 let polls = 0;
-let lastAnswerAt = 0;
 let raceStatus = null;
+let raceStartedAt = null;
 while (options.seconds === 0 || Date.now() - startedAt < options.seconds * 1000) {
   polls += 1;
   for (const bot of bots) {
-    if (polls % HEARTBEAT_EVERY_POLLS === 1) await call("/race-players/me/heartbeat", { method: "POST", cookie: bot.cookie }).catch(() => null);
+    if (bot.left) continue;
     const state = await raceStateWithReconnect(bot);
     if (state.error) { console.log(`${bot.displayName}: ${state.error.message}`); continue; }
+    if (state.snapshot?.playerFinished) markDone(bot, "finished");
+    if (!bot.done && polls % HEARTBEAT_EVERY_POLLS === 1) {
+      await call("/race-players/me/heartbeat", { method: "POST", cookie: bot.cookie }).catch((error) => stopOnTerminalError(bot, error));
+    }
     const nextStatus = state.raceStatus ?? state.status ?? state.snapshot?.raceStatus ?? null;
     if (nextStatus !== raceStatus) { raceStatus = nextStatus; console.log(`race status ${raceStatus}`); }
   }
   if (ENDED_RACE_STATUSES.has(raceStatus)) break;
-  const answerDue = options.answerEverySeconds > 0 && RUNNING_RACE_STATUSES.has(raceStatus) &&
-    Date.now() - lastAnswerAt >= options.answerEverySeconds * 1000;
-  if (answerDue) {
-    lastAnswerAt = Date.now();
-    for (const bot of bots) console.log(`${bot.displayName}: ${await answerCurrentQuestion(bot).catch((error) => error.message)}`);
+  if (RUNNING_RACE_STATUSES.has(raceStatus)) {
+    raceStartedAt ??= Date.now();
+    await leaveDueBots(raceStartedAt);
+    await answerDueBots();
   }
   await sleep(POLL_MS);
 }

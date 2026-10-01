@@ -1,5 +1,5 @@
 import { TEACHER_RACE_PROJECTOR_ART } from "./teacherRaceProjectorArt";
-import { TEACHER_RACE_VEHICLE_MANIFEST } from "./teacherRaceVehicleManifest";
+import { RACE_VEHICLE_SIDE_ART } from "../../../shared/raceVehicles/raceVehicleSideArt";
 
 const requestedUrls = new Set();
 
@@ -12,7 +12,7 @@ export function collectTeacherProjectorArtUrls() {
       verge,
       ...Object.values(signs),
       ...Object.values(uiAccents),
-      ...Object.values(TEACHER_RACE_VEHICLE_MANIFEST),
+      ...Object.values(RACE_VEHICLE_SIDE_ART),
     ]),
   ];
 }

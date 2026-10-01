@@ -61,4 +61,16 @@ describe("TeacherRacesPage row actions", () => {
 
     expect(navigateMock).toHaveBeenCalledExactlyOnceWith("/teacher/races/7/room");
   });
+
+  it("opens the results of a finished race from the button and from the row", () => {
+    renderPage([race({ status: "FINISHED" })]);
+
+    fireEvent.click(screen.getAllByRole("button", { name: actionLabel("viewResults") })[0]);
+    fireEvent.click(screen.getByRole("row", { name: /Jungle Cup/ }));
+
+    expect(navigateMock.mock.calls).toEqual([
+      ["/teacher/races/7/results"],
+      ["/teacher/races/7/results"],
+    ]);
+  });
 });

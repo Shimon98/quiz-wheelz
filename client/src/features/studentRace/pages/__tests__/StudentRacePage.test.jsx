@@ -364,8 +364,11 @@ describe("StudentRacePage — session-first gating", () => {
       });
 
       expect(
-        screen.getByText(i18n.t("studentRace:status.finishedTitle")),
+        screen.getByText(i18n.t("studentRace:results.finalBadge")),
       ).toBeInTheDocument();
+      expect(
+        screen.queryByText(i18n.t("studentRace:status.finishedTitle")),
+      ).not.toBeInTheDocument();
 
       await act(async () => {
         await vi.advanceTimersByTimeAsync(

@@ -33,6 +33,10 @@ const TeacherRaceLivePage = lazy(
     () => import("../features/teacherLiveRace/pages/TeacherRaceLivePage")
 );
 
+const TeacherRaceResultsPage = lazy(
+    () => import("../features/teacherRaceResults/pages/TeacherRaceResultsPage")
+);
+
 export default function AppRouter() {
     return (
         <BrowserRouter>
@@ -101,6 +105,14 @@ export default function AppRouter() {
                         element={
                             <Suspense fallback={null}>
                                 <TeacherRaceLivePage />
+                            </Suspense>
+                        }
+                    />
+                    <Route
+                        path={ROUTES.TEACHER_RACE_RESULTS}
+                        element={
+                            <Suspense fallback={null}>
+                                <TeacherRaceResultsPage />
                             </Suspense>
                         }
                     />
