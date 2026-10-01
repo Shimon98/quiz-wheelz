@@ -1,6 +1,7 @@
 package com.quiz_wheelz.controller;
 
 import com.quiz_wheelz.common.ApiPaths;
+import com.quiz_wheelz.common.RaceLiveStreamRules;
 import com.quiz_wheelz.config.TokenConfig;
 import com.quiz_wheelz.entitys.*;
 import com.quiz_wheelz.enums.UserRole;
@@ -23,12 +24,15 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -126,6 +130,19 @@ class StudentRaceLiveStreamSecurityTest {
         verifyNoInteractions(presence);
         registry.remove(connection.connectionId());
         connection.emitter().complete();
+    }
+
+    @Test
+    void endedStreamCompletesThroughTheAsyncDispatch() throws Exception {
+        MvcResult opened = mvc.perform(stream("0").cookie(validCookie()))
+                .andExpect(status().isOk()).andExpect(request().asyncStarted()).andReturn();
+        var connection = registry.activeConnections(RaceLiveStreamAudience.STUDENT).stream()
+                .filter(value -> value.raceId().equals(race.getId())).findFirst().orElseThrow();
+
+        connection.emitter().send(SseEmitter.event().comment(RaceLiveStreamRules.HEARTBEAT_COMMENT));
+        connection.emitter().complete();
+
+        mvc.perform(asyncDispatch(opened)).andExpect(status().isOk());
     }
 
     private MockHttpServletRequestBuilder stream(String cursor) {

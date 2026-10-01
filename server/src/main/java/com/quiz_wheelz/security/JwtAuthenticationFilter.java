@@ -9,8 +9,11 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -23,6 +26,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final CookieUtils cookieUtils;
     private final JwtService jwtService;
     private final UserService userService;
+    private final SecurityContextRepository securityContextRepository =
+            new RequestAttributeSecurityContextRepository();
 
     public JwtAuthenticationFilter(
             CookieUtils cookieUtils,
@@ -42,7 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
         try {
-            authenticateRequestIfTokenExists(request);
+            authenticateRequestIfTokenExists(request, response);
         } catch (RuntimeException exception) {
             SecurityContextHolder.clearContext();
         }
@@ -50,7 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private void authenticateRequestIfTokenExists(HttpServletRequest request) {
+    private void authenticateRequestIfTokenExists(HttpServletRequest request, HttpServletResponse response) {
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             return;
         }
@@ -84,6 +89,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 new WebAuthenticationDetailsSource().buildDetails(request)
         );
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        // Long-lived responses such as the teacher SSE stream finish with a second servlet dispatch of
+        // type ASYNC. OncePerRequestFilter skips this filter on that dispatch, and Spring Security then
+        // reloads the context from the request-scoped repository used by the STATELESS chain. Without
+        // this save the ASYNC dispatch runs anonymous, /api/** rejects it on an already committed
+        // response, and the request ends in a security error instead of completing normally.
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+        securityContextRepository.saveContext(context, request, response);
     }
 }
