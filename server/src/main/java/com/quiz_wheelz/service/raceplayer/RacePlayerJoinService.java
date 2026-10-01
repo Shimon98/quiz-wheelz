@@ -26,17 +26,20 @@ public class RacePlayerJoinService {
 
     private final RaceRepository raceRepository;
     private final RacePlayerRepository racePlayerRepository;
+    private final RacePlayerGameplayStateService gameplayStateService;
     private final JwtService jwtService;
     private final RaceLiveEventRecorder liveEventRecorder;
 
     public RacePlayerJoinService(
             RaceRepository raceRepository,
             RacePlayerRepository racePlayerRepository,
+            RacePlayerGameplayStateService gameplayStateService,
             JwtService jwtService,
             RaceLiveEventRecorder liveEventRecorder
     ) {
         this.raceRepository = raceRepository;
         this.racePlayerRepository = racePlayerRepository;
+        this.gameplayStateService = gameplayStateService;
         this.jwtService = jwtService;
         this.liveEventRecorder = liveEventRecorder;
     }
@@ -64,6 +67,7 @@ public class RacePlayerJoinService {
         racePlayer.setCurrentDifficulty(Difficulty.EASY);
 
         RacePlayer savedPlayer = racePlayerRepository.save(racePlayer);
+        gameplayStateService.createInitialState(savedPlayer);
 
         long currentPlayers = racePlayerRepository.countByRace(race);
 

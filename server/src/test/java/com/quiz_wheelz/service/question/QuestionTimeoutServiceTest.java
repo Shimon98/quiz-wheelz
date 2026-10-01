@@ -1,5 +1,7 @@
 package com.quiz_wheelz.service.question;
 
+import com.quiz_wheelz.service.raceengine.RacePlayerSpeedEffectService;
+import com.quiz_wheelz.service.raceengine.RaceSpeedEffectMovementCalculator;
 import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
@@ -28,6 +30,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
 
+import static org.mockito.Mockito.mock;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -56,7 +59,8 @@ class QuestionTimeoutServiceTest {
 
         questionTimeoutService = new QuestionTimeoutService(
                 new RaceMovementService(
-                        new RaceMovementCalculator(),
+                        new RaceSpeedEffectMovementCalculator(new RaceMovementCalculator()),
+                        mock(RacePlayerSpeedEffectService.class),
                         raceFinishService,
                         playerQuestionRepository,
                         fixedClock
