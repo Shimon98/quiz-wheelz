@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -67,6 +68,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getStatus())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(response);
+    }
+
+    // A @PreAuthorize denial is thrown inside the controller call, so without this handler the
+    // Exception catch-all below would turn it into 500 INTERNAL_ERROR. Rethrowing hands it back to
+    // Spring Security's ExceptionTranslationFilter, which answers 401 for anonymous callers and 403
+    // for authenticated ones through RestAuthenticationEntryPoint / RestAccessDeniedHandler.
+    @ExceptionHandler(AccessDeniedException.class)
+    public void rethrowAccessDenied(AccessDeniedException ex) {
+        throw ex;
     }
 
     @ExceptionHandler(Exception.class)
