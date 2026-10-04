@@ -92,6 +92,8 @@ class RacePlayerControllerSubmitAnswerTest {
                         null,
                         1_787_045_370_000L,
                         3.2,
+                new com.quiz_wheelz.dto.raceplayer.StudentRaceGameplayResponse(
+                        com.quiz_wheelz.enums.RacePlayerGameplayMode.NORMAL, 0.8, List.of()),
                         3L,
                         1,
                         1,

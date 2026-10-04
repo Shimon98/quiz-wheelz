@@ -3,6 +3,7 @@ package com.quiz_wheelz.service.raceplayer;
 import com.quiz_wheelz.common.RaceProgressRules;
 import com.quiz_wheelz.dto.raceengine.AnswerRaceImpact;
 import com.quiz_wheelz.dto.raceplayer.StudentRaceOpponentResponse;
+import com.quiz_wheelz.dto.raceplayer.StudentRaceGameplayResponse;
 import com.quiz_wheelz.dto.raceplayer.StudentRaceRuntimeSnapshotResponse;
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
@@ -20,7 +21,8 @@ public class StudentRaceRuntimeSnapshotMapper {
             RacePlayer racePlayer,
             StudentRaceStandingResult standing,
             long snapshotAtEpochMs,
-            long eventVersion
+            long eventVersion,
+            StudentRaceGameplayResponse gameplay
     ) {
         Objects.requireNonNull(racePlayer);
         Objects.requireNonNull(standing);
@@ -42,11 +44,8 @@ public class StudentRaceRuntimeSnapshotMapper {
                 race.getStatus() == RaceStatus.FINISHED,
                 racePlayer.getFinishedAtEpochMs(),
                 snapshotAtEpochMs,
-                movementUnitsPerSecond(
-                        race.getStatus(),
-                        racePlayer.getStatus(),
-                        racePlayer.getSpeed()
-                ),
+                gameplay.effectiveSpeed() * RaceProgressRules.BASE_MOVEMENT_UNITS_PER_SECOND,
+                gameplay,
                 eventVersion,
                 standing.rank(),
                 standing.playerCount(),
@@ -59,7 +58,8 @@ public class StudentRaceRuntimeSnapshotMapper {
             RacePlayer racePlayer,
             StudentRaceStandingResult standing,
             long snapshotAtEpochMs,
-            long eventVersion
+            long eventVersion,
+            StudentRaceGameplayResponse gameplay
     ) {
         Objects.requireNonNull(impact);
         Objects.requireNonNull(racePlayer);
@@ -82,11 +82,8 @@ public class StudentRaceRuntimeSnapshotMapper {
                 impact.isRaceFinished(),
                 racePlayer.getFinishedAtEpochMs(),
                 snapshotAtEpochMs,
-                movementUnitsPerSecond(
-                        impact.getRaceStatus(),
-                        impact.getPlayerStatus(),
-                        impact.getNewSpeed()
-                ),
+                gameplay.effectiveSpeed() * RaceProgressRules.BASE_MOVEMENT_UNITS_PER_SECOND,
+                gameplay,
                 eventVersion,
                 standing.rank(),
                 standing.playerCount(),
@@ -112,7 +109,7 @@ public class StudentRaceRuntimeSnapshotMapper {
                         movementUnitsPerSecond(
                                 raceStatus,
                                 opponent.status(),
-                                opponent.speed()
+                                opponent.effectiveSpeed()
                         ),
                         opponent.status(),
                         opponent.finishedAtEpochMs()

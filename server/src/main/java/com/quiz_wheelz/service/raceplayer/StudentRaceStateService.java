@@ -25,7 +25,7 @@ public class StudentRaceStateService {
     private final RacePlayerGameplayRequestGuard gameplayRequestGuard;
     private final RaceFinishService raceFinishService;
     private final StudentRaceStandingService standingService;
-    private final StudentRaceRuntimeSnapshotMapper snapshotMapper;
+    private final StudentRaceRuntimeSnapshotService snapshotMapper;
     private final RaceLiveMutationTracker liveMutationTracker;
     private final Clock clock;
 
@@ -34,7 +34,7 @@ public class StudentRaceStateService {
             RacePlayerGameplayRequestGuard gameplayRequestGuard,
             RaceFinishService raceFinishService,
             StudentRaceStandingService standingService,
-            StudentRaceRuntimeSnapshotMapper snapshotMapper,
+            StudentRaceRuntimeSnapshotService snapshotMapper,
             RaceLiveMutationTracker liveMutationTracker,
             Clock clock
     ) {

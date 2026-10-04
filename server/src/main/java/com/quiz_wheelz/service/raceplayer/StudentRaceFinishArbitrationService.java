@@ -45,7 +45,7 @@ public class StudentRaceFinishArbitrationService {
     private final RaceFinishService raceFinishService;
     private final RaceLiveEventChangeRecorder liveEventChangeRecorder;
     private final StudentRaceStandingService standingService;
-    private final StudentRaceRuntimeSnapshotMapper snapshotMapper;
+    private final StudentRaceRuntimeSnapshotService snapshotMapper;
     private final RaceFinishOrderPolicy finishOrderPolicy;
     private final RaceDecisionTimeService decisionTimeService;
     private final Clock clock;
@@ -60,7 +60,7 @@ public class StudentRaceFinishArbitrationService {
             RaceFinishService raceFinishService,
             RaceLiveEventChangeRecorder liveEventChangeRecorder,
             StudentRaceStandingService standingService,
-            StudentRaceRuntimeSnapshotMapper snapshotMapper,
+            StudentRaceRuntimeSnapshotService snapshotMapper,
             RaceFinishOrderPolicy finishOrderPolicy,
             RaceDecisionTimeService decisionTimeService,
             Clock clock
@@ -223,7 +223,7 @@ public class StudentRaceFinishArbitrationService {
         long eventVersion = race.getLiveEventVersion();
         StudentRaceRuntimeSnapshotResponse snapshot = snapshotMapper.fromRacePlayer(
                 requester,
-                standingService.calculate(requester, lockedPlayers),
+                standingService.calculateSettledAt(requester, lockedPlayers, decisionEpochMs),
                 decisionEpochMs,
                 eventVersion
         );

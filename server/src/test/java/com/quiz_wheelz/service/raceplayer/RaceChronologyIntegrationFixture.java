@@ -50,7 +50,9 @@ import static org.mockito.Mockito.when;
         RacePlayerSessionLockService.class, RacePlayerGameplayRequestGuard.class,
         RacePlayerGameplayPresenceService.class, RacePlayerReconnectPolicy.class,
         RacePlayerGameplayTimelineService.class, QuestionTimeoutService.class,
-        RaceMovementService.class, RaceMovementCalculator.class, RaceFinishService.class,
+        RaceMovementService.class,
+        RacePlayerSpeedEffectService.class,
+        RaceSpeedEffectMovementCalculator.class, RaceMovementCalculator.class, RaceFinishService.class,
         RaceDecisionTimeService.class, RaceEngineService.class, ScoringService.class,
         RaceProgressService.class, DifficultyProgressionService.class,
         RaceLiveEventChangeRecorder.class, RaceLiveEventRecorder.class, RaceLiveEventService.class,
@@ -58,6 +60,7 @@ import static org.mockito.Mockito.when;
         TeacherRaceLivePlayerSnapshotService.class, RaceStandingCalculator.class,
         StudentRaceStandingService.class,
         StudentRaceStandingProjectionService.class, StudentRaceRuntimeSnapshotMapper.class,
+        StudentRaceRuntimeSnapshotService.class, StudentRaceGameplayProjectionService.class,
         RaceFinishOrderPolicy.class, RaceChronologyIntegrationFixture.TimeConfiguration.class
 })
 abstract class RaceChronologyIntegrationFixture {

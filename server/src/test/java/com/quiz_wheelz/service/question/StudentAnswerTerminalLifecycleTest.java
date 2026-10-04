@@ -23,7 +23,6 @@ import com.quiz_wheelz.service.raceengine.ScoringService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.service.raceplayer.RaceStandingCalculator;
-import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStandingService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStandingProjectionService;
 import org.junit.jupiter.api.BeforeEach;
@@ -113,7 +112,7 @@ class StudentAnswerTerminalLifecycleTest {
                 raceEngineService,
                 requestGuard,
                 standingService,
-                new StudentRaceRuntimeSnapshotMapper(),
+                com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotTestFixture.service(),
                 mock(com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder.class),
                 new com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker(
                         mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class),

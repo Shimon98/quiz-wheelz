@@ -1,5 +1,7 @@
 package com.quiz_wheelz.service.raceplayer;
 
+import com.quiz_wheelz.service.raceengine.RacePlayerSpeedEffectService;
+import com.quiz_wheelz.service.raceengine.RaceSpeedEffectMovementCalculator;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerSessionIdentity;
 import com.quiz_wheelz.dto.raceplayer.StudentRaceFinishArbitrationResponse;
 import com.quiz_wheelz.entitys.PlayerQuestion;
@@ -75,7 +77,8 @@ final class StudentRaceFinishArbitrationTestFixture {
         RaceFinishService finishService = new RaceFinishService(racePlayerRepository, clock);
         RaceMovementCalculator movementCalculator = new RaceMovementCalculator();
         RaceMovementService movementService = new RaceMovementService(
-                movementCalculator,
+                new RaceSpeedEffectMovementCalculator(movementCalculator),
+                mock(RacePlayerSpeedEffectService.class),
                 finishService,
                 playerQuestionRepository,
                 clock
@@ -110,9 +113,9 @@ final class StudentRaceFinishArbitrationTestFixture {
                 new StudentRaceStandingService(
                         racePlayerRepository,
                         standingCalculator,
-                        org.mockito.Mockito.mock(StudentRaceStandingProjectionService.class)
+                        mock(StudentRaceStandingProjectionService.class)
                 ),
-                new StudentRaceRuntimeSnapshotMapper(),
+                com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotTestFixture.service(),
                 new RaceFinishOrderPolicy(standingCalculator, movementCalculator),
                 new RaceDecisionTimeService(raceRepository),
                 clock

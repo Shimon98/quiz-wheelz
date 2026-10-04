@@ -139,13 +139,15 @@ core loop.
 
 Order:
 
-1. GameEvent/effect contract.
-2. Junction eligibility and offer.
-3. Highway hard-question path.
-4. Dirt-road easy-sequence path.
-5. Controlled luck events.
-6. Catch-up assistance policy.
-7. Overtake/streak/bonus announcements.
+1. S4-01 gameplay/effect foundation (DONE; Checkpoints A and B implemented and
+   approved on the feature branch, including the shared runtime contract and handoff).
+   S4-02 and later tasks remain PLANNED.
+2. Challenge Energy, offer and choice.
+3. Turbo Trial hard-question challenge.
+4. Safe Run easy-question sequence.
+5. Earned Power-Ups and fair bounded Luck.
+6. Hidden Recovery policy.
+7. Race Moments / announcements.
 8. Confirm open-race browsing requirement.
 
 **Gate:** each event is server-authoritative, persisted/auditable where needed,

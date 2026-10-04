@@ -30,7 +30,8 @@ public final class StudentRaceSnapshotContractFixture {
             "eventVersion",
             "rank",
             "playerCount",
-            "opponents"
+            "opponents",
+            "gameplay"
     );
 
     public static final Set<String> OPPONENT_FIELDS = Set.of(
@@ -68,6 +69,8 @@ public final class StudentRaceSnapshotContractFixture {
                 null,
                 1_787_148_000_000L,
                 4.8,
+                new com.quiz_wheelz.dto.raceplayer.StudentRaceGameplayResponse(
+                        com.quiz_wheelz.enums.RacePlayerGameplayMode.NORMAL, 1.2, List.of()),
                 153L,
                 2,
                 5,

@@ -36,6 +36,9 @@ public class StudentRaceRuntimeSnapshotResponse {
     private Double movementUnitsPerSecond;
 
     @NonNull
+    private StudentRaceGameplayResponse gameplay;
+
+    @NonNull
     private Long eventVersion;
 
     @NonNull

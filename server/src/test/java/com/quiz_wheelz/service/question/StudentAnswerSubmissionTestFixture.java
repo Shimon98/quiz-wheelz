@@ -20,7 +20,6 @@ import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
 import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.service.raceplayer.RaceStandingCalculator;
-import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStandingService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStandingProjectionService;
 
@@ -70,7 +69,7 @@ final class StudentAnswerSubmissionTestFixture {
                             new RaceStandingCalculator(FIXED_ZONE),
                             org.mockito.Mockito.mock(StudentRaceStandingProjectionService.class)
                     ),
-                    new StudentRaceRuntimeSnapshotMapper(),
+                    com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotTestFixture.service(),
                     liveEventRecorder,
                     new RaceLiveMutationTracker(liveMutationGate, liveEventChangeRecorder),
                     decisionTimeService,

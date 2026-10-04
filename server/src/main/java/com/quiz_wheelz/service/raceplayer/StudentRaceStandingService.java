@@ -5,7 +5,6 @@ import com.quiz_wheelz.common.RaceProgressRules;
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.repository.RacePlayerRepository;
-import com.quiz_wheelz.service.raceengine.RaceMovementCalculator.Projection;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -50,6 +49,14 @@ public class StudentRaceStandingService {
         );
     }
 
+    public StudentRaceStandingResult calculateSettledAt(
+            RacePlayer currentRacePlayer, List<RacePlayer> settledPlayers, long decisionEpochMs
+    ) {
+        return calculate(currentRacePlayer, settledPlayers,
+                standingProjectionService.settledAt(settledPlayers, currentRacePlayer.getId(), decisionEpochMs),
+                decisionEpochMs);
+    }
+
     public StudentRaceStandingResult calculate(
             RacePlayer currentRacePlayer,
             List<RacePlayer> settledPlayers
@@ -60,7 +67,7 @@ public class StudentRaceStandingService {
     private StudentRaceStandingResult calculate(
             RacePlayer currentRacePlayer,
             List<RacePlayer> racePlayers,
-            Map<Long, Projection> projections,
+            Map<Long, StudentRaceStandingProjection> projections,
             Long decisionEpochMs
     ) {
         Objects.requireNonNull(currentRacePlayer);
@@ -97,8 +104,8 @@ public class StudentRaceStandingService {
         );
     }
 
-    private double comparedPosition(RacePlayer racePlayer, Map<Long, Projection> projections) {
-        Projection projection = projections.get(racePlayer.getId());
+    private double comparedPosition(RacePlayer racePlayer, Map<Long, StudentRaceStandingProjection> projections) {
+        StudentRaceStandingProjection projection = projections.get(racePlayer.getId());
 
         return projection != null
                 ? projection.position()
@@ -107,7 +114,7 @@ public class StudentRaceStandingService {
 
     private StudentRaceStandingResult.Opponent toOpponent(
             RaceStandingCalculator.RankedRacePlayer standing,
-            Projection projection,
+            StudentRaceStandingProjection projection,
             Long decisionEpochMs
     ) {
         RacePlayer racePlayer = standing.racePlayer();
@@ -133,12 +140,12 @@ public class StudentRaceStandingService {
         );
     }
 
-    private Double projectedSpeed(RacePlayer racePlayer, Projection projection, Long decisionEpochMs) {
+    private Double projectedSpeed(RacePlayer racePlayer, StudentRaceStandingProjection projection, Long decisionEpochMs) {
         if (projection != null && (projection.crossedFinish()
                 || projection.effectiveAtEpochMs() < Objects.requireNonNull(decisionEpochMs))) {
             return RaceProgressRules.FINISHED_SPEED;
         }
 
-        return racePlayer.getSpeed();
+        return projection != null ? projection.effectiveSpeed() : racePlayer.getSpeed();
     }
 }

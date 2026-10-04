@@ -1,6 +1,8 @@
 package com.quiz_wheelz.dto.question.student;
 
 import lombok.Getter;
+import com.quiz_wheelz.enums.QuestionGameplayContext;
+import java.util.Objects;
 
 import java.util.List;
 
@@ -8,6 +10,7 @@ import java.util.List;
 public class StudentQuestionResponse {
 
     private final Long questionId;
+    private final QuestionGameplayContext gameplayContext;
     private final String questionText;
     private final Integer timeLimitSeconds;
     private final Long serverTimeEpochMs;
@@ -16,6 +19,7 @@ public class StudentQuestionResponse {
 
     public StudentQuestionResponse(
             Long questionId,
+            QuestionGameplayContext gameplayContext,
             String questionText,
             Integer timeLimitSeconds,
             Long serverTimeEpochMs,
@@ -23,6 +27,7 @@ public class StudentQuestionResponse {
             List<StudentQuestionChoiceResponse> choices
     ) {
         this.questionId = questionId;
+        this.gameplayContext = Objects.requireNonNull(gameplayContext);
         this.questionText = questionText;
         this.timeLimitSeconds = timeLimitSeconds;
         this.serverTimeEpochMs = serverTimeEpochMs;

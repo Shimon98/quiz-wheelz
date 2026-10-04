@@ -19,18 +19,21 @@ import java.util.Optional;
 @Service
 public class RaceMovementService {
 
-    private final RaceMovementCalculator movementCalculator;
+    private final RaceSpeedEffectMovementCalculator movementCalculator;
+    private final RacePlayerSpeedEffectService speedEffectService;
     private final RaceFinishService raceFinishService;
     private final PlayerQuestionRepository playerQuestionRepository;
     private final Clock clock;
 
     public RaceMovementService(
-            RaceMovementCalculator movementCalculator,
+            RaceSpeedEffectMovementCalculator movementCalculator,
+            RacePlayerSpeedEffectService speedEffectService,
             RaceFinishService raceFinishService,
             PlayerQuestionRepository playerQuestionRepository,
             Clock clock
     ) {
         this.movementCalculator = Objects.requireNonNull(movementCalculator);
+        this.speedEffectService = Objects.requireNonNull(speedEffectService);
         this.raceFinishService = Objects.requireNonNull(raceFinishService);
         this.playerQuestionRepository = Objects.requireNonNull(playerQuestionRepository);
         this.clock = Objects.requireNonNull(clock);
@@ -57,7 +60,8 @@ public class RaceMovementService {
                 speed,
                 anchorEpochMs,
                 targetEpochMs,
-                totalDistance
+                totalDistance,
+                speedEffectService.findOverlapping(racePlayer, anchorEpochMs, targetEpochMs)
         );
 
         racePlayer.setPosition(projection.position());
