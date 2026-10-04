@@ -32,6 +32,7 @@ class StudentQuestionResponseSerializationTest {
     void shouldSerializeOnlySafeFrozenQuestionFields() throws JsonProcessingException {
         StudentQuestionResponse response = new StudentQuestionResponse(
                 501L,
+                com.quiz_wheelz.enums.QuestionGameplayContext.NORMAL,
                 "6 x 7 = ?",
                 30,
                 1_787_148_000_000L,
@@ -49,6 +50,7 @@ class StudentQuestionResponseSerializationTest {
         assertEquals(
                 Set.of(
                         "questionId",
+                        "gameplayContext",
                         "questionText",
                         "timeLimitSeconds",
                         "serverTimeEpochMs",

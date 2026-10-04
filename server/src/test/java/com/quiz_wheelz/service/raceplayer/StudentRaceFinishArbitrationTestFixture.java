@@ -115,7 +115,7 @@ final class StudentRaceFinishArbitrationTestFixture {
                         standingCalculator,
                         mock(StudentRaceStandingProjectionService.class)
                 ),
-                new StudentRaceRuntimeSnapshotMapper(),
+                com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotTestFixture.service(),
                 new RaceFinishOrderPolicy(standingCalculator, movementCalculator),
                 new RaceDecisionTimeService(raceRepository),
                 clock

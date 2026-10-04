@@ -89,7 +89,7 @@ class RacePlayerRefreshLifecycleTest {
                 requestGuard,
                 raceFinishService,
                 standingService,
-                new StudentRaceRuntimeSnapshotMapper(),
+                com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotTestFixture.service(),
                 new RaceLiveMutationTracker(
                         liveMutationGate,
                         new RaceLiveEventChangeRecorder(mock(RaceLiveEventRecorder.class))

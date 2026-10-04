@@ -121,6 +121,7 @@ class RacePlayerControllerCurrentQuestionTest {
     private StudentQuestionResponse createStudentQuestionResponse() {
         return new StudentQuestionResponse(
                 1L,
+                com.quiz_wheelz.enums.QuestionGameplayContext.NORMAL,
                 "6 + 6 = ?",
                 QuestionRules.DEFAULT_TIME_LIMIT_SECONDS,
                 FIXED_INSTANT.toEpochMilli(),

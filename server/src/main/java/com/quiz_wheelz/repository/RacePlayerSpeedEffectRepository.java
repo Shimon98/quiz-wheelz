@@ -21,4 +21,17 @@ public interface RacePlayerSpeedEffectRepository extends JpaRepository<RacePlaye
             @Param("fromEpochMs") long fromEpochMs,
             @Param("toEpochMs") long toEpochMs
     );
+    @Query("""
+            select effect from RacePlayerSpeedEffect effect
+            join fetch effect.racePlayer player
+            where player.id in :playerIds
+              and effect.startsAtEpochMs <= :toEpochMs
+              and effect.endsAtEpochMs > :fromEpochMs
+            order by player.id asc, effect.startsAtEpochMs asc, effect.id asc
+            """)
+    List<RacePlayerSpeedEffect> findRelevantForPlayers(
+            @Param("playerIds") List<Long> playerIds,
+            @Param("fromEpochMs") long fromEpochMs,
+            @Param("toEpochMs") long toEpochMs
+    );
 }

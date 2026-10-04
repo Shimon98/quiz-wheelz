@@ -13,6 +13,9 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import com.quiz_wheelz.common.RaceRules;
 
 @Service
 @RequiredArgsConstructor
@@ -50,5 +53,23 @@ public class RacePlayerSpeedEffectService {
             return List.of();
         }
         return repository.findOverlapping(player.getId(), fromEpochMs, toEpochMs);
+    }
+    @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
+    public List<RacePlayerSpeedEffect> findActiveAt(RacePlayer player, long instant) {
+        return repository.findRelevantForPlayers(List.of(player.getId()), instant, instant);
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
+    public Map<Long, List<RacePlayerSpeedEffect>> findRelevantForPlayers(
+            List<Long> playerIds, long fromEpochMs, long toEpochMs
+    ) {
+        if (playerIds.isEmpty()) {
+            return Map.of();
+        }
+        if (playerIds.size() > RaceRules.MAX_PLAYERS || fromEpochMs > toEpochMs) {
+            throw new ApiException(ErrorCode.SPEED_EFFECT_INVALID);
+        }
+        return repository.findRelevantForPlayers(playerIds, fromEpochMs, toEpochMs).stream()
+                .collect(Collectors.groupingBy(effect -> effect.getRacePlayer().getId()));
     }
 }

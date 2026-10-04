@@ -1,8 +1,8 @@
 # Server Implementation Plan
 
 **Status:** Canonical  
-**Audit date:** 2026-09-20
-**Code baseline:** `main@b577a3b3b63142980cfdccb057d89311ce3d85a6`
+**Audit date:** 2026-10-01
+**Code baseline:** `feature/s4-01-gameplay-effect-foundation@54ac63e072652c86da98f6718f72a2fe41650445`
 **This document owns:** the ordered backend task list with dependencies and integration outputs
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -499,43 +499,102 @@ contract_owner: server
   `GET /api/teacher/races`; the dashboard remains the complete current race-list query
 - C4 still owns client route wiring and the Result Screen.
 
-## S4 — Required game events
+## S4 — Strategic gameplay and effects
 
-### S4-01 — Shared effect/event foundation
+The approved flow is NORMAL race, Challenge choice, Turbo Trial or Safe Run, then
+NORMAL race. There is one continuous road and one server-owned position model.
 
-Add only the fields required by the first real effects. Avoid speculative unused
-entities.
+### S4-01 — Gameplay/effect foundation
 
-### S4-02 — Junction policy
+**Status:** `DONE (Checkpoints A and B implemented and approved on the feature branch)`
 
-- eligibility meter/probability
-- one active offer per player
-- expiry/recovery behavior
-- persisted choice.
+Checkpoint A is verified against the baseline above:
 
-### S4-03 — Highway and dirt-road execution
+- durable one-per-RacePlayer gameplay state with non-null, non-negative
+  `challengeEnergy = 0`; new joins create it in the join transaction and legacy
+  state is obtained lazily under the caller's existing RacePlayer lock
+- explicit persisted `QuestionGameplayContext` NORMAL / TURBO_TRIAL / SAFE_RUN;
+  all production questions remain NORMAL, with an entity and DB default for DEV
+  `ddl-auto=update` backfill
+- durable timed SPEED_SLOW windows with positive additive magnitude in integer
+  tenths, source, and half-open `[start, end)` epoch intervals; caller locks the
+  RacePlayer before creation, and overlapping speed-effect intervals are rejected
+- movement segments reuse the existing exact tick calculator, apply a minimum
+  effective speed of 0.1, preserve exact finish crossings and leave earned base
+  speed intact while racing; existing terminal finish behavior remains unchanged
+- no production slowdown creation, Challenge gameplay, public JSON changes,
+  endpoint, live-event type, event-version bump or Redis gameplay truth
+- focused tests: 64 run, zero failures/errors/skips; clean full server suite:
+  801 run, zero failures/errors, two existing environment-gated tests skipped.
 
-- highway hard question + high reward/penalty
-- dirt-road easy sequence + lower safe reward
-- clear ratio and tests.
+Checkpoint B adds the shared student runtime contract on the current S4 branch:
 
-### S4-04 — Fair luck policy
+- non-null `snapshot.gameplay` with exactly `mode`, `effectiveSpeed`, and
+  `activeEffects`; production mode remains NORMAL, with stable future vocabulary
+  CHALLENGE_CHOICE / TURBO_TRIAL / SAFE_RUN
+- `snapshot.speed` remains earned base speed; effective speed at the snapshot epoch
+  reuses the tenths-based slowdown calculation and drives `movementUnitsPerSecond`
+- each active effect exposes only effectId, type, source, magnitudeTenths,
+  startsAtEpochMs and endsAtEpochMs; activity uses half-open intervals and
+  terminal/non-moving statuses return zero effective rate and an empty list
+- a focused projection service resolves gameplay before the repository-free DTO
+  mapper; race-state, answer and finish arbitration share the same runtime shape
+- opponent positions and ranks use the same segmented movement calculator;
+  one batch effect query for at most eight player ids covers their relevant window,
+  with grouping by player id and no per-opponent effect query
+- opponent movement rates use effective speed, preserving zero rates at stale
+  presence/question cutoffs and projected finishes; arbitration retains settled
+  positions while resolving current or stale effective rates
+- question responses add `gameplayContext` from the persisted question, without
+  special question generation, Challenge entities/endpoints, client changes,
+  production effect creation or new SSE/live-event types.
 
-- weighted events
-- cooldowns
-- maximum negative streak
-- no event that determines the whole race alone.
+The Checkpoint B contract and client handoff are reviewed and approved for C5
+consumption. S4-01 is COMPLETE on the feature branch; S4-02 onward remain PLANNED.
+DEV MySQL startup/schema update succeeded during the separate Checkpoint A check;
+that database contained zero player_questions, so existing-row backfill was not
+observed. Production migrations remain Phase 6 work.
 
-### S4-05 — Catch-up assistance
+### S4-02 — Challenge Energy + offer + choice
 
-Eligibility requires both:
+**Status:** `PLANNED`
 
-```text
-actually behind
-AND demonstrably struggling
-```
+- server-owned energy earning and derived readiness
+- one durable active offer per player, expiry and persisted choice
+- bounded hesitation slowdown using the foundation after the shared contract gate
+- preserve RacePlayer-first lock ordering and refresh/reconnect recovery.
 
+### S4-03 — Turbo Trial + Safe Run
+
+**Status:** `PLANNED`
+
+- Turbo Trial hard questions with bounded rewards and penalties
+- Safe Run easy sequence with lower safe reward
+- explicit question context and server-owned Challenge lifecycle
+- no physical road branching or second position model.
+
+### S4-04 — Power-Ups + fair Luck
+
+**Status:** `PLANNED`
+
+- earned Power-Ups and bounded weighted Luck
+- cooldowns and maximum negative streak
+- final multi-effect stacking and positive-boost policy
+- separate finish-order proof review before any speed exceeds the current maximum.
+
+### S4-05 — Hidden Recovery
+
+**Status:** `PLANNED`
+
+Eligibility requires both actually being behind and demonstrably struggling.
 Never grant assistance solely because a leading player intentionally answers wrong.
+
+### S4-06 — Race Moments / announcements
+
+**Status:** `PLANNED`
+
+Server-owned bounded race notices use the existing RaceLiveEvent infrastructure.
+Add visible event vocabulary only when the corresponding gameplay exists.
 
 ## S5 — Full auth and 2FA
 

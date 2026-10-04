@@ -9,7 +9,7 @@ import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.question.QuestionTimeoutService;
 import com.quiz_wheelz.service.raceengine.RaceMovementCalculator;
-import com.quiz_wheelz.service.raceengine.RaceMovementCalculator.Projection;
+import com.quiz_wheelz.service.raceplayer.StudentRaceStandingProjection;
 import com.quiz_wheelz.service.raceengine.RaceMovementService;
 import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService.GameplayPresenceDecision;
@@ -114,7 +114,7 @@ class StudentRaceStandingServiceTest {
         assertEquals("TOY_CAR_PURPLE", first.vehicleAssetKey());
         assertEquals(800.0, first.position());
         assertEquals(ANCHOR_EPOCH_MS + 1, first.positionAtEpochMs());
-        assertEquals(1.0, first.speed());
+        assertEquals(1.0, first.effectiveSpeed());
         assertEquals(RacePlayerStatus.RACING, first.status());
         assertNull(first.finishedAtEpochMs());
     }
@@ -128,8 +128,8 @@ class StudentRaceStandingServiceTest {
         preparePlayers(List.of(current, stale, behind));
         when(standingProjectionService.projectAt(List.of(current, stale, behind), 1L, DECISION_EPOCH_MS))
                 .thenReturn(Map.of(
-                        2L, new Projection(100.0, DECISION_EPOCH_MS, null),
-                        3L, new Projection(94.0, DECISION_EPOCH_MS - 500L, null)
+                        2L, new StudentRaceStandingProjection(100.0, DECISION_EPOCH_MS, null, 1.0),
+                        3L, new StudentRaceStandingProjection(94.0, DECISION_EPOCH_MS - 500L, null, 0.0)
                 ));
 
         StudentRaceStandingResult result = calculate(current);
@@ -144,7 +144,7 @@ class StudentRaceStandingServiceTest {
         assertEquals(3, trailing.rank());
         assertEquals(94.0, trailing.position());
         assertEquals(DECISION_EPOCH_MS - 500L, trailing.positionAtEpochMs());
-        var snapshot = new StudentRaceRuntimeSnapshotMapper().fromRacePlayer(
+        var snapshot = com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotTestFixture.service().fromRacePlayer(
                 current, result, DECISION_EPOCH_MS, 1L
         );
         assertEquals(4.0, snapshot.getOpponents().get(0).getMovementUnitsPerSecond());
@@ -285,7 +285,8 @@ class StudentRaceStandingServiceTest {
                         mock(RaceMovementService.class)
                 ),
                 playerQuestionRepository,
-                new RaceMovementCalculator(),
+                new com.quiz_wheelz.service.raceengine.RaceSpeedEffectMovementCalculator(new RaceMovementCalculator()),
+                mock(com.quiz_wheelz.service.raceengine.RacePlayerSpeedEffectService.class),
                 Clock.fixed(Instant.ofEpochMilli(DECISION_EPOCH_MS), ZoneOffset.UTC)
         );
     }

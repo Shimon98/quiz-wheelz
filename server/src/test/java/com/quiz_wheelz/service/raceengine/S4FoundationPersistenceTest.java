@@ -39,7 +39,11 @@ import static org.mockito.Mockito.*;
 @DataJpaTest(showSql = false)
 @ActiveProfiles("test")
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
-@Import({RacePlayerGameplayStateService.class, RacePlayerSpeedEffectService.class, RacePlayerJoinService.class})
+@Import({RacePlayerGameplayStateService.class, RacePlayerSpeedEffectService.class, RacePlayerJoinService.class,
+        RaceSpeedEffectMovementCalculator.class, RaceMovementCalculator.class,
+        com.quiz_wheelz.service.raceplayer.StudentRaceGameplayProjectionService.class,
+        com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper.class,
+        com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotService.class})
 class S4FoundationPersistenceTest {
 
     private static final AtomicInteger SEQUENCE = new AtomicInteger();
@@ -52,6 +56,7 @@ class S4FoundationPersistenceTest {
     @Autowired RacePlayerGameplayStateService stateService;
     @Autowired RacePlayerSpeedEffectService effectService;
     @Autowired RacePlayerJoinService joinService;
+    @Autowired com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotService snapshots;
     @MockitoBean JwtService jwtService;
     @MockitoBean RaceLiveEventRecorder events;
 
@@ -187,6 +192,39 @@ class S4FoundationPersistenceTest {
             assertEquals(EffectType.SPEED_SLOW, effects.findById(earlier.getId()).orElseThrow().getType());
             assertEquals(EffectSource.CHALLENGE_TIMEOUT, later.getSource());
             assertEquals(1, later.getMagnitudeTenths());
+        });
+    }
+
+    @Test
+    void realDatabaseEffectsFeedLocalSnapshotAndBatchQueryInDeterministicPlayerOrder() {
+        Long firstId = legacyPlayer();
+        Long secondId = legacyPlayer();
+        transactions.executeWithoutResult(status -> {
+            RacePlayer first = locked(firstId);
+            RacePlayer second = locked(secondId);
+            first.getRace().setStatus(RaceStatus.IN_PROGRESS);
+            first.setStatus(RacePlayerStatus.RACING);
+            first.setSpeed(1.3);
+            var later = create(first, 200, 300);
+            var earlier = create(first, 100, 200);
+            var other = create(second, 100, 300);
+            entityManager.flush();
+            entityManager.clear();
+            assertEquals(List.of(earlier.getId(), later.getId(), other.getId()),
+                    effects.findRelevantForPlayers(List.of(secondId, firstId), 100, 300)
+                            .stream().map(RacePlayerSpeedEffect::getId).toList());
+            var grouped = effectService.findRelevantForPlayers(List.of(firstId, secondId), 200, 200);
+            assertEquals(List.of(later.getId()), grouped.get(firstId).stream()
+                    .map(RacePlayerSpeedEffect::getId).toList());
+            var snapshot = snapshots.fromRacePlayer(locked(firstId),
+                    new com.quiz_wheelz.service.raceplayer.StudentRaceStandingResult(1, 2, List.of()), 200, 0);
+            assertEquals(1.3, snapshot.getSpeed());
+            assertEquals(1.2, snapshot.getGameplay().effectiveSpeed());
+            assertEquals(4.8, snapshot.getMovementUnitsPerSecond());
+            assertEquals(later.getId(), snapshot.getGameplay().activeEffects().getFirst().effectId());
+            assertTrue(snapshots.fromRacePlayer(locked(firstId),
+                    new com.quiz_wheelz.service.raceplayer.StudentRaceStandingResult(1, 2, List.of()), 300, 0)
+                    .getGameplay().activeEffects().isEmpty());
         });
     }
 

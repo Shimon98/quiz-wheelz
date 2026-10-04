@@ -150,6 +150,8 @@ class RacePlayerControllerRaceStateTest {
                         null,
                         1_787_045_370_000L,
                         4.8,
+                new com.quiz_wheelz.dto.raceplayer.StudentRaceGameplayResponse(
+                        com.quiz_wheelz.enums.RacePlayerGameplayMode.NORMAL, 1.2, List.of()),
                         7L,
                         1,
                         1,

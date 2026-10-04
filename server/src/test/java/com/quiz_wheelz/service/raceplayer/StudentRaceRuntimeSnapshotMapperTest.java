@@ -25,8 +25,8 @@ class StudentRaceRuntimeSnapshotMapperTest {
     private static final long FINISHED_AT_EPOCH_MS = 1_779_999_998_000L;
     private static final long EVENT_VERSION = 42L;
 
-    private final StudentRaceRuntimeSnapshotMapper mapper =
-            new StudentRaceRuntimeSnapshotMapper();
+    private final StudentRaceRuntimeSnapshotService mapper =
+            com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotTestFixture.service();
 
     @Test
     void fromRacePlayerShouldMapActiveRaceAndPlayerState() {

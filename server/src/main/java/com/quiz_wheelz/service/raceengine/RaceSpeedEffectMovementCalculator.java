@@ -46,6 +46,19 @@ public class RaceSpeedEffectMovementCalculator {
         return calculator.project(currentPosition, baseSpeed, cursor, target, totalDistance);
     }
 
+    public List<RacePlayerSpeedEffect> activeSlowdowns(List<RacePlayerSpeedEffect> effects, long instant) {
+        return effects.stream()
+                .filter(effect -> effect.getType() == EffectType.SPEED_SLOW)
+                .filter(effect -> effect.getStartsAtEpochMs() <= instant && instant < effect.getEndsAtEpochMs())
+                .toList();
+    }
+
+    public double effectiveSpeedAt(double baseSpeed, long instant, List<RacePlayerSpeedEffect> effects) {
+        return activeSlowdowns(effects, instant).stream().findFirst()
+                .map(effect -> effectiveSpeed(baseSpeed, effect.getMagnitudeTenths()))
+                .orElse(baseSpeed);
+    }
+
     private double effectiveSpeed(double baseSpeed, int magnitudeTenths) {
         long baseTenths = Math.round(baseSpeed * RaceMovementCalculator.SPEED_TENTHS_PER_UNIT);
         return Math.max(RaceSpeedEffectRules.MIN_EFFECTIVE_SPEED_TENTHS, baseTenths - magnitudeTenths)

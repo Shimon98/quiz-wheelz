@@ -1,6 +1,8 @@
 package com.quiz_wheelz.service.raceplayer;
 
 import com.quiz_wheelz.service.raceengine.RacePlayerSpeedEffectService;
+import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotService;
+import com.quiz_wheelz.service.raceplayer.StudentRaceGameplayProjectionService;
 import com.quiz_wheelz.service.raceengine.RaceSpeedEffectMovementCalculator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quiz_wheelz.dto.raceplayer.RacePlayerSessionIdentity;
@@ -108,6 +110,7 @@ import static org.mockito.Mockito.when;
         StudentRaceStandingService.class,
         StudentRaceStandingProjectionService.class,
         StudentRaceRuntimeSnapshotMapper.class,
+        StudentRaceRuntimeSnapshotService.class, StudentRaceGameplayProjectionService.class,
         RaceFinishOrderPolicy.class,
         RaceMovementSettlementWorker.class,
         StudentRaceFinishArbitrationConcurrencyTest.FixedTimeConfiguration.class

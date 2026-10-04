@@ -60,6 +60,7 @@ import static org.mockito.Mockito.when;
         TeacherRaceLivePlayerSnapshotService.class, RaceStandingCalculator.class,
         StudentRaceStandingService.class,
         StudentRaceStandingProjectionService.class, StudentRaceRuntimeSnapshotMapper.class,
+        StudentRaceRuntimeSnapshotService.class, StudentRaceGameplayProjectionService.class,
         RaceFinishOrderPolicy.class, RaceChronologyIntegrationFixture.TimeConfiguration.class
 })
 abstract class RaceChronologyIntegrationFixture {
