@@ -7,7 +7,7 @@ function getRewardModel(feedback, playerFinished, formatter) {
   const streak = Number.isSafeInteger(feedback.streak) && feedback.streak >= 0
     ? feedback.streak
     : 0;
-  const isCombo = streak >= 2;
+  const isCombo = streak >= STUDENT_RACE_CONFIG.comboMinStreak;
   return {
     id: feedback.questionId,
     kind: isCombo ? "combo" : "correct",
@@ -33,7 +33,7 @@ export function getStudentRaceHudModel(runtimeState, language = "he", answerFeed
   const hasStanding = Number.isSafeInteger(player.rank) && player.rank > 0
     && Number.isSafeInteger(playerCount) && playerCount >= player.rank;
   const sharedRank = hasStanding && hasSharedRank(player, playerCount, opponents);
-  const isCombo = Number.isSafeInteger(player.streak) && player.streak >= 2;
+  const isCombo = Number.isSafeInteger(player.streak) && player.streak >= STUDENT_RACE_CONFIG.comboMinStreak;
   const reward = getRewardModel(
     answerFeedback,
     runtimeState.playerFinished === true,

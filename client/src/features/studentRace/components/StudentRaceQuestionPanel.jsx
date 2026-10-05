@@ -5,6 +5,7 @@ import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
 import { STUDENT_RACE_VISUAL_CONFIG } from "../config/raceVisualConfig";
 import { STUDENT_RACE_FEEDBACK } from "../runtime/studentRaceRuntimeConstants";
+import { isQuestionTimeUp } from "../utils/isQuestionTimeUp";
 
 /*
  * StudentRaceQuestionPanel — the production question panel (C1-02, replaces
@@ -125,13 +126,7 @@ export default function StudentRaceQuestionPanel({
   const showCorrectFeedback = feedbackState === STUDENT_RACE_FEEDBACK.CORRECT;
   const showWrongFeedback = feedbackState === STUDENT_RACE_FEEDBACK.WRONG;
   const showAnswerFeedback = showCorrectFeedback || showWrongFeedback;
-  // Answer feedback / an in-flight submit outrank expiry presentation — the
-  // server already decided; a timer that hit zero mid-flight must not paint
-  // "time up" over a real result (no contradictory UI).
-  const showExpired =
-    !showAnswerFeedback &&
-    !isSubmitting &&
-    (isExpired || feedbackState === STUDENT_RACE_FEEDBACK.EXPIRED);
+  const showExpired = isQuestionTimeUp({ isExpired, feedbackState, isSubmitting });
   const showAnswerSyncError =
     feedbackState === STUDENT_RACE_FEEDBACK.ERROR && !showExpired;
 

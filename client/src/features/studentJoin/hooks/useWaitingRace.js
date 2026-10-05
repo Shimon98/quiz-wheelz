@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 import useIntervalWhen from "../../../shared/hooks/useIntervalWhen";
@@ -8,6 +8,8 @@ import {
   RACE_VIEWS,
 } from "../../../shared/racePlayer/getRaceView";
 import { ROUTES } from "../../../constants/routeConstants";
+import { audioEngine } from "../../../shared/audio";
+import { GAME_AUDIO } from "../../../shared/gameAudio/gameAudioCatalog";
 import { STUDENT_WAITING_POLL_MS } from "../config/studentJoinConfig";
 
 /*
@@ -53,12 +55,21 @@ export default function useWaitingRace({ syncEnabled = true } = {}) {
 
   // Immediate on the very first PLAYING/etc. response — no poll-tick delay.
   const shouldEnterRace = view != null && RACE_PAGE_VIEWS.has(view);
+  const sawWaitingRef = useRef(false);
 
   useEffect(() => {
-    if (shouldEnterRace) {
-      navigate(ROUTES.STUDENT_RACE, { replace: true });
-    }
-  }, [shouldEnterRace, navigate]);
+    audioEngine.preload([GAME_AUDIO.RACE_START]);
+  }, []);
+
+  useEffect(() => {
+    if (view === RACE_VIEWS.WAITING) sawWaitingRef.current = true;
+  }, [view]);
+
+  useEffect(() => {
+    if (!shouldEnterRace) return;
+    if (view === RACE_VIEWS.PLAYING && sawWaitingRef.current) audioEngine.playSfx(GAME_AUDIO.RACE_START);
+    navigate(ROUTES.STUDENT_RACE, { replace: true });
+  }, [shouldEnterRace, view, navigate]);
 
   useIntervalWhen(
     silentRefresh,

@@ -1,6 +1,7 @@
 import { Modal, Stack, Text } from "@mantine/core";
 import { useTranslation } from "react-i18next";
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
+import AudioSettingsControls from "./AudioSettingsControls";
 import LanguageSelector from "./LanguageSelector";
 import ThemeModeSelector from "./ThemeModeSelector";
 
@@ -20,7 +21,7 @@ export default function PublicSettingsDialog({ open, onClose }) {
       centered
       radius="lg"
       title={
-        <Text component="h2" fw={800} size="lg">
+        <Text component="span" fw={800} size="lg">
           {t("dialog.title")}
         </Text>
       }
@@ -29,6 +30,7 @@ export default function PublicSettingsDialog({ open, onClose }) {
       <Stack gap="lg">
         <LanguageSelector />
         <ThemeModeSelector />
+        <AudioSettingsControls />
       </Stack>
     </Modal>
   );

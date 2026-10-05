@@ -16,4 +16,10 @@ export default {
     light: "בהיר",
     dark: "כהה",
   },
+  audio: {
+    title: "סאונד",
+    music: "מוזיקה",
+    effects: "אפקטים קוליים",
+    buttonLabel: "הגדרות סאונד",
+  },
 };

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useImperativeHandle, useRef } from "react";
 
 import { cx } from "../../../utils/classNameUtils";
 import { createPixiStudentRaceApp } from "./createPixiStudentRaceApp";
@@ -10,11 +10,20 @@ export default function PixiStudentRaceCanvas({
   runtimeState = null,
   finishPresentation = null,
   className,
+  ref,
 }) {
   const mountRef = useRef(null);
   const rendererRef = useRef(null);
+  const pendingMomentsRef = useRef([]);
   const latestStateRef = useRef(runtimeState);
   const latestFinishPresentationRef = useRef(finishPresentation);
+
+  useImperativeHandle(ref, () => ({
+    playMoments(batch) {
+      if (rendererRef.current == null) pendingMomentsRef.current.push(batch);
+      else rendererRef.current.playMoments(batch);
+    },
+  }), []);
 
   useEffect(() => {
     const mountElement = mountRef.current;
@@ -42,11 +51,14 @@ export default function PixiStudentRaceCanvas({
         renderer.updateRuntimeState(latestStateRef.current);
       }
       renderer.updateFinishPresentation(latestFinishPresentationRef.current);
+      pendingMomentsRef.current.forEach((batch) => renderer.playMoments(batch));
+      pendingMomentsRef.current = [];
     });
 
     return () => {
       cancelled = true;
       rendererRef.current = null;
+      pendingMomentsRef.current = [];
       if (import.meta.env.DEV && window.__studentRaceRenderer === renderer) {
         delete window.__studentRaceRenderer;
       }

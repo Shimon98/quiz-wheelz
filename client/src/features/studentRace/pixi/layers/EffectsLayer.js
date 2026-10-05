@@ -2,7 +2,6 @@ import { Graphics } from "pixi.js";
 
 import { STUDENT_RACE_ANIMATION_CONFIG } from "../../config/raceAnimationConfig";
 import { STUDENT_RACE_EFFECT } from "../../runtime/studentRaceRuntimeConstants";
-import { detectRuntimeEffectTriggers } from "../effects/detectRuntimeEffectTriggers";
 import { drawFeedbackEffect } from "../effects/drawFeedbackEffect";
 
 const DUST_COLOR = 0xd9c39a;
@@ -23,7 +22,7 @@ export class EffectsLayer {
     this.puffs = [];
     this.spawnAccumulator = 0;
     this.activeEffects = new Map();
-    this.observedRuntime = null;
+    this.reducedMotion = false;
     this.destroyed = false;
 
     this.graphics = new Graphics();
@@ -50,6 +49,11 @@ export class EffectsLayer {
     });
   }
 
+  playMoments(batch) {
+    if (this.reducedMotion) return;
+    batch.moments.forEach(({ type, streak = 0 }) => this.playEffect(type, { feedbackStreak: streak }));
+  }
+
   resize() {}
 
   update(frameState) {
@@ -58,7 +62,7 @@ export class EffectsLayer {
     const { anchorX, anchorY, maxWidth, dustOriginY } = layout.playerKart;
     const reducedMotion = runtimeState?.visual?.reducedMotion === true;
 
-    this.observeRuntime(runtimeState, reducedMotion);
+    this.reducedMotion = reducedMotion;
     if (reducedMotion) {
       this.puffs.length = 0;
       this.spawnAccumulator = 0;
@@ -79,19 +83,6 @@ export class EffectsLayer {
       size: maxWidth,
       width,
     });
-  }
-
-  observeRuntime(runtimeState, reducedMotion) {
-    const { observed, effects } = detectRuntimeEffectTriggers(
-      this.observedRuntime,
-      runtimeState,
-    );
-    this.observedRuntime = observed;
-    if (!reducedMotion) {
-      effects.forEach((effect) => this.playEffect(effect, {
-        feedbackStreak: observed.feedbackStreak,
-      }));
-    }
   }
 
   ageEffects(deltaMs) {
@@ -161,7 +152,6 @@ export class EffectsLayer {
     this.destroyed = true;
     this.puffs.length = 0;
     this.activeEffects.clear();
-    this.observedRuntime = null;
     this.spawnAccumulator = 0;
     this.graphics.destroy();
     this.feedbackGraphics.destroy();

@@ -16,4 +16,10 @@ export default {
     light: "Light",
     dark: "Dark",
   },
+  audio: {
+    title: "Sound",
+    music: "Music",
+    effects: "Sound effects",
+    buttonLabel: "Sound settings",
+  },
 };

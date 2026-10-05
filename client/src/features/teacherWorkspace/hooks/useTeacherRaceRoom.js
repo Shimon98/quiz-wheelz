@@ -10,6 +10,8 @@ import {
   showSuccessNotification,
 } from "../../../shared/notifications/appNotifications";
 import { RACE_STATUSES } from "../config/raceStatusConfig";
+import { audioEngine } from "../../../shared/audio";
+import { GAME_AUDIO } from "../../../shared/gameAudio/gameAudioCatalog";
 
 const WAITING_ROOM_POLL_MS = 4000;
 
@@ -84,6 +86,7 @@ export default function useTeacherRaceRoom(raceId) {
 
     try {
       const startResponse = await startTeacherRace(raceId);
+      audioEngine.playSfx(GAME_AUDIO.PROJECTOR_RACE_START);
 
       showSuccessNotification({
         title: t("raceRoom.startedTitle"),

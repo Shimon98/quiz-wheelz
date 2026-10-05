@@ -20,12 +20,18 @@ export default function StudentRaceOverlay({
   answerFeedback = null,
   isSubmitting = false,
   isAwaitingNextQuestion = false,
+  hudControls = null,
 }) {
   return (
     <div className="pointer-events-none absolute inset-0 flex flex-col justify-between">
       <div>
         <StudentRaceHudSafeArea>
-          <StudentRaceHud runtimeState={runtimeState} question={question} answerFeedback={answerFeedback} />
+          <StudentRaceHud
+            runtimeState={runtimeState}
+            question={question}
+            answerFeedback={answerFeedback}
+            controls={hudControls}
+          />
         </StudentRaceHudSafeArea>
         <RacePlayerConnectionNotice
           connectionState={connectionState}

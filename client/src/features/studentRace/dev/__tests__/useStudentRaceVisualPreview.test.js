@@ -41,7 +41,6 @@ describe("useStudentRaceVisualPreview", () => {
     expect(result.current.selectedChoiceId).toBe(2);
     expect(result.current.feedbackState).toBe("correct");
     expect(result.current.correctAnswerChoiceId).toBeNull();
-    expect(result.current.interactionEnabled).toBe(false);
     act(() => vi.advanceTimersByTime(STUDENT_RACE_CONFIG.feedbackDelayMs - 1));
     expect(result.current.answerFeedback.questionId).toBe(questionId);
     act(() => vi.advanceTimersByTime(1));

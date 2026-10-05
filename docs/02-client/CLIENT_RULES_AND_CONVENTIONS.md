@@ -8,6 +8,35 @@
 > The code is authoritative for what is implemented. This document is authoritative
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
+## Audio
+
+- One owner per layer: `shared/audio` is the generic engine and the only `AudioContext`;
+  `stores/audioSettingsStore.js` owns Music and Sound effects; `app/providers/AudioProvider.jsx`
+  owns unlock, hidden/visible and catalog registration; `shared/gameAudio/gameAudioCatalog.js`
+  owns every physical sound (key, kind, URL, gain, cooldown, voices); feature adapters
+  (`features/*/audio/`, `use*Sound` hooks) own presentation semantics → key.
+- Screens request music with `useSceneMusic(key, gain)` and never stop music directly.
+- Student one-shots come only from `useStudentRaceMoments`; every consumer receives the same batch.
+- Audio failures are not application errors: a browser playback or setup failure stays silent
+  inside `shared/audio` and gameplay continues, while a malformed descriptor or catalog throws.
+  Never route audio outcomes to `errors/`, notifications or UI, and keep the engine's play
+  results and states internal.
+- Formats: short sounds and loops WAV PCM16 48 kHz (mono unless stereo adds value); music M4A
+  AAC-LC through the media element. Files live under `client/src/assets/audio/` and are
+  imported, so Vite fingerprints them.
+
+### Adding audio to a future feature
+
+1. The server or gameplay exposes a real event or state, and the presentation runtime carries it.
+2. Choose or create a licensed asset (CC0 preferred), process it to the formats above, add it
+   under `client/src/assets/audio/` and add its row to `AUDIO_ASSET_PROVENANCE.md`.
+3. Add one descriptor to the game audio catalog.
+4. Map the event to the key in the feature's sound adapter and test it: the mapping, once per
+   event, and no replay after a reload.
+
+Do not create a new `AudioContext`, a feature loader, another settings store, another provider
+or a second one-shot detector, and never infer a sound from speed or visual changes.
+
 ## Data flow
 
 ```text

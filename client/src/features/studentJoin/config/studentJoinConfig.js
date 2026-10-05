@@ -20,3 +20,5 @@ export const STUDENT_JOIN_STORAGE_KEY = "quizwheelz.studentJoin";
 // interval. A future SSE "race started" event replaces only this trigger —
 // race-state stays the source of truth.
 export const STUDENT_WAITING_POLL_MS = 2000;
+
+export const STUDENT_GAME_MUSIC_GAIN = 0.6;

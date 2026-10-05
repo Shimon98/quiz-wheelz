@@ -476,19 +476,19 @@ vehicle rendering; it must use this server truth, never `sessionStorage`.
   (`StudentRaceScreen` memoizes a presentation runtime whose
   `visual.activeEffect` comes from `resolveStudentRaceFeedbackEffect`;
   IDLE/EXPIRED/ERROR and a finished player map to null, so a
-  reconnect-required or failed POST never draws correctness); BOOST ← the
-  authoritative `visual.targetSpeed` rising between runtime samples (first
-  sample remembers only, equal/lower never fires, no copied server rule);
+  reconnect-required or failed POST never draws correctness); BOOST ← an
+  authoritative boost cue only — none exists yet, so it never plays (C5-01a
+  retired the `targetSpeed`-rise inference: a speed change has other causes);
   FINISH ← `playerFinished` false→true only (never position/totalDistance),
   dominant: it clears shorter one-shots and blocks new ones while playing.
-  `detectRuntimeEffectTriggers` (pure) spots the edges inside the layer's
-  `update(frameState)`; effects age on `deltaMs` with the existing
+  `deriveStudentRaceMoments` (pure, owned by `useStudentRaceMoments` since C5-01b) spots
+  the edges and the layer draws the delivered batch; effects age on `deltaMs` with the existing
   `raceAnimationConfig.effects` durations (700/500/900/1200 ms); geometry is
   deterministic (fixed angle arrays); BOOST streaks clamp to the visible
   world bottom so phones keep them above the panel. Pixi ticker owns effect
   timing/drawing; React only supplies runtime changes; the server stays the
-  gameplay truth. Live E2E (8081): correct → CORRECT+BOOST (0.5→0.7), wrong →
-  WRONG only (0.7→0.5); poll-driven finish → FINISH during a held screen,
+  gameplay truth. Live E2E (8081): correct → CORRECT (0.5→0.7), wrong →
+  WRONG (0.7→0.5); poll-driven finish → FINISH during a held screen,
   then the final view. Real vehicle art is blank while an approved asset
   loads; the Graphics fallback appears only after a definitive asset
   fallback result (unknown key / malformed entry / load failure), preventing
@@ -506,7 +506,7 @@ vehicle rendering; it must use this server truth, never `sessionStorage`.
   even when a background refresh supplies the next question.
   `getStudentRaceHudModel` formats server streak/score delta and prepares
   the reward. No local combo/scoring rule is added. Pixi answer events
-  deduplicate by question ID through `detectRuntimeEffectTriggers`;
+  deduplicate by question ID through `deriveStudentRaceMoments`;
   `drawFeedbackEffect` and `raceFeedbackVisualConfig` own correct/combo
   geometry. The speedometer's pure model formats raw server speed as ×N.N
   and maps `speed / (speed + 1)` to a cosmetic dial, without a server cap
@@ -806,15 +806,15 @@ visual effect owners; luck/assistance policies and their durable effect contract
 Player/opponents share `StudentRaceVehicleVisual` and the existing asset loader;
 pooled opponent roots interleave with scenery directly in the world container.
 
-### C2-A — Race sound polish — DEFERRED / PLANNED POLISH
+### C2-A — Race sound polish — MOVED INTO C5-A
 
-Deferred polish backlog: it does not block C3. Return to it before the
-student-side final demonstration. No sound playback or assets are implemented.
+Race sound is delivered by C5-A (see C5), complete. The list below was its acceptance list.
 
 - A quiet hover-engine loop changes pitch/volume gradually with the real
   server speed and remains at the new level while that speed is sustained.
-- Short distinct sounds for accepted correct/wrong answers, combo, boost
-  and finish; optional subtle jungle ambience below the feedback volume.
+- Short distinct sounds for accepted correct/wrong answers, combo and
+  finish (boost only once an authoritative boost cue exists); optional
+  subtle jungle ambience below the feedback volume.
 - Reuse accepted answer identity/streak and authoritative speed/finish
   transitions. A combo sound is presentation of the server streak, never
   a locally calculated reward or a new game event.
@@ -1034,12 +1034,78 @@ Depends on S3-01 (final results read model, DONE on the server). C4 made no serv
 - fixture QA from 320 to 1920 px, phone landscape and tablet, HE/EN, light/dark, all eight
   colors, single/tied/no winner and long names: no horizontal overflow, no broken images.
 
-## C5 — Required gameplay UI — NEXT
+## C5 — Required gameplay UI — IN PROGRESS
 
-**Status:** NEXT client stage. It renders server-owned game events and effects, so it starts
-from the S4-01 effect/event contract (Phase 4 in the master roadmap); do not build it against
-an imagined contract. Client-only work that can proceed meanwhile: C2-A race sound polish and
-the carried-forward release QA.
+**Status:** C5-A (client audio) is complete on `feature/C5-A-audio-foundation` and awaits one
+final review before the commit. The gameplay UI (C5-01
+onward) renders server-owned game events and effects, so it starts from the S4-01
+effect/event contract (Phase 4 in the master roadmap); do not build it against an imagined
+contract. The carried-forward release QA can proceed meanwhile.
+
+### C5-A — Audio — COMPLETE
+
+- **C5-A1 feasibility — LOCKED** (Windows Chrome 154, Android Chrome 154, iPad Safari 26):
+  short SFX and the engine loop are WAV PCM16 decoded to an `AudioBuffer` and preloaded;
+  long music is M4A AAC on an `HTMLMediaElement` routed through a
+  `MediaElementAudioSourceNode` into the music bus, opened only while Music is ON. iOS silent
+  mode is respected (`navigator.audioSession` is never changed); a Safari context that is
+  interrupted, or rejects `resume()`, waits for the next user gesture. The temporary
+  `/dev/audio` lab, its synthetic fixtures and its scripts are removed.
+- **C5-A2 settings store — DONE:** `stores/audioSettingsStore.js` (`qw-audio`): Music OFF and
+  Sound effects ON by default; the volumes stay in the store for a later UI; invalid stored
+  fields fall back one by one; blocked storage keeps working in memory.
+- **C5-A3 registry — DONE:** validated `sfx`/`loop`/`music` descriptors; unknown fields,
+  duplicate keys and conflicts throw; an identical re-register is a no-op.
+- **C5-A4 loader — DONE:** one fetch and decode per URL, 10 s timeout, a guard against the
+  HTML fallback page, and a failed decode downloads again.
+- **C5-A5 engine — DONE:** `shared/audio/audioEngine.js` is the only audio owner (module
+  singleton): the context is created lazily inside the unlocking gesture, Music and SFX buses,
+  per-cue cooldown and voice limits, engine/ambience loop channels, sanitized gain and rate,
+  and every playback or loading failure stays inside the audio layer. Context and music
+  element setup is transactional: a half-built one is released and the next gesture or sync
+  builds a fresh one; registry errors still throw.
+- **C5-A6 controls — DONE:** one `AudioSettingsControls` (Music and Sound effects switches,
+  HE/EN, keyboard, screen-reader names) and one generic `AudioSettingsButton` popover
+  (`shared/components/publicSettings`). Public Settings renders the controls; the student
+  HUD and the teacher projector header reuse the button. The projector renders the popover
+  inside its fullscreen surface (`withinPortal={false}`) and keeps the header above the
+  body panels. ON/OFF only — no volume sliders yet.
+- **C5-A7 lifecycle — DONE:** one `AudioProvider` in `AppProviders`, outside the
+  direction-keyed Mantine subtree: settings → `configure`; `pointerup`/`touchend`/`click`/
+  `keydown` (no auto-repeat, no Escape) → `unlock`, listeners kept after the first unlock;
+  hidden → `suspend`, visible → `resume` through `useBrowserLifecycleEvents`. Its cleanup
+  never disposes the engine, so StrictMode remounts are safe.
+- **C5-A8 current-feature sounds — DONE:** two CC0 music tracks (Bamboo Blitz as game music,
+  Joyful Jungle as race music), twelve in-house one-shot sounds and the in-house hover-engine
+  loop (15 files), all chosen by ear in the Sound Lab. Physical descriptors live once in
+  `shared/gameAudio/gameAudioCatalog.js`, registered by `AudioProvider` at import; feature
+  adapters map presentation moments to keys (`features/studentRace/audio/studentRaceSounds.js`,
+  `features/teacherLiveRace/audio/teacherRaceSounds.js`). Every file has a provenance row in
+  `AUDIO_ASSET_PROVENANCE.md`. The current audio matrix is in `CLIENT_CURRENT_STATE.md`.
+- **Music ownership — DONE:** screens request music with `useSceneMusic(key, gain)`; each
+  claim gets an owner token, only the current owner can release, the same key never
+  restarts, and a key change cross-fades (0.4 s). Music OFF keeps the desired scene and Music
+  ON resumes it; hiding the page or Music OFF stops a track that is still fading out at once.
+  `claimMusic`/`releaseMusic` are the only music operations (the unused start/pause/resume/stop
+  and loop-parameter calls were removed), and play results and engine states stay internal.
+- **C5-A9 QA — DONE except physical devices:** automated coverage for the engine, music
+  ownership, catalog, moments, student and teacher adapters; a live bot race (155) passed
+  the whole flow in the browser (join, waiting, start cue, race music, engine, correct,
+  wrong, combo, finish, results silence, projector join/start/finish cues, Music and Sound
+  effects toggles mid-race). Still manual and open: Android and iPad real devices, iPhone if
+  available, the projector in real Chrome fullscreen, listening balance on real speakers, and
+  reconnect/interruption on a real deployment.
+- **C5-01a — DONE:** the client never infers BOOST from a `targetSpeed` rise.
+- **C5-01b single Student moment owner — DONE:** `deriveStudentRaceMoments` (pure) and
+  `useStudentRaceMoments` (the only stateful owner) turn the presentation runtime into one
+  frozen batch per change. The first observation is a baseline for every moment, so a
+  reload, reconnect or remount never replays one; afterwards CORRECT/WRONG play once per
+  accepted answer ID, TIME_UP once per question that runs out, FINISH only on false→true.
+  The renderer (`EffectsLayer.playMoments`) and the sound adapter receive the same batch;
+  the renderer no longer detects anything itself. A batch that arrives before the Pixi
+  renderer exists waits in `PixiStudentRaceCanvas` and is drawn once when the renderer starts.
+
+### C5 gameplay UI — after S4-01
 
 - junction offer
 - highway/dirt-road question modes
