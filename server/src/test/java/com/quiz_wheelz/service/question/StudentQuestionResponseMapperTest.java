@@ -6,6 +6,7 @@ import com.quiz_wheelz.dto.question.student.StudentQuestionResponse;
 import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.entitys.PlayerQuestionChoice;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
+import com.quiz_wheelz.enums.QuestionGameplayContext;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
@@ -45,9 +46,9 @@ class StudentQuestionResponseMapperTest {
         );
 
         assertEquals(10L, response.getQuestionId());
+        assertEquals(QuestionGameplayContext.NORMAL, response.getGameplayContext());
         assertEquals("6 + 6 = ?", response.getQuestionText());
         assertEquals(QuestionRules.DEFAULT_TIME_LIMIT_SECONDS, response.getTimeLimitSeconds());
-        // Epoch values are passed through exactly — the mapper never invents time.
         assertEquals(SERVER_TIME_EPOCH_MS, response.getServerTimeEpochMs());
         assertEquals(EXPIRES_AT_EPOCH_MS, response.getExpiresAtEpochMs());
         assertEquals(2, response.getChoices().size());
@@ -57,6 +58,20 @@ class StudentQuestionResponseMapperTest {
         assertEquals(101L, firstResponseChoice.getChoiceId());
         assertEquals("12", firstResponseChoice.getChoiceText());
         assertEquals(1, firstResponseChoice.getDisplayOrder());
+    }
+
+    @Test
+    void contextComesFromPersistedQuestionForEverySupportedContext() {
+        for (QuestionGameplayContext context : QuestionGameplayContext.values()) {
+            PlayerQuestion question = createPlayerQuestion(LocalDateTime.now().plusSeconds(30));
+            question.setGameplayContext(context);
+            StudentQuestionResponse response = mapper.toResponse(question,
+                    List.of(createChoice("12", 12, true, 1)), SERVER_TIME_EPOCH_MS, EXPIRES_AT_EPOCH_MS);
+            assertEquals(context, response.getGameplayContext());
+            com.fasterxml.jackson.databind.JsonNode json = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .valueToTree(response);
+            assertEquals(context.name(), json.get("gameplayContext").asText());
+        }
     }
 
     @Test

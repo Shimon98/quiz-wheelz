@@ -109,6 +109,9 @@ public final class ErrorMessages {
     public static final String RACE_PLAYER_SESSION_IDENTITY_MISSING =
             "Race player session identity is missing";
 
+    public static final String SPEED_EFFECT_INVALID = "Invalid timed speed effect";
+    public static final String SPEED_EFFECT_OVERLAP = "Timed speed effect overlaps an existing interval";
+
     private ErrorMessages() {
     }
 }

@@ -25,7 +25,7 @@ public record StudentRaceStandingResult(
             int rank,
             Double position,
             Long positionAtEpochMs,
-            Double speed,
+            Double effectiveSpeed,
             RacePlayerStatus status,
             Long finishedAtEpochMs
     ) {

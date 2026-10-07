@@ -28,6 +28,7 @@ public class StudentQuestionResponseMapper {
 
         return new StudentQuestionResponse(
                 playerQuestion.getId(),
+                playerQuestion.getGameplayContext(),
                 playerQuestion.getQuestionText(),
                 playerQuestion.getTimeLimitSeconds(),
                 serverTimeEpochMs,

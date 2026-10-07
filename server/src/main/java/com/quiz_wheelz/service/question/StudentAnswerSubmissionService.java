@@ -21,7 +21,7 @@ import com.quiz_wheelz.service.liveevent.RaceLiveEventRecorder;
 import com.quiz_wheelz.service.liveevent.RaceLiveMutationContext;
 import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
-import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper;
+import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStandingService;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import org.springframework.stereotype.Service;
@@ -42,7 +42,7 @@ public class StudentAnswerSubmissionService {
     private final RaceEngineService raceEngineService;
     private final RacePlayerGameplayRequestGuard gameplayRequestGuard;
     private final StudentRaceStandingService standingService;
-    private final StudentRaceRuntimeSnapshotMapper snapshotMapper;
+    private final StudentRaceRuntimeSnapshotService snapshotMapper;
     private final RaceLiveEventRecorder liveEventRecorder;
     private final RaceLiveMutationTracker liveMutationTracker;
     private final RaceDecisionTimeService decisionTimeService;
@@ -55,7 +55,7 @@ public class StudentAnswerSubmissionService {
             RaceEngineService raceEngineService,
             RacePlayerGameplayRequestGuard gameplayRequestGuard,
             StudentRaceStandingService standingService,
-            StudentRaceRuntimeSnapshotMapper snapshotMapper,
+            StudentRaceRuntimeSnapshotService snapshotMapper,
             RaceLiveEventRecorder liveEventRecorder,
             RaceLiveMutationTracker liveMutationTracker,
             RaceDecisionTimeService decisionTimeService,

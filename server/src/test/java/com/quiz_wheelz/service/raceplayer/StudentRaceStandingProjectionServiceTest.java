@@ -9,7 +9,7 @@ import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.service.question.QuestionTimeoutService;
 import com.quiz_wheelz.service.raceengine.RaceMovementCalculator;
-import com.quiz_wheelz.service.raceengine.RaceMovementCalculator.Projection;
+import com.quiz_wheelz.service.raceplayer.StudentRaceStandingProjection;
 import com.quiz_wheelz.service.raceengine.RaceMovementService;
 import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService.GameplayPresenceDecision;
@@ -72,7 +72,8 @@ class StudentRaceStandingProjectionServiceTest {
                         mock(RaceMovementService.class)
                 ),
                 playerQuestionRepository,
-                new RaceMovementCalculator(),
+                new com.quiz_wheelz.service.raceengine.RaceSpeedEffectMovementCalculator(new RaceMovementCalculator()),
+                mock(com.quiz_wheelz.service.raceengine.RacePlayerSpeedEffectService.class),
                 Clock.fixed(DECISION_INSTANT, ZoneOffset.UTC)
         );
     }
@@ -82,7 +83,7 @@ class StudentRaceStandingProjectionServiceTest {
         presence(opponent, true, false, DECISION_EPOCH_MS);
         noActiveQuestions();
 
-        Projection projection = projectAt(List.of(current, opponent)).get(2L);
+        StudentRaceStandingProjection projection = projectAt(List.of(current, opponent)).get(2L);
 
         assertEquals(100.0, projection.position());
         assertEquals(DECISION_EPOCH_MS, projection.effectiveAtEpochMs());
@@ -94,7 +95,7 @@ class StudentRaceStandingProjectionServiceTest {
         presence(opponent, false, false, DECISION_EPOCH_MS - 600L);
         noActiveQuestions();
 
-        Projection projection = projectAt(List.of(current, opponent)).get(2L);
+        StudentRaceStandingProjection projection = projectAt(List.of(current, opponent)).get(2L);
 
         assertEquals(97.6, projection.position());
         assertEquals(DECISION_EPOCH_MS - 600L, projection.effectiveAtEpochMs());
@@ -105,7 +106,7 @@ class StudentRaceStandingProjectionServiceTest {
         presence(opponent, true, true, ANCHOR_EPOCH_MS - 2_000L);
         noActiveQuestions();
 
-        Projection projection = projectAt(List.of(current, opponent)).get(2L);
+        StudentRaceStandingProjection projection = projectAt(List.of(current, opponent)).get(2L);
 
         assertEquals(96.0, projection.position());
         assertEquals(ANCHOR_EPOCH_MS, projection.effectiveAtEpochMs());
@@ -131,7 +132,7 @@ class StudentRaceStandingProjectionServiceTest {
                 activeQuestion(opponent, DECISION_EPOCH_MS - 500L)
         ));
 
-        Projection projection = projectAt(List.of(current, opponent)).get(2L);
+        StudentRaceStandingProjection projection = projectAt(List.of(current, opponent)).get(2L);
 
         assertEquals(98.0, projection.position());
         assertEquals(DECISION_EPOCH_MS - 500L, projection.effectiveAtEpochMs());
@@ -155,7 +156,7 @@ class StudentRaceStandingProjectionServiceTest {
         presence(opponent, true, false, DECISION_EPOCH_MS);
         noActiveQuestions();
 
-        Projection projection = projectAt(List.of(current, opponent)).get(2L);
+        StudentRaceStandingProjection projection = projectAt(List.of(current, opponent)).get(2L);
 
         assertEquals(1000.0, projection.position());
         assertEquals(ANCHOR_EPOCH_MS + 125L, projection.effectiveAtEpochMs());
@@ -175,7 +176,7 @@ class StudentRaceStandingProjectionServiceTest {
         presence(opponent, true, false, DECISION_EPOCH_MS);
         noActiveQuestions();
 
-        Projection projection = projectAt(List.of(current, opponent)).get(2L);
+        StudentRaceStandingProjection projection = projectAt(List.of(current, opponent)).get(2L);
 
         assertEquals(100.0, projection.position());
         assertNull(opponent.getMovementUpdatedAtEpochMs());
@@ -190,7 +191,7 @@ class StudentRaceStandingProjectionServiceTest {
         RacePlayer waiting = player(5L, 0.0, 0.0, null);
         waiting.setStatus(RacePlayerStatus.WAITING);
 
-        Map<Long, Projection> projections = projectAt(
+        Map<Long, StudentRaceStandingProjection> projections = projectAt(
                 List.of(current, finished, disconnected, waiting)
         );
 
@@ -217,7 +218,7 @@ class StudentRaceStandingProjectionServiceTest {
                 PlayerQuestionStatus.ACTIVE
         )).thenReturn(List.of());
 
-        Map<Long, Projection> projections = projectAt(List.of(current, opponent, second));
+        Map<Long, StudentRaceStandingProjection> projections = projectAt(List.of(current, opponent, second));
 
         assertEquals(100.0, projections.get(2L).position());
         assertEquals(52.0, projections.get(3L).position());
@@ -227,7 +228,7 @@ class StudentRaceStandingProjectionServiceTest {
         );
     }
 
-    private Map<Long, Projection> projectAt(List<RacePlayer> racePlayers) {
+    private Map<Long, StudentRaceStandingProjection> projectAt(List<RacePlayer> racePlayers) {
         return projectionService.projectAt(racePlayers, current.getId(), DECISION_EPOCH_MS);
     }
 

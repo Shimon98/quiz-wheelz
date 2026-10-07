@@ -41,6 +41,9 @@ class RacePlayerJoinServiceTest {
     @Mock
     private RaceLiveEventRecorder liveEventRecorder;
 
+    @Mock
+    private RacePlayerGameplayStateService gameplayStateService;
+
     @InjectMocks
     private RacePlayerJoinService racePlayerJoinService;
 
@@ -89,6 +92,7 @@ class RacePlayerJoinServiceTest {
         assertEquals(2, savedPlayer.getLaneNumber());
         assertEquals(RacePlayerStatus.WAITING, savedPlayer.getStatus());
         verify(jwtService).createRacePlayerToken(10L, 20L, "Noa Cohen");
+        verify(gameplayStateService).createInitialState(savedPlayer);
         verify(liveEventRecorder).recordPlayerJoined(savedPlayer);
     }
 

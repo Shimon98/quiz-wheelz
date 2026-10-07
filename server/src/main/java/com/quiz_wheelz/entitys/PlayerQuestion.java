@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.quiz_wheelz.common.BaseEntity;
 import com.quiz_wheelz.common.QuestionRules;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
+import com.quiz_wheelz.enums.QuestionGameplayContext;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,6 +25,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -84,6 +86,13 @@ public class PlayerQuestion extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private PlayerQuestionStatus status = PlayerQuestionStatus.ACTIVE;
+
+    @NotNull
+    @JsonIgnore
+    @Enumerated(EnumType.STRING)
+    @ColumnDefault("'NORMAL'")
+    @Column(name = "gameplay_context", nullable = false, length = 30)
+    private QuestionGameplayContext gameplayContext = QuestionGameplayContext.NORMAL;
 
     @NotNull
     @Column(name = "expires_at", nullable = false)

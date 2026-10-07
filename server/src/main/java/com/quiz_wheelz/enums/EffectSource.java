@@ -1,6 +1,7 @@
 package com.quiz_wheelz.enums;
 
 public enum EffectSource {
+    CHALLENGE_TIMEOUT,
     ANSWER_RESULT,
     ADAPTIVE_ASSIST,
     LUCK_EVENT,

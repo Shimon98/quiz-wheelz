@@ -69,6 +69,9 @@ public enum ErrorCode {
             HttpStatus.CONFLICT
     ),
 
+    SPEED_EFFECT_INVALID(3031, ErrorMessages.SPEED_EFFECT_INVALID, HttpStatus.BAD_REQUEST),
+    SPEED_EFFECT_OVERLAP(3032, ErrorMessages.SPEED_EFFECT_OVERLAP, HttpStatus.CONFLICT),
+
     INTERNAL_ERROR(9999, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final int code;

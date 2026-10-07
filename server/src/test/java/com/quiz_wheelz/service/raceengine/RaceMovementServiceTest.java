@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
 
+import static org.mockito.Mockito.mock;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -45,7 +46,8 @@ class RaceMovementServiceTest {
 
     private RaceMovementService service() {
         return new RaceMovementService(
-                new RaceMovementCalculator(),
+                new RaceSpeedEffectMovementCalculator(new RaceMovementCalculator()),
+                mock(RacePlayerSpeedEffectService.class),
                 new RaceFinishService(
                         racePlayerRepository,
                         Clock.fixed(ANCHOR_INSTANT, FIXED_ZONE)

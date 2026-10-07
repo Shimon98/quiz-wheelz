@@ -9,6 +9,7 @@ import com.quiz_wheelz.entitys.QuestionTemplate;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.entitys.Subject;
 import com.quiz_wheelz.enums.Difficulty;
+import com.quiz_wheelz.enums.QuestionGameplayContext;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
 import com.quiz_wheelz.enums.QuestionType;
 import com.quiz_wheelz.exception.ApiException;
@@ -75,6 +76,7 @@ class PlayerQuestionPersistenceServiceTest {
         assertEquals(12, result.getCorrectAnswerValue());
         assertEquals(QuestionRules.DEFAULT_TIME_LIMIT_SECONDS, result.getTimeLimitSeconds());
         assertEquals(PlayerQuestionStatus.ACTIVE, result.getStatus());
+        assertEquals(QuestionGameplayContext.NORMAL, result.getGameplayContext());
         assertEquals(expectedExpiresAt(), result.getExpiresAt());
     }
 

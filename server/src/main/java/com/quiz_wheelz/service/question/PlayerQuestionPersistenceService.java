@@ -6,6 +6,7 @@ import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.entitys.PlayerQuestionChoice;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
+import com.quiz_wheelz.enums.QuestionGameplayContext;
 import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
@@ -64,6 +65,7 @@ public class PlayerQuestionPersistenceService {
         playerQuestion.setCorrectAnswerValue(generatedQuestion.getCorrectAnswerValue());
         playerQuestion.setTimeLimitSeconds(generatedQuestion.getTimeLimitSeconds());
         playerQuestion.setStatus(PlayerQuestionStatus.ACTIVE);
+        playerQuestion.setGameplayContext(QuestionGameplayContext.NORMAL);
         playerQuestion.setExpiresAt(now.plusSeconds(generatedQuestion.getTimeLimitSeconds()));
 
         return playerQuestion;
