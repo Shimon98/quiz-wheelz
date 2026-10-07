@@ -5,6 +5,7 @@ import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { cx } from "../../../utils/classNameUtils";
 import BrandLockup from "../../../shared/components/brand/BrandLockup";
 import StatCard from "../../../shared/components/stats/StatCard";
+import { AudioSettingsButton } from "../../../shared/components/publicSettings";
 import {
   TEACHER_HEADER_STATS,
   TEACHER_RACE_PROJECTOR_CONFIG,
@@ -69,6 +70,7 @@ export default function TeacherRaceProjectorHeader({
             valueDir={stat.valueDir}
           />
         ))}
+        <AudioSettingsButton variant="light" size="xl" withinPortal={false} />
         {fullscreenSupported ? (
           <TeacherFullscreenToggle fullscreen={fullscreen} onToggle={onToggleFullscreen} />
         ) : null}

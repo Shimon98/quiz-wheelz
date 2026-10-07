@@ -13,6 +13,7 @@ export const STUDENT_RACE_CONFIG = Object.freeze({
   feedbackDelayMs: 900,
   // Pause after feedback before requesting the next question.
   nextQuestionDelayMs: 1000,
+  comboMinStreak: 2,
 
   // Authoritative gameplay sync while PLAYING (C1-03M): the server advances
   // position continuously with time, so the client refreshes race-state

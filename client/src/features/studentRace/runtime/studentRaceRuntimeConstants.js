@@ -25,3 +25,10 @@ export const STUDENT_RACE_EFFECT = Object.freeze({
   BOOST: "boost",
   FINISH: "finish",
 });
+
+export const STUDENT_RACE_MOMENT = Object.freeze({
+  CORRECT: STUDENT_RACE_EFFECT.CORRECT,
+  WRONG: STUDENT_RACE_EFFECT.WRONG,
+  FINISH: STUDENT_RACE_EFFECT.FINISH,
+  TIME_UP: "time-up",
+});

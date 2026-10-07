@@ -51,6 +51,7 @@ This directory is the replacement. Do not recreate the old structure.
 - `02-client/CLIENT_IMPLEMENTATION_PLAN.md`
 - `02-client/UI_DESIGN_SYSTEM.md`
 - `02-client/STUDENT_RACE_SCREEN_AND_ASSETS.md`
+- `02-client/AUDIO_ASSET_PROVENANCE.md` — origin, license and processing of every shipped audio file.
 
 ### Quality and workflow
 

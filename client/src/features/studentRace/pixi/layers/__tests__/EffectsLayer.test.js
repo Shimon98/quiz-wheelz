@@ -31,82 +31,45 @@ function frame(runtimeState, { deltaMs = 16, visualSpeed = 0 } = {}) {
   };
 }
 
+const batch = (id, ...moments) => ({ id, moments });
+
 function active(layer) {
   return [...layer.activeEffects.keys()];
 }
 
 describe("EffectsLayer one-shot feedback", () => {
-  it("plays an accepted answer once and captures its streak without later poll changes", () => {
+  it("draws each delivered moment with the streak it carries", () => {
     const layer = new EffectsLayer(new Container());
-
     layer.update(frame(runtime()));
-    layer.update(frame(runtime({ activeEffect: "correct", feedbackEventId: 41, feedbackStreak: 3 })));
-    const started = layer.activeEffects.get("correct");
-    layer.update(frame(runtime({ activeEffect: "correct", feedbackEventId: 41, feedbackStreak: 4 }), { deltaMs: 100 }));
-    layer.update(frame(runtime({ activeEffect: "correct", feedbackEventId: 41 }), { deltaMs: 100 }));
 
-    expect(active(layer)).toEqual(["correct"]);
-    expect(layer.activeEffects.get("correct")).toBe(started);
-    expect(started.elapsedMs).toBe(216);
-    expect(started.feedbackStreak).toBe(3);
+    layer.playMoments(batch(1, { type: STUDENT_RACE_EFFECT.CORRECT, id: 41, streak: 3 }));
+    layer.update(frame(runtime(), { deltaMs: 100 }));
+
+    expect(active(layer)).toEqual([STUDENT_RACE_EFFECT.CORRECT]);
+    expect(layer.activeEffects.get("correct")).toMatchObject({ elapsedMs: 100, feedbackStreak: 3 });
     layer.destroy();
   });
 
-  it("restarts the effect for a second genuine event after an idle gap", () => {
+  it("restarts an effect for the next delivered moment of the same kind", () => {
     const layer = new EffectsLayer(new Container());
+    layer.playMoments(batch(1, { type: STUDENT_RACE_EFFECT.WRONG, id: 41 }));
+    layer.update(frame(runtime(), { deltaMs: 300 }));
 
-    layer.update(frame(runtime()));
-    layer.update(frame(runtime({ activeEffect: "wrong", feedbackEventId: 41 }), { deltaMs: 300 }));
-    layer.update(frame(runtime(), { deltaMs: 100 }));
-    layer.update(frame(runtime({ activeEffect: "wrong", feedbackEventId: 42 }), { deltaMs: 0 }));
+    layer.playMoments(batch(2, { type: STUDENT_RACE_EFFECT.WRONG, id: 42 }));
 
     expect(layer.activeEffects.get("wrong").elapsedMs).toBe(0);
     layer.destroy();
   });
 
-  it("plays correct at the speed cap on first draw and restarts for the next accepted ID", () => {
-    const layer = new EffectsLayer(new Container());
-    layer.update(frame(runtime({ activeEffect: "correct", feedbackEventId: 41, feedbackStreak: 4, targetSpeed: 2 })));
-    const first = layer.activeEffects.get("correct");
-    layer.update(frame(runtime({ activeEffect: "correct", feedbackEventId: 42, feedbackStreak: 5, targetSpeed: 2 })));
-
-    expect(active(layer)).toEqual(["correct"]);
-    expect(layer.activeEffects.get("correct")).not.toBe(first);
-    expect(layer.activeEffects.get("correct").feedbackStreak).toBe(5);
-    layer.destroy();
-  });
-
-  it("boosts only on an authoritative speed increase after the first sample", () => {
+  it("never discovers moments on its own from runtime frames", () => {
     const layer = new EffectsLayer(new Container());
 
-    layer.update(frame(runtime({ targetSpeed: 1 })));
-    expect(active(layer)).toEqual([]);
-    layer.update(frame(runtime({ targetSpeed: 1.3 })));
-    expect(active(layer)).toEqual([STUDENT_RACE_EFFECT.BOOST]);
-    const boost = layer.activeEffects.get(STUDENT_RACE_EFFECT.BOOST);
-    layer.update(frame(runtime({ targetSpeed: 1.3 })));
-    layer.update(frame(runtime({ targetSpeed: 1.1 })));
+    layer.update(frame(runtime()));
+    layer.update(frame(runtime({ activeEffect: "correct", feedbackEventId: 41, feedbackStreak: 4 })));
+    layer.update(frame(runtime({ playerFinished: true, targetSpeed: 2 })));
 
-    expect(layer.activeEffects.get(STUDENT_RACE_EFFECT.BOOST)).toBe(boost);
-    layer.destroy();
-  });
-
-  it("plays FINISH once on the authoritative transition and never from an initial true", () => {
-    const layer = new EffectsLayer(new Container());
-
-    layer.update(frame(runtime({ playerFinished: true })));
-    layer.update(frame(runtime({ playerFinished: true })));
     expect(active(layer)).toEqual([]);
     layer.destroy();
-
-    const second = new EffectsLayer(new Container());
-    second.update(frame(runtime({ playerFinished: false })));
-    second.update(frame(runtime({ playerFinished: true })));
-    second.update(frame(runtime({ playerFinished: true }), { deltaMs: 100 }));
-
-    expect(active(second)).toEqual([STUDENT_RACE_EFFECT.FINISH]);
-    expect(second.activeEffects.get(STUDENT_RACE_EFFECT.FINISH).elapsedMs).toBe(116);
-    second.destroy();
   });
 
   it("lets FINISH supersede shorter one-shots and blocks new ones while it plays", () => {
@@ -114,8 +77,8 @@ describe("EffectsLayer one-shot feedback", () => {
 
     layer.playEffect(STUDENT_RACE_EFFECT.CORRECT);
     layer.playEffect(STUDENT_RACE_EFFECT.BOOST);
-    layer.playEffect(STUDENT_RACE_EFFECT.FINISH);
-    layer.playEffect(STUDENT_RACE_EFFECT.WRONG);
+    layer.playMoments(batch(1, { type: STUDENT_RACE_EFFECT.FINISH, id: "finish" }));
+    layer.playMoments(batch(2, { type: STUDENT_RACE_EFFECT.WRONG, id: 43 }));
 
     expect(active(layer)).toEqual([STUDENT_RACE_EFFECT.FINISH]);
     layer.destroy();
@@ -126,7 +89,7 @@ describe("EffectsLayer one-shot feedback", () => {
 
     layer.playEffect("fireworks");
     layer.playEffect("constructor");
-    layer.playEffect(null);
+    layer.playMoments(batch(1, { type: null, id: 1 }));
 
     expect(active(layer)).toEqual([]);
     layer.destroy();
@@ -163,20 +126,17 @@ describe("EffectsLayer one-shot feedback", () => {
     layer.destroy();
   });
 
-  it("consumes reduced-motion feedback without moving bursts, dust or a later replay", () => {
+  it("draws nothing in reduced motion: no bursts, no dust and no delivered moment", () => {
     const layer = new EffectsLayer(new Container());
     layer.update(frame(runtime({ targetSpeed: 1 }), { deltaMs: 100, visualSpeed: 2 }));
     layer.playEffect(STUDENT_RACE_EFFECT.BOOST);
-    layer.update(frame(runtime({
-      activeEffect: "correct", feedbackEventId: 41, feedbackStreak: 3,
-      targetSpeed: 2, reducedMotion: true,
-    }), { deltaMs: 100, visualSpeed: 2 }));
+    layer.update(frame(runtime({ reducedMotion: true }), { deltaMs: 100, visualSpeed: 2 }));
+
+    layer.playMoments(batch(1, { type: STUDENT_RACE_EFFECT.CORRECT, id: 41, streak: 3 }));
 
     expect(active(layer)).toEqual([]);
     expect(layer.puffs).toHaveLength(0);
     expect(layer.spawnAccumulator).toBe(0);
-    layer.update(frame(runtime({ activeEffect: "correct", feedbackEventId: 41, targetSpeed: 2 })));
-    expect(active(layer)).toEqual([]);
     layer.destroy();
   });
 
@@ -193,29 +153,16 @@ describe("EffectsLayer one-shot feedback", () => {
     layer.destroy();
   });
 
-  it("keeps a finished player from starting new feedback after the finish animation expires", () => {
-    const layer = new EffectsLayer(new Container());
-    layer.update(frame(runtime()));
-    layer.update(frame(runtime({ playerFinished: true })));
-    layer.update(frame(runtime({
-      playerFinished: true, activeEffect: "correct", feedbackEventId: 41, targetSpeed: 2,
-    }), { deltaMs: DURATIONS.finishEffectDurationMs }));
-
-    expect(active(layer)).toEqual([]);
-    layer.destroy();
-  });
-
-  it("releases owned graphics and event history without destroying its shared parent", () => {
+  it("releases owned graphics and ignores moments after destroy, without destroying its shared parent", () => {
     const container = new Container();
     const layer = new EffectsLayer(container);
-    layer.update(frame(runtime({ activeEffect: "correct", feedbackEventId: 41 })));
+    layer.playMoments(batch(1, { type: STUDENT_RACE_EFFECT.CORRECT, id: 41 }));
     layer.destroy();
     layer.destroy();
-    layer.update(frame(runtime({ activeEffect: "correct", feedbackEventId: 42 })));
+    layer.playMoments(batch(2, { type: STUDENT_RACE_EFFECT.CORRECT, id: 42 }));
 
     expect(layer.graphics.destroyed).toBe(true);
     expect(layer.feedbackGraphics.destroyed).toBe(true);
-    expect(layer.observedRuntime).toBeNull();
     expect(active(layer)).toEqual([]);
     expect(container.destroyed).toBe(false);
     expect(container.children).toHaveLength(0);

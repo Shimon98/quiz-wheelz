@@ -4,7 +4,7 @@
  * render time, except language endonyms (see below).
  */
 
-import { Monitor, Sun, Moon } from "lucide-react";
+import { Monitor, Moon, Music, Sun, Volume2 } from "lucide-react";
 import { SUPPORTED_LANGUAGES } from "../../../i18n/i18nConstants";
 import { THEME_MODES } from "../../../stores/themeStore";
 
@@ -29,4 +29,9 @@ export const THEME_MODE_OPTIONS = Object.freeze([
   { value: THEME_MODES.SYSTEM, labelKey: "theme.system", Icon: Monitor },
   { value: THEME_MODES.LIGHT, labelKey: "theme.light", Icon: Sun },
   { value: THEME_MODES.DARK, labelKey: "theme.dark", Icon: Moon },
+]);
+
+export const AUDIO_TOGGLE_OPTIONS = Object.freeze([
+  { field: "musicEnabled", setter: "setMusicEnabled", labelKey: "audio.music", Icon: Music },
+  { field: "sfxEnabled", setter: "setSfxEnabled", labelKey: "audio.effects", Icon: Volume2 },
 ]);

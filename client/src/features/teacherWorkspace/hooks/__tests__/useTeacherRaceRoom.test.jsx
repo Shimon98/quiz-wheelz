@@ -1,7 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import "../../../../i18n/i18n";
+import { audioEngine } from "../../../../shared/audio";
+import { GAME_AUDIO } from "../../../../shared/gameAudio/gameAudioCatalog";
 import useTeacherRaceRoom from "../useTeacherRaceRoom";
 import { getTeacherRaceRoom, startTeacherRace } from "../../../../api/teacherApi";
 import {
@@ -38,9 +40,16 @@ function waitingRoom() {
   };
 }
 
+let playSfx;
+
 beforeEach(() => {
   vi.clearAllMocks();
   getTeacherRaceRoom.mockResolvedValue(waitingRoom());
+  playSfx = vi.spyOn(audioEngine, "playSfx").mockReturnValue("played");
+});
+
+afterEach(() => {
+  playSfx.mockRestore();
 });
 
 describe("useTeacherRaceRoom start", () => {
@@ -62,6 +71,7 @@ describe("useTeacherRaceRoom start", () => {
     });
     expect(getTeacherRaceRoom).toHaveBeenCalledTimes(1);
     expect(result.current.isStarting).toBe(false);
+    expect(playSfx).toHaveBeenCalledExactlyOnceWith(GAME_AUDIO.PROJECTOR_RACE_START);
   });
 
   it("falls back to the routed raceId when the start response carries none", async () => {
@@ -92,6 +102,7 @@ describe("useTeacherRaceRoom start", () => {
     expect(navigateMock).not.toHaveBeenCalled();
     expect(showSuccessNotification).not.toHaveBeenCalled();
     expect(showApiErrorNotification).toHaveBeenCalledTimes(1);
+    expect(playSfx).not.toHaveBeenCalled();
     expect(result.current.isStarting).toBe(false);
     expect(result.current.room.status).toBe("WAITING_FOR_PLAYERS");
   });

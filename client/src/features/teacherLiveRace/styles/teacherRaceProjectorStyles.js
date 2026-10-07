@@ -35,7 +35,7 @@ export const TEACHER_PROJECTOR_STYLES = Object.freeze({
   worldVergeStart: `${WORLD_VERGE} left-0 -translate-x-[10%]`,
   worldVergeEnd: `${WORLD_VERGE} right-0 translate-x-[10%] -scale-x-100`,
 
-  header: `relative z-10 grid grid-cols-1 items-center gap-3 ${GLASS} px-3 py-2 sm:px-4`,
+  header: `relative z-20 grid grid-cols-1 items-center gap-3 ${GLASS} px-3 py-2 sm:px-4`,
   headerColumns: "@3xl:grid-cols-[1fr_auto] @6xl:grid-cols-[1fr_auto_1fr]",
   headerColumnsWithBrand: "@3xl:grid-cols-[auto_1fr_auto] @6xl:grid-cols-[1fr_auto_1fr]",
   headerBrand:

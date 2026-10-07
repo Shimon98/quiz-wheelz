@@ -12,6 +12,7 @@ import RacePlayersPanel from "../components/raceRoom/RacePlayersPanel";
 import RaceRoomActions from "../components/raceRoom/RaceRoomActions";
 import { DashboardErrorState } from "../components/DashboardStates";
 import { preloadTeacherProjectorArt } from "../../teacherLiveRace/assets/preloadTeacherProjectorArt";
+import useTeacherRoomSound from "../../teacherLiveRace/hooks/useTeacherRoomSound";
 
 export default function TeacherRaceRoomPage() {
   const { raceId } = useParams();
@@ -20,6 +21,7 @@ export default function TeacherRaceRoomPage() {
 
   const { room, isLoading, error, refetch, startRace, isStarting } =
     useTeacherRaceRoom(raceId);
+  useTeacherRoomSound(room?.players ?? room?.racePlayers ?? null);
 
   const item = useMemo(
     () => (room ? buildRaceViewModel(room, language) : null),

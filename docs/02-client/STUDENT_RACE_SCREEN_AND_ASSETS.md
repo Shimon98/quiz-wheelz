@@ -27,7 +27,8 @@ UI-10G layout contract
 Done: C1-01 bootstrap, C1-02 question panel/timer, C1-03 answer loop,
 C1-03M continuous authoritative movement, C1-04 HUD, C1-05 presence/reconnect,
 C1-06A–C vehicle identity + manifest/loader + real GREEN static sprite,
-C1-06E server-driven correct/wrong/boost/finish Pixi feedback.
+C1-06E server-driven correct/wrong/finish Pixi feedback (the boost drawer waits for an
+authoritative boost cue).
 
 Next:
 
@@ -540,7 +541,7 @@ submitted question is retained throughout feedback even if a background
 refresh supplies the next question.
 No reward is inferred from a tap, error, expiry or speed change. Accepted
 question IDs deduplicate Pixi answer one-shots through
-`resolveStudentRaceFeedbackEffect`/`detectRuntimeEffectTriggers`;
+`resolveStudentRaceFeedbackEffect`/`deriveStudentRaceMoments`;
 `EffectsLayer`, `drawFeedbackEffect` and `raceFeedbackVisualConfig` own
 frame timing and bounded combo geometry. React owns localized reward text;
 the server owns correctness, streak, points, speed and finish.
@@ -601,16 +602,16 @@ Crossing requires confirmed finish-prefix release; same-ms cohorts release toget
 Own/opponent runout uses one interpolation with a shared crossing midpoint, so visual
 backlog cannot reverse server order. Passive finish reads do not revive gameplay presence.
 
-## Race audio — planned C2-A
+## Race audio — C5-A
 
-Add sound immediately after the first integrated opponent renderer. The
-implementation and acceptance owner is C2-A in `CLIENT_IMPLEMENTATION_PLAN.md`.
-This checkpoint adds no playable audio or sound assets.
-
-Use focused audio manifest metadata for engine/ambient loops and short
-correct/wrong/combo/boost/finish cues. One feature audio controller consumes
-the existing accepted-answer identity and authoritative runtime transitions;
-React renders mute/volume controls, while Pixi continues to own graphics.
+Race audio is integrated (C5-A in `CLIENT_IMPLEMENTATION_PLAN.md`). The race screen
+claims the race music, preloads its short sounds and runs the hover-engine loop while
+gameplay is ready and the player races, with the playback rate following the server speed.
+`useStudentRaceMoments` hands one batch to both the renderer and `studentRaceSounds`:
+correct, combo tiers from the server streak, wrong, time up (never over answer feedback or a
+submit in flight) and finish, each once. A batch that arrives while Pixi is still starting waits
+in `PixiStudentRaceCanvas` and is drawn once the renderer exists. BOOST has no sound until an
+authoritative boost cue exists.
 Do not trigger sounds from unconfirmed clicks or infer gameplay events.
 Avoid duplicate effects on polls/reconnect, pause loops while gameplay is
 unavailable, release playback on unmount and retain a usable silent fallback.

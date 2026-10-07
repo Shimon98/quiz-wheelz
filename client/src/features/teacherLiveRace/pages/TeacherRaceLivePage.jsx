@@ -6,6 +6,7 @@ import { useFullscreenElement } from "@mantine/hooks";
 import { MonitorSmartphone } from "lucide-react";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
+import { RACE_STATUSES } from "../../../constants/raceStatusConstants";
 import {
   ROUTES,
   buildTeacherRaceResultsPath,
@@ -16,6 +17,7 @@ import usePreferredDeviceNotice from "../../../shared/responsive/usePreferredDev
 import { PREFERRED_DEVICE_PROFILES } from "../../../shared/responsive/preferredDeviceProfiles";
 import useTeacherRaceLive from "../hooks/useTeacherRaceLive";
 import useTeacherRaceElapsedTime from "../hooks/useTeacherRaceElapsedTime";
+import useTeacherLiveRaceSound from "../hooks/useTeacherLiveRaceSound";
 import { buildTeacherRaceProjectorViewModel } from "../utils/buildTeacherRaceProjectorViewModel";
 import { isFullscreenSupported } from "../utils/isFullscreenSupported";
 import {
@@ -40,6 +42,10 @@ export default function TeacherRaceLivePage() {
   } = useTeacherRaceLive(raceId);
   const view = resolveTeacherLiveView({ isLoading, error, runtime });
   const isProjector = view === TEACHER_LIVE_VIEWS.PROJECTOR;
+  useTeacherLiveRaceSound({
+    raceRunning: isProjector && runtime?.race.status === RACE_STATUSES.IN_PROGRESS,
+    recentEvents,
+  });
 
   const { elapsedMs, serverNowEpochMs } = useTeacherRaceElapsedTime({
     serverClock,

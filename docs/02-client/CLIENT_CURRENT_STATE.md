@@ -8,6 +8,23 @@
 > The code is authoritative for what is implemented. This document is authoritative
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
+Local checkpoint, 2026-10-05: **C5-A audio complete** on `feature/C5-A-audio-foundation`
+(not committed yet) — approved music and sounds integrated for every current student and
+teacher situation, one music owner per screen, the single student moment owner feeding the
+renderer and the sound adapter, and a provenance record for every file. A final cleanup after
+an independent audit made browser resource setup transactional, stops a fading track at once on
+hide or Music OFF, holds moments that arrive before the renderer is ready, keys waiting-room joins
+by the room's `playerId` and narrowed the engine API to its production path. Physical devices,
+the projector in real fullscreen and listening on real speakers remain manual checks.
+
+Local checkpoint, 2026-10-04: **C5-A audio foundation implemented** on
+`feature/C5-A-audio-foundation` (not committed yet) — one audio engine and settings store,
+one `AudioProvider`, one shared sound settings UI in Public Settings, the student HUD and the
+teacher projector; the client no longer infers BOOST from a speed rise. Real sounds (C5-A8)
+wait for production audio assets. 1226 tests/137 files, lint and build pass; the controls and
+the provider were checked in the browser (HE/EN, phone and desktop, keyboard, live bot race
+154 on the projector).
+
 Checkpoint, 2026-09-29: **C4 Results COMPLETE on the client** on `feature/C4-results` —
 C4-A teacher Result Screen (`fd8dedf`), C4-B1 student progressive results engine
 (`cba8056`), C4-B2 student results UI and C4-C results art, final assets and teacher name
@@ -248,9 +265,11 @@ Implemented A–G:
 
 ### Student race visual feedback (C1-06E — done 2026-08-23; local revision accepted 2026-09-08)
 
-- `EffectsLayer` plays procedural one-shots on the Pixi ticker: CORRECT /
-  WRONG from the accepted answer feedback only, BOOST from an authoritative
-  `targetSpeed` increase only, FINISH from `playerFinished` false→true only
+- `useStudentRaceMoments` is the single moment owner; `EffectsLayer` draws the batches it
+  receives and detects nothing itself. It plays procedural one-shots on the Pixi ticker: CORRECT /
+  WRONG from the accepted answer feedback only, FINISH from `playerFinished`
+  false→true only; BOOST only from an authoritative boost cue, which does not
+  exist yet, so it never plays (a `targetSpeed` rise is not a boost)
 - `StudentRaceScreen` hands the canvas a memoized presentation runtime
   (`visual.activeEffect`); HUD/overlay keep the authoritative runtime
 - no effect from clicks, errors, reconnect-required or expiry; durations
@@ -376,13 +395,14 @@ Implemented A–G:
   presentation boundary, retained written reward, feedback expiry and
   unchanged authoritative state. This is component integration coverage,
   not browser emulation or a physical-phone result.
-- Theme QA also exposed an existing nested `h2` React warning in the public
-  settings modal. It is outside the race-renderer change and remains backlog;
-  a fresh race-preview tab produced no console errors or warnings.
+- A fresh race-preview tab produced no console errors or warnings.
 
 ## Missing integration
 - full auth server flows.
-- race audio: deferred polish backlog (C2-A in the client plan); it does not block C3.
+- audio manual checks (open): Android and iPad real devices, iPhone if available, the teacher
+  projector in real Chrome fullscreen (sound popover included), listening balance on real
+  speakers, and reconnect/interruption on a real deployment; everything else in C5-A is
+  integrated.
 
 ## Opponents and live synchronization (C2 — implemented 2026-09-10/13)
 
@@ -484,6 +504,59 @@ teacher/SSE/results/auth work does not belong to that single-player gate.
   the live projector leaderboard does the same (lane labels sit on the always left-to-right
   track and were already correct).
 
+## Audio (C5-A — complete 2026-10-05)
+
+- `shared/audio/audioEngine.js` is the only audio owner (module singleton, no feature
+  creates an `AudioContext`): lazy context inside the unlocking gesture, Music and SFX
+  buses, registry, loader, cue cooldown/voice limits, loop channels, music player with owner
+  tokens and a 0.4 s cross-fade (hiding the page or Music OFF stops a fading track at once);
+  screens use `useSceneMusic(key, gain)`. The barrel exports only `audioEngine`,
+  `useSceneMusic`, `AUDIO_KINDS` and `AUDIO_LOOP_CHANNELS`; play results and engine states stay
+  internal to `shared/audio`
+- failures: a browser failure (context or bus setup, music element routing, `play()`, decode,
+  autoplay) stays silent inside `shared/audio` and gameplay continues; a context or music
+  element that fails while being built is released, and the next gesture or sync builds a
+  fresh one; registry and catalog errors still throw. Audio has no error codes, notifications
+  or retry loop of its own
+- `shared/gameAudio/gameAudioCatalog.js`: every physical sound once (key, kind, fingerprinted
+  URL, gain, cooldown, voices); `AudioProvider` registers it at import; files under
+  `client/src/assets/audio/`, provenance in `AUDIO_ASSET_PROVENANCE.md`
+- `stores/audioSettingsStore.js` (`qw-audio`): Music OFF and Sound effects ON by default,
+  volumes stored for later, per-field fallback for invalid stored values
+- `app/providers/AudioProvider.jsx` (once, in `AppProviders`): settings → engine,
+  activation gestures → unlock (kept after unlock for Safari), hidden/visible →
+  suspend/resume through `useBrowserLifecycleEvents`; never disposes the engine
+- `AudioSettingsControls` + `AudioSettingsButton` (`shared/components/publicSettings`):
+  the same Music/Sound effects switches in Public Settings, the student HUD telemetry row
+  and the teacher projector header; the projector popover stays inside the fullscreen
+  surface
+- feature adapters map presentation to keys: `studentRaceSounds` (moments, combo tiers,
+  engine rate 0.8–1.4 from the server speed), `useStudentRaceSound`, `useWaitingRace` (start
+  cue), `StudentShell` (game music), `teacherRaceSounds`, `useTeacherRoomSound`,
+  `useTeacherLiveRaceSound`, `useTeacherRaceRoom` (start cue)
+- student moments: `useStudentRaceMoments` hands one batch to Pixi and to `studentRaceSounds`;
+  a batch that arrives before the Pixi renderer exists waits in `PixiStudentRaceCanvas` and is
+  drawn once when the renderer starts (an unmount drops it)
+- teacher cues: the waiting-room pop compares roster refreshes by the room's `playerId`; the
+  projector cues only feed items that arrive after the page opened (the feed on screen at mount
+  is a baseline), and a race-finished cue replaces a last player's finish in the same update
+
+Current audio matrix:
+
+| Context | Music | Sound effects | Loop |
+|---|---|---|---|
+| Landing, teacher dashboard and other workspace pages | none | none | none |
+| Public Settings dialog | Music / Sound effects switches only | none | none |
+| Student join | game music (`music-game-main`, soft on phones) | none | none |
+| Student waiting room | game music, same track without a restart | race start, only on an observed WAITING to PLAYING change | none |
+| Student race | race music (`music-race-main`, soft on phones) | correct; combo in three tiers from the server streak (2+, 5+, 10+) instead of correct; wrong; time up; finish | hover engine while gameplay is ready and the player races; rate from the server speed |
+| Student finish ceremony | race music continues | finish (once) | engine stops at the finish |
+| Student results | none: the race music fades out | none | none |
+| Teacher waiting room | game music (projector level) | one soft pop per roster refresh that brings new players; race start on a successful Start | none |
+| Teacher projector | race music (projector level, above a phone) while the race runs | player finished (at least 400 ms apart); race finished (once) | none |
+| Teacher answers and rank changes | none, by decision | none | none |
+| Teacher results | none | none | none |
+
 ## Stale client state to clean
 
 - none recorded; the results route constant now backs the C4 Result Screen route.
@@ -492,7 +565,7 @@ teacher/SSE/results/auth work does not belong to that single-player gate.
 
 ```text
 Results (C4) complete
+→ C5-A audio complete (one final review, then the commit)
 → C5 required gameplay UI once the server S4-01 effect/event contract exists
-→ meanwhile: race sound polish (C2-A) and the carried-forward pre-release
-  device/recovery QA
+→ meanwhile: the carried-forward pre-release device/recovery QA
 ```

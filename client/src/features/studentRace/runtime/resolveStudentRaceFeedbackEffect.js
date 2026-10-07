@@ -25,7 +25,7 @@ export function applyFeedbackEffectToRuntime(
   runtimeState,
   feedbackState,
   answerFeedback = null,
-  { reducedMotion = false } = {},
+  { reducedMotion = false, timeUpQuestionId = null } = {},
 ) {
   if (runtimeState == null) {
     return runtimeState;
@@ -44,12 +44,13 @@ export function applyFeedbackEffectToRuntime(
     && feedbackEventId === (runtimeState.visual?.feedbackEventId ?? null)
     && feedbackStreak === (runtimeState.visual?.feedbackStreak ?? 0)
     && reducedMotion === (runtimeState.visual?.reducedMotion ?? false)
+    && timeUpQuestionId === (runtimeState.visual?.timeUpQuestionId ?? null)
   ) {
     return runtimeState;
   }
 
   return {
     ...runtimeState,
-    visual: { ...runtimeState.visual, activeEffect, feedbackEventId, feedbackStreak, reducedMotion },
+    visual: { ...runtimeState.visual, activeEffect, feedbackEventId, feedbackStreak, reducedMotion, timeUpQuestionId },
   };
 }

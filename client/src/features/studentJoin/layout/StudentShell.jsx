@@ -1,6 +1,9 @@
 import { Outlet } from "react-router-dom";
 
+import { useSceneMusic } from "../../../shared/audio";
+import { GAME_AUDIO } from "../../../shared/gameAudio/gameAudioCatalog";
 import EntryShell from "../../../shared/layouts/entryShell/EntryShell";
+import { STUDENT_GAME_MUSIC_GAIN } from "../config/studentJoinConfig";
 import { STUDENT_ENTRY_SHELL_CONFIG } from "./studentShellConfig";
 
 /**
@@ -11,6 +14,7 @@ import { STUDENT_ENTRY_SHELL_CONFIG } from "./studentShellConfig";
  * route (join scene / waiting scene) via the config map.
  */
 export default function StudentShell() {
+  useSceneMusic(GAME_AUDIO.MUSIC_GAME, STUDENT_GAME_MUSIC_GAIN);
   return (
     <EntryShell config={STUDENT_ENTRY_SHELL_CONFIG}>
       <Outlet />

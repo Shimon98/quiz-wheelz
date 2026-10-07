@@ -19,3 +19,12 @@ if (typeof window.matchMedia !== "function") {
     dispatchEvent: () => false,
   });
 }
+
+// jsdom implements no ResizeObserver; Mantine's SegmentedControl indicator requires it.
+if (typeof window.ResizeObserver !== "function") {
+  window.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}

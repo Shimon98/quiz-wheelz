@@ -19,7 +19,7 @@ function HudStatChip({ art, label, value, accessibleLabel, sharedRank = false })
   );
 }
 
-export default function StudentRaceHud({ runtimeState = null, question = null, answerFeedback = null }) {
+export default function StudentRaceHud({ runtimeState = null, question = null, answerFeedback = null, controls = null }) {
   const { t, i18n } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
   const hud = getStudentRaceHudModel(runtimeState, i18n.resolvedLanguage, answerFeedback);
 
@@ -86,6 +86,7 @@ export default function StudentRaceHud({ runtimeState = null, question = null, a
           ) : null}
         </div>
         <StudentRaceSpeedometer speed={hud.speed} />
+        {controls}
       </div>
       <StudentRaceReward key={hud.rewardKey} reward={hud.reward} />
     </div>

@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { MantineProvider } from "@mantine/core";
 
 import i18n from "../../../../i18n/i18n";
+import { useAudioSettingsStore } from "../../../../stores/audioSettingsStore";
 import { I18N_NAMESPACES } from "../../../../i18n/i18nConstants";
 import TeacherRaceProjector from "../TeacherRaceProjector";
 import TeacherLiveEventsPanel from "../events/TeacherLiveEventsPanel";
@@ -40,7 +41,7 @@ function renderProjector({ runtime = rosterRuntime(), elapsedMs = 61_000, ...pro
   const onBackToRaces = vi.fn();
 
   render(
-    <MantineProvider>
+    <MantineProvider env="test">
       <MemoryRouter>
         <TeacherRaceProjector
           viewModel={viewModel}
@@ -125,6 +126,17 @@ describe("TeacherRaceProjector", () => {
     expect(onToggleFullscreen).toHaveBeenCalledTimes(1);
     expect(onBackToRaces).toHaveBeenCalledTimes(1);
     expect(screen.getByText(text("connection.live"))).toBeInTheDocument();
+  });
+
+  it("opens the shared sound settings inside the projector, so they stay visible in fullscreen", () => {
+    useAudioSettingsStore.getState().setMusicEnabled(true);
+    const { viewModel } = renderProjector({ fullscreen: true });
+
+    fireEvent.click(screen.getByRole("button", { name: i18n.t("publicSettings:audio.buttonLabel") }));
+
+    const dialog = within(screen.getByRole("region", { name: viewModel.header.title })).getByRole("dialog");
+    expect(within(dialog).getByRole("switch", { name: i18n.t("publicSettings:audio.music") })).toBeChecked();
+    useAudioSettingsStore.getState().resetAudioSettings();
   });
 
   it("hides the fullscreen action when unsupported and renders the finished overlay for a finished race", () => {

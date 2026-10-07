@@ -110,7 +110,7 @@ export function useStudentRaceVisualPreview(t) {
     runtimeState,
     question,
     ...feedback,
-    interactionEnabled: !runtimeState.playerFinished && feedback.feedbackState === STUDENT_RACE_FEEDBACK.IDLE,
+    interactionEnabled: !runtimeState.playerFinished,
     onChoiceSelect,
   };
 }

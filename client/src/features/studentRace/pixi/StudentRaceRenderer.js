@@ -91,6 +91,10 @@ export class StudentRaceRenderer {
       .fill(STUDENT_RACE_WORLD_ART.sky.topColor);
   }
 
+  playMoments(batch) {
+    this.effectsLayer.playMoments(batch);
+  }
+
   updateRuntimeState(nextState) {
     this.runtimeState = nextState;
     this.playerKartLayer.setVehicleAssetKey(nextState?.player?.vehicleAssetKey);
