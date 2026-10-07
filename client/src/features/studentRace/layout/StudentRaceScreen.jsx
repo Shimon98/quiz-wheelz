@@ -35,7 +35,7 @@ export default function StudentRaceScreen({
   useStudentRaceMoments(presentationRuntimeState, momentConsumers);
   useStudentRaceSound({
     engineActive: interactionEnabled === true && runtimeState?.playerFinished !== true,
-    speed: runtimeState?.player?.speed,
+    speed: runtimeState?.visual?.targetSpeed,
   });
 
   return (

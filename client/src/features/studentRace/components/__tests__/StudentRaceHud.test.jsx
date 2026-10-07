@@ -10,6 +10,7 @@ function buildRuntimeState({
   score = 850,
   streak = 3,
   speed = 1.3,
+  presentedSpeed = speed,
   position = 420,
   totalDistance = 1000,
   rank = null,
@@ -18,6 +19,7 @@ function buildRuntimeState({
 } = {}) {
   const state = createInitialRaceRuntimeState();
   state.player = { ...state.player, score, streak, speed, position, rank };
+  state.visual = { ...state.visual, targetSpeed: presentedSpeed };
   state.totalDistance = totalDistance;
   state.playerCount = playerCount;
   state.opponents = opponents;
@@ -128,6 +130,13 @@ describe("StudentRaceHud", () => {
     render(<StudentRaceHud runtimeState={buildRuntimeState({ speed: 2.0 })} />);
 
     expect(screen.getByText("×2.0")).toBeInTheDocument();
+  });
+
+  it("shows the server's effective speed while a slowdown keeps it below the earned speed", () => {
+    render(<StudentRaceHud runtimeState={buildRuntimeState({ speed: 1.3, presentedSpeed: 1.0 })} />);
+
+    expect(screen.getByText("×1.0")).toBeInTheDocument();
+    expect(screen.queryByText("×1.3")).not.toBeInTheDocument();
   });
 
   it("hosts exactly one question timer — the existing StudentRaceQuestionTimer", () => {

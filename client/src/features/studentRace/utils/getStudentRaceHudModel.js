@@ -53,7 +53,7 @@ export function getStudentRaceHudModel(runtimeState, language = "he", answerFeed
     streakText: new Intl.NumberFormat(language).format(player.streak),
     streakLabelKey: isCombo ? "hud.comboLabel" : "hud.streakShortLabel",
     isCombo,
-    speed: player.speed,
+    speed: runtimeState.visual.targetSpeed,
     reward,
     rewardKey: reward?.id ?? "steady",
     style: { "--race-reward-duration": `${STUDENT_RACE_CONFIG.feedbackDelayMs}ms` },

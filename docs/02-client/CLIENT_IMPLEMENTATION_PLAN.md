@@ -1036,11 +1036,11 @@ Depends on S3-01 (final results read model, DONE on the server). C4 made no serv
 
 ## C5 — Required gameplay UI — IN PROGRESS
 
-**Status:** C5-A (client audio) is complete on `feature/C5-A-audio-foundation` and awaits one
-final review before the commit. The gameplay UI (C5-01
-onward) renders server-owned game events and effects, so it starts from the S4-01
-effect/event contract (Phase 4 in the master roadmap); do not build it against an imagined
-contract. The carried-forward release QA can proceed meanwhile.
+**Status:** C5-A (client audio) is complete and merged (PR #75). C5-01 (gameplay runtime)
+consumes the merged S4-01 contract on `feature/C5-01-gameplay-runtime`. The gameplay UI
+(C5-02 onward) renders server-owned game events and effects, so each part starts from its S4
+contract (S4-02 Challenge first); do not build it against an imagined contract. The
+carried-forward release QA can proceed meanwhile.
 
 ### C5-A — Audio — COMPLETE
 
@@ -1104,8 +1104,27 @@ contract. The carried-forward release QA can proceed meanwhile.
   The renderer (`EffectsLayer.playMoments`) and the sound adapter receive the same batch;
   the renderer no longer detects anything itself. A batch that arrives before the Pixi
   renderer exists waits in `PixiStudentRaceCanvas` and is drawn once when the renderer starts.
+- **C5-01c gameplay mapping — DONE:** `mapStudentRaceGameplay` (forward-safe, reusing
+  `errors/apiContractGuards.js`) runs inside `applyRaceSnapshot`; `runtime.gameplay` holds the
+  server truth; unknown modes and effects are kept but present nothing; a malformed effect is
+  dropped alone; at the wire level `magnitudeTenths` may be `null` or any integer.
+- **C5-01 presentation speed — DONE:** `visual.targetSpeed` is the server `effectiveSpeed`
+  (the base speed only when none was sent) and the one speed read by the speedometer, the
+  hover engine and the Pixi bob/dust; movement uses only `movementUnitsPerSecond`.
+- **C5-01 question context — DONE:** the question model keeps `gameplayContext` (missing →
+  `NORMAL`, present but blank → contract error); no UI reads it yet.
+- **C5-01d refresh signals — WAITS FOR S4-02:** S4-01 added no SSE event type; the existing
+  signals, the answer/arbitration snapshots and the 2 s race-state poll stay the only refreshes.
+- **C5-01e effect timing — DEFERRED:** the 2 s poll bounds the lag after an effect ends and no
+  production code creates effects yet; add one timer inside `useStudentRaceSynchronization`
+  only if S4-02's real slowdowns prove 2 s too slow.
+- **C5-01f vehicle overlays — DEFERRED:** built with the first attached effect (C5-02/C5-03),
+  once the Turbo/Safe art split (pose, overlay, code animation) is decided.
+- **C5-01g DEV scenarios — DONE:** `/dev/race?motionScenario=slowdown|future-effect|future-mode`.
+- **C5-01h first persistent effect presentation — MOVED TO C5-02:** a "slowed" state belongs
+  with the Challenge timeout message, which explains why the player slowed down.
 
-### C5 gameplay UI — after S4-01
+### C5 gameplay UI — after S4-02 onward
 
 - junction offer
 - highway/dirt-road question modes

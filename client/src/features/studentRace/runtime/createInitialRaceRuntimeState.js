@@ -1,3 +1,4 @@
+import { createDefaultStudentRaceGameplay } from "./mapStudentRaceGameplay.js";
 import { STUDENT_RACE_FEEDBACK } from "./studentRaceRuntimeConstants.js";
 
 
@@ -19,6 +20,7 @@ export function createInitialRaceRuntimeState() {
     playerFinishedAtEpochMs: null,
     lastEventVersion: null,
     opponents: [],
+    gameplay: createDefaultStudentRaceGameplay(),
 
     totalDistance: null,
     playerCount: null,

@@ -55,6 +55,12 @@ final build passed live closure QA on 2026-09-30 (bot races 138–140 with a rea
 and a real teacher browser). Next: Phase 4, starting with the S4-01 effect/event contract
 that C5 consumes.
 
+C5 checkpoint, 2026-10-07: S4-01 (gameplay/effect foundation, PR #74) and C5-A audio (race and
+projector music and sounds with Music/Sound effects settings, PR #75) are merged. C5-01, on
+`feature/C5-01-gameplay-runtime`, makes the student client consume the S4-01 contract: the
+server's effective speed drives the speedometer, the engine sound and the kart's visual speed,
+movement stays server-owned, and unknown future modes or effects are ignored safely.
+
 ## Executive summary
 
 QuizWheelz is not an early prototype. Most backend gameplay foundations and the
@@ -242,6 +248,7 @@ Server S4-01 defines the shared game effect/event contract
 
 C2, C3 Teacher Live and C4 Results are implemented on the client: C3-01/C3-02 merged in
 PR #69, C3-03 … C3-08 are COMPLETE, and C4-A … C4-C (teacher Result Screen, student
-progressive results, results art) are COMPLETE on `feature/C4-results`. The next stage is
-Phase 4: the server S4-01 contract first, then C5. C2-A race sound and the required
-physical-device/recovery QA remain visible pre-release polish.
+progressive results, results art) are COMPLETE on `feature/C4-results`. The S4-01 server
+contract (PR #74) and C5-A audio (PR #75, which also delivered the C2-A race sound) are
+merged; C5-01 consumes the S4-01 contract on the client while S4-02 (Challenge) is next on the
+server. The required physical-device/recovery QA remains visible pre-release polish.

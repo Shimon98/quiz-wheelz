@@ -1,4 +1,6 @@
+import { QUESTION_GAMEPLAY_CONTEXTS } from "../../../constants/raceGameplayConstants.js";
 import { ApiContractError } from "../../../errors/ApiContractError.js";
+import { requireNonEmptyString } from "../../../errors/apiContractGuards.js";
 
 /*
  * mapCurrentQuestionToModel — the ONE boundary between the server's
@@ -103,8 +105,13 @@ export function mapCurrentQuestionToModel(
     .sort((a, b) => a.displayOrder - b.displayOrder)
     .map((choice) => ({ id: choice.choiceId, text: choice.choiceText.trim() }));
 
+  const gameplayContext = response.gameplayContext == null
+    ? QUESTION_GAMEPLAY_CONTEXTS.NORMAL
+    : requireNonEmptyString(response.gameplayContext, "Current question gameplay context");
+
   return {
     id: response.questionId,
+    gameplayContext,
     text: response.questionText.trim(),
     timeLimitSeconds: response.timeLimitSeconds,
     expiresAtEpochMs: response.expiresAtEpochMs,

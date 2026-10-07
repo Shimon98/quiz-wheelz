@@ -72,6 +72,15 @@ describe("student race visual motion", () => {
     expect(state.visual.targetPosition).toBe(100);
   });
 
+  it("moves only at the server movement rate, whatever the presented speed is", () => {
+    const motion = createStudentRaceMotion();
+    motion.updateRuntimeState(runtime({ position: 100, rate: 4, speed: 0.3 }));
+
+    const last = runFrames(motion, 1000).at(-1);
+    expect(last.position).toBeCloseTo(104, 8);
+    expect(last.speed).toBeCloseTo(0.3, 8);
+  });
+
   it.each([10, 15, 20])("smoothly reconciles a +%s position bonus with bounded visual velocity", (bonus) => {
     const motion = createStudentRaceMotion();
     motion.updateRuntimeState(runtime());

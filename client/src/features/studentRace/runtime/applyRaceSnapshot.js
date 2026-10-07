@@ -1,5 +1,9 @@
 import { ApiContractError } from "../../../errors/ApiContractError.js";
 import { compareRaceSnapshotFreshness } from "./compareRaceSnapshotFreshness.js";
+import {
+  mapStudentRaceGameplay,
+  resolveStudentRacePresentationSpeed,
+} from "./mapStudentRaceGameplay.js";
 import { mapStudentRaceOpponents } from "./mapStudentRaceOpponents.js";
 const REQUIRED_NUMBER_FIELDS = [
   "totalDistance",
@@ -75,12 +79,15 @@ export function applyRaceSnapshot(previousState, snapshot) {
     return previousState;
   }
 
+  const gameplay = mapStudentRaceGameplay(snapshot.gameplay);
+
   return {
     ...previousState,
 
     lastSnapshotAtEpochMs: snapshot.snapshotAtEpochMs,
     lastEventVersion: snapshot.eventVersion,
     opponents,
+    gameplay,
 
     raceStatus: snapshot.raceStatus,
     playerStatus: snapshot.playerStatus,
@@ -105,7 +112,7 @@ export function applyRaceSnapshot(previousState, snapshot) {
     visual: {
       ...previousState.visual,
       targetPosition: snapshot.position,
-      targetSpeed: snapshot.speed,
+      targetSpeed: resolveStudentRacePresentationSpeed(snapshot.speed, gameplay),
       movementUnitsPerSecond: snapshot.movementUnitsPerSecond,
     },
   };

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { ApiContractError } from "../../../../errors/ApiContractError";
 import { applyRaceSnapshot } from "../applyRaceSnapshot";
 import { createInitialRaceRuntimeState } from "../createInitialRaceRuntimeState";
+import { createDefaultStudentRaceGameplay } from "../mapStudentRaceGameplay";
 
 function snapshot(overrides = {}) {
   return {
@@ -70,5 +71,63 @@ describe("applyRaceSnapshot authoritative standing", () => {
   ])("rejects malformed standing: %o", (overrides) => {
     expect(() => applyRaceSnapshot(createInitialRaceRuntimeState(), snapshot(overrides)))
       .toThrow(ApiContractError);
+  });
+});
+
+describe("applyRaceSnapshot gameplay", () => {
+  const slowedGameplay = {
+    mode: "NORMAL",
+    effectiveSpeed: 1.2,
+    activeEffects: [{
+      effectId: 41,
+      type: "SPEED_SLOW",
+      source: "CHALLENGE_TIMEOUT",
+      magnitudeTenths: 1,
+      startsAtEpochMs: 9000,
+      endsAtEpochMs: 12000,
+    }],
+  };
+
+  it("keeps the base speed, presents the effective speed and never rewrites the server movement rate", () => {
+    const state = applyRaceSnapshot(createInitialRaceRuntimeState(), snapshot({
+      speed: 1.3,
+      movementUnitsPerSecond: 4.12345,
+      gameplay: slowedGameplay,
+    }));
+
+    expect(state.player.speed).toBe(1.3);
+    expect(state.gameplay).toEqual(slowedGameplay);
+    expect(state.gameplay.effectiveSpeed).toBe(1.2);
+    expect(state.visual.targetSpeed).toBe(1.2);
+    expect(state.visual.movementUnitsPerSecond).toBe(4.12345);
+  });
+
+  it("starts with normal gameplay and presents the base speed when a snapshot has none", () => {
+    expect(createInitialRaceRuntimeState().gameplay).toEqual(createDefaultStudentRaceGameplay());
+
+    const state = applyRaceSnapshot(createInitialRaceRuntimeState(), snapshot({ speed: 1.3 }));
+
+    expect(state.gameplay).toEqual(createDefaultStudentRaceGameplay());
+    expect(state.visual.targetSpeed).toBe(1.3);
+  });
+
+  it("drops a malformed effect without rejecting the race snapshot", () => {
+    const state = applyRaceSnapshot(createInitialRaceRuntimeState(), snapshot({
+      gameplay: { ...slowedGameplay, activeEffects: [{ effectId: "41" }] },
+    }));
+
+    expect(state.gameplay.activeEffects).toEqual([]);
+    expect(state.player.position).toBe(200);
+  });
+
+  it("keeps the previous gameplay when an older snapshot arrives", () => {
+    const state = applyRaceSnapshot(createInitialRaceRuntimeState(), snapshot({ gameplay: slowedGameplay }));
+    const stale = applyRaceSnapshot(state, snapshot({
+      snapshotAtEpochMs: 9999,
+      gameplay: { mode: "NORMAL", effectiveSpeed: 1.5, activeEffects: [] },
+    }));
+
+    expect(stale).toBe(state);
+    expect(stale.gameplay).toEqual(slowedGameplay);
   });
 });
