@@ -3,9 +3,10 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { MantineProvider } from "@mantine/core";
 
 import i18n from "../../../../i18n/i18n";
-import { audioEngine } from "../../../../shared/audio";
+import { AUDIO_LOOP_CHANNELS, audioEngine } from "../../../../shared/audio";
 import { GAME_AUDIO } from "../../../../shared/gameAudio/gameAudioCatalog";
 import { useAudioSettingsStore } from "../../../../stores/audioSettingsStore";
+import { engineRateForSpeed } from "../../audio/studentRaceSounds";
 import { createInitialRaceRuntimeState } from "../../runtime/createInitialRaceRuntimeState";
 import { STUDENT_RACE_FEEDBACK } from "../../runtime/studentRaceRuntimeConstants";
 import PixiStudentRaceCanvas from "../../pixi/PixiStudentRaceCanvas";
@@ -103,6 +104,28 @@ describe("StudentRaceScreen sound", () => {
     rerender(renderRace(runtime, ACCEPTED_FEEDBACK));
 
     expect(play.mock.calls).toEqual([[GAME_AUDIO.COMBO_TIER_1]]);
+  });
+
+  it("runs the hover engine at the presented speed, not the earned base speed", () => {
+    const startLoop = vi.spyOn(audioEngine, "startLoop").mockReturnValue("played");
+    const runtime = runtimeState();
+
+    render(
+      <MantineProvider env="test">
+        <StudentRaceScreen
+          runtimeState={{ ...runtime, visual: { ...runtime.visual, targetSpeed: 0.6 } }}
+          interactionEnabled
+          answerFeedback={null}
+          feedbackState={STUDENT_RACE_FEEDBACK.IDLE}
+        />
+      </MantineProvider>,
+    );
+
+    expect(startLoop).toHaveBeenLastCalledWith(
+      AUDIO_LOOP_CHANNELS.ENGINE,
+      GAME_AUDIO.HOVER_ENGINE,
+      { rate: engineRateForSpeed(0.6) },
+    );
   });
 
   it("stays silent when the race screen mounts while accepted feedback is still showing (reload or reconnect)", () => {

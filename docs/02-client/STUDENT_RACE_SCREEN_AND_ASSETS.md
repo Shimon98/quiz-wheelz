@@ -441,6 +441,9 @@ visual position          drawing position advanced by one smoothed total
                          velocity: server rate plus bounded correction
 ```
 
+The visual speed (`visual.targetSpeed`, the server's effective speed since C5-01) only drives
+the kart's bob and the dust; it never moves the world.
+
 One motion source: the road, ground and scenery scroll derive from the
 visual position supplied by `studentRaceMotion`; no layer advances a
 separate travel clock. `raceAnimationConfig.motion` owns correction limits,
@@ -524,7 +527,8 @@ hidden rather than calculated locally. The stopwatch styling displays the
 existing question countdown as minutes:seconds, not elapsed race time.
 `getStudentRaceHudModel`, `getStudentRaceTimerModel` and
 `useStudentRaceQuestionTimer` own formatting and timer updates outside JSX.
-`StudentRaceSpeedometer` accepts raw server speed only. Its pure
+`StudentRaceSpeedometer` accepts server speed only: since C5-01 the HUD passes
+`visual.targetSpeed`, the server's effective speed (the base speed only when none was sent). Its pure
 `getStudentRaceSpeedometerModel` produces multiplier text and the needle/arc
 styles using `speed / (speed + 1)` as a cosmetic visual scale. This is not
 a speed limit, percentage or km/h conversion; invalid/missing speed hides
@@ -606,7 +610,8 @@ backlog cannot reverse server order. Passive finish reads do not revive gameplay
 
 Race audio is integrated (C5-A in `CLIENT_IMPLEMENTATION_PLAN.md`). The race screen
 claims the race music, preloads its short sounds and runs the hover-engine loop while
-gameplay is ready and the player races, with the playback rate following the server speed.
+gameplay is ready and the player races, with the playback rate following the presented speed
+(`visual.targetSpeed`, the server's effective speed).
 `useStudentRaceMoments` hands one batch to both the renderer and `studentRaceSounds`:
 correct, combo tiers from the server streak, wrong, time up (never over answer feedback or a
 submit in flight) and finish, each once. A batch that arrives while Pixi is still starting waits

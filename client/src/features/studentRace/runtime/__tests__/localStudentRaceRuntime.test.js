@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createInitialRaceRuntimeState } from "../createInitialRaceRuntimeState";
 import { createLocalStudentRaceRuntime } from "../localStudentRaceRuntime";
 import { mapLocalRuntimeSnapshotToState } from "../mapLocalRuntimeSnapshotToState";
 
@@ -86,5 +87,68 @@ describe("student race motion preview", () => {
     expect(snapshot.playerFinished).toBe(true);
     expect(snapshot.movementUnitsPerSecond).toBe(0);
     expect(mapLocalRuntimeSnapshotToState({ player: {}, visual: {} }, snapshot).playerFinished).toBe(true);
+  });
+});
+
+describe("student race gameplay preview", () => {
+  const stateFrom = (snapshot) => mapLocalRuntimeSnapshotToState(createInitialRaceRuntimeState(), snapshot);
+
+  it("previews a server-shaped slowdown from 3 s to 8 s that lowers the presented speed only", () => {
+    const runtime = createLocalStudentRaceRuntime({ scenario: "slowdown" });
+    runtime.start();
+    vi.advanceTimersByTime(2500);
+    const before = runtime.getSnapshot();
+    vi.advanceTimersByTime(500);
+    const slowed = runtime.getSnapshot();
+    vi.advanceTimersByTime(5000);
+    const recovered = runtime.getSnapshot();
+    runtime.stop();
+
+    expect(before.gameplay).toMatchObject({ effectiveSpeed: 1.2, activeEffects: [] });
+    expect(slowed.speed).toBe(1.2);
+    expect(slowed.gameplay.effectiveSpeed).toBeCloseTo(0.9);
+    expect(slowed.movementUnitsPerSecond).toBeCloseTo(3.6);
+    expect(slowed.gameplay.activeEffects).toEqual([expect.objectContaining({
+      type: "SPEED_SLOW",
+      source: "CHALLENGE_TIMEOUT",
+      magnitudeTenths: 3,
+    })]);
+    expect(recovered.speed).toBe(1.2);
+    expect(recovered.gameplay).toMatchObject({ effectiveSpeed: 1.2, activeEffects: [] });
+    expect(recovered.movementUnitsPerSecond).toBeCloseTo(4.8);
+  });
+
+  it("maps a slowed preview through the production gameplay mapper", () => {
+    const runtime = createLocalStudentRaceRuntime({ scenario: "slowdown" });
+    runtime.start();
+    vi.advanceTimersByTime(3000);
+    const state = stateFrom(runtime.getSnapshot());
+    runtime.stop();
+
+    expect(state.player.speed).toBe(1.2);
+    expect(state.gameplay.effectiveSpeed).toBeCloseTo(0.9);
+    expect(state.visual.targetSpeed).toBeCloseTo(0.9);
+    expect(state.visual.movementUnitsPerSecond).toBeCloseTo(3.6);
+    expect(state.gameplay.activeEffects).toHaveLength(1);
+  });
+
+  it("keeps a future effect in the runtime without changing speed or movement", () => {
+    const state = stateFrom(createLocalStudentRaceRuntime({ scenario: "future-effect" }).getSnapshot());
+
+    expect(state.gameplay.activeEffects).toEqual([expect.objectContaining({
+      type: "FUTURE_EFFECT",
+      source: "FUTURE_SOURCE",
+      magnitudeTenths: null,
+    })]);
+    expect(state.visual.targetSpeed).toBe(1.2);
+    expect(state.visual.movementUnitsPerSecond).toBeCloseTo(4.8);
+  });
+
+  it("keeps a future mode in the runtime without changing speed or movement", () => {
+    const state = stateFrom(createLocalStudentRaceRuntime({ scenario: "future-mode" }).getSnapshot());
+
+    expect(state.gameplay.mode).toBe("FUTURE_MODE");
+    expect(state.visual.targetSpeed).toBe(1.2);
+    expect(state.visual.movementUnitsPerSecond).toBeCloseTo(4.8);
   });
 });

@@ -1,4 +1,11 @@
+import {
+  mapStudentRaceGameplay,
+  resolveStudentRacePresentationSpeed,
+} from "./mapStudentRaceGameplay.js";
+
 export function mapLocalRuntimeSnapshotToState(previousState, snapshot) {
+  const gameplay = mapStudentRaceGameplay(snapshot.gameplay);
+
   return {
     ...previousState,
     raceStatus: snapshot.raceStatus,
@@ -6,6 +13,7 @@ export function mapLocalRuntimeSnapshotToState(previousState, snapshot) {
     playerFinished: snapshot.playerFinished,
     totalDistance: snapshot.totalDistance,
     lastSnapshotAtEpochMs: snapshot.snapshotAtEpochMs,
+    gameplay,
     player: {
       ...previousState.player,
       position: snapshot.position,
@@ -16,7 +24,7 @@ export function mapLocalRuntimeSnapshotToState(previousState, snapshot) {
     visual: {
       ...previousState.visual,
       targetPosition: snapshot.position,
-      targetSpeed: snapshot.speed,
+      targetSpeed: resolveStudentRacePresentationSpeed(snapshot.speed, gameplay),
       movementUnitsPerSecond: snapshot.movementUnitsPerSecond,
     },
   };

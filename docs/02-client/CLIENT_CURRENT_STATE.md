@@ -8,8 +8,16 @@
 > The code is authoritative for what is implemented. This document is authoritative
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
-Local checkpoint, 2026-10-05: **C5-A audio complete** on `feature/C5-A-audio-foundation`
-(not committed yet) — approved music and sounds integrated for every current student and
+Local checkpoint, 2026-10-07: **C5-01 gameplay runtime implemented** on
+`feature/C5-01-gameplay-runtime` (not committed yet) — the client consumes the merged S4-01
+contract: `snapshot.gameplay` is mapped once into `runtime.gameplay` (forward-safe), the
+speedometer, the hover engine and the kart's visual speed follow the server's effective speed,
+movement still comes only from `movementUnitsPerSecond`, the question model keeps
+`gameplayContext`, and `/dev/race` previews a slowdown and unknown future data. No new
+gameplay UI; S4-02 and later remain server work.
+
+Checkpoint, 2026-10-05: **C5-A audio complete**, merged in PR #75 (`main@91001d8`) —
+approved music and sounds integrated for every current student and
 teacher situation, one music owner per screen, the single student moment owner feeding the
 renderer and the sound adapter, and a provenance record for every file. A final cleanup after
 an independent audit made browser resource setup transactional, stops a fading track at once on
@@ -17,8 +25,8 @@ hide or Music OFF, holds moments that arrive before the renderer is ready, keys 
 by the room's `playerId` and narrowed the engine API to its production path. Physical devices,
 the projector in real fullscreen and listening on real speakers remain manual checks.
 
-Local checkpoint, 2026-10-04: **C5-A audio foundation implemented** on
-`feature/C5-A-audio-foundation` (not committed yet) — one audio engine and settings store,
+Checkpoint, 2026-10-04: **C5-A audio foundation implemented** (merged with C5-A in PR #75)
+— one audio engine and settings store,
 one `AudioProvider`, one shared sound settings UI in Public Settings, the student HUD and the
 teacher projector; the client no longer infers BOOST from a speed rise. Real sounds (C5-A8)
 wait for production audio assets. 1226 tests/137 files, lint and build pass; the controls and
@@ -557,6 +565,27 @@ Current audio matrix:
 | Teacher answers and rank changes | none, by decision | none | none |
 | Teacher results | none | none | none |
 
+## Gameplay runtime (C5-01)
+
+- `features/studentRace/runtime/mapStudentRaceGameplay.js` maps `snapshot.gameplay` inside
+  `applyRaceSnapshot`, the one entry of race-state, answer and finish-arbitration snapshots;
+  `runtime.gameplay` = `{ mode, effectiveSpeed, activeEffects }` is normalized server truth
+- forward-safe: a future mode, effect type or source is kept but presents nothing; one
+  malformed effect is dropped alone; a missing or malformed `gameplay` object falls back to
+  `NORMAL` with no effects; the race snapshot itself is never rejected for it
+- speed ownership: `player.speed` is the earned base speed, `gameplay.effectiveSpeed` the
+  effective server speed and `visual.targetSpeed` the one presentation speed (the effective
+  speed, or the base speed when the server sent none), read by the speedometer, the
+  hover-engine rate and the Pixi bob/dust; `visual.movementUnitsPerSecond` is the only
+  movement rate
+- the question model keeps the server's `gameplayContext` (missing → `NORMAL`); nothing reads
+  it yet
+- `/dev/race?motionScenario=slowdown|future-effect|future-mode` previews a server-shaped
+  slowdown (3–8 s, ×1.2 → ×0.9) and unknown future data through the same mapper
+- deferred on purpose: an effect-end refresh timer (race-state already polls every 2 s while
+  playing), a vehicle attachment layer, a gameplay presentation resolver and a "slowed" HUD
+  state (C5-02, together with the Challenge timeout message)
+
 ## Stale client state to clean
 
 - none recorded; the results route constant now backs the C4 Result Screen route.
@@ -564,8 +593,8 @@ Current audio matrix:
 ## Immediate client priority
 
 ```text
-Results (C4) complete
-→ C5-A audio complete (one final review, then the commit)
-→ C5 required gameplay UI once the server S4-01 effect/event contract exists
-→ meanwhile: the carried-forward pre-release device/recovery QA
+C5-A audio merged (PR #75); S4-01 contract merged (PR #74)
+→ C5-01 gameplay runtime (one review, then the commit)
+→ C5-02 Challenge Choice once the server S4-02 contract exists
+→ meanwhile: Challenge panel design and the pre-release device/recovery QA
 ```
