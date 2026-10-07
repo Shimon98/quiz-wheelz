@@ -35,7 +35,7 @@ class RaceEngineServiceTest {
 
     @BeforeEach
     void setUp() {
-        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC());
+        RaceFinishService raceFinishService = new RaceFinishService(racePlayerRepository, java.time.Clock.systemUTC(), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class));
 
         raceEngineService = new RaceEngineService(
                 new ScoringService(),

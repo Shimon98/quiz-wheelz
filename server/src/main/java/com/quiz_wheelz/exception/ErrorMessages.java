@@ -111,6 +111,11 @@ public final class ErrorMessages {
 
     public static final String SPEED_EFFECT_INVALID = "Invalid timed speed effect";
     public static final String SPEED_EFFECT_OVERLAP = "Timed speed effect overlaps an existing interval";
+    public static final String CHALLENGE_OFFER_NOT_FOUND = "Challenge offer was not found for the current player";
+    public static final String CHALLENGE_CHOICE_REQUIRED = "Choose an active Challenge offer before requesting a question";
+    public static final String CHALLENGE_OFFER_EXPIRED = "Challenge offer has expired";
+    public static final String CHALLENGE_CHOICE_CONFLICT = "Challenge offer was already selected with a different choice";
+    public static final String INVALID_CHALLENGE_CHOICE = "Invalid Challenge choice";
 
     private ErrorMessages() {
     }

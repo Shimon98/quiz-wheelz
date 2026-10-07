@@ -70,7 +70,7 @@ class StudentRaceStandingProjectionServiceTest {
                 new RacePlayerGameplayTimelineService(
                         mock(QuestionTimeoutService.class),
                         mock(RaceMovementService.class)
-                ),
+                , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.RacePlayerChallengeTimelineService.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class)),
                 playerQuestionRepository,
                 new com.quiz_wheelz.service.raceengine.RaceSpeedEffectMovementCalculator(new RaceMovementCalculator()),
                 mock(com.quiz_wheelz.service.raceengine.RacePlayerSpeedEffectService.class),

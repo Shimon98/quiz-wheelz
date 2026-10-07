@@ -74,7 +74,7 @@ final class StudentAnswerSubmissionTestFixture {
                     new RaceLiveMutationTracker(liveMutationGate, liveEventChangeRecorder),
                     decisionTimeService,
                     Clock.fixed(FIXED_INSTANT, FIXED_ZONE)
-            );
+            , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class));
 
     {
         when(decisionTimeService.advance(any(), org.mockito.ArgumentMatchers.anyLong()))

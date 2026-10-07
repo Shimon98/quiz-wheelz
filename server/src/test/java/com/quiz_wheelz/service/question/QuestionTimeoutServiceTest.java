@@ -55,7 +55,7 @@ class QuestionTimeoutServiceTest {
     void setUp() {
         Clock fixedClock = Clock.fixed(ANCHOR_INSTANT, FIXED_ZONE);
         RaceFinishService raceFinishService =
-                new RaceFinishService(racePlayerRepository, fixedClock);
+                new RaceFinishService(racePlayerRepository, fixedClock, org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class));
 
         questionTimeoutService = new QuestionTimeoutService(
                 new RaceMovementService(

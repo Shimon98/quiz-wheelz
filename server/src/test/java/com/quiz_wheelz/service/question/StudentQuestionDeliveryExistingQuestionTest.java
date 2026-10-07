@@ -167,7 +167,7 @@ class StudentQuestionDeliveryExistingQuestionTest {
                         mock(com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.class)
                 ),
                 steppingClock
-        );
+        , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class));
         RacePlayer racePlayer = fixture.createRacePlayer();
         RacePlayer lockedRacePlayer = fixture.createRacePlayer();
         LocalDateTime expiresAt = fixture.now().plusSeconds(

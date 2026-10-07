@@ -65,7 +65,7 @@ class RacePlayerDuplicateReconnectTest {
                 new RacePlayerGameplayTimelineService(
                         questionTimeoutService,
                         raceMovementService
-                );
+                , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.RacePlayerChallengeTimelineService.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class));
         reconnectService = new RacePlayerReconnectService(
                 sessionLockService,
                 gameplayPresenceService,

@@ -38,7 +38,7 @@ class RaceFinishServiceTest {
     private RacePlayerRepository racePlayerRepository;
 
     private RaceFinishService service() {
-        return new RaceFinishService(racePlayerRepository, Clock.fixed(CLOCK_INSTANT, ZONE));
+        return new RaceFinishService(racePlayerRepository, Clock.fixed(CLOCK_INSTANT, ZONE), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class));
     }
 
     @Test

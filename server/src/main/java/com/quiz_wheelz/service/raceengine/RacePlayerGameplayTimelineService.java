@@ -3,6 +3,8 @@ package com.quiz_wheelz.service.raceengine;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.service.question.QuestionTimeoutService;
+import com.quiz_wheelz.service.challenge.RacePlayerChallengeTimelineService;
+import com.quiz_wheelz.service.challenge.ChallengeOfferService;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayPresenceService.GameplayPresenceDecision;
 import org.springframework.stereotype.Service;
 
@@ -14,13 +16,19 @@ public class RacePlayerGameplayTimelineService {
 
     private final QuestionTimeoutService questionTimeoutService;
     private final RaceMovementService raceMovementService;
+    private final RacePlayerChallengeTimelineService challengeTimeline;
+    private final ChallengeOfferService challengeOffers;
 
     public RacePlayerGameplayTimelineService(
             QuestionTimeoutService questionTimeoutService,
-            RaceMovementService raceMovementService
+            RaceMovementService raceMovementService,
+            RacePlayerChallengeTimelineService challengeTimeline,
+            ChallengeOfferService challengeOffers
     ) {
         this.questionTimeoutService = Objects.requireNonNull(questionTimeoutService);
         this.raceMovementService = Objects.requireNonNull(raceMovementService);
+        this.challengeTimeline = Objects.requireNonNull(challengeTimeline);
+        this.challengeOffers = Objects.requireNonNull(challengeOffers);
     }
 
     public boolean settleBackground(
@@ -93,7 +101,16 @@ public class RacePlayerGameplayTimelineService {
     }
 
     public void expireActiveQuestionForTerminalPlayer(RacePlayer terminalRacePlayer) {
+        challengeOffers.cancelActive(terminalRacePlayer,
+                terminalRacePlayer.getFinishedAtEpochMs() == null
+                        ? (terminalRacePlayer.getMovementUpdatedAtEpochMs() == null
+                            ? 0L : terminalRacePlayer.getMovementUpdatedAtEpochMs())
+                        : terminalRacePlayer.getFinishedAtEpochMs());
         questionTimeoutService.expireActiveQuestionWithoutConsequence(terminalRacePlayer);
+    }
+
+    public void cancelTerminalChallenge(RacePlayer player, long epochMs) {
+        challengeOffers.cancelActive(player, epochMs);
     }
 
     private boolean disconnectWhenGraceExpired(
@@ -128,6 +145,9 @@ public class RacePlayerGameplayTimelineService {
             Instant decisionInstant,
             long movementCutoffEpochMs
     ) {
+        if (challengeTimeline.settle(lockedRacePlayer, decisionInstant.toEpochMilli(), movementCutoffEpochMs)) {
+            return;
+        }
         questionTimeoutService.settleWithOverdueTimeout(
                 lockedRacePlayer,
                 decisionInstant.toEpochMilli(),

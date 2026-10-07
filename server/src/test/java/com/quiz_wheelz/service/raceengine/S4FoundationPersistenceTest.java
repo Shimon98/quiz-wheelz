@@ -39,7 +39,8 @@ import static org.mockito.Mockito.*;
 @DataJpaTest(showSql = false)
 @ActiveProfiles("test")
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
-@Import({RacePlayerGameplayStateService.class, RacePlayerSpeedEffectService.class, RacePlayerJoinService.class,
+@Import({com.quiz_wheelz.service.challenge.ChallengeOfferService.class, com.quiz_wheelz.service.challenge.ChallengeEnergyService.class, com.quiz_wheelz.service.challenge.ChallengeEligibilityService.class, com.quiz_wheelz.service.challenge.StudentChallengeProjectionService.class,
+RacePlayerGameplayStateService.class, RacePlayerSpeedEffectService.class, RacePlayerJoinService.class,
         RaceSpeedEffectMovementCalculator.class, RaceMovementCalculator.class,
         com.quiz_wheelz.service.raceplayer.StudentRaceGameplayProjectionService.class,
         com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper.class,

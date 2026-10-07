@@ -127,7 +127,7 @@ class RaceSpeedEffectMovementTest {
 
     private RaceMovementService service(RacePlayerSpeedEffectService effects, PlayerQuestionRepository questions) {
         return new RaceMovementService(calculator, effects,
-                new RaceFinishService(mock(RacePlayerRepository.class), Clock.systemUTC()),
+                new RaceFinishService(mock(RacePlayerRepository.class), Clock.systemUTC(), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class)),
                 questions, Clock.systemUTC());
     }
 

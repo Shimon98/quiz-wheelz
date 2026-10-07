@@ -59,7 +59,7 @@ class StudentQuestionReloadHardeningTest {
                 new RacePlayerGameplayTimelineService(
                         timeoutService,
                         raceMovementService
-                );
+                , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.RacePlayerChallengeTimelineService.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class));
         RacePlayerGameplayRequestGuard requestGuard =
                 new RacePlayerGameplayRequestGuard(
                         gameplayPresenceService,
@@ -80,7 +80,7 @@ class StudentQuestionReloadHardeningTest {
                         mock(com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder.class)
                 ),
                 clock
-        );
+        , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class));
     }
 
     @Test

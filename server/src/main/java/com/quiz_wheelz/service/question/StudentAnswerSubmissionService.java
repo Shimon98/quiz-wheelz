@@ -24,6 +24,7 @@ import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStandingService;
 import com.quiz_wheelz.utils.DateTimeUtils;
+import com.quiz_wheelz.service.challenge.ChallengeOfferService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +48,7 @@ public class StudentAnswerSubmissionService {
     private final RaceLiveMutationTracker liveMutationTracker;
     private final RaceDecisionTimeService decisionTimeService;
     private final Clock clock;
+    private final ChallengeOfferService challengeOffers;
 
     public StudentAnswerSubmissionService(
             PlayerQuestionRepository playerQuestionRepository,
@@ -59,7 +61,8 @@ public class StudentAnswerSubmissionService {
             RaceLiveEventRecorder liveEventRecorder,
             RaceLiveMutationTracker liveMutationTracker,
             RaceDecisionTimeService decisionTimeService,
-            Clock clock
+            Clock clock,
+            ChallengeOfferService challengeOffers
     ) {
         this.playerQuestionRepository = Objects.requireNonNull(playerQuestionRepository);
         this.playerQuestionChoiceRepository = Objects.requireNonNull(playerQuestionChoiceRepository);
@@ -72,6 +75,7 @@ public class StudentAnswerSubmissionService {
         this.liveMutationTracker = Objects.requireNonNull(liveMutationTracker);
         this.decisionTimeService = Objects.requireNonNull(decisionTimeService);
         this.clock = Objects.requireNonNull(clock);
+        this.challengeOffers = Objects.requireNonNull(challengeOffers);
     }
 
     @Transactional(noRollbackFor = ApiException.class)
@@ -148,6 +152,8 @@ public class StudentAnswerSubmissionService {
         question.setAnsweredAt(now);
 
         PlayerQuestion savedQuestion = playerQuestionRepository.save(question);
+        challengeOffers.afterAnswer(lockedRacePlayer, savedQuestion,
+                answerRaceImpact.getAnsweredDifficulty(), correct, decisionEpochMs);
 
         if (liveContext.active()) {
             liveEventRecorder.recordQuestionAnswered(

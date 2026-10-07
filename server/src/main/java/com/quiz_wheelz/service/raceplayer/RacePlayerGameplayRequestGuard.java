@@ -34,6 +34,12 @@ public class RacePlayerGameplayRequestGuard {
             Instant decisionInstant
     ) {
         if (!requiresGameplayPresence(lockedRacePlayer)) {
+            if (lockedRacePlayer.getStatus() == RacePlayerStatus.FINISHED
+                    || lockedRacePlayer.getStatus() == RacePlayerStatus.DISCONNECTED
+                    || lockedRacePlayer.getRace().getStatus() == RaceStatus.FINISHED
+                    || lockedRacePlayer.getRace().getStatus() == RaceStatus.CANCELLED) {
+                gameplayTimelineService.cancelTerminalChallenge(lockedRacePlayer, decisionInstant.toEpochMilli());
+            }
             return;
         }
 

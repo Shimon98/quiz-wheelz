@@ -1,8 +1,8 @@
 # Server Implementation Plan
 
 **Status:** Canonical  
-**Audit date:** 2026-10-01
-**Code baseline:** `feature/s4-01-gameplay-effect-foundation@54ac63e072652c86da98f6718f72a2fe41650445`
+**Audit date:** 2026-10-05
+**Code baseline:** `main@5817af3b344fc22fc5007398412815523fedc128`
 **This document owns:** the ordered backend task list with dependencies and integration outputs
 
 > The code is authoritative for what is implemented. This document is authoritative
@@ -506,7 +506,7 @@ NORMAL race. There is one continuous road and one server-owned position model.
 
 ### S4-01 — Gameplay/effect foundation
 
-**Status:** `DONE (Checkpoints A and B implemented and approved on the feature branch)`
+**Status:** `DONE (Checkpoints A and B approved and merged in PR #74)`
 
 Checkpoint A is verified against the baseline above:
 
@@ -550,19 +550,65 @@ Checkpoint B adds the shared student runtime contract on the current S4 branch:
   production effect creation or new SSE/live-event types.
 
 The Checkpoint B contract and client handoff are reviewed and approved for C5
-consumption. S4-01 is COMPLETE on the feature branch; S4-02 onward remain PLANNED.
+consumption. S4-01 is COMPLETE on main through PR #74.
 DEV MySQL startup/schema update succeeded during the separate Checkpoint A check;
 that database contained zero player_questions, so existing-row backfill was not
 observed. Production migrations remain Phase 6 work.
 
 ### S4-02 — Challenge Energy + offer + choice
 
-**Status:** `PLANNED`
+**Status:** `Implemented locally / under review / held from main until S4-03`
 
-- server-owned energy earning and derived readiness
-- one durable active offer per player, expiry and persisted choice
-- bounded hesitation slowdown using the foundation after the shared contract gate
-- preserve RacePlayer-first lock ordering and refresh/reconnect recovery.
+Integration branch: `feature/s4-02-03-challenge-flow`. S4-02 must not be merged to
+main alone; S4-03 must first implement the selected Turbo Trial / Safe Run flow.
+
+- correct NORMAL EASY/MEDIUM/HARD answers earn 20/25/30 Challenge Energy, bounded
+  to 0..100 in application validation and the DB check; wrong answers, timeouts,
+  special contexts and terminal players earn nothing
+- authoritative post-answer eligibility requires RACING / IN_PROGRESS, Energy 100,
+  no unresolved ACTIVE/SELECTED Challenge and position strictly below 80% of total
+  distance; an ineligible near-finish player keeps Energy 100
+- one durable `RacePlayerChallengeOffer` lifecycle retains ACTIVE / SELECTED /
+  EXPIRED / CANCELLED history under the existing RacePlayer lock; offer creation
+  consumes Energy to 0 and sets the exact half-open 12,000 ms interval
+- expiry resolves at the exact deadline, restores Energy to 50 and creates the
+  S4-01 SPEED_SLOW / CHALLENGE_TIMEOUT effect, magnitude 1 tenth, for exactly 4,000 ms;
+  movement settles to expiry before effect creation, then to the trusted cutoff
+- offer wall-clock expiry continues while offline; reconnect preserves its original
+  effect interval, grants no offline catch-up and never shifts a spent penalty
+- terminal cleanup cancels ACTIVE offers without Energy restore or slowdown;
+  finish crossings before expiry retain their exact finish time
+- cookie-owned `POST /api/race-players/me/challenge/choice` accepts offerId and
+  TURBO_TRIAL / SAFE_RUN, persists a server decision epoch and returns the shared
+  runtime snapshot; same-choice SELECTED replay preserves its original selected epoch
+  even after player/race finish and returns a fresh terminal NORMAL snapshot with
+  zero movement, no offer and no active effects; conflicting replay still rejects
+  with 3036 after finish, while ACTIVE terminal offers are cancelled rather than selected
+- exact errors 3033..3037: CHALLENGE_OFFER_NOT_FOUND, CHALLENGE_CHOICE_REQUIRED,
+  CHALLENGE_OFFER_EXPIRED, CHALLENGE_CHOICE_CONFLICT, INVALID_CHALLENGE_CHOICE
+- `gameplay.challenge` always exposes energy / threshold / offer; ACTIVE offer
+  exposes only offerId / expiresAtEpochMs / choices in TURBO_TRIAL, SAFE_RUN order;
+  selected state persists the corresponding mode with offer null
+- current-question first settles the timeline, then blocks ACTIVE Challenge choice
+  and selected special modes from NORMAL generation; S4-03 owns special delivery
+- MySQL remains durable truth; caller transactions and RacePlayer → Race lock order
+  remain authoritative, with no new Challenge live-event/SSE type or Redis truth.
+
+Turbo/Safe execution, special questions/answers, Challenge completion, Luck,
+Power-Ups and Recovery remain unimplemented. One continuous road/world is preserved.
+
+Verification (2026-10-05): focused 147 tests, zero failures/errors/skips; full server
+917 tests, zero failures/errors, two existing MySQL tests skipped because
+`QUIZWHEELZ_C2_MYSQL_TEST_URL` is not defined. DEV MySQL startup/schema verification
+PASS: invalid Energy rows before alignment were 0; challenge_energy remains
+INT NOT NULL DEFAULT 0. Hibernate ddl-auto=update did not strengthen the pre-existing
+S4-01 CHECK, so an explicitly authorized DEV-only manual alignment replaced >=0
+with an enforced 0..100 CHECK. The offer table remains InnoDB with its expected
+lifecycle CHECK and player/status index unchanged. Application startup passed
+without schema errors, and overall/application, MySQL and Redis health were UP.
+H2 persistence, constraints, rollback and concurrent answer/choice/expiry tests passed.
+Production migrations remain Phase 6 work. S4-02 is still held from main until S4-03;
+S4-03 remains PLANNED.
 
 ### S4-03 — Turbo Trial + Safe Run
 

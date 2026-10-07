@@ -8,11 +8,13 @@ import java.util.Objects;
 public record StudentRaceGameplayResponse(
         RacePlayerGameplayMode mode,
         Double effectiveSpeed,
-        List<StudentRaceActiveEffectResponse> activeEffects
+        List<StudentRaceActiveEffectResponse> activeEffects,
+        StudentChallengeResponse challenge
 ) {
     public StudentRaceGameplayResponse {
         Objects.requireNonNull(mode);
         Objects.requireNonNull(effectiveSpeed);
+        Objects.requireNonNull(challenge);
         activeEffects = List.copyOf(Objects.requireNonNull(activeEffects));
     }
 }

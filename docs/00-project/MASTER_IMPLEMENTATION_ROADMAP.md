@@ -139,10 +139,14 @@ core loop.
 
 Order:
 
-1. S4-01 gameplay/effect foundation (DONE; Checkpoints A and B implemented and
-   approved on the feature branch, including the shared runtime contract and handoff).
-   S4-02 and later tasks remain PLANNED.
-2. Challenge Energy, offer and choice.
+1. S4-01 gameplay/effect foundation (DONE; Checkpoints A and B implemented,
+   approved and merged in PR #74, including the shared runtime contract and handoff).
+2. S4-02 Challenge Energy, offer and choice implemented locally / under review on
+   `feature/s4-02-03-challenge-flow`; held from main until S4-03 completes execution.
+   Correct NORMAL EASY/MEDIUM/HARD answers earn 20/25/30 Energy, capped at 100.
+   Below 80% post-answer progress, 100 Energy opens a 12-second offer and resets
+   Energy to 0; expiry restores 50 and applies -0.1 effective speed for 4 seconds.
+   S4-03 and later tasks remain PLANNED.
 3. Turbo Trial hard-question challenge.
 4. Safe Run easy-question sequence.
 5. Earned Power-Ups and fair bounded Luck.

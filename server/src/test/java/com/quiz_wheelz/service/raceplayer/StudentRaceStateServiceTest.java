@@ -286,7 +286,10 @@ class StudentRaceStateServiceTest {
 
         assertEquals(RacePlayerStatus.FINISHED, response.getSnapshot().getPlayerStatus());
         assertEquals(RaceStatus.IN_PROGRESS, response.getSnapshot().getRaceStatus());
-        verifyNoInteractions(gameplayPresenceService, gameplayTimelineService);
+        verifyNoInteractions(gameplayPresenceService);
+        org.mockito.Mockito.verify(gameplayTimelineService, org.mockito.Mockito.times(1)).cancelTerminalChallenge(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyLong());
+        org.mockito.Mockito.verifyNoMoreInteractions(gameplayTimelineService);
     }
 
     @Test
@@ -304,7 +307,10 @@ class StudentRaceStateServiceTest {
                 RacePlayerStatus.DISCONNECTED,
                 response.getSnapshot().getPlayerStatus()
         );
-        verifyNoInteractions(gameplayPresenceService, gameplayTimelineService);
+        verifyNoInteractions(gameplayPresenceService);
+        org.mockito.Mockito.verify(gameplayTimelineService, org.mockito.Mockito.times(1)).cancelTerminalChallenge(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyLong());
+        org.mockito.Mockito.verifyNoMoreInteractions(gameplayTimelineService);
     }
 
     @Test
@@ -321,7 +327,10 @@ class StudentRaceStateServiceTest {
         assertEquals(RacePlayerStatus.RACING, response.getSnapshot().getPlayerStatus());
         assertEquals(RaceStatus.FINISHED, response.getSnapshot().getRaceStatus());
         assertTrue(response.getSnapshot().isRaceFinished());
-        verifyNoInteractions(gameplayPresenceService, gameplayTimelineService);
+        verifyNoInteractions(gameplayPresenceService);
+        org.mockito.Mockito.verify(gameplayTimelineService, org.mockito.Mockito.times(1)).cancelTerminalChallenge(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyLong());
+        org.mockito.Mockito.verifyNoMoreInteractions(gameplayTimelineService);
     }
 
     @Test
