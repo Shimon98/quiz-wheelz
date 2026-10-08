@@ -79,7 +79,7 @@ class QuestionTimeoutChronologyTest {
                 ),
                 playerQuestionRepository,
                 clock
-        );
+        , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeExecutionService.class));
         timelineService = new RacePlayerGameplayTimelineService(timeoutService, movementService, org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.RacePlayerChallengeTimelineService.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class));
     }
 

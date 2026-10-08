@@ -52,8 +52,19 @@ class S4ChallengeLifecycleTest extends S4ChallengeIntegrationFixture {
     @ParameterizedTest
     @EnumSource(value = QuestionGameplayContext.class, names = {"TURBO_TRIAL", "SAFE_RUN"})
     void persistedSpecialContextDoesNotEarn(QuestionGameplayContext context) {
-        transactions.executeWithoutResult(status -> questionRepository.findById(questionId)
-                .orElseThrow().setGameplayContext(context));
+        transactions.executeWithoutResult(status -> {
+            var question = questionRepository.findById(questionId).orElseThrow();
+            var offer = new com.quiz_wheelz.entitys.RacePlayerChallengeOffer();
+            offer.setRacePlayer(locked());
+            offer.setStatus(ChallengeOfferStatus.SELECTED);
+            offer.setChoice(ChallengeChoice.valueOf(context.name()));
+            offer.setOfferedAtEpochMs(T);
+            offer.setExpiresAtEpochMs(T + 12_000);
+            offer.setResolvedAtEpochMs(T);
+            offerRepository.save(offer);
+            question.setGameplayContext(context);
+            question.setChallengeOffer(offer);
+        });
         energy(80);
         answerSecond();
         assertEquals(80, energy());

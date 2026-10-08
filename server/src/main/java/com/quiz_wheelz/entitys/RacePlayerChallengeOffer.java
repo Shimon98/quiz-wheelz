@@ -1,7 +1,10 @@
 package com.quiz_wheelz.entitys;
 
 import com.quiz_wheelz.common.BaseEntity;
+import com.quiz_wheelz.enums.ChallengeOutcome;
 import com.quiz_wheelz.enums.ChallengeChoice;
+import org.hibernate.annotations.ColumnDefault;
+import jakarta.validation.constraints.Min;
 import com.quiz_wheelz.enums.ChallengeOfferStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -20,6 +23,22 @@ import org.hibernate.annotations.Check;
         + "(status = 'EXPIRED' and choice is null and resolved_at_epoch_ms is not null "
         + "and resolved_at_epoch_ms = expires_at_epoch_ms) or "
         + "(status = 'CANCELLED' and choice is null and resolved_at_epoch_ms is not null))")
+@Check(name = "chk_challenge_execution_counters", constraints = "questions_resolved >= 0 and "
+        + "correct_answers >= 0 and correct_answers <= questions_resolved")
+@Check(name = "chk_challenge_execution_state", constraints = "(status <> 'SELECTED' and "
+        + "questions_resolved = 0 and correct_answers = 0 and execution_ended_at_epoch_ms is null and outcome is null) or "
+        + "(status = 'SELECTED' and ((choice = 'TURBO_TRIAL' and questions_resolved <= 1) or "
+        + "(choice = 'SAFE_RUN' and questions_resolved <= 3)) and "
+        + "((execution_ended_at_epoch_ms is null and outcome is null and "
+        + "((choice = 'TURBO_TRIAL' and questions_resolved = 0) or "
+        + "(choice = 'SAFE_RUN' and questions_resolved < 3))) or "
+        + "(execution_ended_at_epoch_ms is not null and (outcome is null or "
+        + "(choice = 'TURBO_TRIAL' and questions_resolved = 1 and "
+        + "((outcome = 'TURBO_SUCCESS' and correct_answers = 1) or "
+        + "(outcome = 'TURBO_FAILURE' and correct_answers = 0))) or "
+        + "(choice = 'SAFE_RUN' and questions_resolved = 3 and "
+        + "((outcome = 'SAFE_PERFECT' and correct_answers = 3) or "
+        + "(outcome = 'SAFE_COMPLETE' and correct_answers < 3)))))))")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -48,4 +67,23 @@ public class RacePlayerChallengeOffer extends BaseEntity {
 
     @Column(name = "resolved_at_epoch_ms")
     private Long resolvedAtEpochMs;
+
+    @NotNull
+    @Min(0)
+    @ColumnDefault("0")
+    @Column(name = "questions_resolved", nullable = false)
+    private Integer questionsResolved = 0;
+
+    @NotNull
+    @Min(0)
+    @ColumnDefault("0")
+    @Column(name = "correct_answers", nullable = false)
+    private Integer correctAnswers = 0;
+
+    @Column(name = "execution_ended_at_epoch_ms")
+    private Long executionEndedAtEpochMs;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private ChallengeOutcome outcome;
 }

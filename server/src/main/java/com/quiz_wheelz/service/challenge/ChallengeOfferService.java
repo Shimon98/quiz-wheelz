@@ -7,6 +7,7 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerChallengeOfferRepository;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayStateService;
+import com.quiz_wheelz.service.raceengine.RacePlayerSpeedEffectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -23,11 +24,13 @@ public class ChallengeOfferService {
     private final RacePlayerGameplayStateService stateService;
     private final ChallengeEnergyService energyService;
     private final ChallengeEligibilityService eligibilityService;
+    private final ChallengeQuestionAvailabilityService availability;
+    private final ChallengeExecutionStateService executions;
+    private final RacePlayerSpeedEffectService speedEffects;
 
     @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
     public Optional<RacePlayerChallengeOffer> unresolved(RacePlayer player) {
-        return repository.findFirstByRacePlayerIdAndStatusInOrderByIdDesc(player.getId(),
-                List.of(ChallengeOfferStatus.ACTIVE, ChallengeOfferStatus.SELECTED));
+        return repository.findUnresolved(player.getId());
     }
 
     public void afterAnswer(RacePlayer player, PlayerQuestion question, Difficulty answeredDifficulty,
@@ -39,7 +42,9 @@ public class ChallengeOfferService {
         }
         var state = stateService.obtainForLockedPlayer(player);
         energyService.earn(state, answeredDifficulty, question.getGameplayContext(), correct);
-        if (!eligibilityService.eligible(state, unresolved(player).isPresent())) {
+        if (!eligibilityService.eligible(state, unresolved(player).isPresent()) || !availability.available(player)
+                || speedEffects.findActiveAt(player, decisionEpochMs).stream()
+                .anyMatch(effect -> effect.getType() == EffectType.SPEED_SLOW)) {
             return;
         }
         var offer = new RacePlayerChallengeOffer();
@@ -95,6 +100,7 @@ public class ChallengeOfferService {
     }
 
     public void cancelActive(RacePlayer player, long decisionEpochMs) {
+        executions.abort(player, decisionEpochMs);
         repository.findFirstByRacePlayerIdAndStatusOrderByIdDesc(player.getId(), ChallengeOfferStatus.ACTIVE)
                 .ifPresent(offer -> {
                     offer.setStatus(ChallengeOfferStatus.CANCELLED);
@@ -103,9 +109,8 @@ public class ChallengeOfferService {
     }
 
     public void requireNormalQuestion(RacePlayer player) {
-        unresolved(player).ifPresent(offer -> {
-            throw new ApiException(offer.getStatus() == ChallengeOfferStatus.ACTIVE
-                    ? ErrorCode.CHALLENGE_CHOICE_REQUIRED : ErrorCode.QUESTION_TEMPLATE_NOT_AVAILABLE_FOR_PLAYER);
+        unresolved(player).filter(offer -> offer.getStatus() == ChallengeOfferStatus.ACTIVE).ifPresent(offer -> {
+            throw new ApiException(ErrorCode.CHALLENGE_CHOICE_REQUIRED);
         });
     }
 }

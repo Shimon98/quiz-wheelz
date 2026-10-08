@@ -1,6 +1,8 @@
 package com.quiz_wheelz.service.question;
 
 import com.quiz_wheelz.entitys.PlayerQuestion;
+import com.quiz_wheelz.enums.QuestionGameplayContext;
+import com.quiz_wheelz.service.challenge.ChallengeExecutionService;
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
@@ -25,17 +27,20 @@ public class QuestionTimeoutService {
     private final RaceEngineService raceEngineService;
     private final PlayerQuestionRepository playerQuestionRepository;
     private final Clock clock;
+    private final ChallengeExecutionService challenges;
 
     public QuestionTimeoutService(
             RaceMovementService raceMovementService,
             RaceEngineService raceEngineService,
             PlayerQuestionRepository playerQuestionRepository,
-            Clock clock
+            Clock clock,
+            ChallengeExecutionService challenges
     ) {
         this.raceMovementService = Objects.requireNonNull(raceMovementService);
         this.raceEngineService = Objects.requireNonNull(raceEngineService);
         this.playerQuestionRepository = Objects.requireNonNull(playerQuestionRepository);
         this.clock = Objects.requireNonNull(clock);
+        this.challenges = Objects.requireNonNull(challenges);
     }
 
     public void processExpiredActiveQuestion(
@@ -61,7 +66,14 @@ public class QuestionTimeoutService {
             return;
         }
 
+        challenges.validate(lockedRacePlayer, question);
         long expiryEpochMs = expiryEpochMs(question);
+
+        if (question.getGameplayContext() != QuestionGameplayContext.NORMAL) {
+            applyTimeoutConsequence(lockedRacePlayer, question, expiryEpochMs,
+                    Math.min(decisionEpochMs, movementCutoffEpochMs));
+            return;
+        }
 
         if (movementCutoffEpochMs < expiryEpochMs) {
             raceMovementService.settleTo(lockedRacePlayer, movementCutoffEpochMs);
@@ -86,6 +98,7 @@ public class QuestionTimeoutService {
             throw new ApiException(ErrorCode.QUESTION_NOT_ACTIVE);
         }
 
+        challenges.validate(lockedRacePlayer, question);
         long trustedConsequenceEpochMs = Math.min(
                 decisionEpochMs,
                 movementCutoffEpochMs
@@ -107,7 +120,8 @@ public class QuestionTimeoutService {
         Optional<PlayerQuestion> activeQuestion = findActiveQuestion(lockedRacePlayer);
 
         if (activeQuestion.isPresent()
-                && expiryEpochMs(activeQuestion.get()) <= movementCutoffEpochMs) {
+                && expiryEpochMs(activeQuestion.get()) <= (activeQuestion.get().getGameplayContext() == QuestionGameplayContext.NORMAL
+                    ? movementCutoffEpochMs : decisionEpochMs)) {
             processExpiredActiveQuestion(
                     lockedRacePlayer,
                     activeQuestion.get(),
@@ -135,14 +149,18 @@ public class QuestionTimeoutService {
     ) {
         raceMovementService.settleTo(
                 lockedRacePlayer,
-                movementBeforeConsequenceEpochMs
+                Math.min(movementBeforeConsequenceEpochMs, movementAfterConsequenceEpochMs)
         );
 
         question.setStatus(PlayerQuestionStatus.EXPIRED);
         playerQuestionRepository.save(question);
 
         if (isActivelyRacing(lockedRacePlayer)) {
-            raceEngineService.applyTimeoutResult(lockedRacePlayer);
+            if (question.getGameplayContext() == QuestionGameplayContext.NORMAL) {
+                raceEngineService.applyTimeoutResult(lockedRacePlayer);
+            } else {
+                challenges.resolve(lockedRacePlayer, question, false, movementBeforeConsequenceEpochMs);
+            }
         }
 
         raceMovementService.settleTo(

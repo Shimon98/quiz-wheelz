@@ -117,6 +117,8 @@ public final class ErrorMessages {
     public static final String CHALLENGE_CHOICE_CONFLICT = "Challenge offer was already selected with a different choice";
     public static final String INVALID_CHALLENGE_CHOICE = "Invalid Challenge choice";
 
+    public static final String CHALLENGE_EXECUTION_STATE_INVALID = "Challenge execution state is inconsistent";
+
     private ErrorMessages() {
     }
 }

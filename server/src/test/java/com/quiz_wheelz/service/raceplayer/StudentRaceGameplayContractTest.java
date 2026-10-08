@@ -23,7 +23,7 @@ class StudentRaceGameplayContractTest {
     private final RacePlayerSpeedEffectRepository repository = mock(RacePlayerSpeedEffectRepository.class);
     private final StudentRaceGameplayProjectionService gameplayService = new StudentRaceGameplayProjectionService(
             new RacePlayerSpeedEffectService(repository),
-            new RaceSpeedEffectMovementCalculator(new RaceMovementCalculator()), new com.quiz_wheelz.service.challenge.StudentChallengeProjectionService(org.mockito.Mockito.mock(com.quiz_wheelz.repository.RacePlayerGameplayStateRepository.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class)));
+            new RaceSpeedEffectMovementCalculator(new RaceMovementCalculator()), new com.quiz_wheelz.service.challenge.StudentChallengeProjectionService(org.mockito.Mockito.mock(com.quiz_wheelz.repository.RacePlayerGameplayStateRepository.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class), org.mockito.Mockito.mock(com.quiz_wheelz.repository.RacePlayerChallengeOfferRepository.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeExecutionStateService.class)));
     private final StudentRaceRuntimeSnapshotService snapshots = new StudentRaceRuntimeSnapshotService(
             new StudentRaceRuntimeSnapshotMapper(), gameplayService);
     private final RacePlayer player = player();
@@ -139,7 +139,7 @@ class StudentRaceGameplayContractTest {
                 java.util.Arrays.stream(RacePlayerGameplayMode.values()).map(Enum::name)
                         .collect(java.util.stream.Collectors.toSet()));
         var mutable = new ArrayList<StudentRaceActiveEffectResponse>();
-        var dto = new StudentRaceGameplayResponse(RacePlayerGameplayMode.NORMAL, 1.3, mutable, new com.quiz_wheelz.dto.raceplayer.StudentChallengeResponse(0, 100, null));
+        var dto = new StudentRaceGameplayResponse(RacePlayerGameplayMode.NORMAL, 1.3, mutable, new com.quiz_wheelz.dto.raceplayer.StudentChallengeResponse(0, 100, null, null, null));
         mutable.add(new StudentRaceActiveEffectResponse(41L, EffectType.SPEED_SLOW,
                 EffectSource.CHALLENGE_TIMEOUT, 1, T, T + 3000));
         assertTrue(dto.activeEffects().isEmpty());

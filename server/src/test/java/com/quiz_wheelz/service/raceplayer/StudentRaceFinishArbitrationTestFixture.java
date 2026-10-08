@@ -93,7 +93,7 @@ final class StudentRaceFinishArbitrationTestFixture {
                 ),
                 playerQuestionRepository,
                 clock
-        );
+        , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeExecutionService.class));
         RacePlayerGameplayTimelineService timelineService =
                 new RacePlayerGameplayTimelineService(timeoutService, movementService, org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.RacePlayerChallengeTimelineService.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class));
         RaceStandingCalculator standingCalculator = new RaceStandingCalculator(ZONE);

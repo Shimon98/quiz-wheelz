@@ -41,7 +41,7 @@ public class RacePlayerGameplayTimelineService {
                 decisionInstant,
                 presenceDecision.movementCutoffEpochMs()
         );
-        return disconnectWhenGraceExpired(lockedRacePlayer, presenceDecision);
+        return disconnectWhenGraceExpired(lockedRacePlayer, presenceDecision, decisionInstant.toEpochMilli());
     }
 
     public boolean settleGameplayRequest(
@@ -54,7 +54,7 @@ public class RacePlayerGameplayTimelineService {
                 decisionInstant,
                 resolvePlayerRequestCutoff(decisionInstant, presenceDecision)
         );
-        return disconnectWhenGraceExpired(lockedRacePlayer, presenceDecision);
+        return disconnectWhenGraceExpired(lockedRacePlayer, presenceDecision, decisionInstant.toEpochMilli());
     }
 
     public boolean settleReconnect(
@@ -78,7 +78,7 @@ public class RacePlayerGameplayTimelineService {
             settle(lockedRacePlayer, decisionInstant, decisionInstant.toEpochMilli());
         }
 
-        return disconnectWhenGraceExpired(lockedRacePlayer, presenceDecision);
+        return disconnectWhenGraceExpired(lockedRacePlayer, presenceDecision, decisionInstant.toEpochMilli());
     }
 
     public boolean settleForRaceFinalization(
@@ -96,7 +96,7 @@ public class RacePlayerGameplayTimelineService {
             return false;
         }
 
-        markDisconnected(lockedRacePlayer);
+        markDisconnected(lockedRacePlayer, decisionInstant.toEpochMilli());
         return true;
     }
 
@@ -115,20 +115,22 @@ public class RacePlayerGameplayTimelineService {
 
     private boolean disconnectWhenGraceExpired(
             RacePlayer racePlayer,
-            GameplayPresenceDecision presenceDecision
+            GameplayPresenceDecision presenceDecision,
+            long decisionEpochMs
     ) {
         if (!presenceDecision.graceExpired()
                 || racePlayer.getStatus() != RacePlayerStatus.RACING) {
             return false;
         }
 
-        markDisconnected(racePlayer);
+        markDisconnected(racePlayer, decisionEpochMs);
         return true;
     }
 
-    private void markDisconnected(RacePlayer racePlayer) {
+    private void markDisconnected(RacePlayer racePlayer, long epochMs) {
         racePlayer.setStatus(RacePlayerStatus.DISCONNECTED);
-        expireActiveQuestionForTerminalPlayer(racePlayer);
+        challengeOffers.cancelActive(racePlayer, epochMs);
+        questionTimeoutService.expireActiveQuestionWithoutConsequence(racePlayer);
     }
 
     public long resolvePlayerRequestCutoff(

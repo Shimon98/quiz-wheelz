@@ -25,6 +25,7 @@ import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStandingService;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import com.quiz_wheelz.service.challenge.ChallengeOfferService;
+import com.quiz_wheelz.service.challenge.ChallengeExecutionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,6 +50,7 @@ public class StudentAnswerSubmissionService {
     private final RaceDecisionTimeService decisionTimeService;
     private final Clock clock;
     private final ChallengeOfferService challengeOffers;
+    private final ChallengeExecutionService challengeExecution;
 
     public StudentAnswerSubmissionService(
             PlayerQuestionRepository playerQuestionRepository,
@@ -62,7 +64,8 @@ public class StudentAnswerSubmissionService {
             RaceLiveMutationTracker liveMutationTracker,
             RaceDecisionTimeService decisionTimeService,
             Clock clock,
-            ChallengeOfferService challengeOffers
+            ChallengeOfferService challengeOffers,
+            ChallengeExecutionService challengeExecution
     ) {
         this.playerQuestionRepository = Objects.requireNonNull(playerQuestionRepository);
         this.playerQuestionChoiceRepository = Objects.requireNonNull(playerQuestionChoiceRepository);
@@ -76,6 +79,7 @@ public class StudentAnswerSubmissionService {
         this.decisionTimeService = Objects.requireNonNull(decisionTimeService);
         this.clock = Objects.requireNonNull(clock);
         this.challengeOffers = Objects.requireNonNull(challengeOffers);
+        this.challengeExecution = Objects.requireNonNull(challengeExecution);
     }
 
     @Transactional(noRollbackFor = ApiException.class)
@@ -142,18 +146,22 @@ public class StudentAnswerSubmissionService {
                 ? null
                 : resolveCorrectAnswerChoiceId(question);
 
-        AnswerRaceImpact answerRaceImpact = raceEngineService.applyAnswerResult(
+        challengeExecution.validate(lockedRacePlayer, question);
+        boolean normal = question.getGameplayContext() == com.quiz_wheelz.enums.QuestionGameplayContext.NORMAL;
+        AnswerRaceImpact answerRaceImpact = normal ? raceEngineService.applyAnswerResult(
                 lockedRacePlayer,
                 correct,
                 decisionEpochMs
-        );
+        ) : challengeExecution.resolve(lockedRacePlayer, question, correct, decisionEpochMs);
 
         question.setStatus(PlayerQuestionStatus.ANSWERED);
         question.setAnsweredAt(now);
 
         PlayerQuestion savedQuestion = playerQuestionRepository.save(question);
-        challengeOffers.afterAnswer(lockedRacePlayer, savedQuestion,
-                answerRaceImpact.getAnsweredDifficulty(), correct, decisionEpochMs);
+        if (normal) {
+            challengeOffers.afterAnswer(lockedRacePlayer, savedQuestion,
+                    answerRaceImpact.getAnsweredDifficulty(), correct, decisionEpochMs);
+        }
 
         if (liveContext.active()) {
             liveEventRecorder.recordQuestionAnswered(

@@ -180,9 +180,10 @@ class S4ChallengeChoiceQuestionTest extends S4ChallengeIntegrationFixture {
     void selectedStateCannotGenerateNormalQuestion(ChallengeChoice choice) {
         Long id = openOffer();
         choiceService.choose(secondRequest, new StudentChallengeChoiceRequest(id, choice.name()));
-        error(ErrorCode.QUESTION_TEMPLATE_NOT_AVAILABLE_FOR_PLAYER,
-                () -> questions.getOrCreateCurrentQuestion(second()));
-        verifyNoInteractions(plans, generation);
+        allowGeneration();
+        assertEquals(QuestionGameplayContext.valueOf(choice.name()),
+                questions.getOrCreateCurrentQuestion(second()).getGameplayContext());
+        verifyNoInteractions(plans);
     }
 
     @Test
@@ -217,7 +218,7 @@ class S4ChallengeChoiceQuestionTest extends S4ChallengeIntegrationFixture {
         var mapper = new ObjectMapper();
         JsonNode gameplay = mapper.valueToTree(snapshot().getGameplay());
         assertEquals(Set.of("mode", "effectiveSpeed", "activeEffects", "challenge"), names(gameplay));
-        assertEquals(Set.of("energy", "threshold", "offer"), names(gameplay.get("challenge")));
+        assertEquals(Set.of("energy", "threshold", "offer", "run", "lastResult"), names(gameplay.get("challenge")));
         assertEquals(100, gameplay.get("challenge").get("threshold").asInt());
         var offer = gameplay.get("challenge").get("offer");
         assertEquals(Set.of("offerId", "expiresAtEpochMs", "choices"), names(offer));

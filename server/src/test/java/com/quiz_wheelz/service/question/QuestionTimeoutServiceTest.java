@@ -73,7 +73,7 @@ class QuestionTimeoutServiceTest {
                 ),
                 playerQuestionRepository,
                 fixedClock
-        );
+        , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeExecutionService.class));
     }
 
     @Test

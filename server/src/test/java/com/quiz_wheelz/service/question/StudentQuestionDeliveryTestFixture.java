@@ -78,7 +78,7 @@ final class StudentQuestionDeliveryTestFixture {
                     gameplayRequestGuard,
                     new RaceLiveMutationTracker(liveMutationGate, liveEventChangeRecorder),
                     Clock.fixed(FIXED_INSTANT, FIXED_ZONE)
-            , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class));
+            , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeQuestionDeliveryService.class));
 
     {
         when(liveMutationGate.lockIfActive(any())).thenAnswer(invocation ->
