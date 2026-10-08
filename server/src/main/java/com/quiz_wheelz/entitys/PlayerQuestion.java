@@ -26,6 +26,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Check;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -46,9 +47,12 @@ import java.util.List;
                 @Index(
                         name = "idx_player_questions_status_expires",
                         columnList = "status,expires_at"
-                )
+                ),
+                @Index(name = "idx_player_questions_challenge", columnList = "challenge_offer_id")
         }
 )
+@Check(name = "chk_player_question_challenge_context", constraints = "(gameplay_context = 'NORMAL' and "
+        + "challenge_offer_id is null) or (gameplay_context in ('TURBO_TRIAL','SAFE_RUN') and challenge_offer_id is not null)")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -100,6 +104,18 @@ public class PlayerQuestion extends BaseEntity {
 
     @Column(name = "answered_at")
     private LocalDateTime answeredAt;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "challenge_offer_id")
+    private RacePlayerChallengeOffer challengeOffer;
+
+    @Override
+    protected void onPrePersist(LocalDateTime now) {
+        if (gameplayContext != QuestionGameplayContext.NORMAL && expiresAt != null && timeLimitSeconds != null) {
+            createdAt = expiresAt.minusSeconds(timeLimitSeconds);
+        }
+    }
 
     @JsonIgnore
     @OneToMany(

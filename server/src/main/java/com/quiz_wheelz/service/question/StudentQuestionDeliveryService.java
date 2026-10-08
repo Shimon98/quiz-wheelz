@@ -19,6 +19,8 @@ import com.quiz_wheelz.service.liveevent.RaceLiveMutationContext;
 import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.utils.DateTimeUtils;
+import com.quiz_wheelz.service.challenge.ChallengeOfferService;
+import com.quiz_wheelz.service.challenge.ChallengeQuestionDeliveryService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +43,8 @@ public class StudentQuestionDeliveryService {
     private final RacePlayerGameplayRequestGuard gameplayRequestGuard;
     private final RaceLiveMutationTracker liveMutationTracker;
     private final Clock clock;
+    private final ChallengeOfferService challengeOffers;
+    private final ChallengeQuestionDeliveryService challengeExecution;
 
     public StudentQuestionDeliveryService(
             RacePlayerRepository racePlayerRepository,
@@ -52,7 +56,9 @@ public class StudentQuestionDeliveryService {
             StudentQuestionResponseMapper studentQuestionResponseMapper,
             RacePlayerGameplayRequestGuard gameplayRequestGuard,
             RaceLiveMutationTracker liveMutationTracker,
-            Clock clock
+            Clock clock,
+            ChallengeOfferService challengeOffers,
+            ChallengeQuestionDeliveryService challengeExecution
     ) {
         this.racePlayerRepository = Objects.requireNonNull(racePlayerRepository);
         this.playerQuestionRepository = Objects.requireNonNull(playerQuestionRepository);
@@ -64,6 +70,8 @@ public class StudentQuestionDeliveryService {
         this.gameplayRequestGuard = Objects.requireNonNull(gameplayRequestGuard);
         this.liveMutationTracker = Objects.requireNonNull(liveMutationTracker);
         this.clock = Objects.requireNonNull(clock);
+        this.challengeOffers = Objects.requireNonNull(challengeOffers);
+        this.challengeExecution = Objects.requireNonNull(challengeExecution);
     }
 
     @Transactional(noRollbackFor = ApiException.class)
@@ -99,6 +107,13 @@ public class StudentQuestionDeliveryService {
                         lockedRacePlayer,
                         PlayerQuestionStatus.ACTIVE
                 );
+
+        challengeExecution.validateCurrent(lockedRacePlayer, active);
+        challengeOffers.requireNormalQuestion(lockedRacePlayer);
+        var special = challengeExecution.resolve(lockedRacePlayer, active);
+        if (special.isPresent()) {
+            return mapToStudentResponse(special.get(), decisionEpochMs);
+        }
 
         if (active.isPresent()) {
             PlayerQuestion activeQuestion = active.get();

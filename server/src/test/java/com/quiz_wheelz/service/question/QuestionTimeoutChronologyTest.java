@@ -61,7 +61,7 @@ class QuestionTimeoutChronologyTest {
     @BeforeEach
     void setUp() {
         Clock clock = Clock.fixed(ANCHOR, ZONE);
-        RaceFinishService finishService = new RaceFinishService(racePlayerRepository, clock);
+        RaceFinishService finishService = new RaceFinishService(racePlayerRepository, clock, org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class));
         RaceMovementService movementService = new RaceMovementService(
                 new RaceSpeedEffectMovementCalculator(new RaceMovementCalculator()),
                 mock(RacePlayerSpeedEffectService.class),
@@ -79,8 +79,8 @@ class QuestionTimeoutChronologyTest {
                 ),
                 playerQuestionRepository,
                 clock
-        );
-        timelineService = new RacePlayerGameplayTimelineService(timeoutService, movementService);
+        , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeExecutionService.class));
+        timelineService = new RacePlayerGameplayTimelineService(timeoutService, movementService, org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.RacePlayerChallengeTimelineService.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class));
     }
 
     @Test

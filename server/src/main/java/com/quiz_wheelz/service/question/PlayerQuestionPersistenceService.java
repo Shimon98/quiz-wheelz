@@ -5,6 +5,7 @@ import com.quiz_wheelz.dto.question.internal.InternalGeneratedQuestionChoice;
 import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.entitys.PlayerQuestionChoice;
 import com.quiz_wheelz.entitys.RacePlayer;
+import com.quiz_wheelz.entitys.RacePlayerChallengeOffer;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
 import com.quiz_wheelz.enums.QuestionGameplayContext;
 import com.quiz_wheelz.exception.ApiException;
@@ -37,13 +38,35 @@ public class PlayerQuestionPersistenceService {
             RacePlayer racePlayer,
             InternalGeneratedQuestion generatedQuestion
     ) {
+        return persistGeneratedQuestion(racePlayer, generatedQuestion, QuestionGameplayContext.NORMAL, null,
+                generatedQuestion == null ? null : generatedQuestion.getTimeLimitSeconds());
+    }
+
+    @Transactional
+    public PlayerQuestion persistGeneratedQuestion(RacePlayer racePlayer, InternalGeneratedQuestion generatedQuestion,
+                                                   QuestionGameplayContext context, RacePlayerChallengeOffer offer,
+                                                   Integer timeLimitSeconds) {
         validateInput(racePlayer, generatedQuestion);
+        if (context == null || timeLimitSeconds == null || timeLimitSeconds <= 0
+                || (context == QuestionGameplayContext.NORMAL) != (offer == null)
+                || (offer != null && (!Objects.equals(offer.getRacePlayer().getId(), racePlayer.getId())
+                    || offer.getStatus() != com.quiz_wheelz.enums.ChallengeOfferStatus.SELECTED
+                    || offer.getExecutionEndedAtEpochMs() != null
+                    || context != QuestionGameplayContext.valueOf(offer.getChoice().name())))) {
+            throw new ApiException(ErrorCode.CHALLENGE_EXECUTION_STATE_INVALID);
+        }
 
         PlayerQuestion playerQuestion = buildPlayerQuestion(
                 racePlayer,
                 generatedQuestion
         );
 
+        playerQuestion.setGameplayContext(context);
+        playerQuestion.setChallengeOffer(offer);
+        if (context != QuestionGameplayContext.NORMAL) {
+            playerQuestion.setTimeLimitSeconds(timeLimitSeconds);
+            playerQuestion.setExpiresAt(LocalDateTime.now(clock).plusSeconds(timeLimitSeconds));
+        }
         addChoices(
                 playerQuestion,
                 generatedQuestion.getChoices()

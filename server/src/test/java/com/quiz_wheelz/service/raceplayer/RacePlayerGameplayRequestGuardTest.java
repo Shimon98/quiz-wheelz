@@ -54,11 +54,10 @@ class RacePlayerGameplayRequestGuardTest {
 
         guard.requireGameplayAccess(racePlayer, NOW);
 
-        verifyNoInteractions(
-                gameplayPresenceService,
-                gameplayTimelineService,
-                racePlayerRepository
-        );
+        verifyNoInteractions(gameplayPresenceService, racePlayerRepository);
+        org.mockito.Mockito.verify(gameplayTimelineService, org.mockito.Mockito.times(1)).cancelTerminalChallenge(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyLong());
+        org.mockito.Mockito.verifyNoMoreInteractions(gameplayTimelineService);
     }
 
     @Test
@@ -67,11 +66,10 @@ class RacePlayerGameplayRequestGuardTest {
 
         guard.requireGameplayAccess(racePlayer, NOW);
 
-        verifyNoInteractions(
-                gameplayPresenceService,
-                gameplayTimelineService,
-                racePlayerRepository
-        );
+        verifyNoInteractions(gameplayPresenceService, racePlayerRepository);
+        org.mockito.Mockito.verify(gameplayTimelineService, org.mockito.Mockito.times(1)).cancelTerminalChallenge(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyLong());
+        org.mockito.Mockito.verifyNoMoreInteractions(gameplayTimelineService);
     }
 
     @Test
@@ -80,11 +78,10 @@ class RacePlayerGameplayRequestGuardTest {
 
         guard.requireGameplayAccess(racePlayer, NOW);
 
-        verifyNoInteractions(
-                gameplayPresenceService,
-                gameplayTimelineService,
-                racePlayerRepository
-        );
+        verifyNoInteractions(gameplayPresenceService, racePlayerRepository);
+        org.mockito.Mockito.verify(gameplayTimelineService, org.mockito.Mockito.times(1)).cancelTerminalChallenge(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyLong());
+        org.mockito.Mockito.verifyNoMoreInteractions(gameplayTimelineService);
     }
 
     @Test

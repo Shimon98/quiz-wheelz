@@ -142,7 +142,7 @@ class RaceFinalizationHeartbeatConcurrencyTest {
                 raceRepository,
                 presenceService,
                 gameplayTimelineService,
-                new RaceFinishService(racePlayerRepository, clock),
+                new RaceFinishService(racePlayerRepository, clock, org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class)),
                 changeRecorder,
                 mutationTracker,
                 clock

@@ -64,6 +64,7 @@ public class RacePlayerReconnectService {
 
         RacePlayerReconnectOutcome terminalOutcome = resolveTerminalOutcome(race, racePlayer);
         if (terminalOutcome != null) {
+            gameplayTimelineService.cancelTerminalChallenge(racePlayer, nowInstant.toEpochMilli());
             gameplayPresenceService.markOffline(racePlayer);
             return buildResponse(race, racePlayer, terminalOutcome, false, false, now);
         }

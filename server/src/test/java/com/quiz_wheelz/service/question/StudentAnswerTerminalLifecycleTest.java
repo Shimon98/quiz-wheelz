@@ -120,7 +120,7 @@ class StudentAnswerTerminalLifecycleTest {
                 ),
                 mock(com.quiz_wheelz.service.raceengine.RaceDecisionTimeService.class),
                 Clock.fixed(NOW, ZoneId.of("UTC"))
-        );
+        , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeExecutionService.class));
     }
 
     @Test
@@ -157,7 +157,10 @@ class StudentAnswerTerminalLifecycleTest {
         assertEquals(ErrorCode.RACE_NOT_IN_PROGRESS, exception.getErrorCode());
         assertUnchanged(racePlayer, question);
         verifyNoEnginePolicyEffects();
-        verifyNoInteractions(gameplayPresenceService, gameplayTimelineService);
+        verifyNoInteractions(gameplayPresenceService);
+        org.mockito.Mockito.verify(gameplayTimelineService, org.mockito.Mockito.times(1)).cancelTerminalChallenge(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyLong());
+        org.mockito.Mockito.verifyNoMoreInteractions(gameplayTimelineService);
         verify(playerQuestionRepository, never()).save(any());
         verify(racePlayerRepository, never()).findByRaceOrderByLaneNumberAsc(any());
     }
@@ -181,9 +184,11 @@ class StudentAnswerTerminalLifecycleTest {
         verifyNoEnginePolicyEffects();
         verifyNoInteractions(
                 gameplayPresenceService,
-                gameplayTimelineService,
                 playerQuestionChoiceRepository
         );
+        org.mockito.Mockito.verify(gameplayTimelineService).cancelTerminalChallenge(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyLong());
+        org.mockito.Mockito.verifyNoMoreInteractions(gameplayTimelineService);
         verify(playerQuestionRepository, never()).save(any());
         verify(racePlayerRepository, never()).findByRaceOrderByLaneNumberAsc(any());
     }

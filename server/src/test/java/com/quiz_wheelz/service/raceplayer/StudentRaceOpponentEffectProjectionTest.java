@@ -32,7 +32,7 @@ class StudentRaceOpponentEffectProjectionTest {
             new RaceSpeedEffectMovementCalculator(new RaceMovementCalculator());
     private final StudentRaceStandingProjectionService projectionService = new StudentRaceStandingProjectionService(
             presence, new RacePlayerGameplayTimelineService(mock(QuestionTimeoutService.class),
-            mock(RaceMovementService.class)), questions, calculator, new RacePlayerSpeedEffectService(effects),
+            mock(RaceMovementService.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.RacePlayerChallengeTimelineService.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class)), questions, calculator, new RacePlayerSpeedEffectService(effects),
             Clock.fixed(Instant.ofEpochMilli(T), ZoneOffset.UTC));
 
     @Test

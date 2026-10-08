@@ -1,6 +1,7 @@
 package com.quiz_wheelz.config;
 
 import com.quiz_wheelz.common.ApiPaths;
+import com.quiz_wheelz.common.ChallengeApiPaths;
 import com.quiz_wheelz.security.JwtAuthenticationFilter;
 import com.quiz_wheelz.security.RestAccessDeniedHandler;
 import com.quiz_wheelz.security.RestAuthenticationEntryPoint;
@@ -59,6 +60,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, ApiPaths.RACE_PLAYERS_CURRENT_RACE_STATE).permitAll()
                         .requestMatchers(HttpMethod.GET, ApiPaths.RACE_PLAYERS_EVENTS_STREAM).permitAll()
                         .requestMatchers(HttpMethod.POST, ApiPaths.RACE_PLAYERS_CURRENT_QUESTION).permitAll()
+                        .requestMatchers(HttpMethod.POST, ChallengeApiPaths.CHOICE).permitAll()
                         .requestMatchers(HttpMethod.GET, ApiPaths.ACTUATOR_HEALTH).permitAll()
                         .requestMatchers(ApiPaths.SWAGGER_UI).permitAll()
                         .requestMatchers(ApiPaths.API_DOCS).permitAll()

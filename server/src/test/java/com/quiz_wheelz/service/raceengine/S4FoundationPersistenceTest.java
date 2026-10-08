@@ -39,7 +39,8 @@ import static org.mockito.Mockito.*;
 @DataJpaTest(showSql = false)
 @ActiveProfiles("test")
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
-@Import({RacePlayerGameplayStateService.class, RacePlayerSpeedEffectService.class, RacePlayerJoinService.class,
+@Import({com.quiz_wheelz.config.TimeConfig.class, com.quiz_wheelz.service.challenge.ChallengeQuestionAvailabilityService.class, com.quiz_wheelz.service.challenge.ChallengeExecutionStateService.class, com.quiz_wheelz.service.challenge.ChallengeOfferService.class, com.quiz_wheelz.service.challenge.ChallengeEnergyService.class, com.quiz_wheelz.service.challenge.ChallengeEligibilityService.class, com.quiz_wheelz.service.challenge.StudentChallengeProjectionService.class,
+RacePlayerGameplayStateService.class, RacePlayerSpeedEffectService.class, RacePlayerJoinService.class,
         RaceSpeedEffectMovementCalculator.class, RaceMovementCalculator.class,
         com.quiz_wheelz.service.raceplayer.StudentRaceGameplayProjectionService.class,
         com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotMapper.class,
@@ -282,13 +283,24 @@ class S4FoundationPersistenceTest {
                 question.setTimeLimitSeconds(30);
                 question.setExpiresAt(LocalDateTime.now().plusSeconds(30));
                 question.setGameplayContext(context);
+                if (context != QuestionGameplayContext.NORMAL) {
+                    var offer = new com.quiz_wheelz.entitys.RacePlayerChallengeOffer();
+                    offer.setRacePlayer(question.getRacePlayer());
+                    offer.setStatus(com.quiz_wheelz.enums.ChallengeOfferStatus.SELECTED);
+                    offer.setChoice(com.quiz_wheelz.enums.ChallengeChoice.valueOf(context.name()));
+                    offer.setOfferedAtEpochMs(1000L);
+                    offer.setExpiresAtEpochMs(13000L);
+                    offer.setResolvedAtEpochMs(1000L);
+                    entityManager.persist(offer);
+                    question.setChallengeOffer(offer);
+                }
                 entityManager.persist(question);
                 entityManager.flush();
                 Long questionId = question.getId();
                 entityManager.clear();
                 assertEquals(context, entityManager.find(PlayerQuestion.class, questionId).getGameplayContext());
                 entityManager.createNativeQuery(
-                        "update player_questions set gameplay_context = DEFAULT where id = :id")
+                        "update player_questions set gameplay_context = DEFAULT, challenge_offer_id = null where id = :id")
                         .setParameter("id", questionId).executeUpdate();
                 entityManager.clear();
                 assertEquals(QuestionGameplayContext.NORMAL,

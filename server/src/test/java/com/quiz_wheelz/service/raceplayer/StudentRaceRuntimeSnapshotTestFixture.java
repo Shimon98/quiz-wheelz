@@ -14,6 +14,6 @@ public final class StudentRaceRuntimeSnapshotTestFixture {
     public static StudentRaceRuntimeSnapshotService service() {
         return new StudentRaceRuntimeSnapshotService(new StudentRaceRuntimeSnapshotMapper(),
                 new StudentRaceGameplayProjectionService(mock(RacePlayerSpeedEffectService.class),
-                        new RaceSpeedEffectMovementCalculator(new RaceMovementCalculator())));
+                        new RaceSpeedEffectMovementCalculator(new RaceMovementCalculator()), new com.quiz_wheelz.service.challenge.StudentChallengeProjectionService(org.mockito.Mockito.mock(com.quiz_wheelz.repository.RacePlayerGameplayStateRepository.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class), org.mockito.Mockito.mock(com.quiz_wheelz.repository.RacePlayerChallengeOfferRepository.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeExecutionStateService.class))));
     }
 }

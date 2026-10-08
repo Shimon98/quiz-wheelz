@@ -9,6 +9,7 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.utils.DateTimeUtils;
+import com.quiz_wheelz.service.challenge.ChallengeOfferService;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -21,13 +22,16 @@ public class RaceFinishService {
 
     private final RacePlayerRepository racePlayerRepository;
     private final Clock clock;
+    private final ChallengeOfferService challengeOffers;
 
     public RaceFinishService(
             RacePlayerRepository racePlayerRepository,
-            Clock clock
+            Clock clock,
+            ChallengeOfferService challengeOffers
     ) {
         this.racePlayerRepository = racePlayerRepository;
         this.clock = clock;
+        this.challengeOffers = challengeOffers;
     }
 
     public boolean finishPlayerAt(RacePlayer racePlayer, long finishEpochMs) {
@@ -58,6 +62,7 @@ public class RaceFinishService {
                 Instant.ofEpochMilli(finishEpochMs),
                 clock.getZone()
         ));
+        challengeOffers.cancelActive(racePlayer, finishEpochMs);
 
         return true;
     }

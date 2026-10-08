@@ -139,12 +139,24 @@ core loop.
 
 Order:
 
-1. S4-01 gameplay/effect foundation (DONE; Checkpoints A and B implemented and
-   approved on the feature branch, including the shared runtime contract and handoff).
-   S4-02 and later tasks remain PLANNED.
-2. Challenge Energy, offer and choice.
-3. Turbo Trial hard-question challenge.
-4. Safe Run easy-question sequence.
+1. S4-01 gameplay/effect foundation (DONE; Checkpoints A and B implemented,
+   approved and merged in PR #74, including the shared runtime contract and handoff).
+2. S4-02 Challenge Energy, offer and choice complete locally on
+   `feature/s4-02-03-challenge-flow`; held from main until S4-03 completes execution.
+   Correct NORMAL EASY/MEDIUM/HARD answers earn 20/25/30 Energy, capped at 100.
+   Below 80% post-answer progress, 100 Energy opens a 12-second offer and resets
+   Energy to 0; expiry restores 50 and applies -0.1 effective speed for 4 seconds.
+   S4-02 DEV verification passed; production migrations remain Phase 6.
+3. S4-03 Turbo Trial + Safe Run implemented locally / under review on the same
+   integration branch: Turbo is one HARD 15-second question (+80 progress/+40 score
+   on correct; wrong/timeout gives -0.2 effective speed for 4 seconds). Safe is three
+   EASY 15-second questions (+15/+8 each correct, +10/+6 perfect bonus; no wrong/timeout
+   penalty). Active SPEED_SLOW suppresses a new offer and retains Energy 100; only
+   the next qualifying NORMAL correct answer after expiry can create the offer.
+   DEV startup/schema/health verification passed after approved DEV-only CHECK alignment.
+   End-to-end Challenge execution remains local and subject to Diana review before
+   any combined PR/main merge.
+4. S4-04 / S4-05 / S4-06 remain PLANNED; no Luck, Power-Up or Recovery is claimed.
 5. Earned Power-Ups and fair bounded Luck.
 6. Hidden Recovery policy.
 7. Race Moments / announcements.

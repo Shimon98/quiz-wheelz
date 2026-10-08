@@ -74,7 +74,7 @@ final class StudentRaceFinishArbitrationTestFixture {
         race.setMaxPlayers(8);
         race.setLiveEventVersion(EVENT_VERSION);
 
-        RaceFinishService finishService = new RaceFinishService(racePlayerRepository, clock);
+        RaceFinishService finishService = new RaceFinishService(racePlayerRepository, clock, org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class));
         RaceMovementCalculator movementCalculator = new RaceMovementCalculator();
         RaceMovementService movementService = new RaceMovementService(
                 new RaceSpeedEffectMovementCalculator(movementCalculator),
@@ -93,9 +93,9 @@ final class StudentRaceFinishArbitrationTestFixture {
                 ),
                 playerQuestionRepository,
                 clock
-        );
+        , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeExecutionService.class));
         RacePlayerGameplayTimelineService timelineService =
-                new RacePlayerGameplayTimelineService(timeoutService, movementService);
+                new RacePlayerGameplayTimelineService(timeoutService, movementService, org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.RacePlayerChallengeTimelineService.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class));
         RaceStandingCalculator standingCalculator = new RaceStandingCalculator(ZONE);
         service = new StudentRaceFinishArbitrationService(
                 sessionLockService,

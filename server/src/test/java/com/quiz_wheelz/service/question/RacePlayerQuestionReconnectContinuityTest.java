@@ -63,12 +63,12 @@ class RacePlayerQuestionReconnectContinuityTest {
                 raceEngineService,
                 fixture.playerQuestionRepository,
                 clock
-        );
+        , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeExecutionService.class));
         RacePlayerGameplayTimelineService gameplayTimelineService =
                 new RacePlayerGameplayTimelineService(
                         questionTimeoutService,
                         raceMovementService
-                );
+                , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.RacePlayerChallengeTimelineService.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class));
         reconnectService = new RacePlayerReconnectService(
                 sessionLockService,
                 gameplayPresenceService,

@@ -1,6 +1,7 @@
 package com.quiz_wheelz.common;
 
 public final class ApiMessages {
+    public static final String CHALLENGE_CHOICE_SELECTED_SUCCESSFULLY = "Challenge choice selected successfully";
 
     public static final String LOGIN_SUCCESSFUL = "Login successful";
     public static final String CURRENT_USER_LOADED = "Current user loaded";

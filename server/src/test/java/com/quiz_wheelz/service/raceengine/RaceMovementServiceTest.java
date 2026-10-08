@@ -51,7 +51,7 @@ class RaceMovementServiceTest {
                 new RaceFinishService(
                         racePlayerRepository,
                         Clock.fixed(ANCHOR_INSTANT, FIXED_ZONE)
-                ),
+                , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class)),
                 playerQuestionRepository,
                 Clock.fixed(ANCHOR_INSTANT, FIXED_ZONE)
         );

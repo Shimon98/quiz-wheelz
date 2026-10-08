@@ -192,7 +192,10 @@ class RacePlayerRefreshLifecycleTest {
 
         assertRepeatedSnapshot(racePlayer);
 
-        verifyNoInteractions(gameplayPresenceService, gameplayTimelineService);
+        verifyNoInteractions(gameplayPresenceService);
+        org.mockito.Mockito.verify(gameplayTimelineService, org.mockito.Mockito.times(2)).cancelTerminalChallenge(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyLong());
+        org.mockito.Mockito.verifyNoMoreInteractions(gameplayTimelineService);
         verifyNoMutationSave();
     }
 
@@ -205,7 +208,10 @@ class RacePlayerRefreshLifecycleTest {
 
         assertRepeatedSnapshot(racePlayer);
 
-        verifyNoInteractions(gameplayPresenceService, gameplayTimelineService);
+        verifyNoInteractions(gameplayPresenceService);
+        org.mockito.Mockito.verify(gameplayTimelineService, org.mockito.Mockito.times(2)).cancelTerminalChallenge(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyLong());
+        org.mockito.Mockito.verifyNoMoreInteractions(gameplayTimelineService);
         verifyNoMutationSave();
     }
 
@@ -218,7 +224,10 @@ class RacePlayerRefreshLifecycleTest {
 
         assertRepeatedSnapshot(racePlayer);
 
-        verifyNoInteractions(gameplayPresenceService, gameplayTimelineService);
+        verifyNoInteractions(gameplayPresenceService);
+        org.mockito.Mockito.verify(gameplayTimelineService, org.mockito.Mockito.times(2)).cancelTerminalChallenge(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyLong());
+        org.mockito.Mockito.verifyNoMoreInteractions(gameplayTimelineService);
         verifyNoMutationSave();
     }
 
