@@ -1,5 +1,8 @@
 export const RACE_GAMEPLAY_MODES = Object.freeze({
   NORMAL: "NORMAL",
+  CHALLENGE_CHOICE: "CHALLENGE_CHOICE",
+  TURBO_TRIAL: "TURBO_TRIAL",
+  SAFE_RUN: "SAFE_RUN",
 });
 
 export const RACE_GAMEPLAY_EFFECT_TYPES = Object.freeze({
@@ -12,4 +15,6 @@ export const RACE_GAMEPLAY_EFFECT_SOURCES = Object.freeze({
 
 export const QUESTION_GAMEPLAY_CONTEXTS = Object.freeze({
   NORMAL: "NORMAL",
+  TURBO_TRIAL: "TURBO_TRIAL",
+  SAFE_RUN: "SAFE_RUN",
 });

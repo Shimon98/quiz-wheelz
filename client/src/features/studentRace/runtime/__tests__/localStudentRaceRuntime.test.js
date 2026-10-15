@@ -151,4 +151,15 @@ describe("student race gameplay preview", () => {
     expect(state.visual.targetSpeed).toBe(1.2);
     expect(state.visual.movementUnitsPerSecond).toBeCloseTo(4.8);
   });
+
+  it.each([
+    ["turbo", "TURBO_TRIAL"],
+    ["safe", "SAFE_RUN"],
+  ])("presents the %s scenario as its server mode without changing speed or movement", (scenario, mode) => {
+    const state = stateFrom(createLocalStudentRaceRuntime({ scenario }).getSnapshot());
+
+    expect(state.gameplay.mode).toBe(mode);
+    expect(state.visual.targetSpeed).toBe(1.2);
+    expect(state.visual.movementUnitsPerSecond).toBeCloseTo(4.8);
+  });
 });

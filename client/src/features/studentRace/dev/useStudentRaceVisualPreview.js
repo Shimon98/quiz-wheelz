@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { QUESTION_GAMEPLAY_CONTEXTS } from "../../../constants/raceGameplayConstants";
 import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig";
 import { createInitialRaceRuntimeState } from "../runtime/createInitialRaceRuntimeState";
 import { createLocalStudentRaceRuntime } from "../runtime/localStudentRaceRuntime";
 import { mapLocalRuntimeSnapshotToState } from "../runtime/mapLocalRuntimeSnapshotToState";
 import { mapSubmitAnswerToModel } from "../runtime/mapSubmitAnswerToModel";
 import { STUDENT_RACE_FEEDBACK } from "../runtime/studentRaceRuntimeConstants";
+import { getQuestionContextForMode } from "../runtime/studentRaceGameplayMode";
 
 const PREVIEW_QUESTION_DURATION_MS = 20000;
 const PREVIEW_FEEDBACK_SAMPLES = Object.freeze([
@@ -43,11 +45,13 @@ export function useStudentRaceVisualPreview(t) {
   const [feedback, setFeedback] = useState(IDLE_FEEDBACK);
   const dwellTimerRef = useRef(null);
   const feedbackActiveRef = useRef(false);
+  const gameplayContext = getQuestionContextForMode(runtimeState.gameplay.mode) ?? QUESTION_GAMEPLAY_CONTEXTS.NORMAL;
   const question = useMemo(() => ({
     ...questionState,
+    gameplayContext,
     text: t("preview.question"),
     choices: PREVIEW_FEEDBACK_SAMPLES.map(({ id, labelKey }) => ({ id, text: t(labelKey) })),
-  }), [questionState, t]);
+  }), [questionState, gameplayContext, t]);
 
   useEffect(() => {
     const unsubscribe = runtime.subscribe((snapshot) => {

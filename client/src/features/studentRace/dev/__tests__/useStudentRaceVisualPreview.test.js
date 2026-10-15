@@ -81,6 +81,27 @@ describe("useStudentRaceVisualPreview", () => {
     expect(result.current.answerFeedback.streak).toBe(3);
   });
 
+  it("keeps the NORMAL question context without a scenario", () => {
+    const { result } = renderHook(() => useStudentRaceVisualPreview(translate));
+
+    expect(result.current.question.gameplayContext).toBe("NORMAL");
+  });
+
+  it.each([
+    ["turbo", "TURBO_TRIAL"],
+    ["safe", "SAFE_RUN"],
+  ])("skins the preview question for the %s scenario", (scenario, context) => {
+    window.history.replaceState({}, "", `/dev/race?motionScenario=${scenario}`);
+    try {
+      const { result } = renderHook(() => useStudentRaceVisualPreview(translate));
+
+      expect(result.current.runtimeState.gameplay.mode).toBe(context);
+      expect(result.current.question.gameplayContext).toBe(context);
+    } finally {
+      window.history.replaceState({}, "", "/");
+    }
+  });
+
   it("rejects unknown fixture choices and cleans both movement and dwell timers", () => {
     const { result, unmount } = renderHook(() => useStudentRaceVisualPreview(translate));
     act(() => result.current.onChoiceSelect(999));

@@ -5,12 +5,6 @@ import i18n from "../../../../i18n/i18n";
 import { createInitialRaceRuntimeState } from "../../runtime/createInitialRaceRuntimeState";
 import StudentRaceOverlay from "../StudentRaceOverlay";
 
-/*
- * C1-04 architectural regression: the ONE question countdown is
- * StudentRaceQuestionTimer, hosted inside StudentRaceHud — the overlay
- * composition must never grow a second timer.
- */
-
 function buildQuestion() {
   return {
     id: 1,
@@ -58,5 +52,44 @@ describe("StudentRaceOverlay", () => {
     expect(
       screen.getAllByLabelText(i18n.t("studentRace:timer.label")),
     ).toHaveLength(1);
+  });
+
+  it("explains a server slowdown caused by a missed challenge", () => {
+    const runtimeState = createInitialRaceRuntimeState();
+    runtimeState.gameplay = {
+      ...runtimeState.gameplay,
+      activeEffects: [{
+        effectId: 1,
+        type: "SPEED_SLOW",
+        source: "CHALLENGE_TIMEOUT",
+        magnitudeTenths: 3,
+        startsAtEpochMs: 1,
+        endsAtEpochMs: 2,
+      }],
+    };
+
+    render(<StudentRaceOverlay runtimeState={runtimeState} question={buildQuestion()} />);
+
+    expect(screen.getByText(i18n.t("studentRace:gameplay.slowdownNotice"))).toBeInTheDocument();
+  });
+
+  it("does not explain a slowdown from another source", () => {
+    const runtimeState = createInitialRaceRuntimeState();
+    runtimeState.gameplay = {
+      ...runtimeState.gameplay,
+      activeEffects: [{
+        effectId: 2,
+        type: "SPEED_SLOW",
+        source: "POWER_UP",
+        magnitudeTenths: 3,
+        startsAtEpochMs: 1,
+        endsAtEpochMs: 2,
+      }],
+    };
+
+    render(<StudentRaceOverlay runtimeState={runtimeState} question={buildQuestion()} />);
+
+    expect(screen.queryByText(i18n.t("studentRace:gameplay.slowdownNotice"))).not.toBeInTheDocument();
+    expect(screen.getByText(i18n.t("studentRace:question.instruction"))).toBeInTheDocument();
   });
 });

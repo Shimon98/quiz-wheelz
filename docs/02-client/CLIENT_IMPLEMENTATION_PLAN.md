@@ -1037,9 +1037,11 @@ Depends on S3-01 (final results read model, DONE on the server). C4 made no serv
 ## C5 — Required gameplay UI — IN PROGRESS
 
 **Status:** C5-A (client audio) is complete and merged (PR #75). C5-01 (gameplay runtime)
-consumes the merged S4-01 contract on `feature/C5-01-gameplay-runtime`. The gameplay UI
-(C5-02 onward) renders server-owned game events and effects, so each part starts from its S4
-contract (S4-02 Challenge first); do not build it against an imagined contract. The
+is merged (PR #76). The C5-03 presentation groundwork and the C5-01h slowdown explanation are
+implemented on `feature/C5-02-03-gameplay-presentation` from the merged S4-01 vocabulary only.
+The server Challenge contract (S4-02 energy/offer/choice + S4-03 Turbo/Safe execution) is
+merged (PR #77). The gameplay UI renders server-owned game events and effects, so each further
+part starts from an audit of that real server code; never from a text handoff alone. The
 carried-forward release QA can proceed meanwhile.
 
 ### C5-A — Audio — COMPLETE
@@ -1112,17 +1114,45 @@ carried-forward release QA can proceed meanwhile.
   (the base speed only when none was sent) and the one speed read by the speedometer, the
   hover engine and the Pixi bob/dust; movement uses only `movementUnitsPerSecond`.
 - **C5-01 question context — DONE:** the question model keeps `gameplayContext` (missing →
-  `NORMAL`, present but blank → contract error); no UI reads it yet.
+  `NORMAL`, present but blank → contract error); the question panel reads it (C5-03a).
 - **C5-01d refresh signals — WAITS FOR S4-02:** S4-01 added no SSE event type; the existing
   signals, the answer/arbitration snapshots and the 2 s race-state poll stay the only refreshes.
 - **C5-01e effect timing — DEFERRED:** the 2 s poll bounds the lag after an effect ends and no
   production code creates effects yet; add one timer inside `useStudentRaceSynchronization`
   only if S4-02's real slowdowns prove 2 s too slow.
-- **C5-01f vehicle overlays — DEFERRED:** built with the first attached effect (C5-02/C5-03),
-  once the Turbo/Safe art split (pose, overlay, code animation) is decided.
-- **C5-01g DEV scenarios — DONE:** `/dev/race?motionScenario=slowdown|future-effect|future-mode`.
-- **C5-01h first persistent effect presentation — MOVED TO C5-02:** a "slowed" state belongs
-  with the Challenge timeout message, which explains why the player slowed down.
+- **C5-01f vehicle overlays — PARTIAL:** the player-only mode aura exists (C5-03b); burner
+  art, a new pose, flames and lean wait for the art decision and the S4-03 Turbo success moment.
+- **C5-01g DEV scenarios — DONE:** `/dev/race?motionScenario=slowdown|future-effect|future-mode`
+  (Turbo/Safe added in C5-03c).
+- **C5-01h first persistent effect presentation — DONE in C5-02g:** the missed-challenge
+  slowdown explains itself in the question line.
+
+### C5-02 / C5-03 — Challenge Choice + Turbo/Safe presentation
+
+Built in tracks by server contract: Track A uses only the merged S4-01 vocabulary; Track B
+(C5-02) uses the merged S4-02 code; Track C (the rest of C5-03) uses the merged S4-03 code.
+
+- **C5-03a shared panel surface + Turbo/Safe question presentation — DONE (Track A, not
+  committed):** `StudentRacePanelSurface` owns the panel geometry unchanged; the same question
+  component shows a Turbo/Safe badge and accent from `gameplayContext`; one presentation table
+  (`raceGameplayPresentationConfig.js`) for React and Pixi.
+- **C5-03b player kart mode aura — DONE (Track A, not committed):** one ground aura in
+  `PlayerKartLayer` (not the shared vehicle base), additive glow, Turbo pulse with a real
+  `pulsePeriodMs` cycle from the presentation table, Safe steady, reduced motion without pulse;
+  opponents are never inferred.
+- **C5-03c DEV Turbo/Safe scenarios — DONE (Track A, not committed):**
+  `/dev/race?motionScenario=turbo|safe`.
+- **C5-02g missed-challenge slowdown explanation — DONE (Track A, not committed):** exact
+  `SPEED_SLOW` + `CHALLENGE_TIMEOUT` match, below answer feedback in the stable status line.
+- **C5-02a–f, h, i — NEXT (S4-02 merged in PR #77):** contract audit, challenge mapping and
+  offer clock, question gate by mode with answer-input pairing (never the displayed feedback
+  question), the choice controller (single flight, mutation tokens, local expiry lock +
+  `silentRefresh`, no automatic replay), the choice panel with the one HUD timer, recovery via
+  `useStudentRaceRecoverySync` and one session gate, the energy meter, bots
+  `--challenge=random|turbo|safe|none`, and the DEV challenge loop.
+- **C5-03 result moments — AFTER C5-02 (S4-03 merged in PR #77):** Turbo success/failure,
+  Safe progress, speed lines as a Turbo success one-shot, result sounds and burner art through
+  the existing moment pipeline.
 
 ### C5 gameplay UI — after S4-02 onward
 

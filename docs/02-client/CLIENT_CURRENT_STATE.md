@@ -8,13 +8,21 @@
 > The code is authoritative for what is implemented. This document is authoritative
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
-Local checkpoint, 2026-10-07: **C5-01 gameplay runtime implemented** on
-`feature/C5-01-gameplay-runtime` (not committed yet) — the client consumes the merged S4-01
-contract: `snapshot.gameplay` is mapped once into `runtime.gameplay` (forward-safe), the
-speedometer, the hover engine and the kart's visual speed follow the server's effective speed,
-movement still comes only from `movementUnitsPerSecond`, the question model keeps
-`gameplayContext`, and `/dev/race` previews a slowdown and unknown future data. No new
-gameplay UI; S4-02 and later remain server work.
+Local checkpoint, 2026-10-08: **C5-03 presentation groundwork and the C5-01h slowdown
+explanation implemented** on `feature/C5-02-03-gameplay-presentation` (not committed yet) —
+built only on the merged S4-01 vocabulary: one shared question-panel surface, a Turbo/Safe
+badge and accent on the same question component, the missed-challenge slowdown explained in
+the question line, a player-only kart aura for the server mode, and `/dev/race` Turbo/Safe
+scenarios. The server Challenge contract is now merged (S4-02 + S4-03, PR #77,
+`main@6808d16`); **C5-02 Challenge choice is next and starts from a contract audit of that
+code** — no client code consumes `gameplay.challenge` yet.
+
+Checkpoint, 2026-10-07: **C5-01 gameplay runtime merged** in PR #76 (`main@dd20140`) — the
+client consumes the merged S4-01 contract: `snapshot.gameplay` is mapped once into
+`runtime.gameplay` (forward-safe), the speedometer, the hover engine and the kart's visual
+speed follow the server's effective speed, movement still comes only from
+`movementUnitsPerSecond`, the question model keeps `gameplayContext`, and `/dev/race`
+previews a slowdown and unknown future data.
 
 Checkpoint, 2026-10-05: **C5-A audio complete**, merged in PR #75 (`main@91001d8`) —
 approved music and sounds integrated for every current student and
@@ -578,13 +586,41 @@ Current audio matrix:
   speed, or the base speed when the server sent none), read by the speedometer, the
   hover-engine rate and the Pixi bob/dust; `visual.movementUnitsPerSecond` is the only
   movement rate
-- the question model keeps the server's `gameplayContext` (missing → `NORMAL`); nothing reads
-  it yet
-- `/dev/race?motionScenario=slowdown|future-effect|future-mode` previews a server-shaped
-  slowdown (3–8 s, ×1.2 → ×0.9) and unknown future data through the same mapper
+- the question model keeps the server's `gameplayContext` (missing → `NORMAL`); the question
+  panel reads it for the Turbo/Safe presentation (see below)
+- `/dev/race?motionScenario=slowdown|future-effect|future-mode|turbo|safe` previews a
+  server-shaped slowdown (3–8 s, ×1.2 → ×0.9), the Turbo and Safe modes and unknown future
+  data through the same mapper
 - deferred on purpose: an effect-end refresh timer (race-state already polls every 2 s while
-  playing), a vehicle attachment layer, a gameplay presentation resolver and a "slowed" HUD
-  state (C5-02, together with the Challenge timeout message)
+  playing)
+
+## Gameplay presentation (C5-03 groundwork, C5-01h)
+
+- one presentation table, `features/studentRace/config/raceGameplayPresentationConfig.js`:
+  per server variant (`TURBO_TRIAL`, `SAFE_RUN`) the icon, the i18n title/description keys and
+  the kart aura (color, strength, pulse period); React and Pixi read the same table and an unknown
+  variant presents nothing; DOM colors stay CSS theme tokens chosen by `data-gameplay`
+  (`styles/studentRaceGameplay.css`: Turbo `--qw-warning`, Safe `--qw-secondary`)
+- `components/StudentRacePanelSurface.jsx` is the one owner of the bottom panel geometry
+  (extracted unchanged from the question panel); the mode accent is a 4 px inset shadow, so a
+  NORMAL panel keeps its exact height, padding and card shadow
+- the same `StudentRaceQuestionPanel` presents NORMAL, Turbo and Safe questions: a Turbo or
+  Safe `gameplayContext` replaces the instruction with the mode badge
+  (`StudentRaceGameplayBadge`: icon + name, never color alone); a future context keeps the
+  plain instruction
+- C5-01h: an active `SPEED_SLOW` effect whose source is `CHALLENGE_TIMEOUT` explains itself in
+  the question's stable status line ("no challenge chosen in time — short slowdown"); answer
+  feedback and sync states keep priority; nothing is inferred from speed
+- `runtime/studentRaceGameplayMode.js`: pure helpers for the mode → question-context table and
+  the missed-challenge slowdown check
+- the player kart (`PlayerKartLayer`, not the shared vehicle base, so opponents are untouched)
+  draws one ground aura between the shadow and the kart: drawn once, recolored by tint,
+  additive blending so it reads as a glow on any road color; hidden for NORMAL,
+  CHALLENGE_CHOICE and unknown modes; Turbo pulses once per `pulsePeriodMs` (800 ms), Safe
+  stays steady, and reduced motion keeps the aura without the pulse
+- not built yet on purpose: burner art, a new pose, flames, lean and speed lines (art decision
+  and the Turbo success moment); everything for the Challenge choice and results (C5-02 and
+  the rest of C5-03, on the merged S4-02/S4-03 contract)
 
 ## Stale client state to clean
 
@@ -593,8 +629,10 @@ Current audio matrix:
 ## Immediate client priority
 
 ```text
-C5-A audio merged (PR #75); S4-01 contract merged (PR #74)
-→ C5-01 gameplay runtime (one review, then the commit)
-→ C5-02 Challenge Choice once the server S4-02 contract exists
-→ meanwhile: Challenge panel design and the pre-release device/recovery QA
+C5-A audio merged (PR #75); S4-01 contract merged (PR #74); C5-01 merged (PR #76);
+S4-02 + S4-03 Challenge contract merged (PR #77)
+→ C5-03 presentation groundwork + C5-01h slowdown explanation (one review, then the commit)
+→ C5-02 Challenge Choice: contract audit of the merged S4-02 code, then the client
+→ C5-03 Safe progress and Turbo/Safe results on the merged S4-03 contract
+→ meanwhile: the pre-release device/recovery QA
 ```

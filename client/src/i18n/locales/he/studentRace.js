@@ -108,6 +108,18 @@ export default {
     label: "הזמן שנותר לשאלה",
   },
 
+  gameplay: {
+    turbo: {
+      title: "מבחן טורבו",
+      description: "קשה יותר, שווה יותר",
+    },
+    safe: {
+      title: "ריצה בטוחה",
+      description: "קל יותר, בטוח יותר",
+    },
+    slowdownNotice: "לא נבחר אתגר בזמן — האטה קצרה",
+  },
+
   deviceAdvice: {
     title: "מומלץ לשחק בטלפון",
     body: "המרוץ נבנה למסך של טלפון. אפשר להמשיך גם כאן, אבל בטלפון זה הכי נוח.",

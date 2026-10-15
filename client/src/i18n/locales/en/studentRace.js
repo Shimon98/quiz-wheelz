@@ -108,6 +108,18 @@ export default {
     label: "Time left for this question",
   },
 
+  gameplay: {
+    turbo: {
+      title: "Turbo Trial",
+      description: "Harder, worth more",
+    },
+    safe: {
+      title: "Safe Run",
+      description: "Easier, steadier",
+    },
+    slowdownNotice: "No challenge chosen in time — short slowdown",
+  },
+
   deviceAdvice: {
     title: "A phone is recommended",
     body: "The race is designed for a phone screen. You can keep going here, but a phone is the most comfortable.",

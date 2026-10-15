@@ -1,0 +1,27 @@
+[data-gameplay="TURBO_TRIAL"] {
+  --race-gameplay-accent: var(--qw-warning);
+}
+
+[data-gameplay="SAFE_RUN"] {
+  --race-gameplay-accent: var(--qw-secondary);
+}
+
+.race-panel-surface {
+  box-shadow: inset 0 4px 0 var(--race-gameplay-accent, transparent), var(--qw-shadow-card);
+}
+
+.race-gameplay-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--qw-text);
+  font-weight: 800;
+}
+
+.race-gameplay-badge svg {
+  width: 1.15em;
+  height: 1.15em;
+  flex: none;
+  color: var(--race-gameplay-accent);
+}

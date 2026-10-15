@@ -21,7 +21,11 @@ const DEV_FINISH_PREVIEW_POSITION = 900;
 const DEV_SLOWDOWN = Object.freeze({ fromMs: 3000, toMs: 8000, magnitudeTenths: 3 });
 const DEV_MIN_EFFECTIVE_SPEED_TENTHS = 1;
 const DEV_FUTURE_EFFECT_DURATION_MS = 60000;
-const DEV_FUTURE_MODE = "FUTURE_MODE";
+const DEV_SCENARIO_MODES = Object.freeze({
+  turbo: RACE_GAMEPLAY_MODES.TURBO_TRIAL,
+  safe: RACE_GAMEPLAY_MODES.SAFE_RUN,
+  "future-mode": "FUTURE_MODE",
+});
 
 function resolveMotionScenario() {
   return new URLSearchParams(globalThis.location?.search ?? "").get("motionScenario");
@@ -79,7 +83,7 @@ export function createLocalStudentRaceRuntime({ scenario = resolveMotionScenario
       speed,
       movementUnitsPerSecond: currentEffectiveSpeed * DEV_UNITS_PER_SECOND_AT_SPEED_1,
       gameplay: {
-        mode: scenario === "future-mode" ? DEV_FUTURE_MODE : RACE_GAMEPLAY_MODES.NORMAL,
+        mode: Object.hasOwn(DEV_SCENARIO_MODES, scenario) ? DEV_SCENARIO_MODES[scenario] : RACE_GAMEPLAY_MODES.NORMAL,
         effectiveSpeed: currentEffectiveSpeed,
         activeEffects: finished ? [] : activeEffects(),
       },

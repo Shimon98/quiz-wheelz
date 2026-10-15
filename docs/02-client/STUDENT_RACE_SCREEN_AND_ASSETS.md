@@ -424,6 +424,33 @@ The 2026-09-07 trial increases `raceVisualConfig.playerKart.maxWidthRatio`
 from 0.28 to 0.34 so the driver reads more clearly. Its screen-fixed center,
 anchor and shared track geometry remain unchanged.
 
+## Gameplay mode presentation (C5-03 groundwork)
+
+Server gameplay modes are presented, never decided, by the client:
+
+```text
+runtime.gameplay.mode / question.gameplayContext
+→ RACE_GAMEPLAY_PRESENTATION (one table: icon, i18n keys, kart aura)
+→ React badge + panel accent (CSS tokens by data-gameplay)
+→ Pixi player aura
+```
+
+- The bottom panel geometry has one owner, `StudentRacePanelSurface`; the
+  question (and later the Challenge choice) render inside it. A mode accent
+  is a 4 px inset shadow, so the NORMAL panel keeps its exact geometry and
+  the Pixi kart anchor (`resolveStudentRaceLayoutMetrics`) stays correct.
+- Normal, Turbo and Safe questions share one question component; only the
+  badge in the stable status line and the accent change.
+- The player kart gets one ground aura between its shadow and the kart body,
+  drawn once and recolored by tint with additive blending, so it reads as a
+  glow on the orange road. It is a permitted overlay on the composite art,
+  not a redraw of the art. Turbo pulses, Safe stays steady, reduced motion
+  removes only the pulse. Opponents get nothing until the server exposes
+  their mode.
+- Not yet: burner art, new poses, flames, lean and speed lines. Speed lines
+  belong to the future Turbo success one-shot moment in `EffectsLayer`, not
+  to a persistent mode layer.
+
 ## Continuous world flow (C1-03M)
 
 Authoritative `position` itself advances continuously on the server

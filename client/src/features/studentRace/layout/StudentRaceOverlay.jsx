@@ -2,6 +2,7 @@ import StudentRaceHud from "../components/StudentRaceHud";
 import StudentRaceHudSafeArea from "../components/StudentRaceHudSafeArea";
 import StudentRaceQuestionPanel from "../components/StudentRaceQuestionPanel";
 import RacePlayerConnectionNotice from "../../../shared/racePlayer/RacePlayerConnectionNotice";
+import { hasChallengeTimeoutSlowdown } from "../runtime/studentRaceGameplayMode";
 
 export default function StudentRaceOverlay({
   runtimeState = null,
@@ -51,6 +52,7 @@ export default function StudentRaceOverlay({
         feedbackState={feedbackState}
         isSubmitting={isSubmitting}
         isAwaitingNextQuestion={isAwaitingNextQuestion}
+        slowdownNotice={hasChallengeTimeoutSlowdown(runtimeState?.gameplay)}
       />
     </div>
   );
