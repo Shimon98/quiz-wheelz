@@ -1,31 +1,15 @@
 import { useTranslation } from "react-i18next";
 import { Button } from "@mantine/core";
+import { Snail } from "lucide-react";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
-import { STUDENT_RACE_VISUAL_CONFIG } from "../config/raceVisualConfig";
+import { getRaceGameplayPresentation } from "../config/raceGameplayPresentationConfig";
 import { STUDENT_RACE_FEEDBACK } from "../runtime/studentRaceRuntimeConstants";
 import { isQuestionTimeUp } from "../utils/isQuestionTimeUp";
+import StudentRaceGameplayBadge from "./StudentRaceGameplayBadge";
+import StudentRacePanelSurface from "./StudentRacePanelSurface";
 
-/*
- * StudentRaceQuestionPanel — the production question panel (C1-02, replaces
- * the UI-10G skeleton shell; the geometry wrapper is IDENTICAL so the DOM
- * panel and the Pixi kart anchor still agree via
- * resolveStudentRaceLayoutMetrics).
- *
- * Presentation only: the page/hooks own HTTP, expiry policy and navigation.
- * Panel-level loading/error keep the race world alive behind it — the
- * question is a child resource of the screen, never the screen itself.
- *
- * C1-02 renders the real question and choices with interaction DISABLED —
- * clicking answers becomes real in C1-03 via onChoiceSelect (the prop
- * contract already exists so C1-03 only flips interactionEnabled and passes
- * the handler; no structural change).
- */
-
-// The design system's answer-option palette (tokens.css: --qw-blue/violet/
-// amber, answer green reuses --qw-green). Decorative identity only — NEVER
-// correctness; C1-03 layers server-driven correct/wrong feedback separately.
 const CHOICE_ACCENT_VARS = [
   "var(--qw-blue)",
   "var(--qw-violet)",
@@ -33,26 +17,7 @@ const CHOICE_ACCENT_VARS = [
   "var(--qw-green)",
 ];
 
-function PanelSurface({ children }) {
-  const { questionPanel } = STUDENT_RACE_VISUAL_CONFIG.layout;
-
-  return (
-    <div
-      className="pointer-events-auto w-full"
-      style={{
-        height: `clamp(${questionPanel.minHeight}px, ${
-          questionPanel.heightRatio * 100
-        }dvh, ${questionPanel.maxHeight}px)`,
-        paddingInlineStart: questionPanel.sideInset,
-        paddingInlineEnd: questionPanel.sideInset,
-      }}
-    >
-      <div className="flex h-full w-full flex-col gap-3 rounded-t-[1.75rem] bg-[var(--qw-surface)] p-5 shadow-[var(--qw-shadow-card)]">
-        {children}
-      </div>
-    </div>
-  );
-}
+const STATUS_LINE_CLASS = "flex items-center justify-center gap-2 text-center text-sm font-bold";
 
 function QuestionSkeleton() {
   return (
@@ -68,6 +33,45 @@ function QuestionSkeleton() {
   );
 }
 
+function InlineRetryButton({ onRetry }) {
+  const { t } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
+
+  if (!onRetry) return null;
+
+  return (
+    <Button size="compact-sm" variant="light" color={UI_TONES.DANGER} onClick={onRetry}>
+      {t("status.retry")}
+    </Button>
+  );
+}
+
+function IdleLine({ gameplayContext, slowdownNotice }) {
+  const { t } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
+
+  if (slowdownNotice) {
+    return (
+      <p role="status" className={`${STATUS_LINE_CLASS} text-[var(--qw-text)]`}>
+        <Snail aria-hidden="true" className="size-4 shrink-0 text-[var(--qw-warning)]" />
+        <span>{t("gameplay.slowdownNotice")}</span>
+      </p>
+    );
+  }
+
+  if (getRaceGameplayPresentation(gameplayContext) != null) {
+    return (
+      <p className="text-center text-sm">
+        <StudentRaceGameplayBadge gameplay={gameplayContext} />
+      </p>
+    );
+  }
+
+  return (
+    <p className="text-center text-sm font-semibold text-[var(--qw-text-muted)]">
+      {t("question.instruction")}
+    </p>
+  );
+}
+
 export default function StudentRaceQuestionPanel({
   question = null,
   error = null,
@@ -75,19 +79,19 @@ export default function StudentRaceQuestionPanel({
   interactionEnabled = false,
   onChoiceSelect = null,
   onRetry = null,
-  // C1-03 answer feedback — server-driven correctness presentation.
   selectedChoiceId = null,
   correctAnswerChoiceId = null,
   feedbackState = STUDENT_RACE_FEEDBACK.IDLE,
   isSubmitting = false,
   isAwaitingNextQuestion = false,
+  slowdownNotice = false,
 }) {
   const { t } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
 
   if (!question) {
     if (error) {
       return (
-        <PanelSurface>
+        <StudentRacePanelSurface>
           <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
             <p className="text-lg font-bold text-[var(--qw-text)]">
               {t("question.errorTitle")}
@@ -103,19 +107,17 @@ export default function StudentRaceQuestionPanel({
               </Button>
             ) : null}
           </div>
-        </PanelSurface>
+        </StudentRacePanelSurface>
       );
     }
 
     return (
-      <PanelSurface>
+      <StudentRacePanelSurface>
         <QuestionSkeleton />
-      </PanelSurface>
+      </StudentRacePanelSurface>
     );
   }
 
-  // A button may only be live when ALL hold — interactionEnabled without a
-  // real callback must never render an enabled button that does nothing.
   const canInteract =
     interactionEnabled &&
     !isExpired &&
@@ -131,28 +133,13 @@ export default function StudentRaceQuestionPanel({
     feedbackState === STUDENT_RACE_FEEDBACK.ERROR && !showExpired;
 
   return (
-    <PanelSurface>
-      {/* One stable line: instruction ↔ feedback swap in place, so the
-          answer grid never shifts (small-screen layout contract). Glyphs +
-          text carry the result — never color alone. */}
+    <StudentRacePanelSurface gameplay={question.gameplayContext}>
       {isAwaitingNextQuestion ? (
-        <p
-          role="status"
-          className="flex items-center justify-center gap-2 text-center text-sm font-bold text-[var(--qw-text-muted)]"
-        >
+        <p role="status" className={`${STATUS_LINE_CLASS} text-[var(--qw-text-muted)]`}>
           <span>
             {t(error ? "question.errorTitle" : "question.loadingNext")}
           </span>
-          {error && onRetry ? (
-            <Button
-              size="compact-sm"
-              variant="light"
-              color={UI_TONES.DANGER}
-              onClick={onRetry}
-            >
-              {t("status.retry")}
-            </Button>
-          ) : null}
+          {error ? <InlineRetryButton onRetry={onRetry} /> : null}
         </p>
       ) : showAnswerFeedback ? (
         <p
@@ -167,30 +154,14 @@ export default function StudentRaceQuestionPanel({
             : `✕ ${t("question.wrongFeedback")}`}
         </p>
       ) : showAnswerSyncError ? (
-        <p
-          role="status"
-          className="flex items-center justify-center gap-2 text-center text-sm font-bold text-[var(--qw-text-muted)]"
-        >
+        <p role="status" className={`${STATUS_LINE_CLASS} text-[var(--qw-text-muted)]`}>
           <span>{t("question.answerSyncing")}</span>
-          {onRetry ? (
-            <Button
-              size="compact-sm"
-              variant="light"
-              color={UI_TONES.DANGER}
-              onClick={onRetry}
-            >
-              {t("status.retry")}
-            </Button>
-          ) : null}
+          <InlineRetryButton onRetry={onRetry} />
         </p>
       ) : (
-        <p className="text-center text-sm font-semibold text-[var(--qw-text-muted)]">
-          {t("question.instruction")}
-        </p>
+        <IdleLine gameplayContext={question.gameplayContext} slowdownNotice={slowdownNotice} />
       )}
 
-      {/* bdi isolates the math expression from the surrounding RTL flow:
-          "7 × 8 = ?" keeps LTR order, future Hebrew wording stays RTL. */}
       <p className="text-center text-3xl font-bold leading-snug text-[var(--qw-text)]">
         <bdi>{question.text}</bdi>
       </p>
@@ -202,23 +173,10 @@ export default function StudentRaceQuestionPanel({
           style={{ color: error ? "var(--qw-red)" : "var(--qw-gold)" }}
         >
           <span>{t(error ? "question.syncError" : "question.timeUp")}</span>
-          {error && onRetry ? (
-            <Button
-              size="compact-sm"
-              variant="light"
-              color={UI_TONES.DANGER}
-              onClick={onRetry}
-            >
-              {t("status.retry")}
-            </Button>
-          ) : null}
+          {error ? <InlineRetryButton onRetry={onRetry} /> : null}
         </div>
       ) : null}
 
-      {/* auto-rows-fr + min-h-0 buttons: rows split the available panel
-          height equally, so the legal 6-choice case (3 rows) fits 360x640
-          instead of clipping below the fold; with 4 choices the rows are
-          simply taller. */}
       <div
         className={`grid min-h-0 flex-1 auto-rows-fr grid-cols-2 gap-3 ${
           showExpired ? "opacity-50" : ""
@@ -226,8 +184,6 @@ export default function StudentRaceQuestionPanel({
       >
         {question.choices.map((choice, index) => {
           const isSelected = choice.id === selectedChoiceId;
-          // Server-driven correctness only: the child's correct pick, or the
-          // revealed correct answer after a wrong pick.
           const markCorrect =
             (showCorrectFeedback && isSelected) ||
             (showWrongFeedback && choice.id === correctAnswerChoiceId);
@@ -259,8 +215,6 @@ export default function StudentRaceQuestionPanel({
                     : undefined,
               }}
             >
-              {/* Glyph mark, never color alone; the status line above
-                  carries the accessible result text. */}
               {markCorrect ? <span aria-hidden="true">✓</span> : null}
               {markWrong ? <span aria-hidden="true">✕</span> : null}
               <bdi>{choice.text}</bdi>
@@ -268,6 +222,6 @@ export default function StudentRaceQuestionPanel({
           );
         })}
       </div>
-    </PanelSurface>
+    </StudentRacePanelSurface>
   );
 }
