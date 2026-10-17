@@ -61,6 +61,14 @@ projector music and sounds with Music/Sound effects settings, PR #75) are merged
 server's effective speed drives the speedometer, the engine sound and the kart's visual speed,
 movement stays server-owned, and unknown future modes or effects are ignored safely.
 
+C5 checkpoint, 2026-10-17: C5-01 (PR #76), the S4-02/S4-03 Challenge contract (PR #77) and the
+C5 Track A presentation groundwork (PR #78) are merged. C5-02, the student Challenge choice
+and energy meter, is implemented locally on `feature/C5-02-challenge-choice-energy` (not
+committed, pending review): the student sees the server's offer as two cards with one
+countdown, a lost or failed choice is checked against fresh race state instead of being
+guessed or re-sent, and live QA passed on the local server (races 156–158). Next: C5-03
+Turbo/Safe result moments and Safe progress.
+
 ## Executive summary
 
 QuizWheelz is not an early prototype. Most backend gameplay foundations and the
@@ -250,5 +258,6 @@ C2, C3 Teacher Live and C4 Results are implemented on the client: C3-01/C3-02 me
 PR #69, C3-03 … C3-08 are COMPLETE, and C4-A … C4-C (teacher Result Screen, student
 progressive results, results art) are COMPLETE on `feature/C4-results`. The S4-01 server
 contract (PR #74) and C5-A audio (PR #75, which also delivered the C2-A race sound) are
-merged; C5-01 consumes the S4-01 contract on the client while S4-02 (Challenge) is next on the
-server. The required physical-device/recovery QA remains visible pre-release polish.
+merged; C5-01 (PR #76), the S4-02/S4-03 Challenge contract (PR #77) and the C5 Track A
+presentation (PR #78) are merged, and C5-02 (Challenge choice) is implemented locally, pending
+review. The required physical-device/recovery QA remains visible pre-release polish.

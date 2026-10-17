@@ -1,6 +1,7 @@
 import { resolveRacePlacement } from "../../../shared/components/raceRank/racePlacementConfig";
 import { getRaceProgressRatio } from "./getRaceProgressRatio";
 import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig";
+import { RACE_GAMEPLAY_MODES } from "../../../constants/raceGameplayConstants";
 
 function getRewardModel(feedback, playerFinished, formatter) {
   if (playerFinished || feedback?.correct !== true || feedback.questionId == null) return null;
@@ -22,6 +23,19 @@ function getRewardModel(feedback, playerFinished, formatter) {
 function hasSharedRank(player, playerCount, opponents) {
   if (!Array.isArray(opponents) || opponents.length + 1 !== playerCount) return false;
   return opponents.some((opponent) => opponent?.rank === player.rank);
+}
+
+function getEnergyModel(gameplay, formatter) {
+  const challenge = gameplay?.challenge;
+  if (gameplay?.mode !== RACE_GAMEPLAY_MODES.NORMAL || challenge == null) return null;
+  const value = Math.min(challenge.energy, challenge.threshold);
+  return {
+    value,
+    max: challenge.threshold,
+    full: value === challenge.threshold,
+    text: `${formatter.format(value)}/${formatter.format(challenge.threshold)}`,
+    style: { width: `${(value / challenge.threshold) * 100}%` },
+  };
 }
 
 export function getStudentRaceHudModel(runtimeState, language = "he", answerFeedback = null) {
@@ -60,5 +74,6 @@ export function getStudentRaceHudModel(runtimeState, language = "he", answerFeed
     progressPercent,
     progressText: progressPercent == null ? null : `${progressPercent}%`,
     progressStyle: { width: `${progressPercent ?? 0}%` },
+    energy: getEnergyModel(runtimeState.gameplay, new Intl.NumberFormat(language)),
   };
 }

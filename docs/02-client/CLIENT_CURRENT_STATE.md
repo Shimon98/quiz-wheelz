@@ -8,14 +8,25 @@
 > The code is authoritative for what is implemented. This document is authoritative
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
-Local checkpoint, 2026-10-08: **C5-03 presentation groundwork and the C5-01h slowdown
-explanation implemented** on `feature/C5-02-03-gameplay-presentation` (not committed yet) —
+Local checkpoint, 2026-10-17: **C5-02 Challenge choice and energy implemented locally** on
+`feature/C5-02-challenge-choice-energy` (not committed, pending review) on the merged
+S4-02/S4-03 contract: the challenge mapper (finite offer clock, consistent run/result
+counters), the question gate by server mode, the choice cards with the one HUD countdown, the
+energy meter with its value, a choice controller that never replays a request and checks an
+unknown outcome with one fresh race-state read, and bots that never re-send a failed choice.
+Live QA passed on the local server (races 156–158: a real student browser, six bots and
+simulated lost responses); DEV-route (`/dev/race?motionScenario=challenge`) screenshots are
+mock data and are labeled so.
+
+Checkpoint, 2026-10-08: **C5-03 presentation groundwork and the C5-01h slowdown
+explanation implemented** on `feature/C5-02-03-gameplay-presentation` (merged in PR #78,
+`main@84a4423`) —
 built only on the merged S4-01 vocabulary: one shared question-panel surface, a Turbo/Safe
 badge and accent on the same question component, the missed-challenge slowdown explained in
 the question line, a player-only kart aura for the server mode, and `/dev/race` Turbo/Safe
 scenarios. The server Challenge contract is now merged (S4-02 + S4-03, PR #77,
-`main@6808d16`); **C5-02 Challenge choice is next and starts from a contract audit of that
-code** — no client code consumes `gameplay.challenge` yet.
+`main@6808d16`); C5-02 started from a contract audit of that code (see the 2026-10-17
+checkpoint above).
 
 Checkpoint, 2026-10-07: **C5-01 gameplay runtime merged** in PR #76 (`main@dd20140`) — the
 client consumes the merged S4-01 contract: `snapshot.gameplay` is mapped once into
@@ -619,8 +630,47 @@ Current audio matrix:
   CHALLENGE_CHOICE and unknown modes; Turbo pulses once per `pulsePeriodMs` (800 ms), Safe
   stays steady, and reduced motion keeps the aura without the pulse
 - not built yet on purpose: burner art, a new pose, flames, lean and speed lines (art decision
-  and the Turbo success moment); everything for the Challenge choice and results (C5-02 and
-  the rest of C5-03, on the merged S4-02/S4-03 contract)
+  and the Turbo success moment); the Turbo/Safe result moments and Safe progress (the rest of
+  C5-03, on the merged S4-03 contract). The Challenge choice itself is C5-02 (next section).
+
+## Challenge choice and energy (C5-02, local, not committed)
+
+- `runtime/mapStudentRaceChallenge.js` maps `gameplay.challenge` once (energy, threshold,
+  offer, run, last result); a broken part drops only that part (`mapOrNull`), the offer
+  carries the snapshot's finite `serverClockOffsetMs`, and run/result counters must be
+  consistent (resolved ≤ total, correct ≤ resolved)
+- the page asks for a question only in a question mode (`isQuestionGameplayMode`) and pairs
+  the answer input with the mode (`isQuestionForGameplayMode`); the question and answer hooks
+  are unchanged, and the cards appear only after the answer feedback dwell
+- `hooks/useStudentRaceChallenge.js` owns the choice: one request per tap (single flight),
+  mutation tokens, a deadline lock from the shared `getQuestionRemainingMs` checked by timer
+  and at tap time, and phases (`STUDENT_RACE_CHALLENGE_PHASE`). A failed or lost response is
+  never replayed: one `readAuthoritativeRaceState()` read that starts after the failure
+  decides — fresh state with a run follows the run; the same offer still open allows only the
+  first choice again (the server replays it if it already landed); a failed read offers a
+  manual "Try to sync". Session and reconnect failures stay with the session gate and the
+  reconnect check
+- reliability bounds (2026-10-17 audit): the choice POST and the check read carry their own
+  request timeouts (`STUDENT_RACE_CONFIG.challengeChoiceTimeoutMs` 4 s,
+  `challengeCheckTimeoutMs` 3 s; per request, the shared HTTP client has no global limit). A POST
+  timeout is an unknown outcome — checked, never re-sent; a read timeout ends in the manual
+  sync. Only a read that landed in the race state allows the same-choice retry; a stale or
+  invalid read leaves the manual sync. A failure that arrives after the screen moved on (newer
+  state, finished race, reconnect, unmount) starts no late read
+- `useStudentRaceSynchronization.readAuthoritativeRaceState()` is the one awaitable race-state
+  read; it goes through the normal ingest (identity + freshness), so nothing bypasses
+  `applyRaceSnapshot`, and returns `STUDENT_RACE_STATE_READ` (`current` / `stale` /
+  `invalid`; network failures throw) so an HTTP 200 alone never counts as proof
+- `components/StudentRaceChallengePanel.jsx` renders the server's choices inside
+  `StudentRacePanelSurface` with art from `config/raceChallengeArt.js`; status copy never
+  claims a failure it cannot know; the HUD shows one countdown (the offer's) and hides the
+  question timer; an unreadable offer shows a calm sync line with a manual sync button
+- the energy meter lives in the HUD progress column (NORMAL mode only, clamped to the
+  threshold, `aria-valuetext`) with a visible `75/100` value; it fits at 320 px
+- shared extractions: `StudentRaceInlineRetryButton` and `STUDENT_RACE_PANEL_STYLES.statusLine`
+  (question and challenge panels)
+- bots: `scripts/devRaceBotChallenge.mjs` (`--challenge=random|turbo|safe|none`) sends one
+  request per offer, never re-sends a failed one, and counts only confirmed choices
 
 ## Stale client state to clean
 
@@ -631,8 +681,8 @@ Current audio matrix:
 ```text
 C5-A audio merged (PR #75); S4-01 contract merged (PR #74); C5-01 merged (PR #76);
 S4-02 + S4-03 Challenge contract merged (PR #77)
-→ C5-03 presentation groundwork + C5-01h slowdown explanation (one review, then the commit)
-→ C5-02 Challenge Choice: contract audit of the merged S4-02 code, then the client
+→ C5-03 presentation groundwork + C5-01h slowdown explanation merged (PR #78)
+→ C5-02 Challenge Choice implemented locally, live QA passed (review, then the commit)
 → C5-03 Safe progress and Turbo/Safe results on the merged S4-03 contract
 → meanwhile: the pre-release device/recovery QA
 ```

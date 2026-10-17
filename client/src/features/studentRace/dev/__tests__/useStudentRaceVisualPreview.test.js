@@ -102,6 +102,27 @@ describe("useStudentRaceVisualPreview", () => {
     }
   });
 
+  it("plays the DEV challenge loop: energy, cards after the dwell, then a Turbo question", () => {
+    window.history.replaceState({}, "", "/dev/race?motionScenario=challenge");
+    try {
+      const { result } = renderHook(() => useStudentRaceVisualPreview(translate));
+      for (let answer = 0; answer < 4; answer += 1) {
+        act(() => { result.current.onChoiceSelect(1); });
+        act(() => { vi.advanceTimersByTime(STUDENT_RACE_CONFIG.feedbackDelayMs); });
+      }
+
+      expect(result.current.challenge.visible).toBe(true);
+      expect(result.current.challenge.offer.choices).toEqual(["TURBO_TRIAL", "SAFE_RUN"]);
+
+      act(() => { result.current.challenge.onChoose("TURBO_TRIAL"); });
+
+      expect(result.current.challenge.visible).toBe(false);
+      expect(result.current.question.gameplayContext).toBe("TURBO_TRIAL");
+    } finally {
+      window.history.replaceState({}, "", "/");
+    }
+  });
+
   it("rejects unknown fixture choices and cleans both movement and dwell timers", () => {
     const { result, unmount } = renderHook(() => useStudentRaceVisualPreview(translate));
     act(() => result.current.onChoiceSelect(999));

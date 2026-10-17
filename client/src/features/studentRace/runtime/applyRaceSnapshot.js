@@ -69,7 +69,7 @@ export function assertValidRaceSnapshot(snapshot, currentPlayerId = null) {
   return mapStudentRaceOpponents(snapshot.opponents, currentPlayerId);
 }
 
-export function applyRaceSnapshot(previousState, snapshot) {
+export function applyRaceSnapshot(previousState, snapshot, receivedAtEpochMs = Date.now()) {
   const opponents = assertValidRaceSnapshot(snapshot, previousState.player.racePlayerId);
 
   if (
@@ -79,7 +79,9 @@ export function applyRaceSnapshot(previousState, snapshot) {
     return previousState;
   }
 
-  const gameplay = mapStudentRaceGameplay(snapshot.gameplay);
+  const gameplay = mapStudentRaceGameplay(snapshot.gameplay, {
+    serverClockOffsetMs: snapshot.snapshotAtEpochMs - receivedAtEpochMs,
+  });
 
   return {
     ...previousState,

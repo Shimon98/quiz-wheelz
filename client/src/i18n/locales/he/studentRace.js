@@ -95,6 +95,8 @@ export default {
     speedValue: "מהירות {{speed}}",
     progressLabel: "התקדמות במרוץ",
     progressShortLabel: "מסלול",
+    energyLabel: "אנרגיית אתגר",
+    energyValue: "אנרגיית אתגר {{value}} מתוך {{max}}",
   },
 
   reward: {
@@ -106,6 +108,7 @@ export default {
 
   timer: {
     label: "הזמן שנותר לשאלה",
+    challengeLabel: "הזמן שנותר לבחירת אתגר",
   },
 
   gameplay: {
@@ -118,6 +121,16 @@ export default {
       description: "קל יותר, בטוח יותר",
     },
     slowdownNotice: "לא נבחר אתגר בזמן — האטה קצרה",
+    choice: {
+      title: "אתגר חדש נפתח! בחרו אחד",
+      submitting: "שומרים את הבחירה...",
+      reconciling: "בודקים אם הבחירה נקלטה...",
+      expired: "נגמר הזמן לבחירה — חוזרים למרוץ",
+      syncing: "מתעדכנים מול המרוץ...",
+      syncFailed: "לא הצלחנו להתעדכן מול המרוץ",
+      resync: "נסו לסנכרן",
+      retry: "אפשר לנסות שוב",
+    },
   },
 
   deviceAdvice: {

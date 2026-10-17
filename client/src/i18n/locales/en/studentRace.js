@@ -95,6 +95,8 @@ export default {
     speedValue: "Speed {{speed}}",
     progressLabel: "Race progress",
     progressShortLabel: "Track",
+    energyLabel: "Challenge energy",
+    energyValue: "Challenge energy {{value}} of {{max}}",
   },
 
   reward: {
@@ -106,6 +108,7 @@ export default {
 
   timer: {
     label: "Time left for this question",
+    challengeLabel: "Time left to choose a challenge",
   },
 
   gameplay: {
@@ -118,6 +121,16 @@ export default {
       description: "Easier, steadier",
     },
     slowdownNotice: "No challenge chosen in time — short slowdown",
+    choice: {
+      title: "Challenge unlocked! Pick one",
+      submitting: "Saving your choice...",
+      reconciling: "Checking whether your choice was saved...",
+      expired: "Time is up — back to the race",
+      syncing: "Syncing with the race...",
+      syncFailed: "We could not sync with the race",
+      resync: "Try to sync",
+      retry: "You can try again",
+    },
   },
 
   deviceAdvice: {

@@ -7,7 +7,11 @@ import { createLocalStudentRaceRuntime } from "../runtime/localStudentRaceRuntim
 import { mapLocalRuntimeSnapshotToState } from "../runtime/mapLocalRuntimeSnapshotToState";
 import { mapSubmitAnswerToModel } from "../runtime/mapSubmitAnswerToModel";
 import { STUDENT_RACE_FEEDBACK } from "../runtime/studentRaceRuntimeConstants";
-import { getQuestionContextForMode } from "../runtime/studentRaceGameplayMode";
+import {
+  getQuestionContextForMode,
+  isChallengeChoiceMode,
+  selectChallengeOffer,
+} from "../runtime/studentRaceGameplayMode";
 
 const PREVIEW_QUESTION_DURATION_MS = 20000;
 const PREVIEW_FEEDBACK_SAMPLES = Object.freeze([
@@ -91,6 +95,7 @@ export function useStudentRaceVisualPreview(t) {
         },
       },
     }, { question, choiceId });
+    runtime.answer(sample.correct);
     feedbackActiveRef.current = true;
     setFeedback({
       feedbackState: model.correct ? STUDENT_RACE_FEEDBACK.CORRECT : STUDENT_RACE_FEEDBACK.WRONG,
@@ -98,10 +103,10 @@ export function useStudentRaceVisualPreview(t) {
       selectedChoiceId: choiceId,
       correctAnswerChoiceId: model.correctAnswerChoiceId,
     });
-    setRuntimeState((previous) => ({
-      ...previous,
-      player: { ...previous.player, score: sample.score, streak: sample.streak },
-    }));
+    setRuntimeState((previous) => {
+      const next = mapLocalRuntimeSnapshotToState(previous, runtime.getSnapshot());
+      return { ...next, player: { ...next.player, score: sample.score, streak: sample.streak } };
+    });
     dwellTimerRef.current = setTimeout(() => {
       feedbackActiveRef.current = false;
       dwellTimerRef.current = null;
@@ -110,11 +115,24 @@ export function useStudentRaceVisualPreview(t) {
     }, STUDENT_RACE_CONFIG.feedbackDelayMs);
   }, [question, runtime, runtimeState.playerFinished]);
 
+  const challengeOffer = selectChallengeOffer(runtimeState.gameplay);
+  const onChallengeChoose = useCallback((choice) => {
+    if (!runtime.choose(choice)) return;
+    setRuntimeState((previous) => mapLocalRuntimeSnapshotToState(previous, runtime.getSnapshot()));
+    setQuestionState((previous) => createPreviewQuestion(previous.id + 1, Date.now()));
+  }, [runtime]);
+
   return {
     runtimeState,
     question,
     ...feedback,
     interactionEnabled: !runtimeState.playerFinished,
     onChoiceSelect,
+    challenge: {
+      visible: isChallengeChoiceMode(runtimeState.gameplay) && feedback.feedbackState === STUDENT_RACE_FEEDBACK.IDLE,
+      offer: challengeOffer,
+      openChoices: challengeOffer?.choices ?? [],
+      onChoose: onChallengeChoose,
+    },
   };
 }

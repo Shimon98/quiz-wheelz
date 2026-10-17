@@ -21,6 +21,13 @@ export const STUDENT_RACE_CONFIG = Object.freeze({
   // this only keeps position/speed/finish truth fresh between answers.
   raceStatePollMs: 2000,
 
+  // Challenge network bounds (C5-02). The server offer lasts 12 s (~11 s on
+  // screen after the feedback dwell): a stalled choice POST plus its check read
+  // (4 s + 3 s) still leaves time for one manual retry. The POST may wait
+  // behind the player row lock, so it gets more time than the read.
+  challengeChoiceTimeoutMs: 4000,
+  challengeCheckTimeoutMs: 3000,
+
   // Question countdown DISPLAY (the server's expiresAt is the truth; these
   // only tune presentation). Urgency thresholds switch the timer accent —
   // one owner here, never inline in components.

@@ -3,11 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import useStudentRaceSynchronization from "../useStudentRaceSynchronization.js";
 import { raceResponse, raceSnapshot } from "../../runtime/studentRaceTestFixtures.js";
 import { requestFinishArbitration } from "../../../../api/studentRaceLiveApi.js";
+import { getRaceState } from "../../../../api/racePlayerApi.js";
+import { STUDENT_RACE_STATE_READ as READ } from "../../runtime/studentRaceRuntimeConstants.js";
 
 vi.mock("../../../../api/studentRaceLiveApi.js", () => ({
   createStudentRaceEventSource: vi.fn(() => ({ close: vi.fn() })),
   requestFinishArbitration: vi.fn(),
 }));
+vi.mock("../../../../api/racePlayerApi.js", () => ({ getRaceState: vi.fn() }));
 
 let silentRefresh;
 beforeEach(() => { silentRefresh = vi.fn().mockResolvedValue(undefined); });
@@ -29,6 +32,89 @@ async function signals(result, events) {
 }
 
 describe("student synchronization", () => {
+  it("reads race state on demand, bounded by the caller's timeout, and ingests it like any other", async () => {
+    const { result } = await mount();
+    getRaceState.mockResolvedValueOnce(raceResponse({ eventVersion: 13, position: 300 }));
+
+    let read;
+    await act(async () => { read = await result.current.readAuthoritativeRaceState({ timeoutMs: 3000 }); });
+
+    expect(getRaceState).toHaveBeenCalledExactlyOnceWith({ timeoutMs: 3000 });
+    expect(read).toBe(READ.CURRENT);
+    expect(result.current.runtimeState.player.position).toBe(300);
+  });
+
+  it("never lets an on-demand read regress fresher truth, which is still current truth", async () => {
+    const { result } = await mount();
+    act(() => result.current.applyAuthoritativeSnapshot(raceSnapshot({ eventVersion: 15, position: 400 })));
+    getRaceState.mockResolvedValueOnce(raceResponse({ eventVersion: 14, position: 300 }));
+
+    let read;
+    await act(async () => { read = await result.current.readAuthoritativeRaceState(); });
+
+    expect(read).toBe(READ.CURRENT);
+    expect(result.current.runtimeState.player.position).toBe(400);
+  });
+
+  it("reports a valid read with the same event version as current truth", async () => {
+    const { result } = await mount();
+    getRaceState.mockResolvedValueOnce(raceResponse({ snapshotAtEpochMs: 10500, position: 210 }));
+
+    let read;
+    await act(async () => { read = await result.current.readAuthoritativeRaceState(); });
+
+    expect(read).toBe(READ.CURRENT);
+    expect(result.current.runtimeState.lastEventVersion).toBe(12);
+  });
+
+  it("drops an on-demand read that a resync made obsolete and says so", async () => {
+    const { result } = await mount();
+    let resolve;
+    getRaceState.mockReturnValueOnce(new Promise((done) => { resolve = done; }));
+    let pending;
+    act(() => { pending = result.current.readAuthoritativeRaceState(); });
+    act(() => result.current.prepareAuthoritativeResync());
+
+    let read;
+    await act(async () => { resolve(raceResponse({ eventVersion: 20, position: 900 })); read = await pending; });
+
+    expect(read).toBe(READ.STALE);
+    expect(result.current.runtimeState.player.position).toBe(200);
+  });
+
+  it("reports a broken race state as invalid instead of a silent success", async () => {
+    const { result } = await mount();
+    getRaceState.mockResolvedValueOnce(raceResponse({ eventVersion: 13, snapshotAtEpochMs: null }));
+
+    let read;
+    await act(async () => { read = await result.current.readAuthoritativeRaceState(); });
+
+    expect(read).toBe(READ.INVALID);
+    expect(result.current.runtimeState.lastEventVersion).toBe(12);
+    expect(result.current.error.category).toBe("API_CONTRACT");
+  });
+
+  it("reports another player's race state as not this caller's truth", async () => {
+    const { result } = await mount();
+    const otherPlayer = { ...raceResponse().player, racePlayerId: 2, displayName: "Other" };
+    getRaceState.mockResolvedValueOnce(raceResponse({ eventVersion: 3 }, { player: otherPlayer }));
+
+    let read;
+    await act(async () => { read = await result.current.readAuthoritativeRaceState(); });
+
+    expect(read).toBe(READ.STALE);
+    expect(result.current.runtimeState.player.racePlayerId).toBe(2);
+  });
+
+  it("rejects a failed on-demand read so the caller can offer a manual sync", async () => {
+    const { result } = await mount();
+    getRaceState.mockRejectedValueOnce(new Error("offline"));
+
+    await act(async () => {
+      await expect(result.current.readAuthoritativeRaceState()).rejects.toThrow("offline");
+    });
+  });
+
   it("preserves an in-flight proof across the normal PLAYING to FINISHED transition", async () => {
     const { result, rerender } = await mount();
     let resolve;

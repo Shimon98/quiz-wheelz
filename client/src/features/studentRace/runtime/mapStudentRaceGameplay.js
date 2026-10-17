@@ -1,5 +1,6 @@
 import { ApiContractError } from "../../../errors/ApiContractError.js";
 import {
+  mapOrNull,
   requireArray,
   requireFiniteNumber,
   requireNonEmptyString,
@@ -7,18 +8,10 @@ import {
   requireSafeInteger,
 } from "../../../errors/apiContractGuards.js";
 import { RACE_GAMEPLAY_MODES } from "../../../constants/raceGameplayConstants.js";
+import { mapStudentRaceChallenge } from "./mapStudentRaceChallenge.js";
 
 export function createDefaultStudentRaceGameplay() {
-  return { mode: RACE_GAMEPLAY_MODES.NORMAL, effectiveSpeed: null, activeEffects: [] };
-}
-
-function mapOrNull(mapper, value) {
-  try {
-    return mapper(value);
-  } catch (error) {
-    if (error instanceof ApiContractError) return null;
-    throw error;
-  }
+  return { mode: RACE_GAMEPLAY_MODES.NORMAL, effectiveSpeed: null, activeEffects: [], challenge: null };
 }
 
 function mapActiveEffect(raw) {
@@ -42,7 +35,7 @@ function mapActiveEffect(raw) {
   };
 }
 
-function mapGameplay(raw) {
+function mapGameplay(raw, clock) {
   requireObject(raw, "Gameplay");
 
   return {
@@ -51,11 +44,12 @@ function mapGameplay(raw) {
     activeEffects: requireArray(raw.activeEffects, "Gameplay effects")
       .map((effect) => mapOrNull(mapActiveEffect, effect))
       .filter(Boolean),
+    challenge: mapStudentRaceChallenge(raw.challenge, clock),
   };
 }
 
-export function mapStudentRaceGameplay(raw) {
-  return mapOrNull(mapGameplay, raw) ?? createDefaultStudentRaceGameplay();
+export function mapStudentRaceGameplay(raw, clock = {}) {
+  return mapOrNull((gameplay) => mapGameplay(gameplay, clock), raw) ?? createDefaultStudentRaceGameplay();
 }
 
 export function resolveStudentRacePresentationSpeed(baseSpeed, gameplay) {

@@ -16,6 +16,7 @@ export const API_ENDPOINTS = {
     RACE_STATE: "/race-players/me/race-state",
     CURRENT_QUESTION: "/race-players/me/question/current",
     SUBMIT_ANSWER: "/race-players/me/answers",
+    CHALLENGE_CHOICE: "/race-players/me/challenge/choice",
     FINISH_ARBITRATION: "/race-players/me/finish-arbitration",
     EVENTS_STREAM: "/race-players/me/events/stream",
     HEARTBEAT: "/race-players/me/heartbeat",

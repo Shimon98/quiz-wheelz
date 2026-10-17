@@ -1038,9 +1038,10 @@ Depends on S3-01 (final results read model, DONE on the server). C4 made no serv
 
 **Status:** C5-A (client audio) is complete and merged (PR #75). C5-01 (gameplay runtime)
 is merged (PR #76). The C5-03 presentation groundwork and the C5-01h slowdown explanation are
-implemented on `feature/C5-02-03-gameplay-presentation` from the merged S4-01 vocabulary only.
-The server Challenge contract (S4-02 energy/offer/choice + S4-03 Turbo/Safe execution) is
-merged (PR #77). The gameplay UI renders server-owned game events and effects, so each further
+merged (PR #78). The server Challenge contract (S4-02 energy/offer/choice + S4-03 Turbo/Safe
+execution) is merged (PR #77). C5-02 (Track B) is implemented locally on
+`feature/C5-02-challenge-choice-energy` — not committed, pending review; live QA passed on the
+local server. The gameplay UI renders server-owned game events and effects, so each further
 part starts from an audit of that real server code; never from a text handoff alone. The
 carried-forward release QA can proceed meanwhile.
 
@@ -1132,24 +1133,35 @@ carried-forward release QA can proceed meanwhile.
 Built in tracks by server contract: Track A uses only the merged S4-01 vocabulary; Track B
 (C5-02) uses the merged S4-02 code; Track C (the rest of C5-03) uses the merged S4-03 code.
 
-- **C5-03a shared panel surface + Turbo/Safe question presentation — DONE (Track A, not
-  committed):** `StudentRacePanelSurface` owns the panel geometry unchanged; the same question
+- **C5-03a shared panel surface + Turbo/Safe question presentation — DONE (Track A, PR #78):** `StudentRacePanelSurface` owns the panel geometry unchanged; the same question
   component shows a Turbo/Safe badge and accent from `gameplayContext`; one presentation table
   (`raceGameplayPresentationConfig.js`) for React and Pixi.
-- **C5-03b player kart mode aura — DONE (Track A, not committed):** one ground aura in
+- **C5-03b player kart mode aura — DONE (Track A, PR #78):** one ground aura in
   `PlayerKartLayer` (not the shared vehicle base), additive glow, Turbo pulse with a real
   `pulsePeriodMs` cycle from the presentation table, Safe steady, reduced motion without pulse;
   opponents are never inferred.
-- **C5-03c DEV Turbo/Safe scenarios — DONE (Track A, not committed):**
+- **C5-03c DEV Turbo/Safe scenarios — DONE (Track A, PR #78):**
   `/dev/race?motionScenario=turbo|safe`.
-- **C5-02g missed-challenge slowdown explanation — DONE (Track A, not committed):** exact
+- **C5-02g missed-challenge slowdown explanation — DONE (Track A, PR #78):** exact
   `SPEED_SLOW` + `CHALLENGE_TIMEOUT` match, below answer feedback in the stable status line.
-- **C5-02a–f, h, i — NEXT (S4-02 merged in PR #77):** contract audit, challenge mapping and
-  offer clock, question gate by mode with answer-input pairing (never the displayed feedback
-  question), the choice controller (single flight, mutation tokens, local expiry lock +
-  `silentRefresh`, no automatic replay), the choice panel with the one HUD timer, recovery via
-  `useStudentRaceRecoverySync` and one session gate, the energy meter, bots
-  `--challenge=random|turbo|safe|none`, and the DEV challenge loop.
+- **C5-02a–f, h, i — IMPLEMENTED LOCALLY (Track B, not committed, pending review):** contract
+  audit, challenge mapping and offer clock (finite offset, consistent counters), question gate
+  by mode with answer-input pairing (never the displayed feedback question), the choice
+  controller (single flight, mutation tokens, deadline lock by timer and at tap time, no
+  automatic replay), the choice panel with the one HUD timer, one session gate, the energy
+  meter with a visible value, bots `--challenge=random|turbo|safe|none`, and the DEV challenge
+  loop. Changed from the plan after review: an expired offer or a failed choice is checked with
+  one awaitable `readAuthoritativeRaceState()` read that starts after the failure (not
+  `silentRefresh`, which may skip or predate it); an unknown outcome locks the cards and allows
+  only the same first choice again; a failed read offers a manual sync; the recovery hook keeps
+  only the reconnect check for choice errors (3034 on a question joins its conflict refresh).
+  Live QA on the local server (races 156–158): plain choice, lost response after the server
+  accepted it, choice that never reached the server, failed check with manual sync, offer
+  expiry, energy full past the finish gate. Reliability audit (same day): per-request timeouts
+  for the choice (4 s) and the check read (3 s), an explicit read result (`current` / `stale`
+  / `invalid`) instead of trusting an HTTP 200, and no late read after the screen moved on;
+  live QA against a local silent server (race 160): the real axios timeouts ended the choice at
+  4.0 s and the check at 3.0 s, with one POST and the manual sync instead of an endless wait.
 - **C5-03 result moments — AFTER C5-02 (S4-03 merged in PR #77):** Turbo success/failure,
   Safe progress, speed lines as a Turbo success one-shot, result sounds and burner art through
   the existing moment pipeline.

@@ -7,6 +7,10 @@ import {
 import {
   getQuestionContextForMode,
   hasChallengeTimeoutSlowdown,
+  isChallengeChoiceMode,
+  isQuestionForGameplayMode,
+  isQuestionGameplayMode,
+  selectChallengeOffer,
 } from "../studentRaceGameplayMode";
 
 function slowdown(overrides = {}) {
@@ -39,6 +43,33 @@ describe("studentRaceGameplayMode", () => {
     ["constructor", null],
   ])("maps mode %s to question context %s", (mode, context) => {
     expect(getQuestionContextForMode(mode)).toBe(context);
+  });
+
+  it.each([
+    ["NORMAL", true],
+    ["TURBO_TRIAL", true],
+    ["SAFE_RUN", true],
+    ["CHALLENGE_CHOICE", false],
+    ["FUTURE_MODE", false],
+  ])("asks for questions in mode %s: %s", (mode, expected) => {
+    expect(isQuestionGameplayMode(mode)).toBe(expected);
+  });
+
+  it("pairs a question with the mode whose context it carries", () => {
+    expect(isQuestionForGameplayMode({ gameplayContext: "TURBO_TRIAL" }, "TURBO_TRIAL")).toBe(true);
+    expect(isQuestionForGameplayMode({ gameplayContext: "NORMAL" }, "TURBO_TRIAL")).toBe(false);
+    expect(isQuestionForGameplayMode({ gameplayContext: "NORMAL" }, "CHALLENGE_CHOICE")).toBe(false);
+    expect(isQuestionForGameplayMode(null, "NORMAL")).toBe(false);
+  });
+
+  it("exposes the offer only while the server says the player is choosing", () => {
+    const offer = { offerId: 3 };
+
+    expect(isChallengeChoiceMode({ mode: "CHALLENGE_CHOICE" })).toBe(true);
+    expect(selectChallengeOffer({ mode: "CHALLENGE_CHOICE", challenge: { offer } })).toBe(offer);
+    expect(selectChallengeOffer({ mode: "NORMAL", challenge: { offer } })).toBeNull();
+    expect(selectChallengeOffer({ mode: "CHALLENGE_CHOICE", challenge: null })).toBeNull();
+    expect(selectChallengeOffer(null)).toBeNull();
   });
 
   it("reports only the slowdown caused by a missed challenge", () => {

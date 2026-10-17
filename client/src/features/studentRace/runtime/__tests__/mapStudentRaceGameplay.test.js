@@ -24,7 +24,27 @@ function gameplay(overrides = {}) {
 
 describe("mapStudentRaceGameplay", () => {
   it("maps the server gameplay as it arrives", () => {
-    expect(mapStudentRaceGameplay(gameplay())).toEqual(gameplay());
+    expect(mapStudentRaceGameplay(gameplay())).toEqual({ ...gameplay(), challenge: null });
+  });
+
+  it("maps the challenge part with the clock it was given", () => {
+    const challenge = {
+      energy: 0,
+      threshold: 100,
+      offer: { offerId: 9, expiresAtEpochMs: 112000, choices: ["SAFE_RUN"] },
+      run: null,
+      lastResult: null,
+    };
+
+    expect(mapStudentRaceGameplay(gameplay({ mode: "CHALLENGE_CHOICE", challenge }), { serverClockOffsetMs: 40 })
+      .challenge.offer).toEqual({ ...challenge.offer, serverClockOffsetMs: 40 });
+  });
+
+  it("keeps the gameplay when only the challenge part is malformed", () => {
+    const mapped = mapStudentRaceGameplay(gameplay({ challenge: { energy: "full" } }));
+
+    expect(mapped.challenge).toBeNull();
+    expect(mapped.effectiveSpeed).toBe(1.2);
   });
 
   it("accepts the zero effective speed of a player who is not racing", () => {

@@ -436,7 +436,7 @@ runtime.gameplay.mode / question.gameplayContext
 ```
 
 - The bottom panel geometry has one owner, `StudentRacePanelSurface`; the
-  question (and later the Challenge choice) render inside it. A mode accent
+  question and the Challenge choice (C5-02) render inside it. A mode accent
   is a 4 px inset shadow, so the NORMAL panel keeps its exact geometry and
   the Pixi kart anchor (`resolveStudentRaceLayoutMetrics`) stays correct.
 - Normal, Turbo and Safe questions share one question component; only the
@@ -450,6 +450,21 @@ runtime.gameplay.mode / question.gameplayContext
 - Not yet: burner art, new poses, flames, lean and speed lines. Speed lines
   belong to the future Turbo success one-shot moment in `EffectsLayer`, not
   to a persistent mode layer.
+
+### Challenge choice art (C5-02, local, not committed)
+
+- Three WebPs in `client/src/assets/game/challenge/`: `turbo-emblem.webp`,
+  `safe-emblem.webp` (choice cards) and `challenge-energy.webp` (HUD meter).
+  One manifest owns them: `features/studentRace/config/raceChallengeArt.js`
+  (`RACE_CHALLENGE_ART`); the presentation table and the HUD read it, no
+  component imports the files directly. Masters and the recolor script stay
+  in the private `docs/vision/` folder.
+- Card art is `clamp(56px, 22vw, 112px)`, 48 px when the viewport is at most
+  620 px tall (phone landscape); title and description stay text (i18n).
+- The energy meter sits in the HUD progress column under the track bar:
+  crystal art, a violet bar clamped to the server threshold, and a visible
+  `75/100` value (tabular digits, `dir="ltr"`). Checked at 320, 390, 430 px
+  and 844×390 without overflow.
 
 ## Continuous world flow (C1-03M)
 

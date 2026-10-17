@@ -25,3 +25,90 @@
   flex: none;
   color: var(--race-gameplay-accent);
 }
+
+.race-challenge-grid {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  min-height: 0;
+}
+
+.race-challenge-card {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 6px;
+  border: 2px solid var(--race-gameplay-accent);
+  border-bottom-width: 5px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--race-gameplay-accent) 12%, var(--qw-surface-alt));
+  color: var(--qw-text);
+  cursor: pointer;
+  text-align: center;
+  transition: transform 120ms ease;
+}
+
+.race-challenge-card:active:not(:disabled),
+.race-challenge-card[data-selected="true"] {
+  transform: scale(0.97);
+}
+
+.race-challenge-card[data-selected="true"] {
+  box-shadow: 0 0 0 3px var(--race-gameplay-accent);
+}
+
+.race-challenge-card:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.race-challenge-card[data-selected="true"]:disabled {
+  opacity: 1;
+}
+
+.race-challenge-card:focus-visible {
+  outline: 3px solid var(--race-gameplay-accent);
+  outline-offset: 2px;
+}
+
+.race-challenge-art {
+  width: clamp(56px, 22vw, 112px);
+  aspect-ratio: 1;
+  flex: none;
+  object-fit: contain;
+}
+
+.race-challenge-title {
+  font-size: clamp(15px, 4.2vw, 19px);
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.race-challenge-description {
+  color: var(--qw-text-muted);
+  font-size: clamp(12px, 3.2vw, 14px);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+@media (max-height: 620px) {
+  .race-challenge-card {
+    gap: 2px;
+    padding: 4px;
+  }
+
+  .race-challenge-art {
+    width: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .race-challenge-card {
+    transition: none;
+  }
+}

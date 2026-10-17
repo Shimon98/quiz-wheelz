@@ -28,10 +28,13 @@ export async function joinRace({ roomCode, displayName }) {
  * cookie and returns race metadata + the shared runtime snapshot. Unlike the
  * question/answer actions, the server validates only the session here (any
  * race status), so screens can route by server truth from this response.
+ * `timeoutMs` bounds a read the caller must not wait on forever (C5-02 check);
+ * the regular loads and polls pass none and keep their behavior.
  */
-export async function getRaceState() {
+export async function getRaceState({ timeoutMs } = {}) {
   const response = await httpClient.get(
     API_ENDPOINTS.RACE_PLAYERS.RACE_STATE,
+    { timeout: timeoutMs },
   );
 
   return unwrapApiResponse(response);
@@ -54,6 +57,21 @@ export async function submitAnswer({ questionId, choiceId }) {
   const response = await httpClient.post(
     API_ENDPOINTS.RACE_PLAYERS.SUBMIT_ANSWER,
     { questionId, choiceId },
+  );
+
+  return unwrapApiResponse(response);
+}
+
+/*
+ * Challenge choice (C5-02): one POST per tap, never replayed automatically —
+ * the caller reconciles an unknown outcome with fresh race-state first. A
+ * timeout is such an unknown outcome: the server may still have saved it.
+ */
+export async function chooseChallenge({ offerId, choice }, { timeoutMs } = {}) {
+  const response = await httpClient.post(
+    API_ENDPOINTS.RACE_PLAYERS.CHALLENGE_CHOICE,
+    { offerId, choice },
+    { timeout: timeoutMs },
   );
 
   return unwrapApiResponse(response);

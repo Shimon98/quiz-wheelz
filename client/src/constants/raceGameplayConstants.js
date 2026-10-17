@@ -18,3 +18,8 @@ export const QUESTION_GAMEPLAY_CONTEXTS = Object.freeze({
   TURBO_TRIAL: "TURBO_TRIAL",
   SAFE_RUN: "SAFE_RUN",
 });
+
+export const RACE_CHALLENGE_CHOICES = Object.freeze({
+  TURBO_TRIAL: "TURBO_TRIAL",
+  SAFE_RUN: "SAFE_RUN",
+});

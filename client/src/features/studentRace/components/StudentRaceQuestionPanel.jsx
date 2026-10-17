@@ -6,8 +6,10 @@ import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
 import { getRaceGameplayPresentation } from "../config/raceGameplayPresentationConfig";
 import { STUDENT_RACE_FEEDBACK } from "../runtime/studentRaceRuntimeConstants";
+import { STUDENT_RACE_PANEL_STYLES } from "../styles/studentRacePanelStyles";
 import { isQuestionTimeUp } from "../utils/isQuestionTimeUp";
 import StudentRaceGameplayBadge from "./StudentRaceGameplayBadge";
+import StudentRaceInlineRetryButton from "./StudentRaceInlineRetryButton";
 import StudentRacePanelSurface from "./StudentRacePanelSurface";
 
 const CHOICE_ACCENT_VARS = [
@@ -16,8 +18,6 @@ const CHOICE_ACCENT_VARS = [
   "var(--qw-amber)",
   "var(--qw-green)",
 ];
-
-const STATUS_LINE_CLASS = "flex items-center justify-center gap-2 text-center text-sm font-bold";
 
 function QuestionSkeleton() {
   return (
@@ -33,24 +33,12 @@ function QuestionSkeleton() {
   );
 }
 
-function InlineRetryButton({ onRetry }) {
-  const { t } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
-
-  if (!onRetry) return null;
-
-  return (
-    <Button size="compact-sm" variant="light" color={UI_TONES.DANGER} onClick={onRetry}>
-      {t("status.retry")}
-    </Button>
-  );
-}
-
 function IdleLine({ gameplayContext, slowdownNotice }) {
   const { t } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
 
   if (slowdownNotice) {
     return (
-      <p role="status" className={`${STATUS_LINE_CLASS} text-[var(--qw-text)]`}>
+      <p role="status" className={`${STUDENT_RACE_PANEL_STYLES.statusLine} text-[var(--qw-text)]`}>
         <Snail aria-hidden="true" className="size-4 shrink-0 text-[var(--qw-warning)]" />
         <span>{t("gameplay.slowdownNotice")}</span>
       </p>
@@ -135,11 +123,11 @@ export default function StudentRaceQuestionPanel({
   return (
     <StudentRacePanelSurface gameplay={question.gameplayContext}>
       {isAwaitingNextQuestion ? (
-        <p role="status" className={`${STATUS_LINE_CLASS} text-[var(--qw-text-muted)]`}>
+        <p role="status" className={`${STUDENT_RACE_PANEL_STYLES.statusLine} text-[var(--qw-text-muted)]`}>
           <span>
             {t(error ? "question.errorTitle" : "question.loadingNext")}
           </span>
-          {error ? <InlineRetryButton onRetry={onRetry} /> : null}
+          {error ? <StudentRaceInlineRetryButton onRetry={onRetry} /> : null}
         </p>
       ) : showAnswerFeedback ? (
         <p
@@ -154,9 +142,9 @@ export default function StudentRaceQuestionPanel({
             : `✕ ${t("question.wrongFeedback")}`}
         </p>
       ) : showAnswerSyncError ? (
-        <p role="status" className={`${STATUS_LINE_CLASS} text-[var(--qw-text-muted)]`}>
+        <p role="status" className={`${STUDENT_RACE_PANEL_STYLES.statusLine} text-[var(--qw-text-muted)]`}>
           <span>{t("question.answerSyncing")}</span>
-          <InlineRetryButton onRetry={onRetry} />
+          <StudentRaceInlineRetryButton onRetry={onRetry} />
         </p>
       ) : (
         <IdleLine gameplayContext={question.gameplayContext} slowdownNotice={slowdownNotice} />
@@ -173,7 +161,7 @@ export default function StudentRaceQuestionPanel({
           style={{ color: error ? "var(--qw-red)" : "var(--qw-gold)" }}
         >
           <span>{t(error ? "question.syncError" : "question.timeUp")}</span>
-          {error ? <InlineRetryButton onRetry={onRetry} /> : null}
+          {error ? <StudentRaceInlineRetryButton onRetry={onRetry} /> : null}
         </div>
       ) : null}
 

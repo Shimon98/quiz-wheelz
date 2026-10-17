@@ -92,4 +92,37 @@ describe("StudentRaceOverlay", () => {
     expect(screen.queryByText(i18n.t("studentRace:gameplay.slowdownNotice"))).not.toBeInTheDocument();
     expect(screen.getByText(i18n.t("studentRace:question.instruction"))).toBeInTheDocument();
   });
+
+  it("swaps the question for the challenge cards and keeps one timer, the offer countdown", () => {
+    const runtimeState = createInitialRaceRuntimeState();
+    runtimeState.gameplay = { ...runtimeState.gameplay, mode: "CHALLENGE_CHOICE" };
+    const offer = { offerId: 4, expiresAtEpochMs: Date.now() + 9000, serverClockOffsetMs: 0, choices: ["TURBO_TRIAL", "SAFE_RUN"] };
+
+    render(
+      <StudentRaceOverlay
+        runtimeState={runtimeState}
+        question={buildQuestion()}
+        interactionEnabled
+        challenge={{ visible: true, offer, openChoices: offer.choices, onChoose: () => {} }}
+      />,
+    );
+
+    expect(screen.queryByText("3 + 4 = ?")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: new RegExp(i18n.t("studentRace:gameplay.turbo.title")) })).toBeEnabled();
+    expect(screen.queryByLabelText(i18n.t("studentRace:timer.label"))).not.toBeInTheDocument();
+    expect(screen.getAllByLabelText(i18n.t("studentRace:timer.challengeLabel"))).toHaveLength(1);
+  });
+
+  it("keeps the question panel while the challenge is not visible yet", () => {
+    render(
+      <StudentRaceOverlay
+        runtimeState={createInitialRaceRuntimeState()}
+        question={buildQuestion()}
+        challenge={{ visible: false, offer: null }}
+      />,
+    );
+
+    expect(screen.getByText("3 + 4 = ?")).toBeInTheDocument();
+    expect(screen.getAllByLabelText(i18n.t("studentRace:timer.label"))).toHaveLength(1);
+  });
 });
