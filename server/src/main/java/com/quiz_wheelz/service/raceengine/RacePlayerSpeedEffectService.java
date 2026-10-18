@@ -28,6 +28,21 @@ public class RacePlayerSpeedEffectService {
             RacePlayer player, EffectSource source, int magnitudeTenths,
             long startsAtEpochMs, long endsAtEpochMs
     ) {
+        return createForLockedPlayer(player, source, EffectType.SPEED_SLOW, magnitudeTenths, startsAtEpochMs, endsAtEpochMs);
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public RacePlayerSpeedEffect createBoostForLockedPlayer(
+            RacePlayer player, EffectSource source, int magnitudeTenths,
+            long startsAtEpochMs, long endsAtEpochMs
+    ) {
+        return createForLockedPlayer(player, source, EffectType.SPEED_BOOST, magnitudeTenths, startsAtEpochMs, endsAtEpochMs);
+    }
+
+    private RacePlayerSpeedEffect createForLockedPlayer(
+            RacePlayer player, EffectSource source, EffectType type, int magnitudeTenths,
+            long startsAtEpochMs, long endsAtEpochMs
+    ) {
         if (player == null || player.getId() == null || source == null
                 || magnitudeTenths <= 0 || startsAtEpochMs >= endsAtEpochMs) {
             throw new ApiException(ErrorCode.SPEED_EFFECT_INVALID);
@@ -37,7 +52,7 @@ public class RacePlayerSpeedEffectService {
         }
         RacePlayerSpeedEffect effect = new RacePlayerSpeedEffect();
         effect.setRacePlayer(player);
-        effect.setType(EffectType.SPEED_SLOW);
+        effect.setType(type);
         effect.setSource(source);
         effect.setMagnitudeTenths(magnitudeTenths);
         effect.setStartsAtEpochMs(startsAtEpochMs);

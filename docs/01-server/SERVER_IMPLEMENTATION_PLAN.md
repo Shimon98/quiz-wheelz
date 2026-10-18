@@ -667,14 +667,120 @@ SPEED_EFFECT_OVERLAP defensive invariant remains; no stacking or cooldown was ad
 Energy 100 does not guarantee an offer; offer existence remains server-authoritative.
 Production migrations remain Phase 6; S4-04 / S4-05 / S4-06 remain PLANNED.
 
-### S4-04 — Power-Ups + fair Luck
+### S4-04 - Power-Ups + fair Luck
 
-**Status:** `PLANNED`
+**Status:** `PARTIAL - Checkpoint A approved as detached local foundation; B not started`
 
-- earned Power-Ups and bounded weighted Luck
-- cooldowns and maximum negative streak
-- final multi-effect stacking and positive-boost policy
-- separate finish-order proof review before any speed exceeds the current maximum.
+Local checkpoint, 2026-10-18, `feature/s4-04-fair-luck`, based on
+`origin/main@84a44230b77f6acb469c6f969070e4c0cf409325`. Approved V5 parameters
+supersede older Power-Up/Luck proposals. This is not a playable feature.
+
+- Gameplay state declares Shield charges/granted/award question, Luck attempt
+  and tangible-event counts, cooldown, sequences, recent manual activity and the
+  negative guard, with Java/DB defaults and bounded CHECK constraints.
+- RaceLuckFairnessState models one unique state per Race. RacePlayerLuckDecision
+  stores each actual attempt, unique per player/source question, with selected
+  and applied types, outcome, effective magnitude/energy delta, effect link and
+  ordered-read indexes. Deferral stores no attempt or cooldown.
+- Detached policies cover third cumulative correct NORMAL answer Shield,
+  eligibility, weighted injected RNG, anti-Mud, Orb fallback/capping and cooldown.
+  Fairness uses the race's last event sequence as the opportunity boundary.
+  The 60-second activity window remains provisional; pure tests compare 30/60/90.
+- FairLuckService requires caller-held PESSIMISTIC_WRITE locks on its managed
+  RacePlayer and Race and an owned, managed, ANSWERED NORMAL question with an
+  explicit first-accepted manual-answer signal. It is not connected to answers.
+  It lazily initializes per-race state, guards duplicate source attempts, grants
+  Shield, checks eligibility/fairness and atomically persists RNG outcomes,
+  counters, cooldown, sequence, recipient, Orb energy, Shield consumption and
+  speed-effect records. It never changes learning score/difficulty/progress.
+- GuardShieldService obtains fresh own state and grants once at correct count 3.
+  LuckEffectResolver reuses the existing speed-effect owner; that owner now has
+  an additive boost-persistence method sharing its no-overlap invariant. The
+  movement calculator still has no BOOST integration: that remains Checkpoint B.
+
+Lock/isolation proof: submitAnswer remains findLockedRacePlayer ->
+RaceLiveMutationTracker.begin -> RaceLiveMutationGate -> Race lock. New owners
+validate those locks rather than acquiring player/Race locks in reverse order.
+Own gameplay state, own audit and per-race state use current locking reads;
+managed state is refreshed before use. Own unresolved Challenge and speed-window
+queries use current SELECT ... FOR UPDATE restricted to the caller's player ID.
+No peer RacePlayer lock is acquired. Future speed-window overlap is checked using
+an own current read before effect creation; errors roll back the entire attempt.
+
+LuckPeerReader suspends the caller using a focused REQUIRES_NEW, read-only,
+READ_COMMITTED transaction. One JDBC projection reads committed peer state with
+RACING/IN_PROGRESS, <80%, cap, cooldown, recent manual activity, unresolved
+Challenge and all-source active speed-effect exclusions. It does not request row
+locks and bypasses the caller's Hibernate identity map and old consistent-read
+snapshot. The outer transaction retains Race throughout; other active gameplay
+writers still serialize through that Race lock. The connection pool must provide
+an additional connection for this short read; 8 concurrent callers passed with
+the existing default pool. Global answer isolation is unchanged.
+
+Real MySQL validation uses only disposable mysql:8.4 (server 8.4.11), tmpfs at
+/var/lib/mysql, localhost-only port 13317, database quizwheelz_s4_luck_test.
+LuckMySqlTest is gated by QUIZWHEELZ_LUCK_MYSQL_TEST_URL/USER/PASSWORD; URL must
+match jdbc:mysql://127.0.0.1:<port>/quizwheelz_s4_luck_test. It asserts MySQL and
+REPEATABLE_READ, pins an old snapshot, observes an actual InnoDB data_lock_waits
+entry while player A holds its own lock and waits for Race, commits B's Luck
+state, then proves A's ordinary read remains stale while LuckPeerReader sees the
+commit. Further tests cover 2/4/8 simultaneous players, equal decision timestamps,
+sequential durable audits, duplicate source requests with old snapshots and
+rollback/constraints/peer exclusions on actual MySQL as well as H2.
+
+No answer/timeout, Challenge behavior, movement calculation, API, SSE or client
+integration is included. No local DEV/production DB or production DDL was used.
+Final commands, counts, failure history, complete patch and git evidence are in
+server/target/checkpoint-a-review.md and the adjacent logs (local review artifacts).
+Checkpoint B, commit, push and PR await explicit user approval.
+
+Final review, 2026-10-18: Checkpoint A is approved as a detached local foundation.
+Before this documentation-only update, the working tree exactly matched the
+reviewed 27-file patch (SHA-256
+`4abd6c7966d9f4a494d1ba4f9fefc8cbed619afdd31b9965d5a2a8ea220b41ec`).
+Final focused tests: 113 passed, zero failures/errors/skips. Final full suite:
+1,089 run, 1,087 passed, zero failures/errors, two existing C2 MySQL skips.
+LuckMySqlTest passed all 38 tests in both runs. The visibility blocker is resolved
+in the tested scenario; S4-04 is not playable and B is not automatically approved.
+
+#### Mandatory gates before enabling Checkpoint B
+
+1. **B-GATE-1 - Connection-pool headroom across concurrent races:** reproduce
+   multiple simultaneous races against disposable real MySQL with a deliberately
+   small Hikari pool. Outer transactions retain both connections and Race locks
+   while REQUIRES_NEW readers request additional connections. Capture starvation
+   or timeout behavior when outer transactions fill the pool, select an enforceable
+   resource strategy, and verify it before enabling Luck. Eight players per race
+   do not bound global concurrency. Do not substitute a speculative global
+   isolation change or peer RacePlayer locks.
+2. **B-GATE-2 - Managed state refresh and Challenge Energy:** prove that
+   GuardShieldService's EntityManager.refresh cannot discard pending correct-answer
+   Energy, offer consumption/reset, Orb or Shield changes when integrated with
+   ChallengeOfferService.afterAnswer. Verify all changes survive the same
+   transaction and appear in the returned snapshot. This is a potential integration
+   hazard, not a demonstrated A failure.
+3. **B-GATE-3 - End-to-end answer authority:** integrate only through the existing
+   first-accepted manual NORMAL answer after authoritative answer impact. Prove
+   timeout, replay, Challenge, >=80%, disconnect/reconnect and successful finish
+   cannot create duplicate Luck or an invalid Shield. Test a Shield-awarding answer
+   that suppresses Luck on the same source question.
+4. **B-GATE-4 - Movement and existing event contracts:** prove Tailwind stays <=2.0
+   in every movement segment and finish-crossing calculation. Cover Mud versus
+   Turbo slowdown overlap, expiry, snapshots and QUESTION_ANSWERED refresh. Schema
+   and effect persistence alone do not establish active client/movement behavior.
+
+**Deployment gate:** production uses ddl-auto=validate. New columns and tables
+require an explicitly approved schema deployment/migration path before rollout;
+this is not authorization to execute DEV or production DDL.
+
+**Test-log qualification:** the initially empty disposable MySQL schema emitted
+Hibernate GenerationTarget warnings when DROP foreign-key statements referenced
+tables that did not yet exist. Tests passed, but startup DDL output was not clean.
+Two earlier rollback-only test errors were corrected before the final green runs.
+
+A local A commit requires Diana's explicit go-ahead. Push, PR and merge require
+further approval. Preserve approved probabilities, thresholds and effect sizes;
+do not expand scope or start B based solely on the A review.
 
 ### S4-05 — Hidden Recovery
 
