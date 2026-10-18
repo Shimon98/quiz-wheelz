@@ -1,5 +1,6 @@
 import { STUDENT_RACE_FEEDBACK_VISUAL } from "../../config/raceFeedbackVisualConfig";
 import { STUDENT_RACE_EFFECT } from "../../runtime/studentRaceRuntimeConstants";
+import { CHALLENGE_RESULT_DRAWERS } from "./drawChallengeResultEffect";
 
 const GREEN = 0x51cf66;
 const GOLD = 0xfcc419;
@@ -99,6 +100,7 @@ const DRAWERS = Object.freeze({
   [STUDENT_RACE_EFFECT.WRONG]: drawWrong,
   [STUDENT_RACE_EFFECT.BOOST]: drawBoost,
   [STUDENT_RACE_EFFECT.FINISH]: drawFinish,
+  ...CHALLENGE_RESULT_DRAWERS,
 });
 
 export function drawFeedbackEffect(graphics, effect, progress, geometry) {

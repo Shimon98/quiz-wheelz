@@ -81,6 +81,8 @@ export default {
   },
 
   hud: {
+    slowLabel: "האטה",
+    slowSpeedValue: "האטה פעילה — מהירות {{speed}}",
     scoreLabel: "ניקוד",
     rankLabel: "מקום",
     rankValue: "מקום {{rank}} מתוך {{count}}",
@@ -113,23 +115,32 @@ export default {
 
   gameplay: {
     turbo: {
-      title: "מבחן טורבו",
-      description: "קשה יותר, שווה יותר",
+      title: "טורבו־ברק",
+      description: "שאלה קשה אחת · פרס גדול!",
     },
     safe: {
-      title: "ריצה בטוחה",
-      description: "קל יותר, בטוח יותר",
+      title: "שיוט בננה",
+      description: "3 שאלות קלות · התקדמות בטוחה",
+      progress: "שאלה {{current}} מתוך {{total}}",
     },
-    slowdownNotice: "לא נבחר אתגר בזמן — האטה קצרה",
+    slowdownNotice: "לא בחרת? המנוע בחר שנ״צ. האטה קצרה!",
+    turboSlowdownNotice: "הטורבו עשה פוף. האטה קצרה — וממשיכים!",
     choice: {
       title: "אתגר חדש נפתח! בחרו אחד",
-      submitting: "שומרים את הבחירה...",
+      submitting: "מכינים לכם את האתגר...",
+      submittingSlow: "רגע, הקוף בודק שהבחירה הגיעה! 🐵",
       reconciling: "בודקים אם הבחירה נקלטה...",
       expired: "נגמר הזמן לבחירה — חוזרים למרוץ",
       syncing: "מתעדכנים מול המרוץ...",
       syncFailed: "לא הצלחנו להתעדכן מול המרוץ",
       resync: "נסו לסנכרן",
-      retry: "אפשר לנסות שוב",
+      retry: "אפשר לנסות שוב על אותו קלף",
+    },
+    result: {
+      turboSuccess: "טורבו־ברק הצליח! ⚡",
+      turboFailure: "הטורבו כבה הפעם",
+      safeComplete: "השיוט הסתיים — ממשיכים בדרך! 🍌",
+      safePerfect: "שיוט מושלם — בונוס! 🍌",
     },
   },
 

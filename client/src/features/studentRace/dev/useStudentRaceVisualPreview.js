@@ -31,12 +31,14 @@ function createPreviewState(snapshot) {
   return mapLocalRuntimeSnapshotToState(createInitialRaceRuntimeState(), snapshot);
 }
 
-function createPreviewQuestion(id, now) {
+// Like a served question, the context is fixed when it is created, not re-read from the live mode.
+function createPreviewQuestion(id, now, mode) {
   return {
     id,
     timeLimitSeconds: PREVIEW_QUESTION_DURATION_MS / 1000,
     expiresAtEpochMs: now + PREVIEW_QUESTION_DURATION_MS,
     serverClockOffsetMs: 0,
+    gameplayContext: getQuestionContextForMode(mode) ?? QUESTION_GAMEPLAY_CONTEXTS.NORMAL,
   };
 }
 
@@ -45,23 +47,23 @@ export function useStudentRaceVisualPreview(t) {
   const [runtimeState, setRuntimeState] = useState(() =>
     createPreviewState(runtime.getSnapshot()),
   );
-  const [questionState, setQuestionState] = useState(() => createPreviewQuestion(1, Date.now()));
+  const [questionState, setQuestionState] = useState(
+    () => createPreviewQuestion(1, Date.now(), runtime.getSnapshot().gameplay.mode),
+  );
   const [feedback, setFeedback] = useState(IDLE_FEEDBACK);
   const dwellTimerRef = useRef(null);
   const feedbackActiveRef = useRef(false);
-  const gameplayContext = getQuestionContextForMode(runtimeState.gameplay.mode) ?? QUESTION_GAMEPLAY_CONTEXTS.NORMAL;
   const question = useMemo(() => ({
     ...questionState,
-    gameplayContext,
     text: t("preview.question"),
     choices: PREVIEW_FEEDBACK_SAMPLES.map(({ id, labelKey }) => ({ id, text: t(labelKey) })),
-  }), [questionState, gameplayContext, t]);
+  }), [questionState, t]);
 
   useEffect(() => {
     const unsubscribe = runtime.subscribe((snapshot) => {
       setRuntimeState((previous) => mapLocalRuntimeSnapshotToState(previous, snapshot));
       setQuestionState((previous) => !feedbackActiveRef.current && Date.now() >= previous.expiresAtEpochMs
-        ? createPreviewQuestion(previous.id + 1, Date.now())
+        ? createPreviewQuestion(previous.id + 1, Date.now(), snapshot.gameplay.mode)
         : previous);
     });
     runtime.start();
@@ -111,7 +113,7 @@ export function useStudentRaceVisualPreview(t) {
       feedbackActiveRef.current = false;
       dwellTimerRef.current = null;
       setFeedback(IDLE_FEEDBACK);
-      setQuestionState((previous) => createPreviewQuestion(previous.id + 1, Date.now()));
+      setQuestionState((previous) => createPreviewQuestion(previous.id + 1, Date.now(), runtime.getSnapshot().gameplay.mode));
     }, STUDENT_RACE_CONFIG.feedbackDelayMs);
   }, [question, runtime, runtimeState.playerFinished]);
 
@@ -119,7 +121,7 @@ export function useStudentRaceVisualPreview(t) {
   const onChallengeChoose = useCallback((choice) => {
     if (!runtime.choose(choice)) return;
     setRuntimeState((previous) => mapLocalRuntimeSnapshotToState(previous, runtime.getSnapshot()));
-    setQuestionState((previous) => createPreviewQuestion(previous.id + 1, Date.now()));
+    setQuestionState((previous) => createPreviewQuestion(previous.id + 1, Date.now(), runtime.getSnapshot().gameplay.mode));
   }, [runtime]);
 
   return {

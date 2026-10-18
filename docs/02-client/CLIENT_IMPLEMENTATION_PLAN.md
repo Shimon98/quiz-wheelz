@@ -1039,9 +1039,10 @@ Depends on S3-01 (final results read model, DONE on the server). C4 made no serv
 **Status:** C5-A (client audio) is complete and merged (PR #75). C5-01 (gameplay runtime)
 is merged (PR #76). The C5-03 presentation groundwork and the C5-01h slowdown explanation are
 merged (PR #78). The server Challenge contract (S4-02 energy/offer/choice + S4-03 Turbo/Safe
-execution) is merged (PR #77). C5-02 (Track B) is implemented locally on
-`feature/C5-02-challenge-choice-energy` — not committed, pending review; live QA passed on the
-local server. The gameplay UI renders server-owned game events and effects, so each further
+execution) is merged (PR #77). C5-02 (Track B) is committed locally on
+`feature/C5-02-challenge-choice-energy` (`f6b9878`, not pushed); the rest of C5-03 (Track C) is
+implemented on the same branch, not committed, pending review; live QA passed on the local
+server. The gameplay UI renders server-owned game events and effects, so each further
 part starts from an audit of that real server code; never from a text handoff alone. The
 carried-forward release QA can proceed meanwhile.
 
@@ -1121,8 +1122,9 @@ carried-forward release QA can proceed meanwhile.
 - **C5-01e effect timing — DEFERRED:** the 2 s poll bounds the lag after an effect ends and no
   production code creates effects yet; add one timer inside `useStudentRaceSynchronization`
   only if S4-02's real slowdowns prove 2 s too slow.
-- **C5-01f vehicle overlays — PARTIAL:** the player-only mode aura exists (C5-03b); burner
-  art, a new pose, flames and lean wait for the art decision and the S4-03 Turbo success moment.
+- **C5-01f vehicle overlays — PARTIAL:** the player-only mode aura (C5-03b), the thruster
+  glow with one burst per result (C5-03f) and the monkey poses (C5-03h) exist; painted flames
+  and speed lines are integrated locally (C5-03j/k); final live/device acceptance is open.
 - **C5-01g DEV scenarios — DONE:** `/dev/race?motionScenario=slowdown|future-effect|future-mode`
   (Turbo/Safe added in C5-03c).
 - **C5-01h first persistent effect presentation — DONE in C5-02g:** the missed-challenge
@@ -1144,7 +1146,7 @@ Built in tracks by server contract: Track A uses only the merged S4-01 vocabular
   `/dev/race?motionScenario=turbo|safe`.
 - **C5-02g missed-challenge slowdown explanation — DONE (Track A, PR #78):** exact
   `SPEED_SLOW` + `CHALLENGE_TIMEOUT` match, below answer feedback in the stable status line.
-- **C5-02a–f, h, i — IMPLEMENTED LOCALLY (Track B, not committed, pending review):** contract
+- **C5-02a–f, h, i — COMMITTED LOCALLY (Track B, `f6b9878`, not pushed):** contract
   audit, challenge mapping and offer clock (finite offset, consistent counters), question gate
   by mode with answer-input pairing (never the displayed feedback question), the choice
   controller (single flight, mutation tokens, deadline lock by timer and at tap time, no
@@ -1162,9 +1164,103 @@ Built in tracks by server contract: Track A uses only the merged S4-01 vocabular
   / `invalid`) instead of trusting an HTTP 200, and no late read after the screen moved on;
   live QA against a local silent server (race 160): the real axios timeouts ended the choice at
   4.0 s and the check at 3.0 s, with one POST and the manual sync instead of an endless wait.
-- **C5-03 result moments — AFTER C5-02 (S4-03 merged in PR #77):** Turbo success/failure,
-  Safe progress, speed lines as a Turbo success one-shot, result sounds and burner art through
-  the existing moment pipeline.
+- **C5-03d Safe progress — IMPLEMENTED LOCALLY (Track C, not committed):** "question N of 3"
+  and pips beside the Safe badge, from the server's run only.
+- **C5-03e result moments — IMPLEMENTED LOCALLY (Track C, not committed):** one moment per
+  `lastResult.challengeId` through the existing moment pipeline (baseline first, never replayed
+  after a refresh), result lines, the Turbo failure slowdown notice, four result effects and
+  reused approved sounds.
+- **C5-03f kart thrusters — IMPLEMENTED LOCALLY (Track C, not committed):** glow on the art's
+  measured nozzles (Turbo gold flicker, Safe calm blue), one burst per result, reduced-motion
+  safe. Painted exhaust is integrated locally in C5-03j. Dedicated challenge sounds: AUDIO ASSET REQUIRED.
+- **C5-03g hardening — IMPLEMENTED LOCALLY (Track C, not committed):** bounded runtime request
+  timeouts (5 s / 8 s, join unbounded), light-theme feedback contrast, and the DEV preview
+  question keeps its served context. Live QA: race 161 (every outcome, a reload mid-Safe, a
+  missed offer) and soak race 162 (eight players, a slow and a failed choice).
+- **C5-03h closeout — IMPLEMENTED LOCALLY (Track C, not committed, 2026-10-18):** monkey poses
+  composited onto the shipped kart bodies (8 colours, player-only, lazy), challenge answers
+  without combo claims, calmer Safe Perfect, neutral Safe-complete copy, clear sync error,
+  lost-acknowledgement integration test, q90 colour karts. Live QA passed on the local server
+  (final code: race 172, 23/23 — Turbo win, Safe Perfect, and a Turbo win whose acknowledgement
+  was lost after the server counted it: one POST, the server's score).
+- **C5-03i Turbo polish and stutter audit — IMPLEMENTED LOCALLY (Track C, not committed,
+  2026-10-18):** measured first: in the production build the first Turbo entry blocked one
+  frame for about 63 ms (the first GPU upload of the pose image). The player's two poses now
+  load and upload about 1.5 s after the kart art appears (a failed one retries at most twice,
+  5 s apart, never offline) and fade in over 220 ms. A Turbo win keeps the Turbo pose and
+  flames for 1.3 s although the server mode is already NORMAL (a finish, a new offer or reduced
+  motion ends that at once), with a small camera punch, speed lines and a 1.5 s catch-up of the
+  server's progress bonus (never past the server position). The flames are flame tongues aimed
+  at the camera (no spinning star, no glow over the kart, no streaks down the road), and a
+  challenge result replaces the answer effect as it already replaced the answer sound.
+  Production re-measure: no main-thread task over 50 ms during play (the first Turbo entry
+  costs 30 ms once). Movement, score and timing stay the server's; a timed speed boost after a
+  win would be a server change (SERVER CHANGE REQUEST, not built).
+  *Superseded by C5-03j/k/m (kept as history):* the camera punch, the 1.5 s visual catch-up
+  burst, the code-drawn flame tongues and the 220 ms fade were removed. Now there is no zoom
+  and no special catch-up burst — the server's progress is shown through the normal
+  interpolation and the reward itself stays the server's; the painted exhaust burst plays only
+  on a fresh `TURBO_SUCCESS`; poses blend in over 320 ms and return from Turbo in 160 ms; the
+  blend filter is prewarmed in a quiet moment (final gate below).
+
+- **C5-03j restrained Turbo presentation — IMPLEMENTED LOCALLY (not committed, 2026-10-18):**
+  a shared 192 x 288 transparent painted exhaust WebP (11,968 bytes) is loaded once through
+  `studentRaceEffectManifest` and placed on the measured nozzle anchors. Quiet code fallback
+  on asset failure; no Turbo star particles or filled ground disc. The initial compression,
+  short middle dissolve and camera push are superseded by C5-03k below.
+
+- **C5-03k success timing and clean transitions — IMPLEMENTED LOCALLY (not committed, 2026-10-18):**
+  - Turbo selection/question: idle composite and original blue nozzles, no launch flame.
+  - Fresh accepted `TURBO_SUCCESS`: launch pose for 1.3 s, painted exhaust for 1.1 s; no
+    replay from old results, ordinary correct answers, failures or entry into Turbo.
+  - Removed event-specific movement burst (110 units/s cap) and camera zoom. Progress uses
+    the existing shared interpolation (24 units/s correction cap); authoritative score,
+    position and speed are unchanged. This fixes presentation of the current +80 reward.
+  - Safe and Turbo pose changes: 320 ms full-composite blend, isolated additive accumulation
+    then normal composition. No body-opacity dip or squash; an interrupted return reverses
+    continuously. The extra render surface is active only during a pose transition.
+  - Safe ground glow reduced from 0.65 to 0.18. Shared poses/nozzle anchors remain unchanged.
+  - Claude audit: his latest seven-file attempt was reverted; all 94 scoped delivered files
+    matched the previous Codex bundle before this repair. No partial work was discarded.
+  - Validation: client regression suite, lint/build and Chromium DEV evidence are recorded
+    in `docs/vision/C5_03/codex_timing_2026-10-18/`. Six viewports, eight colors, both Safe
+    directions, GPU opacity, reduced motion and missing exhaust asset are covered.
+  - Still open: final live-race and physical-phone acceptance, review and C5-03 commit;
+    dedicated challenge audio. Diana owns requested question sequence/difficulty changes.
+    The client does not invent a Turbo sequence or timed speed boost.
+
+- **C5-03l restrained Safe presentation — IMPLEMENTED LOCALLY (not committed, 2026-10-18):**
+  Safe Complete and Safe Perfect use a thin blue ground ellipse and a contained blue nozzle
+  pulse, without stars, gold rays, large rings or flame. Steady Safe nozzle opacity is 0.45;
+  complete/perfect pulses ease in/out for 550/800 ms, with maximum opacity 0.45/0.65.
+  Ground ripple opacity peaks at 0.16/0.26. The mode aura fades over 320 ms with the pose;
+  reduced motion settles immediately. Shared Turbo gating and motion are unchanged.
+  Before/after captures, regression suite, lint/build and six-viewport QA are recorded in
+  `docs/vision/C5_03/codex_safe_2026-10-18/`. Final live-race and physical-phone acceptance,
+  C5-03 review/commit and dedicated audio remain open; server sequence/difficulty is Diana's work.
+
+- **C5-03m sharp return and readable slowdown — IMPLEMENTED LOCALLY (not committed, 2026-10-18):**
+  The isolated blend surface inherits renderer resolution and antialiasing instead of
+  downsampling to resolution 1. Turbo return lasts 160 ms; entry/Safe retain 320 ms and
+  reversal preserves the current blend. Server `SPEED_SLOW` from `CHALLENGE_TIMEOUT` or
+  `TURBO_FAILURE` dims the nozzles and adds an amber speedometer badge/accessible label and
+  compact humorous notice. Removal follows the server effect list; no extra local speed
+  reduction, penalty timer or gameplay rule is added. Existing audio is preserved; the user's
+  latest instruction defers additional mode music until after visual polish.
+  Evidence and full before/after source package: `docs/vision/C5_03/codex_clarity_2026-10-18/`.
+  Live-race/physical-phone acceptance and C5-03 review/commit remain open.
+
+- **C5-03 final gate — IMPLEMENTED AND TESTED ON THE FEATURE BRANCH (not merged to `main`,
+  2026-10-18):** the pose-blend filter compiled its shader on its first draw, a 64–177 ms stall
+  at the first Turbo win (DEV measurement); `KartArtCrossfade.prewarm()` now draws one unchanged
+  frame through it in the quiet pose-preload moment. Final code, live on the local server:
+  race 190, 39/39 (Turbo win and failure, a missed offer, Safe Perfect with a reload mid-run,
+  Safe Complete, a lost answer acknowledgement — one POST and the server's score). Also race 183
+  (pose and exhaust images blocked) 12/12 and race 180 (reduced motion) 11/12, the one mismatch
+  being an expected development-only warning from the animation library. Client suite
+  1,641/1,641 (178 files), lint and build pass. Performance was measured on the DEV build only:
+  a physical-phone check and production profiling remain open, and dedicated challenge sounds
+  are still AUDIO ASSET REQUIRED. Evidence: `docs/vision/C5_03/final_gate_2026-10-18/` (local).
 
 ### C5 gameplay UI — after S4-02 onward
 

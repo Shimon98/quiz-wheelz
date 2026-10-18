@@ -118,7 +118,8 @@ describe("PlayerKartLayer vehicle art lifecycle", () => {
     const sprite = layer.artSprite;
     expect(sprite.constructor).toBe(Sprite);
     expect(sprite.texture).toBe(green);
-    expect(sprite.parent).toBe(layer.kart);
+    expect(sprite.parent).toBe(layer.fade.surface);
+    expect(layer.fade.surface.parent).toBe(layer.kart);
     expect(sprite.anchor.x).toBe(0.5);
     expect(sprite.anchor.y).toBe(0.96);
     expect(sprite.width).toBeCloseTo(120);
@@ -187,7 +188,7 @@ describe("PlayerKartLayer vehicle art lifecycle", () => {
     await Promise.resolve();
 
     expect(layer.artSprite.texture).toBe(redTexture);
-    expect(layer.kart.children.filter((child) => child instanceof Sprite)).toHaveLength(1);
+    expect(layer.fade.surface.children.filter((child) => child instanceof Sprite && child.visible)).toHaveLength(1);
     layer.destroy();
   });
 
@@ -216,7 +217,7 @@ describe("PlayerKartLayer vehicle art lifecycle", () => {
     await Promise.resolve();
 
     expect(visibleArt(layer)).toEqual({ sprite: false, placeholder: true, shadow: true });
-    expect(layer.kart.children).toEqual([layer.placeholder]);
+    expect(layer.kart.children.filter((child) => child.visible)).toEqual([layer.placeholder]);
     layer.destroy();
   });
 

@@ -63,11 +63,58 @@ movement stays server-owned, and unknown future modes or effects are ignored saf
 
 C5 checkpoint, 2026-10-17: C5-01 (PR #76), the S4-02/S4-03 Challenge contract (PR #77) and the
 C5 Track A presentation groundwork (PR #78) are merged. C5-02, the student Challenge choice
-and energy meter, is implemented locally on `feature/C5-02-challenge-choice-energy` (not
-committed, pending review): the student sees the server's offer as two cards with one
+and energy meter, is committed locally on `feature/C5-02-challenge-choice-energy` (`f6b9878`,
+not pushed): the student sees the server's offer as two cards with one
 countdown, a lost or failed choice is checked against fresh race state instead of being
-guessed or re-sent, and live QA passed on the local server (races 156–158). Next: C5-03
-Turbo/Safe result moments and Safe progress.
+guessed or re-sent, and live QA passed on the local server (races 156–158). The rest of C5-03 —
+Safe progress, one-shot Turbo/Safe results and the kart thrusters — is implemented on the same
+branch (not committed, pending review); live QA passed on the local server (race 161 and the
+eight-player soak race 162). 2026-10-18 closeout on the same branch (not committed): the
+monkey poses (Safe lounging with a banana can, Turbo leaning forward) are composited onto the
+shipped kart bodies for all eight colours; challenge answers no longer present a combo; the
+Safe Perfect effect no longer covers the kart; a lost answer acknowledgement is proven not to
+re-send or double-score; the seven colour karts load about 2 MB lighter. Earlier live QA
+(race 172) predates the final visual repairs.
+
+Local checkpoint, **C5-03k, 2026-10-18**: selecting Turbo leaves the idle pose and blue
+painted nozzles throughout the question. Only a fresh server `TURBO_SUCCESS` result moment
+starts the short painted flame and launch pose. Ordinary correct answers, failure, refresh and
+polling do not trigger a launch. Removed the special 110 units/s catch-up and camera zoom;
+the +80 progress reward uses the shared normal interpolation (24 units/s correction cap).
+Safe and success-pose transitions use a 320 ms whole-composite blend on an isolated Pixi
+surface, with no squash and no transparent body dip. Safe ground-light alpha is 0.18.
+No server contract or reward changes. Claude's interrupted seven-file attempt was reverted:
+all 94 scoped paths matched the preceding delivered bundle before this repair.
+
+Latest local checkpoint, **C5-03l, 2026-10-18**: Safe Complete and Safe Perfect now use
+one shallow blue ground ripple and a contained blue nozzle pulse. Removed Safe stars, golden
+rays and driver-height rings; no Safe flame. The steady light is softened, result pulses ease
+in/out, and mode aura fades over the same 320 ms as the pose. Turbo success gating and normal
+motion remain intact. Local before/after evidence covers both Safe outcomes.
+
+Latest local checkpoint, **C5-03m, 2026-10-18**: pose blending inherits the renderer's
+resolution/antialiasing and Turbo returns to idle in 160 ms (Safe remains 320 ms). Active
+server challenge slowdown dims the nozzles and adds an amber speedometer label plus a
+compact, playful notice. No local speed penalty or duration is invented. Existing audio
+is preserved; additional mode music is deferred by the user's latest priority.
+
+C5-03 status, **final gate, 2026-10-18**: implemented and tested on
+`feature/C5-02-challenge-choice-energy`; **not merged to `main`**. The final code passed a live
+race on the local server, race 190: 39/39 (Turbo win and failure, a missed offer, Safe Perfect
+with a reload mid-run, Safe Complete, a lost answer acknowledgement with one POST and the
+server's score). Race 183 (pose and exhaust images blocked) passed 12/12 and race 180 (reduced
+motion) 11/12 — the one mismatch is an expected development-only warning from the animation
+library, not a game failure. The gate also removed a 64–177 ms stall at the first Turbo win: the
+pose-blend filter compiled its shader on first use and is now warmed up in a quiet moment.
+Performance was measured on the DEV build only; a physical-phone check and production profiling
+remain open, and dedicated challenge sounds are still audio work.
+
+Next: a physical-phone check (before classroom or production use), then the S4-04 handoff and
+C5-04 planning. Diana owns the requested Turbo question sequence and
+question difficulty on the server; the client does not simulate these. Dedicated challenge
+sounds remain audio work. Browser fixtures and unit tests are local evidence, not release
+acceptance. Full review bundle: `docs/vision/C5_03/codex_clarity_2026-10-18/` (local, ignored).
+
 
 ## Executive summary
 
@@ -259,5 +306,6 @@ PR #69, C3-03 … C3-08 are COMPLETE, and C4-A … C4-C (teacher Result Screen, 
 progressive results, results art) are COMPLETE on `feature/C4-results`. The S4-01 server
 contract (PR #74) and C5-A audio (PR #75, which also delivered the C2-A race sound) are
 merged; C5-01 (PR #76), the S4-02/S4-03 Challenge contract (PR #77) and the C5 Track A
-presentation (PR #78) are merged, and C5-02 (Challenge choice) is implemented locally, pending
-review. The required physical-device/recovery QA remains visible pre-release polish.
+presentation (PR #78) are merged; C5-02 (Challenge choice) is committed locally and C5-03
+(results, Safe progress, poses, painted Turbo exhaust and slowdown cues) is implemented and
+tested on the same feature branch, not merged to `main`. The required physical-device/recovery QA remains visible pre-release polish.

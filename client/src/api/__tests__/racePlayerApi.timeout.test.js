@@ -1,6 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { chooseChallenge, getRaceState } from "../racePlayerApi.js";
+import {
+  chooseChallenge,
+  getCurrentQuestion,
+  getRaceState,
+  heartbeatRacePlayer,
+  joinRace,
+  reconnectRacePlayer,
+  submitAnswer,
+} from "../racePlayerApi.js";
+import { requestFinishArbitration } from "../studentRaceLiveApi.js";
 import { normalizeApiError } from "../../errors/normalizeApiError.js";
 
 // A server that takes the request and never answers: only the request's own
@@ -82,12 +91,30 @@ describe("race player requests against a silent server", () => {
     expect(normalizeApiError(read.error).category).toBe("NETWORK");
   });
 
-  it("keeps the regular race-state reads as they were, without a new global limit", async () => {
-    const read = track(getRaceState());
+  it.each([
+    ["race-state", () => getRaceState(), 5000],
+    ["current question", () => getCurrentQuestion(), 5000],
+    ["answer", () => submitAnswer({ questionId: 3, choiceId: 9 }), 5000],
+    ["finish arbitration", () => requestFinishArbitration(), 5000],
+    ["heartbeat", () => heartbeatRacePlayer(), 8000],
+    ["reconnect", () => reconnectRacePlayer(), 8000],
+  ])("bounds the %s call so a stalled network cannot pin its hook forever, sent once", async (_, call, limitMs) => {
+    const request = track(call());
+
+    await vi.advanceTimersByTimeAsync(limitMs - 1);
+    expect(request.settled).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(normalizeApiError(request.error).category).toBe("NETWORK");
+    expect(SilentServerXhr.sent).toHaveLength(1);
+  });
+
+  it("leaves the join unbounded: a lost join response must not invite a retry that hits 'name taken'", async () => {
+    const join = track(joinRace({ roomCode: "ABC123", displayName: "Kid" }));
 
     await vi.advanceTimersByTimeAsync(60_000);
 
-    expect(read.settled).toBe(false);
+    expect(join.settled).toBe(false);
     expect(SilentServerXhr.sent).toHaveLength(1);
   });
 });

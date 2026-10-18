@@ -1,3 +1,4 @@
+import { QUESTION_GAMEPLAY_CONTEXTS } from "../../../constants/raceGameplayConstants.js";
 import { ApiContractError } from "../../../errors/ApiContractError.js";
 import { assertValidRaceSnapshot } from "./applyRaceSnapshot.js";
 
@@ -44,6 +45,7 @@ export function mapSubmitAnswerToModel(response, { question, choiceId }) {
       correct: response.correct,
       scoreDelta,
       streak: snapshot.streak,
+      gameplayContext: question.gameplayContext ?? QUESTION_GAMEPLAY_CONTEXTS.NORMAL,
     },
   };
 }

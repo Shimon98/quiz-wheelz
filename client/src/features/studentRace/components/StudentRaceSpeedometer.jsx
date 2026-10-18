@@ -4,7 +4,7 @@ import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { getStudentRaceSpeedometerModel } from "../utils/getStudentRaceSpeedometerModel";
 import "../styles/studentRaceSpeedometer.css";
 
-export default function StudentRaceSpeedometer({ speed }) {
+export default function StudentRaceSpeedometer({ speed, slowing = false }) {
   const { t } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
   const model = getStudentRaceSpeedometerModel(speed);
 
@@ -13,9 +13,11 @@ export default function StudentRaceSpeedometer({ speed }) {
   return (
     <div
       className="student-race-speedometer"
+      data-slowing={slowing}
       role="img"
-      aria-label={t("hud.speedValue", { speed: model.valueText })}
+      aria-label={t(slowing ? "hud.slowSpeedValue" : "hud.speedValue", { speed: model.valueText })}
     >
+      {slowing ? <span className="race-speedometer-slow-label" aria-hidden="true">{t("hud.slowLabel")}</span> : null}
       <svg viewBox="0 0 88 55" aria-hidden="true" focusable="false">
         <path className="race-speedometer-track" d="M 14 33 A 30 30 0 0 1 74 33" />
         <path

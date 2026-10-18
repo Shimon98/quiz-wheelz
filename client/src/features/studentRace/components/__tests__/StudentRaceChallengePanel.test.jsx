@@ -60,6 +60,15 @@ describe("StudentRaceChallengePanel", () => {
     screen.getAllByRole("button").forEach((card) => expect(card).toBeDisabled());
   });
 
+  it("keeps a playful line ready for a slow choice, hidden from screen readers", () => {
+    renderPanel({ offer: offer(), phase: PHASE.SUBMITTING, selectedChoice: "TURBO_TRIAL" });
+
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent(i18n.t("studentRace:gameplay.choice.submitting"));
+    expect(screen.getByText(i18n.t("studentRace:gameplay.choice.submittingSlow"))).toHaveAttribute("aria-hidden", "true");
+    expect(status.querySelector(".race-status-swap")).toHaveStyle({ "--race-status-swap-delay": "1500ms" });
+  });
+
   it("keeps the cards locked while gameplay is not interactive", () => {
     renderPanel({ offer: offer(), openChoices: BOTH, interactionEnabled: false });
 

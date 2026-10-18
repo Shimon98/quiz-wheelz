@@ -24,6 +24,10 @@ export const STUDENT_RACE_EFFECT = Object.freeze({
   WRONG: "wrong",
   BOOST: "boost",
   FINISH: "finish",
+  TURBO_SUCCESS: "turbo-success",
+  TURBO_FAILURE: "turbo-failure",
+  SAFE_COMPLETE: "safe-complete",
+  SAFE_PERFECT: "safe-perfect",
 });
 
 export const STUDENT_RACE_MOMENT = Object.freeze({
@@ -31,6 +35,10 @@ export const STUDENT_RACE_MOMENT = Object.freeze({
   WRONG: STUDENT_RACE_EFFECT.WRONG,
   FINISH: STUDENT_RACE_EFFECT.FINISH,
   TIME_UP: "time-up",
+  TURBO_SUCCESS: STUDENT_RACE_EFFECT.TURBO_SUCCESS,
+  TURBO_FAILURE: STUDENT_RACE_EFFECT.TURBO_FAILURE,
+  SAFE_COMPLETE: STUDENT_RACE_EFFECT.SAFE_COMPLETE,
+  SAFE_PERFECT: STUDENT_RACE_EFFECT.SAFE_PERFECT,
 });
 
 // Phases of one challenge choice request, keyed to its offer (C5-02).

@@ -73,6 +73,39 @@ describe("StudentRaceOverlay", () => {
     expect(screen.getByText(i18n.t("studentRace:gameplay.slowdownNotice"))).toBeInTheDocument();
   });
 
+  it("explains a server slowdown caused by a failed Turbo", () => {
+    const runtimeState = createInitialRaceRuntimeState();
+    runtimeState.gameplay = {
+      ...runtimeState.gameplay,
+      activeEffects: [{
+        effectId: 3,
+        type: "SPEED_SLOW",
+        source: "TURBO_FAILURE",
+        magnitudeTenths: 2,
+        startsAtEpochMs: 1,
+        endsAtEpochMs: 2,
+      }],
+    };
+
+    render(<StudentRaceOverlay runtimeState={runtimeState} question={buildQuestion()} />);
+
+    expect(screen.getByText(i18n.t("studentRace:gameplay.turboSlowdownNotice"))).toBeInTheDocument();
+  });
+
+  it("shows the server's Safe progress on a Safe question", () => {
+    const runtimeState = createInitialRaceRuntimeState();
+    runtimeState.gameplay = {
+      ...runtimeState.gameplay,
+      mode: "SAFE_RUN",
+      challenge: { energy: 0, threshold: 100, offer: null, lastResult: null,
+        run: { challengeId: 4, type: "SAFE_RUN", questionsResolved: 2, totalQuestions: 3, correctAnswers: 2 } },
+    };
+
+    render(<StudentRaceOverlay runtimeState={runtimeState} question={{ ...buildQuestion(), gameplayContext: "SAFE_RUN" }} />);
+
+    expect(screen.getByText(i18n.t("studentRace:gameplay.safe.progress", { current: 3, total: 3 }))).toBeInTheDocument();
+  });
+
   it("does not explain a slowdown from another source", () => {
     const runtimeState = createInitialRaceRuntimeState();
     runtimeState.gameplay = {

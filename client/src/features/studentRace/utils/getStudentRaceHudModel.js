@@ -2,18 +2,20 @@ import { resolveRacePlacement } from "../../../shared/components/raceRank/racePl
 import { getRaceProgressRatio } from "./getRaceProgressRatio";
 import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig";
 import { RACE_GAMEPLAY_MODES } from "../../../constants/raceGameplayConstants";
+import { isChallengeAnswer, selectChallengeSlowdownSource } from "../runtime/studentRaceGameplayMode";
 
 function getRewardModel(feedback, playerFinished, formatter) {
   if (playerFinished || feedback?.correct !== true || feedback.questionId == null) return null;
   const streak = Number.isSafeInteger(feedback.streak) && feedback.streak >= 0
     ? feedback.streak
     : 0;
-  const isCombo = streak >= STUDENT_RACE_CONFIG.comboMinStreak;
+  const challenge = isChallengeAnswer(feedback);
+  const isCombo = !challenge && streak >= STUDENT_RACE_CONFIG.comboMinStreak;
   return {
     id: feedback.questionId,
     kind: isCombo ? "combo" : "correct",
     titleKey: isCombo ? "reward.comboTitle" : "reward.correctTitle",
-    streak,
+    streak: challenge ? null : streak,
     pointsText: Number.isSafeInteger(feedback.scoreDelta) && feedback.scoreDelta !== 0
       ? formatter.format(feedback.scoreDelta)
       : null,
@@ -68,6 +70,7 @@ export function getStudentRaceHudModel(runtimeState, language = "he", answerFeed
     streakLabelKey: isCombo ? "hud.comboLabel" : "hud.streakShortLabel",
     isCombo,
     speed: runtimeState.visual.targetSpeed,
+    slowing: runtimeState.playerFinished !== true && selectChallengeSlowdownSource(runtimeState.gameplay) != null,
     reward,
     rewardKey: reward?.id ?? "steady",
     style: { "--race-reward-duration": `${STUDENT_RACE_CONFIG.feedbackDelayMs}ms` },

@@ -13,7 +13,7 @@ export default function StudentRaceReward({ reward }) {
       <BadgeCheckIcon className="race-hud-reward-medal" aria-hidden="true" />
       <div className="race-hud-reward-copy">
         <strong>{t(reward.titleKey)}</strong>
-        <span>{t("reward.streak", { count: reward.streak })}</span>
+        {reward.streak != null ? <span>{t("reward.streak", { count: reward.streak })}</span> : null}
       </div>
       {reward.pointsText != null ? (
         <div className="race-hud-reward-points">

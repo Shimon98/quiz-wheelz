@@ -26,6 +26,81 @@
   color: var(--race-gameplay-accent);
 }
 
+.race-status-swap {
+  display: inline-grid;
+}
+
+.race-status-swap > span {
+  grid-area: 1 / 1;
+}
+
+.race-status-swap-first {
+  animation: race-status-hide 0s linear var(--race-status-swap-delay) forwards;
+}
+
+.race-status-swap-later {
+  visibility: hidden;
+  animation: race-status-show 0s linear var(--race-status-swap-delay) forwards;
+}
+
+@keyframes race-status-hide {
+  to { visibility: hidden; }
+}
+
+@keyframes race-status-show {
+  to { visibility: visible; }
+}
+
+.race-panel-tone[data-tone="correct"] {
+  color: var(--qw-green);
+}
+
+.race-panel-tone[data-tone="wrong"] {
+  color: var(--qw-gold);
+}
+
+.race-panel-tone[data-tone="error"] {
+  color: var(--qw-red);
+}
+
+/* The bright brand tones fail text contrast on light surfaces (gold on white is 2:1); darken them there. */
+html:not([data-theme="dark"]) .race-panel-tone[data-tone="correct"] {
+  color: var(--qw-green-deep);
+}
+
+html:not([data-theme="dark"]) .race-panel-tone[data-tone="wrong"] {
+  color: color-mix(in srgb, var(--qw-gold) 55%, var(--qw-ink));
+}
+
+html:not([data-theme="dark"]) .race-panel-tone[data-tone="error"] {
+  color: color-mix(in srgb, var(--qw-red) 75%, var(--qw-ink));
+}
+
+.race-safe-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--qw-text-muted);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.race-safe-pips {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.race-safe-pip {
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--race-gameplay-accent, var(--qw-secondary));
+  border-radius: 99px;
+}
+
+.race-safe-pip[data-done="true"] {
+  background: var(--race-gameplay-accent, var(--qw-secondary));
+}
+
 .race-challenge-grid {
   display: grid;
   flex: 1;
@@ -90,7 +165,8 @@
 }
 
 .race-challenge-description {
-  color: var(--qw-text-muted);
+  /* Muted text on the accent-tinted card falls just under 4.5:1; pull it toward the body text. */
+  color: color-mix(in srgb, var(--qw-text-muted) 70%, var(--qw-text));
   font-size: clamp(12px, 3.2vw, 14px);
   font-weight: 700;
   line-height: 1.2;
@@ -111,4 +187,11 @@
   .race-challenge-card {
     transition: none;
   }
+}
+
+.race-slowdown-notice {
+  border-radius: 10px;
+  padding: 4px 8px;
+  background: color-mix(in srgb, var(--qw-warning) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--qw-warning) 28%, transparent);
 }

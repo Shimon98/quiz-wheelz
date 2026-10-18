@@ -55,7 +55,9 @@ export class StudentRaceRenderer {
     this.finishLineLayer = new FinishLineLayer(this.worldContainer);
     this.sceneryLayer = new SceneryLayer(this.worldContainer);
     this.opponentLayer = new OpponentLayer(this.worldContainer);
-    this.playerKartLayer = new PlayerKartLayer(this.worldContainer);
+    this.playerKartLayer = new PlayerKartLayer(this.worldContainer, {
+      prepareTexture: (texture) => this.app.renderer?.texture?.initSource?.(texture.source),
+    });
     this.effectsLayer = new EffectsLayer(this.effectsContainer);
     this.layers = [
       this.jungleLayer,
@@ -93,6 +95,7 @@ export class StudentRaceRenderer {
 
   playMoments(batch) {
     this.effectsLayer.playMoments(batch);
+    this.playerKartLayer.playMoments(batch);
   }
 
   updateRuntimeState(nextState) {

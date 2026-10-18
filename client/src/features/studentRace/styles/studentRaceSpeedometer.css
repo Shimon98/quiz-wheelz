@@ -85,3 +85,24 @@
     transition: none;
   }
 }
+
+.student-race-speedometer[data-slowing="true"] {
+  --race-speedometer-accent: var(--qw-warning);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--qw-warning) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--qw-warning) 45%, transparent);
+}
+.race-speedometer-slow-label {
+  position: absolute;
+  inset-inline: 0;
+  top: 14px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--qw-text);
+}
+
+.student-race-speedometer[data-slowing="true"] .race-speedometer-needle,
+.student-race-speedometer[data-slowing="true"] .race-speedometer-hub {
+  visibility: hidden;
+}

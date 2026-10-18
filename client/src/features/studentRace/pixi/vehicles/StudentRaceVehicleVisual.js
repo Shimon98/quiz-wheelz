@@ -8,7 +8,7 @@ import {
 } from "../assets/studentRaceVehicleAssets";
 
 import { VEHICLE_UNIT_WIDTH as UNIT_WIDTH, VEHICLE_UNIT_HEIGHT as UNIT_HEIGHT,
-  VEHICLE_GROUND_Y as GROUND_Y } from "./studentRaceVehicleGeometry.js";
+  VEHICLE_GROUND_Y as GROUND_Y, artScale } from "./studentRaceVehicleGeometry.js";
 
 const KART_BODY_COLOR = 0x37b24d;
 const KART_STRIPE_COLOR = 0x2b8a3e;
@@ -130,7 +130,7 @@ export class StudentRaceVehicleVisual {
   createArtSprite(texture, { anchorX, anchorY, baseScale }) {
     const sprite = new Sprite(texture);
     sprite.anchor.set(anchorX, anchorY);
-    sprite.scale.set((UNIT_WIDTH * baseScale) / texture.width);
+    sprite.scale.set(artScale(texture.width, baseScale));
     sprite.position.set(UNIT_WIDTH / 2, GROUND_Y);
     return sprite;
   }

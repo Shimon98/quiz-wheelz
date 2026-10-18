@@ -27,6 +27,8 @@ export const STUDENT_RACE_CONFIG = Object.freeze({
   // behind the player row lock, so it gets more time than the read.
   challengeChoiceTimeoutMs: 4000,
   challengeCheckTimeoutMs: 3000,
+  // A choice still saving after this long swaps to a playful "still checking" line.
+  challengeSlowSubmitMs: 1500,
 
   // Question countdown DISPLAY (the server's expiresAt is the truth; these
   // only tune presentation). Urgency thresholds switch the timer accent —

@@ -8,8 +8,37 @@
 > The code is authoritative for what is implemented. This document is authoritative
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
-Local checkpoint, 2026-10-17: **C5-02 Challenge choice and energy implemented locally** on
-`feature/C5-02-challenge-choice-energy` (not committed, pending review) on the merged
+Local checkpoint, 2026-10-17 (C5-03): **C5-02 committed locally** as `f6b9878` on
+`feature/C5-02-challenge-choice-energy` (not pushed), and **the rest of C5-03 implemented
+locally on the same branch** (not committed, pending review): Safe progress ("question N of 3"
+with pips) from the server's run, one-shot Turbo/Safe result moments (once per
+`lastResult.challengeId`, never replayed after a refresh), result lines that name the outcome,
+player-only kart thrusters on the art's own nozzles (Turbo success-only fire, Safe calm blue, one
+burst per result), result effects, reused approved sounds, bounded timeouts for the runtime
+requests and readable feedback colors in the light theme. Live QA passed on the local server
+(race 161: every outcome, a reload mid-Safe and a missed offer; soak race 162: eight
+players, a slow and a failed choice). Closeout 2026-10-18 (same branch, not committed): monkey
+poses on the real kart bodies (Safe lounging with a can, Turbo leaning forward; eight colours,
+player-only, preloaded shortly after the kart appears), no combo claims for challenge answers, a calmer Safe Perfect
+effect, neutral Safe-complete copy, a clear sync-failed message, a proven lost-acknowledgement
+path, and q90 WebP for the seven colour karts. Dedicated challenge sounds are still AUDIO ASSET
+REQUIRED. Painted nozzle exhaust is integrated by the subsequent C5-03j visual pass: restrained
+Turbo light, no Turbo star particles or filled ground disc, and a staged whole-kart pose
+transition. Earlier live evidence (race 172) predates this pass; its final live/device acceptance
+remains open. Latest C5-03k correction: Turbo waits in idle until a fresh accepted success;
+no special movement burst or camera zoom. Both poses blend over 320 ms without squash or
+transparent body dip; Safe ground-light alpha is 0.18. Claude's later attempt was fully
+reverted before this repair (all 94 scoped files matched the prior review bundle).
+Latest C5-03l Safe cleanup removes stars, golden rays and driver-height rings; steady blue
+nozzle light is softened, result pulses ease in/out, and the mode aura fades with the pose.
+Diana handles Turbo question sequence/difficulty on the server. See C5-03k/l/m in the plan.
+C5-03m inherits renderer resolution/antialiasing during pose blending and returns Turbo to
+idle in 160 ms, keeping Safe at 320 ms. Active server challenge slowdown adds dim nozzles,
+an amber speedometer label and playful copy. Speed and effect lifetime remain server-owned.
+Additional mode music is deferred; the existing audio system is unchanged by this pass.
+
+Local checkpoint, 2026-10-17: **C5-02 Challenge choice and energy implemented** on
+`feature/C5-02-challenge-choice-energy` (committed locally as `f6b9878`) on the merged
 S4-02/S4-03 contract: the challenge mapper (finite offer clock, consistent run/result
 counters), the question gate by server mode, the choice cards with the one HUD countdown, the
 energy meter with its value, a choice controller that never replays a request and checks an
@@ -627,13 +656,12 @@ Current audio matrix:
 - the player kart (`PlayerKartLayer`, not the shared vehicle base, so opponents are untouched)
   draws one ground aura between the shadow and the kart: drawn once, recolored by tint,
   additive blending so it reads as a glow on any road color; hidden for NORMAL,
-  CHALLENGE_CHOICE and unknown modes; Turbo pulses once per `pulsePeriodMs` (800 ms), Safe
-  stays steady, and reduced motion keeps the aura without the pulse
-- not built yet on purpose: burner art, a new pose, flames, lean and speed lines (art decision
-  and the Turbo success moment); the Turbo/Safe result moments and Safe progress (the rest of
-  C5-03, on the merged S4-03 contract). The Challenge choice itself is C5-02 (next section).
+  CHALLENGE_CHOICE and unknown modes; Turbo and Safe stay steady (Turbo alpha 0.12 after C5-03j)
+- later local work: painted exhaust and restrained speed lines (C5-03j); the monkey poses,
+  the thruster glow, the result moments and Safe progress are C5-03 (see below). The Challenge
+  choice itself is C5-02 (next section).
 
-## Challenge choice and energy (C5-02, local, not committed)
+## Challenge choice and energy (C5-02, committed locally as `f6b9878`)
 
 - `runtime/mapStudentRaceChallenge.js` maps `gameplay.challenge` once (energy, threshold,
   offer, run, last result); a broken part drops only that part (`mapOrNull`), the offer
@@ -652,7 +680,8 @@ Current audio matrix:
   reconnect check
 - reliability bounds (2026-10-17 audit): the choice POST and the check read carry their own
   request timeouts (`STUDENT_RACE_CONFIG.challengeChoiceTimeoutMs` 4 s,
-  `challengeCheckTimeoutMs` 3 s; per request, the shared HTTP client has no global limit). A POST
+  `challengeCheckTimeoutMs` 3 s; per request — the shared HTTP client has no global limit, and
+  the other runtime calls got their own bounds in C5-03). A POST
   timeout is an unknown outcome — checked, never re-sent; a read timeout ends in the manual
   sync. Only a read that landed in the race state allows the same-choice retry; a stale or
   invalid read leaves the manual sync. A failure that arrives after the screen moved on (newer
@@ -672,6 +701,90 @@ Current audio matrix:
 - bots: `scripts/devRaceBotChallenge.mjs` (`--challenge=random|turbo|safe|none`) sends one
   request per offer, never re-sends a failed one, and counts only confirmed choices
 
+## Challenge results, Safe progress and thrusters (C5-03, local, not committed)
+
+- pure selectors in `runtime/studentRaceGameplayMode.js` read only server data:
+  `selectSafeRunProgress` (current = resolved + 1, only while the served Safe question and the
+  Safe mode agree), `selectChallengeResultOutcome` (the run's `lastResult` once the mode moved
+  on and the served question still carries the run's context) and
+  `selectChallengeSlowdownSource` (`CHALLENGE_TIMEOUT` or `TURBO_FAILURE`)
+- Safe progress sits beside the Safe badge in the question's status line: "question N of 3"
+  and three pips (`.race-safe-pip[data-done]`, decorative). After a Safe timeout the progress
+  can trail the server by up to one 2 s poll, because the question DTO carries no run index
+- result moments: `deriveStudentRaceMoments` adds `TURBO_SUCCESS` / `TURBO_FAILURE` /
+  `SAFE_COMPLETE` / `SAFE_PERFECT` once per `lastResult.challengeId` and player identity; the
+  first observation is a baseline, so a refresh or reconnect never replays a result; FINISH
+  still outranks everything; the seen-id sets are bounded (64)
+- the answer feedback names the result (`gameplay.result.*`; ✓/✕ still mark the answer itself);
+  a Turbo failure slowdown explains itself ("The turbo fizzled — short slowdown")
+- names and copy (HE/EN): Turbo Rush / טורבו־ברק and Banana Cruise / שיוט בננה; a choice that
+  is still saving after `challengeSlowSubmitMs` (1.5 s) swaps to a playful "still checking"
+  line by CSS alone (`.race-status-swap`)
+- thrusters: `pixi/vehicles/KartThrusters.js` with `config/kartThrusterConfig.js`. The kart
+  manifest records the art's measured rear-nozzle centres and radius (identical on every
+  color); `artPixelToKartLocal` maps them like the art sprite. Player only, inside the bobbing
+  kart, above the art; drawn once per palette, animated by alpha and scale. The Turbo question
+  keeps the original nozzles; only a fresh server `TURBO_SUCCESS` plays the painted exhaust
+  (`studentRaceEffectManifest`; a small code-drawn flame only when that image fails to load).
+  Safe: calm blue; a server slowdown dims the nozzles; NORMAL, choice and unknown
+  modes keep the original art. One burst per result (Turbo flare, failure sputter, Safe settle
+  pulses); FINISH stops a burst; reduced motion keeps a steady glow and skips bursts;
+  placeholder karts get none
+- effects: `pixi/effects/drawChallengeResultEffect.js` (four deterministic drawers, durations in
+  `raceAnimationConfig`); sounds reuse approved cues (`COMBO_TIER_3`, `ANSWER_WRONG`,
+  `COMBO_TIER_1`, `COMBO_TIER_2`) and a result replaces the answer cue of the same batch;
+  dedicated challenge sounds are AUDIO ASSET REQUIRED
+- runtime request bounds: `RACE_PLAYER_REQUEST_TIMEOUT_MS` in `api/racePlayerApi.js` —
+  race-state, current question, answer and finish arbitration 5 s, heartbeat and reconnect 8 s.
+  Each caller already recovers from a network error (keep the question and retry, refresh the
+  question, reconnect, retry the arbitration loop), so a stalled network no longer freezes the
+  panel until a reload. The join stays unbounded: a lost join response must not invite a retry
+  that hits "name taken"
+- contrast: feedback lines take their tone from `.race-panel-tone[data-tone]`; the light theme
+  darkens the bright brand tones (4.9:1 and more, measured), and the card description is mixed
+  toward the body text (4.5:1 and more in both themes)
+- the DEV preview question keeps the context it was served with, like a server question, so
+  `/dev/race?motionScenario=challenge` shows the result lines
+- monkey poses (2026-10-18): `pixi/vehicles/KartPoseArt.js` + manifest `poses`
+  (`SAFE_RUN`, `TURBO_TRIAL`) per colour. Each pose image is the shipped colour image with only
+  the zone above the cockpit rim replaced by the candidate monkey (aligned, its paint recoloured
+  with the kart recolour pipeline); 0 visible pixels change in the kart body, so the anchor,
+  size and nozzle centres are identical. Only the player's kart uses them. The player's two poses
+  load and upload to the GPU about 1.5 s after the kart art appears (`kartPoses` in
+  `raceAnimationConfig`); a failed one retries at most twice, 5 s apart, never offline; a pose
+  blends in over 320 ms and returns from Turbo in 160 ms on an isolated surface
+  (`KartArtCrossfade`, the shared body stays opaque); the blend filter is warmed up in the same
+  quiet moment, so the first Turbo win does not stall on compiling it; reduced motion swaps at
+  once; the idle art shows until a pose is ready and again afterwards, and a late or failed load
+  never shows a stale pose. Opponents are unchanged
+- challenge answers: the answer feedback carries its served `gameplayContext`; for Turbo/Safe
+  questions the reward chip shows the server points without a combo or streak line, and the
+  answer effect and sound use the plain correct tier, because the server keeps challenge answers
+  out of the streak (`isChallengeAnswer`)
+- Safe copy: `SAFE_COMPLETE` reads "Cruise finished — keep rolling!" (✓/✕ still mark the last
+  answer); only `SAFE_PERFECT` celebrates. The choice sync failure is a plain error message
+- Safe results (C5-03l): no stars, rays, nozzle halos or driver-height rings. One shallow blue
+  ground ripple (peak alpha 0.16 complete / 0.26 perfect), plus a contained blue nozzle pulse
+  (550 / 800 ms, opacity capped at 0.45 / 0.65). The steady Safe nozzle light is capped at
+  0.45. The mode aura fades in/out over 320 ms and settles immediately under reduced motion.
+- Turbo timing (C5-03k): the question keeps the idle art and has no fire. Only a fresh server
+  `TURBO_SUCCESS` moment holds the launch pose for 1.3 s and plays the 1.1 s flame. Finish,
+  a new offer, another mode or reduced motion cancels the hold. No camera zoom or special
+  movement burst: +80 uses normal authoritative interpolation (24 units/s correction cap).
+  Both pose directions blend for 320 ms on an isolated surface; common body pixels stay
+  opaque, scale stays fixed, and an interrupted return reverses continuously. A challenge
+  result replaces the answer effect and sound of the same batch. Earlier performance
+  measurements predate this final pass; physical-phone performance must be checked again.
+- lost acknowledgement: `pages/__tests__/StudentRacePage.lostAnswer.test.jsx` drives a fake server
+  that commits the answer and then loses the response — one POST, the next server question, the
+  server score once, no feedback for the lost answer
+- seven colour karts re-encoded as q90 WebP like the green one (about 390 KB to 88 KB each,
+  alpha identical, 41–44 dB at display sizes)
+- painted Turbo exhaust (C5-03j): one shared 12 KB transparent WebP, no star particles or filled
+  ground disc; fire appears only for a successful result, with a small code fallback on load failure.
+  No new server speed effect; final live/device acceptance remains open
+- not built: dedicated challenge sounds
+
 ## Stale client state to clean
 
 - none recorded; the results route constant now backs the C4 Result Screen route.
@@ -682,7 +795,11 @@ Current audio matrix:
 C5-A audio merged (PR #75); S4-01 contract merged (PR #74); C5-01 merged (PR #76);
 S4-02 + S4-03 Challenge contract merged (PR #77)
 → C5-03 presentation groundwork + C5-01h slowdown explanation merged (PR #78)
-→ C5-02 Challenge Choice implemented locally, live QA passed (review, then the commit)
-→ C5-03 Safe progress and Turbo/Safe results on the merged S4-03 contract
+→ C5-02 Challenge Choice committed locally (f6b9878)
+→ C5-03 results, Safe progress and thrusters implemented locally, live QA passed (review, then
+  the commit); 2026-10-18 closeout and Turbo polish on top, live QA race 172 (23/23)
+→ C5-03k/l success-only launch, normal catch-up, clean Turbo/Safe blending and restrained Safe results:
+  local QA; final live/device QA open
+→ S4-04 handoff to the server; dedicated challenge sounds (audio)
 → meanwhile: the pre-release device/recovery QA
 ```

@@ -1,6 +1,7 @@
 import { audioEngine } from "../../../shared/audio";
 import { GAME_AUDIO } from "../../../shared/gameAudio/gameAudioCatalog";
 import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig";
+import { presentedMoments } from "../runtime/deriveStudentRaceMoments";
 import { STUDENT_RACE_MOMENT } from "../runtime/studentRaceRuntimeConstants";
 
 export const STUDENT_RACE_SOUND = Object.freeze({
@@ -24,10 +25,19 @@ const COMBO_TIERS = Object.freeze([
   { minStreak: STUDENT_RACE_CONFIG.comboMinStreak, key: GAME_AUDIO.COMBO_TIER_1 },
 ]);
 
+// Challenge results reuse approved cues until dedicated ones are recorded and approved.
+const CHALLENGE_RESULT_SOUNDS = Object.freeze({
+  [STUDENT_RACE_MOMENT.TURBO_SUCCESS]: GAME_AUDIO.COMBO_TIER_3,
+  [STUDENT_RACE_MOMENT.TURBO_FAILURE]: GAME_AUDIO.ANSWER_WRONG,
+  [STUDENT_RACE_MOMENT.SAFE_COMPLETE]: GAME_AUDIO.COMBO_TIER_1,
+  [STUDENT_RACE_MOMENT.SAFE_PERFECT]: GAME_AUDIO.COMBO_TIER_2,
+});
+
 const MOMENT_SOUNDS = Object.freeze({
   [STUDENT_RACE_MOMENT.WRONG]: GAME_AUDIO.ANSWER_WRONG,
   [STUDENT_RACE_MOMENT.TIME_UP]: GAME_AUDIO.QUESTION_TIME_UP,
   [STUDENT_RACE_MOMENT.FINISH]: GAME_AUDIO.RACE_FINISH,
+  ...CHALLENGE_RESULT_SOUNDS,
 });
 
 export function soundForMoment({ type, streak = 0 }) {
@@ -44,8 +54,9 @@ export function engineRateForSpeed(speed) {
   return minRate + progress * (maxRate - minRate);
 }
 
+// A result arrives with the answer that caused it: its cue replaces the answer cue.
 export function playStudentRaceMoments(batch) {
-  batch.moments.forEach((moment) => {
+  presentedMoments(batch).forEach((moment) => {
     const key = soundForMoment(moment);
     if (key != null) audioEngine.playSfx(key);
   });

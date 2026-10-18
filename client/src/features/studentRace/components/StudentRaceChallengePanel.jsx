@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
+import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig";
 import { getRaceGameplayPresentation } from "../config/raceGameplayPresentationConfig";
 import { STUDENT_RACE_CHALLENGE_PHASE as PHASE } from "../runtime/studentRaceRuntimeConstants";
 import { STUDENT_RACE_PANEL_STYLES } from "../styles/studentRacePanelStyles";
@@ -9,6 +10,19 @@ import StudentRacePanelSurface from "./StudentRacePanelSurface";
 import "../styles/studentRaceGameplay.css";
 
 const NO_CHOICES = Object.freeze([]);
+const SLOW_SUBMIT_STYLE = Object.freeze({ "--race-status-swap-delay": `${STUDENT_RACE_CONFIG.challengeSlowSubmitMs}ms` });
+
+// CSS swaps the lines after the delay, so a fresh SUBMITTING mount restarts it without timers.
+function SubmittingLine() {
+  const { t } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
+
+  return (
+    <span className="race-status-swap" style={SLOW_SUBMIT_STYLE}>
+      <span className="race-status-swap-first">{t("gameplay.choice.submitting")}</span>
+      <span className="race-status-swap-later" aria-hidden="true">{t("gameplay.choice.submittingSlow")}</span>
+    </span>
+  );
+}
 
 // A pending or unverified choice outranks the deadline: it may still have landed in time.
 function resolveStatus({ offer, phase, selectedChoice, isExpired }) {
@@ -41,7 +55,7 @@ export default function StudentRaceChallengePanel({
   return (
     <StudentRacePanelSurface>
       <p role="status" className={`${STUDENT_RACE_PANEL_STYLES.statusLine} text-[var(--qw-text)]`}>
-        <span>{t(status.key)}</span>
+        {phase === PHASE.SUBMITTING ? <SubmittingLine /> : <span>{t(status.key)}</span>}
         {status.canResync && interactionEnabled ? (
           <StudentRaceInlineRetryButton onRetry={onResync} labelKey="gameplay.choice.resync" />
         ) : null}

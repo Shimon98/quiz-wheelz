@@ -6,11 +6,13 @@ import {
 } from "../../../../constants/raceGameplayConstants";
 import {
   getQuestionContextForMode,
-  hasChallengeTimeoutSlowdown,
   isChallengeChoiceMode,
   isQuestionForGameplayMode,
   isQuestionGameplayMode,
   selectChallengeOffer,
+  selectChallengeResultOutcome,
+  selectChallengeSlowdownSource,
+  selectSafeRunProgress,
 } from "../studentRaceGameplayMode";
 
 function slowdown(overrides = {}) {
@@ -72,11 +74,61 @@ describe("studentRaceGameplayMode", () => {
     expect(selectChallengeOffer(null)).toBeNull();
   });
 
-  it("reports only the slowdown caused by a missed challenge", () => {
-    expect(hasChallengeTimeoutSlowdown({ activeEffects: [slowdown()] })).toBe(true);
-    expect(hasChallengeTimeoutSlowdown({ activeEffects: [slowdown({ source: "POWER_UP" })] })).toBe(false);
-    expect(hasChallengeTimeoutSlowdown({ activeEffects: [slowdown({ type: "SPEED_BOOST" })] })).toBe(false);
-    expect(hasChallengeTimeoutSlowdown({ activeEffects: [] })).toBe(false);
-    expect(hasChallengeTimeoutSlowdown(null)).toBe(false);
+  it("names the challenge that caused a server slowdown and nothing else", () => {
+    expect(selectChallengeSlowdownSource({ activeEffects: [slowdown()] })).toBe("CHALLENGE_TIMEOUT");
+    expect(selectChallengeSlowdownSource({ activeEffects: [slowdown({ source: "TURBO_FAILURE" })] }))
+      .toBe("TURBO_FAILURE");
+    expect(selectChallengeSlowdownSource({ activeEffects: [slowdown({ source: "POWER_UP" })] })).toBeNull();
+    expect(selectChallengeSlowdownSource({ activeEffects: [slowdown({ type: "SPEED_BOOST" })] })).toBeNull();
+    expect(selectChallengeSlowdownSource({ activeEffects: [] })).toBeNull();
+    expect(selectChallengeSlowdownSource(null)).toBeNull();
+  });
+
+  describe("challenge result for the answered question", () => {
+    function ended(mode, lastResult) {
+      return { mode, challenge: { run: null, lastResult } };
+    }
+    const turboWin = { challengeId: 3, type: "TURBO_TRIAL", outcome: "TURBO_SUCCESS" };
+    const safePerfect = { challengeId: 4, type: "SAFE_RUN", outcome: "SAFE_PERFECT" };
+
+    it("names the server outcome once the run that asked the question has ended", () => {
+      expect(selectChallengeResultOutcome(ended("NORMAL", turboWin), "TURBO_TRIAL")).toBe("TURBO_SUCCESS");
+      expect(selectChallengeResultOutcome(ended("NORMAL", safePerfect), "SAFE_RUN")).toBe("SAFE_PERFECT");
+    });
+
+    it("stays silent while the run continues or for another kind of question", () => {
+      expect(selectChallengeResultOutcome(ended("SAFE_RUN", safePerfect), "SAFE_RUN")).toBeNull();
+      expect(selectChallengeResultOutcome(ended("NORMAL", turboWin), "SAFE_RUN")).toBeNull();
+      expect(selectChallengeResultOutcome(ended("NORMAL", turboWin), "NORMAL")).toBeNull();
+      expect(selectChallengeResultOutcome(ended("NORMAL", null), "TURBO_TRIAL")).toBeNull();
+      expect(selectChallengeResultOutcome(null, "TURBO_TRIAL")).toBeNull();
+    });
+  });
+
+  describe("Safe run progress", () => {
+    function safeRun(questionsResolved, overrides = {}) {
+      return {
+        mode: "SAFE_RUN",
+        challenge: {
+          run: { challengeId: 9, type: "SAFE_RUN", questionsResolved, totalQuestions: 3, correctAnswers: 0, ...overrides },
+        },
+      };
+    }
+
+    it.each([[0, 1], [1, 2], [2, 3]])("shows question %i resolved as question %i of 3", (resolved, current) => {
+      expect(selectSafeRunProgress(safeRun(resolved), "SAFE_RUN")).toEqual({ current, total: 3, resolved });
+    });
+
+    it("shows progress only for a Safe question while the server runs Safe", () => {
+      expect(selectSafeRunProgress(safeRun(1), "NORMAL")).toBeNull();
+      expect(selectSafeRunProgress({ ...safeRun(1), mode: "NORMAL" }, "SAFE_RUN")).toBeNull();
+      expect(selectSafeRunProgress(safeRun(1, { type: "TURBO_TRIAL" }), "SAFE_RUN")).toBeNull();
+      expect(selectSafeRunProgress({ mode: "SAFE_RUN", challenge: { run: null } }, "SAFE_RUN")).toBeNull();
+      expect(selectSafeRunProgress(null, "SAFE_RUN")).toBeNull();
+    });
+
+    it("never invents a question past the end of the run", () => {
+      expect(selectSafeRunProgress(safeRun(3), "SAFE_RUN")).toBeNull();
+    });
   });
 });

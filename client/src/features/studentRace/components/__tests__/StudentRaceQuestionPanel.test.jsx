@@ -57,17 +57,61 @@ describe("StudentRaceQuestionPanel gameplay presentation", () => {
     expect(screen.getByText(i18n.t("studentRace:question.instruction"))).toBeInTheDocument();
   });
 
-  it("explains a missed-challenge slowdown in the instruction line", () => {
-    renderPanel({ slowdownNotice: true });
+  it.each(["gameplay.slowdownNotice", "gameplay.turboSlowdownNotice"])(
+    "explains the challenge slowdown %s in the instruction line",
+    (slowdownNoticeKey) => {
+      renderPanel({ slowdownNoticeKey });
 
-    expect(screen.getByRole("status")).toHaveTextContent(i18n.t("studentRace:gameplay.slowdownNotice"));
-  });
+      expect(screen.getByRole("status")).toHaveTextContent(i18n.t(`studentRace:${slowdownNoticeKey}`));
+    },
+  );
 
   it("lets answer feedback replace the slowdown notice", () => {
-    renderPanel({ slowdownNotice: true, feedbackState: "correct", selectedChoiceId: 1 });
+    renderPanel({ slowdownNoticeKey: "gameplay.slowdownNotice", feedbackState: "correct", selectedChoiceId: 1 });
 
     expect(screen.getByRole("status")).toHaveTextContent(i18n.t("studentRace:question.correctFeedback"));
     expect(screen.queryByText(i18n.t("studentRace:gameplay.slowdownNotice"))).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["correct", "gameplay.result.turboSuccess", "✓"],
+    ["wrong", "gameplay.result.turboFailure", "✕"],
+    ["wrong", "gameplay.result.safeComplete", "✕"],
+    ["correct", "gameplay.result.safePerfect", "✓"],
+  ])("names the challenge result in the %s answer feedback", (feedbackState, resultFeedbackKey, mark) => {
+    renderPanel({ question: question("TURBO_TRIAL"), feedbackState, selectedChoiceId: 1, correctAnswerChoiceId: 1,
+      resultFeedbackKey });
+
+    expect(screen.getByRole("status")).toHaveTextContent(`${mark} ${i18n.t(`studentRace:${resultFeedbackKey}`)}`);
+  });
+
+  it.each([
+    [{ feedbackState: "correct", selectedChoiceId: 1 }, "correct"],
+    [{ feedbackState: "wrong", selectedChoiceId: 2, correctAnswerChoiceId: 1 }, "wrong"],
+    [{ isExpired: true }, "wrong"],
+    [{ isExpired: true, error: "sync failed", onRetry: vi.fn() }, "error"],
+  ])("tones the feedback line from the stylesheet, not inline colors (%o)", (props, tone) => {
+    renderPanel(props);
+
+    const line = screen.getAllByRole("status").find((node) => node.classList.contains("race-panel-tone"));
+    expect(line).toHaveAttribute("data-tone", tone);
+    expect(line.style.color).toBe("");
+  });
+
+  it("shows the server's Safe progress beside the Safe badge", () => {
+    renderPanel({ question: question("SAFE_RUN"), safeProgress: { current: 2, total: 3, resolved: 1 } });
+
+    const progress = screen.getByText(i18n.t("studentRace:gameplay.safe.progress", { current: 2, total: 3 }));
+    expect(progress).toBeInTheDocument();
+    expect(document.querySelectorAll(".race-safe-pip")).toHaveLength(3);
+    expect(document.querySelectorAll(".race-safe-pip[data-done='true']")).toHaveLength(1);
+  });
+
+  it("hides the Safe progress once answer feedback takes the line", () => {
+    renderPanel({ question: question("SAFE_RUN"), safeProgress: { current: 2, total: 3, resolved: 1 },
+      feedbackState: "correct", selectedChoiceId: 1 });
+
+    expect(document.querySelector(".race-safe-pip")).toBeNull();
   });
 });
 

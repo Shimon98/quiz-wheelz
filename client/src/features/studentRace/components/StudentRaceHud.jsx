@@ -116,7 +116,7 @@ export default function StudentRaceHud({
             </div>
           ) : null}
         </div>
-        <StudentRaceSpeedometer speed={hud.speed} />
+        <StudentRaceSpeedometer speed={hud.speed} slowing={hud.slowing} />
         {controls}
       </div>
       <StudentRaceReward key={hud.rewardKey} reward={hud.reward} />

@@ -1,3 +1,4 @@
+import { isChallengeAnswer } from "./studentRaceGameplayMode.js";
 import {
   STUDENT_RACE_EFFECT,
   STUDENT_RACE_FEEDBACK,
@@ -36,6 +37,7 @@ export function applyFeedbackEffectToRuntime(
   });
   const feedbackEventId = activeEffect == null ? null : answerFeedback?.questionId ?? null;
   const feedbackStreak = activeEffect === STUDENT_RACE_EFFECT.CORRECT && answerFeedback?.correct === true
+    && !isChallengeAnswer(answerFeedback)
     ? answerFeedback.streak
     : 0;
 

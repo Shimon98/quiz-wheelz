@@ -2,6 +2,16 @@ import httpClient from "./httpClient";
 import { API_ENDPOINTS } from "../constants/apiEndpointConstants";
 import { unwrapApiResponse } from "./apiResponseUtils.js";
 
+// A hung runtime call pins its hook's in-flight slot until a reload; every call bounded here is safe
+// to repeat and its caller already recovers from a network error. Join is not, so it stays unbounded.
+export const RACE_PLAYER_REQUEST_TIMEOUT_MS = Object.freeze({
+  RACE_STATE: 5000,
+  CURRENT_QUESTION: 5000,
+  SUBMIT_ANSWER: 5000,
+  FINISH_ARBITRATION: 5000,
+  SESSION: 8000,
+});
+
 /*
  * Student join — the server creates the RacePlayer and sets the
  * racePlayerToken COOKIE on this response (student identity is cookie-based,
@@ -28,10 +38,9 @@ export async function joinRace({ roomCode, displayName }) {
  * cookie and returns race metadata + the shared runtime snapshot. Unlike the
  * question/answer actions, the server validates only the session here (any
  * race status), so screens can route by server truth from this response.
- * `timeoutMs` bounds a read the caller must not wait on forever (C5-02 check);
- * the regular loads and polls pass none and keep their behavior.
+ * `timeoutMs` tightens the bound for a read the caller must settle quickly (C5-02 check).
  */
-export async function getRaceState({ timeoutMs } = {}) {
+export async function getRaceState({ timeoutMs = RACE_PLAYER_REQUEST_TIMEOUT_MS.RACE_STATE } = {}) {
   const response = await httpClient.get(
     API_ENDPOINTS.RACE_PLAYERS.RACE_STATE,
     { timeout: timeoutMs },
@@ -48,6 +57,8 @@ export async function getRaceState({ timeoutMs } = {}) {
 export async function getCurrentQuestion() {
   const response = await httpClient.post(
     API_ENDPOINTS.RACE_PLAYERS.CURRENT_QUESTION,
+    undefined,
+    { timeout: RACE_PLAYER_REQUEST_TIMEOUT_MS.CURRENT_QUESTION },
   );
 
   return unwrapApiResponse(response);
@@ -57,6 +68,7 @@ export async function submitAnswer({ questionId, choiceId }) {
   const response = await httpClient.post(
     API_ENDPOINTS.RACE_PLAYERS.SUBMIT_ANSWER,
     { questionId, choiceId },
+    { timeout: RACE_PLAYER_REQUEST_TIMEOUT_MS.SUBMIT_ANSWER },
   );
 
   return unwrapApiResponse(response);
@@ -83,13 +95,17 @@ export async function chooseChallenge({ offerId, choice }, { timeoutMs } = {}) {
  * refresh/unmount.
  */
 export async function heartbeatRacePlayer() {
-  const response = await httpClient.post(API_ENDPOINTS.RACE_PLAYERS.HEARTBEAT);
+  const response = await httpClient.post(API_ENDPOINTS.RACE_PLAYERS.HEARTBEAT, undefined, {
+    timeout: RACE_PLAYER_REQUEST_TIMEOUT_MS.SESSION,
+  });
 
   return unwrapApiResponse(response);
 }
 
 export async function reconnectRacePlayer() {
-  const response = await httpClient.post(API_ENDPOINTS.RACE_PLAYERS.RECONNECT);
+  const response = await httpClient.post(API_ENDPOINTS.RACE_PLAYERS.RECONNECT, undefined, {
+    timeout: RACE_PLAYER_REQUEST_TIMEOUT_MS.SESSION,
+  });
 
   return unwrapApiResponse(response);
 }

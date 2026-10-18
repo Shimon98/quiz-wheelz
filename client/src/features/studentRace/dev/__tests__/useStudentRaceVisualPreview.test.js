@@ -37,7 +37,7 @@ describe("useStudentRaceVisualPreview", () => {
       result.current.onChoiceSelect(3);
     });
 
-    expect(result.current.answerFeedback).toEqual({ questionId, correct: true, scoreDelta: 10, streak: 3 });
+    expect(result.current.answerFeedback).toEqual({ questionId, correct: true, scoreDelta: 10, streak: 3, gameplayContext: "NORMAL" });
     expect(result.current.selectedChoiceId).toBe(2);
     expect(result.current.feedbackState).toBe("correct");
     expect(result.current.correctAnswerChoiceId).toBeNull();
@@ -59,7 +59,7 @@ describe("useStudentRaceVisualPreview", () => {
     act(() => result.current.onChoiceSelect(4));
 
     expect(result.current.answerFeedback).toEqual({
-      questionId: result.current.question.id, correct: false, scoreDelta: 0, streak: 0,
+      questionId: result.current.question.id, correct: false, scoreDelta: 0, streak: 0, gameplayContext: "NORMAL",
     });
     expect(result.current.answerFeedback.questionId).not.toBe(firstId);
     expect(result.current.feedbackState).toBe("wrong");
@@ -118,6 +118,28 @@ describe("useStudentRaceVisualPreview", () => {
 
       expect(result.current.challenge.visible).toBe(false);
       expect(result.current.question.gameplayContext).toBe("TURBO_TRIAL");
+    } finally {
+      window.history.replaceState({}, "", "/");
+    }
+  });
+
+  it("keeps a served question's challenge context through its feedback, like the server question", () => {
+    window.history.replaceState({}, "", "/dev/race?motionScenario=challenge");
+    try {
+      const { result } = renderHook(() => useStudentRaceVisualPreview(translate));
+      for (let answer = 0; answer < 4; answer += 1) {
+        act(() => { result.current.onChoiceSelect(1); });
+        act(() => { vi.advanceTimersByTime(STUDENT_RACE_CONFIG.feedbackDelayMs); });
+      }
+      act(() => { result.current.challenge.onChoose("TURBO_TRIAL"); });
+
+      act(() => { result.current.onChoiceSelect(1); });
+
+      expect(result.current.runtimeState.gameplay.mode).toBe("NORMAL");
+      expect(result.current.runtimeState.gameplay.challenge.lastResult.outcome).toBe("TURBO_SUCCESS");
+      expect(result.current.question.gameplayContext).toBe("TURBO_TRIAL");
+      act(() => { vi.advanceTimersByTime(STUDENT_RACE_CONFIG.feedbackDelayMs); });
+      expect(result.current.question.gameplayContext).toBe("NORMAL");
     } finally {
       window.history.replaceState({}, "", "/");
     }
