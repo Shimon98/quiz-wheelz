@@ -2,7 +2,7 @@ import { Container, Graphics } from "pixi.js";
 import { describe, expect, it } from "vitest";
 
 import { STUDENT_RACE_ANIMATION_CONFIG } from "../../../config/raceAnimationConfig";
-import { STUDENT_RACE_EFFECT } from "../../../runtime/studentRaceRuntimeConstants";
+import { STUDENT_RACE_EFFECT, STUDENT_RACE_MOMENT } from "../../../runtime/studentRaceRuntimeConstants";
 import { drawFeedbackEffect } from "../../effects/drawFeedbackEffect";
 import { EffectsLayer } from "../EffectsLayer";
 
@@ -55,6 +55,20 @@ describe("EffectsLayer challenge results", () => {
     ));
 
     expect([...layer.activeEffects.keys()]).toEqual([STUDENT_RACE_EFFECT.TURBO_SUCCESS]);
+    layer.destroy();
+  });
+
+  it("keeps the answer effect when a new offer arrives with it, and draws nothing for the offer or the Turbo arm", () => {
+    const layer = new EffectsLayer(new Container());
+    layer.update(frame());
+
+    layer.playMoments(batch(
+      { type: STUDENT_RACE_EFFECT.CORRECT, id: 18, streak: 0 },
+      { type: STUDENT_RACE_MOMENT.CHALLENGE_OFFER, id: "offer-4", offerId: 4 },
+    ));
+    layer.playMoments(batch({ type: STUDENT_RACE_MOMENT.TURBO_ARMED, id: "turbo-armed-4", challengeId: 4 }));
+
+    expect([...layer.activeEffects.keys()]).toEqual([STUDENT_RACE_EFFECT.CORRECT]);
     layer.destroy();
   });
 

@@ -178,8 +178,9 @@ using a contained blue pulse and shallow ground ripple with gradual aura transit
 C5-03m preserves native renderer resolution during blending, shortens Turbo return to 160 ms,
 and clearly labels server-owned challenge slowdown with dimmed nozzles and playful copy.
 Existing audio remains; additional mode music is deferred. Final live/device
-acceptance and the C5-03 review/commit remain open. Dedicated challenge sounds remain audio
-work. Diana owns the requested question sequence/difficulty changes; these are separate server
+acceptance and the C5-03 review/commit remain open. Dedicated challenge sounds were added
+locally on 2026-10-19 (client quality package 2). Diana owns the requested question
+sequence/difficulty changes; these are separate server
 work, not client simulation. S4-04 remains the next server roadmap item.
 
 ## Phase 5 — Full teacher identity and 2FA

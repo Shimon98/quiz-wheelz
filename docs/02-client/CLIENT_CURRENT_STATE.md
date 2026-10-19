@@ -21,8 +21,8 @@ players, a slow and a failed choice). Closeout 2026-10-18 (same branch, not comm
 poses on the real kart bodies (Safe lounging with a can, Turbo leaning forward; eight colours,
 player-only, preloaded shortly after the kart appears), no combo claims for challenge answers, a calmer Safe Perfect
 effect, neutral Safe-complete copy, a clear sync-failed message, a proven lost-acknowledgement
-path, and q90 WebP for the seven colour karts. Dedicated challenge sounds are still AUDIO ASSET
-REQUIRED. Painted nozzle exhaust is integrated by the subsequent C5-03j visual pass: restrained
+path, and q90 WebP for the seven colour karts. Dedicated challenge sounds were added on
+2026-10-19 (client quality package 2; see the audio matrix). Painted nozzle exhaust is integrated by the subsequent C5-03j visual pass: restrained
 Turbo light, no Turbo star particles or filled ground disc, and a staged whole-kart pose
 transition. Earlier live evidence (race 172) predates this pass; its final live/device acceptance
 remains open. Latest C5-03k correction: Turbo waits in idle until a fresh accepted success;
@@ -606,9 +606,9 @@ Current audio matrix:
 | Public Settings dialog | Music / Sound effects switches only | none | none |
 | Student join | game music (`music-game-main`, soft on phones) | none | none |
 | Student waiting room | game music, same track without a restart | race start, only on an observed WAITING to PLAYING change | none |
-| Student race | race music (`music-race-main`, soft on phones) | correct; combo in three tiers from the server streak (2+, 5+, 10+) instead of correct; wrong; time up; finish | hover engine while gameplay is ready and the player races; rate from the server speed |
+| Student race | race music (`music-race-main`, soft on phones) | correct; combo in three tiers from the server streak (2+, 5+, 10+) instead of correct; wrong; time up; finish; challenge offer instead of the correct cue it arrives with; Turbo armed once the server holds the run; Turbo launch, Turbo fizzle, Safe complete (combo tier 1) and Safe perfect instead of the answer cue of their batch | hover engine while gameplay is ready and the player races; rate from the server speed |
 | Student finish ceremony | race music continues | finish (once) | engine stops at the finish |
-| Student results | none: the race music fades out | none | none |
+| Student results | game music (`music-game-main`, scene gain 0.4, below the waiting room) after the race music fades out | none | none |
 | Teacher waiting room | game music (projector level) | one soft pop per roster refresh that brings new players; race start on a successful Start | none |
 | Teacher projector | race music (projector level, above a phone) while the race runs | player finished (at least 400 ms apart); race finished (once) | none |
 | Teacher answers and rank changes | none, by decision | none | none |
@@ -732,9 +732,12 @@ Current audio matrix:
   pulses); FINISH stops a burst; reduced motion keeps a steady glow and skips bursts;
   placeholder karts get none
 - effects: `pixi/effects/drawChallengeResultEffect.js` (four deterministic drawers, durations in
-  `raceAnimationConfig`); sounds reuse approved cues (`COMBO_TIER_3`, `ANSWER_WRONG`,
-  `COMBO_TIER_1`, `COMBO_TIER_2`) and a result replaces the answer cue of the same batch;
-  dedicated challenge sounds are AUDIO ASSET REQUIRED
+  `raceAnimationConfig`); sounds (2026-10-19): `TURBO_LAUNCH`, `TURBO_FIZZLE` and `SAFE_PERFECT`
+  for their results, Safe complete keeps `COMBO_TIER_1`, and a result replaces the answer cue of
+  the same batch. `deriveStudentRaceMoments` adds a `challenge-offer` moment for a new `offerId`
+  and a `turbo-armed` moment for a new Turbo `run.challengeId` (sets of seen ids, the first sight
+  of a race or player is a baseline, the finish silences both); the offer cue replaces the
+  correct-answer cue of its batch in sound only, and the visual answer effect stays
 - runtime request bounds: `RACE_PLAYER_REQUEST_TIMEOUT_MS` in `api/racePlayerApi.js` —
   race-state, current question, answer and finish arbitration 5 s, heartbeat and reconnect 8 s.
   Each caller already recovers from a network error (keep the question and retry, refresh the
@@ -787,7 +790,7 @@ Current audio matrix:
 - painted Turbo exhaust (C5-03j): one shared 12 KB transparent WebP, no star particles or filled
   ground disc; fire appears only for a successful result, with a small code fallback on load failure.
   No new server speed effect; final live/device acceptance remains open
-- not built: dedicated challenge sounds
+- dedicated challenge sounds: added 2026-10-19 (client quality package 2, see the audio matrix)
 
 ## Stale client state to clean
 
@@ -804,6 +807,6 @@ S4-02 + S4-03 Challenge contract merged (PR #77)
   the commit); 2026-10-18 closeout and Turbo polish on top, live QA race 172 (23/23)
 → C5-03k/l success-only launch, normal catch-up, clean Turbo/Safe blending and restrained Safe results:
   local QA; final live/device QA open
-→ S4-04 handoff to the server; dedicated challenge sounds (audio)
+→ S4-04 handoff to the server
 → meanwhile: the pre-release device/recovery QA
 ```

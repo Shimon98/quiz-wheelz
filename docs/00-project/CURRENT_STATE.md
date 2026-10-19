@@ -112,7 +112,8 @@ remain open, and dedicated challenge sounds are still audio work.
 Next: a physical-phone check (before classroom or production use), then the S4-04 handoff and
 C5-04 planning. Diana owns the requested Turbo question sequence and
 question difficulty on the server; the client does not simulate these. Dedicated challenge
-sounds remain audio work. Browser fixtures and unit tests are local evidence, not release
+sounds and calm student results music were added locally on 2026-10-19 (client quality
+package 2). Browser fixtures and unit tests are local evidence, not release
 acceptance. Full review bundle: `docs/vision/C5_03/codex_clarity_2026-10-18/` (local, ignored).
 
 

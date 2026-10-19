@@ -1,4 +1,4 @@
-import { RACE_CHALLENGE_OUTCOMES } from "../../../constants/raceGameplayConstants";
+import { RACE_CHALLENGE_CHOICES, RACE_CHALLENGE_OUTCOMES } from "../../../constants/raceGameplayConstants";
 import { STUDENT_RACE_MOMENT } from "./studentRaceRuntimeConstants";
 
 const ANSWER_MOMENTS = new Set([STUDENT_RACE_MOMENT.CORRECT, STUDENT_RACE_MOMENT.WRONG]);
@@ -24,6 +24,17 @@ function resultIdOf(runtimeState) {
   return Number.isSafeInteger(challengeId) ? challengeId : null;
 }
 
+function offerIdOf(runtimeState) {
+  const offerId = runtimeState.gameplay?.challenge?.offer?.offerId;
+  return Number.isSafeInteger(offerId) ? offerId : null;
+}
+
+// Only a run the server already holds counts: tapping a card changes nothing until its answer is applied.
+function turboRunIdOf(runtimeState) {
+  const run = runtimeState.gameplay?.challenge?.run;
+  return run?.type === RACE_CHALLENGE_CHOICES.TURBO_TRIAL && Number.isSafeInteger(run.challengeId) ? run.challengeId : null;
+}
+
 // Challenge IDs only grow for one race player, so the highest one seen is the whole
 // memory; another race or player starts again from its own baseline.
 function seenResultId(previous, identity, resultId) {
@@ -44,6 +55,9 @@ function observeRuntime(runtimeState, previous) {
     seenFeedbackEventIds: previous?.seenFeedbackEventIds ?? new Set(),
     seenTimeUpIds: previous?.seenTimeUpIds ?? new Set(),
     seenChallengeResultId: seenResultId(previous, identity, resultId),
+    // Sets rather than a highest id: nothing in the contract promises that offer ids arrive in order.
+    seenOfferIds: previous?.identity === identity ? previous.seenOfferIds : new Set(),
+    seenRunIds: previous?.identity === identity ? previous.seenRunIds : new Set(),
   };
 }
 
@@ -81,6 +95,14 @@ export function deriveStudentRaceMoments(previous, runtimeState) {
     observed.seenTimeUpIds = remember(observed.seenTimeUpIds, observed.timeUpQuestionId);
   }
   const resultMoment = freshResultMoment(previous, observed, runtimeState);
+  const offerId = offerIdOf(runtimeState);
+  const isFreshOffer = offerId != null && !observed.seenOfferIds.has(offerId);
+  if (isFreshOffer) observed.seenOfferIds = remember(observed.seenOfferIds, offerId);
+  const armedId = turboRunIdOf(runtimeState);
+  const isFreshArm = armedId != null && !observed.seenRunIds.has(armedId);
+  if (isFreshArm) observed.seenRunIds = remember(observed.seenRunIds, armedId);
+  // The first sight of a race or player is a baseline: a refresh or a reconnect never replays an offer or an arm.
+  const sameIdentity = previous?.identity === observed.identity;
 
   if (previous == null) return { observed, moments: [] };
 
@@ -93,6 +115,10 @@ export function deriveStudentRaceMoments(previous, runtimeState) {
     moments.push({ type: observed.activeEffect, id: observed.feedbackEventId, streak: observed.feedbackStreak });
   }
   if (isFreshTimeUp) moments.push({ type: STUDENT_RACE_MOMENT.TIME_UP, id: observed.timeUpQuestionId });
+  if (sameIdentity && isFreshOffer) moments.push({ type: STUDENT_RACE_MOMENT.CHALLENGE_OFFER, id: `offer-${offerId}`, offerId });
+  if (sameIdentity && isFreshArm) {
+    moments.push({ type: STUDENT_RACE_MOMENT.TURBO_ARMED, id: `turbo-armed-${armedId}`, challengeId: armedId });
+  }
   if (resultMoment != null) moments.push(resultMoment);
   return { observed, moments };
 }

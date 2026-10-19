@@ -1278,6 +1278,27 @@ Built in tracks by server contract: Track A uses only the merged S4-01 vocabular
   packaging recorded under C1-06F): 3,481,208 → 994,664 bytes, and the game's frames match the
   reviewed candidate pixel for pixel. Production preview and physical phones: NOT TESTED.
   Evidence: `docs/vision/p1_gpu_scenery_2026-10-19/` (local).
+- **Client quality package 2, challenge sounds and results music — IMPLEMENTED LOCALLY (not
+  committed, 2026-10-19):** five in-house cues approved by ear in the challenge Sound Lab (offer A,
+  Turbo arm A, Turbo launch B, Turbo fizzle A, Safe perfect A) live in `assets/audio/sfx/` with
+  catalog keys of one voice and a 1 s cooldown (Turbo launch was approved at full level and uses
+  0.95, since every catalog gain stays under 1); all five are preloaded with the race screen.
+  `deriveStudentRaceMoments` adds `challenge-offer` for a new `offerId` and `turbo-armed` for a new
+  Turbo `run.challengeId`, which appears only once the server applied the choice; both use sets of
+  seen ids, and the first sight of a race or player is a baseline. The offer cue replaces the
+  correct-answer cue of its batch in sound only. Results now play Turbo launch, Turbo fizzle and
+  Safe perfect, while Safe complete keeps combo tier 1 (this supersedes the AUDIO ASSET REQUIRED
+  notes above). The student results screen plays the game music at scene gain 0.4 through
+  `useSceneMusic`; the projector is unchanged. DEV check on the challenge fixture: every new cue
+  played on its first use, the offer and each result played alone, and the Safe choice stayed
+  silent. A closeout check added eight tests for moments that share one sample, reconnect gaps
+  and the results music; client suite 1,668/1,668 (181 files), lint and build pass. A DEV
+  cold-load check with slowed sound downloads: a cue whose file has not arrived yet stays silent,
+  never late or doubled; at 13 s per file every cue stayed silent for the whole check, because
+  the audio loader's 10 s budget covers the whole download (an engine limit older than this
+  package). Open for package 4 (final QA): preload the race sounds in the student waiting room,
+  review that budget for a busy classroom network, and test the production preview, a live server
+  race and physical phones (NOT TESTED). Evidence: `docs/vision/p2_audio_2026-10-19/` (local).
 
 ### C5 gameplay UI — after S4-02 onward
 

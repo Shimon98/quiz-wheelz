@@ -26,6 +26,12 @@ to -1 dBFS. No third-party samples are involved, so there is no external license
 project-owned and may be modified freely. The render recipe lives in the private, untracked asset
 pipeline (`docs/vision/audio-source/render-sfx.html`), like the other art pipelines.
 
+The five challenge cues (`sfx-challenge-offer` … `sfx-safe-perfect`) were approved by ear in the
+challenge Sound Lab on 2026-10-19. They come from the same kit with three engine voices added, in
+`docs/vision/p2_audio_2026-10-19/render-challenge-sfx.html`: seeded noise (a re-render matches
+within one sample step), a 30 Hz high-pass, and 150 ms of silence before each design so the
+limiter does not flatten the first event, trimmed back to a 3 ms lead.
+
 | Production key | File | Purpose | Design | Format |
 |---|---|---|---|---|
 | `sfx-answer-correct` | `sfx/answer-correct.wav` | Student: accepted correct answer | Two rising bell notes (A5, E6) with a short high sparkle | WAV PCM16, 48 kHz, mono |
@@ -36,6 +42,11 @@ pipeline (`docs/vision/audio-source/render-sfx.html`), like the other art pipeli
 | `sfx-question-time-up` | `sfx/question-time-up.wav` | Student: the question's time ran out | Two ticks and a falling whistle | WAV PCM16, 48 kHz, mono |
 | `sfx-race-finish` | `sfx/race-finish.wav` | Student: own authoritative finish | "Winning marimba": rising pentatonic marimba run into a bell chord, soft kick and shimmer | WAV PCM16, 48 kHz, mono |
 | `sfx-race-start` | `sfx/race-start.wav` | Student: race opens (waiting to racing) | Three quick square pips and a high GO tone (0.74 s, a start flourish, not a countdown) | WAV PCM16, 48 kHz, mono |
+| `sfx-challenge-offer` | `sfx/challenge-offer.wav` | Student: a new challenge offer from the server; replaces the correct-answer cue it arrives with | A soft swell, then a rising E major-seventh glass arpeggio that stays open (0.48 s) | WAV PCM16, 48 kHz, mono |
+| `sfx-turbo-arm` | `sfx/turbo-arm.wav` | Student: the server accepted the Turbo choice | The engine swells and spools up, then a small bright lock-in tick (0.73 s) | WAV PCM16, 48 kHz, mono |
+| `sfx-turbo-launch` | `sfx/turbo-launch.wav` | Student: Turbo success, with the flame burst | Rocket: a rev, a soft thump, a big opening whoosh and a short high zing, no bells (0.72 s) | WAV PCM16, 48 kHz, mono |
+| `sfx-turbo-fizzle` | `sfx/turbo-fizzle.wav` | Student: Turbo failure | Four engine coughs, each lower and softer, then a small puff (0.71 s) | WAV PCM16, 48 kHz, mono |
+| `sfx-safe-perfect` | `sfx/safe-perfect.wav` | Student: a Safe run with every answer correct | An unhurried C major marimba walk into a soft Cmaj9 chime over a short warm pad (0.96 s) | WAV PCM16, 48 kHz, mono |
 | `loop-hover-engine` | `loops/hover-engine.wav` | Student: own kart engine while racing | Sawtooth and square voices with a sub, vibrato and filtered air noise; one 2.000 s period cut from the steady state so every voice closes a whole cycle | WAV PCM16, 48 kHz, mono, seamless loop |
 | `sfx-projector-player-joined` | `sfx/projector-player-joined.wav` | Teacher waiting room: a roster refresh brought new players | Two soft rising bubble pops | WAV PCM16, 48 kHz, mono |
 | `sfx-projector-race-start` | `sfx/projector-race-start.wav` | Teacher: race started (on a successful Start) | Soft G major pad with three bell notes | WAV PCM16, 48 kHz, mono |

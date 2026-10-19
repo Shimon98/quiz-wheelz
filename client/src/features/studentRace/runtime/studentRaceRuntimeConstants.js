@@ -39,6 +39,8 @@ export const STUDENT_RACE_MOMENT = Object.freeze({
   TURBO_FAILURE: STUDENT_RACE_EFFECT.TURBO_FAILURE,
   SAFE_COMPLETE: STUDENT_RACE_EFFECT.SAFE_COMPLETE,
   SAFE_PERFECT: STUDENT_RACE_EFFECT.SAFE_PERFECT,
+  CHALLENGE_OFFER: "challenge-offer",
+  TURBO_ARMED: "turbo-armed",
 });
 
 // Phases of one challenge choice request, keyed to its offer (C5-02).
