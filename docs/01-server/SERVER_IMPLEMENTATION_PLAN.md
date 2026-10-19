@@ -1094,6 +1094,76 @@ calculator and RaceFinishOrderPolicy remain unchanged. Luck generation remains
 OFF by default. No client change, schema/migration, staging, commit, push, PR,
 merge, deployment, Checkpoint C or feature activation is authorized.
 
+#### Checkpoint C1 - server acceptance QA and PR readiness
+
+**Status:** `C1 SERVER QA READY FOR REVIEW; rollout OFF; pending Diana review`
+
+A, B1 and B2 are approved local commits 466f041, 206405d and ac67bc2. C1 starts
+from ac67bc277fd8bcc7de7e86311aefee1f621b5a13 on feature/s4-04-fair-luck.
+Those checkpoint implementations are preserved. C1 adds eight focused test files
+and this documentation only; production code, client, schema, dependencies and
+workflows are unchanged. No staging or Git publication is authorized.
+
+The new acceptance matrix runs actual answer, Challenge, Luck, movement, standing
+and snapshot owners for 2/4/8 players, distances 100/300/1000 and seeds 7/41/2026,
+each OFF and ON, on H2 and disposable MySQL. Controlled persisted questions and
+mocked Redis presence make these service/JPA scenarios, not browser or HTTP E2E.
+Further tests prove later manual opportunities after peer NO_EVENT or loss of
+eligibility, identical-input educational invariants, full-speed substitutions,
+30/60/90-second pure-policy comparisons, mixed concurrent actions at effect expiry
+and exact disposable-schema evidence. Existing A/B1/B2 tests are not weakened.
+
+Final focused regression: 491 cases, 489 passed, zero failures/errors, two existing
+C2 MySQL skips. All 173 selected real-MySQL cases passed: 143 retained A/B1/B2 and
+30 C1. Full Maven verify passed: 1,360 cases, 1,358 passed, zero failures/errors,
+the same two existing C2 skips, and successful server JAR packaging. C1 adds 71
+cases in total. Both final runs used identical Java source hashes.
+
+The complete deterministic matrix has 126 ON player-races per database and 252
+OFF/ON player-race comparisons between H2 and MySQL. Measured gameplay outcomes
+match across databases. Per database: 205 attempts, 116 NO_EVENT, 79 APPLIED,
+10 BLOCKED_BY_SHIELD, zero NO_EFFECT in this sample and 21 fairness deferrals.
+Dedicated answer/policy tests cover NO_EFFECT separately. Six deferral episodes
+resume after 8-49 seconds; two reach the finish gate before another draw and are
+reported as censored rather than starvation or resumed successes. No equality of
+random outcomes or universal waiting bound is claimed. All ON winners in this
+sample follow the high-accuracy pattern; one OFF tie becomes a sole ON winner.
+Seed reuse and eligibility mean the observed histogram is not an independent
+estimate of the approved probabilities. Exact probability boundaries stay tested.
+
+MySQL uses only a new disposable mysql:8.4 / 8.4.11 instance, RR writers and the
+unchanged bounded READ_COMMITTED private reader, tmpfs storage and localhost-only
+port 13318. Both final regressions retain ten repetitions of each 2/4/8 same-race
+and distinct-race group: 280 measured answer transactions per run. Latency and
+1ms sampled active/idle/waiting peaks are harness evidence, not an HTTP SLA or
+production budget. After both final regressions, InnoDB reports zero deadlocks,
+zero lock timeouts and zero maximum-connection errors. Expected create-drop
+lifecycle warnings and injected failure proofs remain visible in the logs.
+
+The approved B2 API/SSE contract is unchanged. The local C1 review pack includes
+one concise server handoff for Shimon with actual JSON fixtures, persisted event
+IDs, version/time ordering and the authoritative expiry-GET contract. Client
+mapping, refresh scheduling, React/Pixi/HUD/effects/audio and browser acceptance
+belong to Shimon and are not implemented or claimed by this checkpoint.
+
+Read-only readiness inspection finds no GitHub Actions workflow or migration
+chain. Local CI parity is not remote CI. Production ddl-auto=validate requires an
+approved schema/backfill/deployment plan even while Luck is OFF. Actual target
+schema was not accessed. The deployment budget must satisfy sum(W_i+R_i) <= B and
+B + reserved <= MySQL max_connections; real instance count, writer pool maxima,
+other consumers and reserved headroom remain unconfirmed. Cached test-context
+connection peaks are not a production sizing recommendation. The 60-second
+activity window remains provisional pending explicit product sign-off; the
+30/60/90 comparison does not change its runtime value.
+
+Local main and available origin/main are 84a4423 with 0/3 divergent commits before
+C1. No fetch/rebase/merge was run, so current remote compatibility remains a later
+review task. The ignored server/target/c1-evidence review pack contains commands,
+exit codes, code hashes, logs/XML, fairness/load JSON, schema inventory, patch and
+Hebrew report. Future PR-review readiness is separate from merge/deploy/activation
+approval. Keep QUIZWHEELZ_LUCK_ANSWER_ENABLED=false and stop for Diana's review;
+no client work, C2, staging, commit, push, PR, merge, deployment or migrations.
+
 ### S4-05 — Hidden Recovery
 
 **Status:** `PLANNED`
