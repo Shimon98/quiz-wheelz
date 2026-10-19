@@ -669,11 +669,13 @@ Production migrations remain Phase 6; S4-04 / S4-05 / S4-06 remain PLANNED.
 
 ### S4-04 - Power-Ups + fair Luck
 
-**Status:** `PARTIAL - A approved; B1 implemented/verified, pending review with rollout OFF; B2 not started`
+**Status:** `PARTIAL - A/B1 approved locally; B2 SERVER READY FOR REVIEW; rollout OFF`
 
 Local checkpoint, 2026-10-18, `feature/s4-04-fair-luck`, based on
 `origin/main@84a44230b77f6acb469c6f969070e4c0cf409325`. Approved V5 parameters
 supersede older Power-Up/Luck proposals. This is not a playable feature.
+The foundation description below records the approved A baseline; the later B1
+and B2 sections supersede its integration/read-strategy status.
 
 - Gameplay state declares Shield charges/granted/award question, Luck attempt
   and tangible-event counts, cooldown, sequences, recent manual activity and the
@@ -1024,6 +1026,73 @@ is empty and HEAD remains approved A commit 466f041b85e59889a552e1500ccdcc505127
 QUIZWHEELZ_LUCK_ANSWER_ENABLED remains false by default. B2, movement/client work,
 production migration approval, staging, commit, push, PR and merge remain outside
 this authorization. Stop for Diana's review.
+
+#### Checkpoint B2 - server runtime, gameplay snapshot and event delivery
+
+**Status:** `B2 SERVER READY FOR REVIEW; rollout OFF; pending Diana review`
+
+Approved B1 was committed locally as 206405d8b36b6e34bc498bc836ca5f7a1ef75967.
+The prior B1 review paragraphs are historical evidence. B2 starts from that clean
+commit on feature/s4-04-fair-luck and is authorized for server implementation only.
+
+RaceSpeedEffectMovementCalculator now handles persisted BOOST and SLOW through the
+same exact tick calculator, sorted half-open windows, base-speed gaps and earliest
+finish crossing. Boost clips to MAX 2.0; slowdown retains effective minimum 0.1.
+Adjacent mixed effects are supported; corrupt overlapping speed windows fail
+closed. With no elapsed time or a reversed interval, the original tick calculator's
+anchor is retained.
+The insertion-time all-source overlap guard, finish-order bound and learning
+rules are unchanged. Own settlement, read-only opponents and gameplay projection
+share this calculator without acquiring peer RacePlayer locks.
+
+StudentRaceGameplayResponse additively includes non-null powerUps and luck,
+retaining its existing four-argument constructor. Gameplay projection reads own
+persisted Shield state and at most two APPLIED/BLOCKED_BY_SHIELD audit outcomes,
+ordered ascending by stable audit ID, through a bounded nonlocking repository
+query. Historical award IDs survive consumption and finish. NO_EVENT/NO_EFFECT
+stay audit-only. Active BOOST/SLOW windows agree with effectiveSpeed and the shared
+movementUnitsPerSecond calculation; terminal snapshots retain history with zero
+rate and no active effects. Existing Challenge, opponent and teacher fields remain.
+
+No SSE code, event enum, endpoint or cursor change is needed. Real server tests
+hold an accepted answer transaction open and verify no signal before commit,
+then QUESTION_ANSWERED plus the existing progress signal, matching answer/GET
+snapshots, unchanged IDs on late replay/reconnect, and no committed ghost event
+on rollback. Client code was inspected read-only: QUESTION_ANSWERED during PLAYING
+requests silentRefresh and gaps request resync. Client rendering, new-field mapping,
+one-shot deduplication and effect-expiry refresh scheduling remain C5 work.
+The exact contract/expiry/ID handoff is in
+../00-project/ARCHITECTURE_AND_CONTRACTS.md under S4-04 B2.
+
+Tests include exact start/end/finish/tick partition boundaries, clipped Tailwind,
+Mud, adjacent/gapped windows, historical overlap rejection, 2/4/8 participant races
+at distances 100/300/1000, own/opponent/standing/finish-arbitration agreement,
+awarded/consumed/blocked/finished/empty/two-event serialization, quiet expiry GET,
+and existing signal delivery. MySQL subclasses verify the actual MySQL product,
+RR isolation and the isolated test URL. A MySQL concurrency proof observes actual
+InnoDB player-lock waits while GET/reconnect compete with a pending answer;
+heartbeat and all re-reads consume no additional RNG.
+
+Final focused regression after the final code/test change: 1,016 executed,
+1,014 passed, zero failures/errors, two existing C2 MySQL skips. Full regression:
+1,289 executed, 1,287 passed, zero failures/errors, the same two C2 skips.
+All 143 real-MySQL Luck/B2 tests passed (109 preserved A/B1 plus 34 B2).
+B2 adds 85 tests including the additive serialization case; its movement,
+snapshot and delivery matrix runs on H2 and actual MySQL where applicable.
+The blocked-Mud SSE case keeps score/position/speed unchanged at the base-speed
+floor and proves that QUESTION_ANSWERED alone provides the refresh opportunity.
+The original 2/4/8 cold-cross-race and same-race groups were rerun ten times per
+size, 280 measured answer operations per full run. Fresh final MySQL metrics show
+zero deadlocks and zero lock timeouts. Load percentiles/pool samples, exact commands,
+serialized snapshots and traces, full logs/XML, complete working-tree patch and
+Hebrew review are under ignored server/target/b2-*. These remain service/transaction
+measurements on disposable MySQL, not an HTTP or production capacity/SLA claim.
+No required B2 server gate remains blocked in this measured envelope. Client C5
+mapping/expiry refresh/moments and production migrations/budgets remain open gates.
+Protected B1 answer/FairLuck/pool/current-read/fairness owners, the low-level tick
+calculator and RaceFinishOrderPolicy remain unchanged. Luck generation remains
+OFF by default. No client change, schema/migration, staging, commit, push, PR,
+merge, deployment, Checkpoint C or feature activation is authorized.
 
 ### S4-05 — Hidden Recovery
 

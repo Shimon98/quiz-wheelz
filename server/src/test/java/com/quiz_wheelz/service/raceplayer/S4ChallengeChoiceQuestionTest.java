@@ -217,7 +217,7 @@ class S4ChallengeChoiceQuestionTest extends S4ChallengeIntegrationFixture {
         Long id = openOffer();
         var mapper = new ObjectMapper();
         JsonNode gameplay = mapper.valueToTree(snapshot().getGameplay());
-        assertEquals(Set.of("mode", "effectiveSpeed", "activeEffects", "challenge"), names(gameplay));
+        assertEquals(Set.of("mode", "effectiveSpeed", "activeEffects", "challenge", "powerUps", "luck"), names(gameplay));
         assertEquals(Set.of("energy", "threshold", "offer", "run", "lastResult"), names(gameplay.get("challenge")));
         assertEquals(100, gameplay.get("challenge").get("threshold").asInt());
         var offer = gameplay.get("challenge").get("offer");

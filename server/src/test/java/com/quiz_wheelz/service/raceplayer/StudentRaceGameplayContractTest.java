@@ -23,7 +23,7 @@ class StudentRaceGameplayContractTest {
     private final RacePlayerSpeedEffectRepository repository = mock(RacePlayerSpeedEffectRepository.class);
     private final StudentRaceGameplayProjectionService gameplayService = new StudentRaceGameplayProjectionService(
             new RacePlayerSpeedEffectService(repository),
-            new RaceSpeedEffectMovementCalculator(new RaceMovementCalculator()), new com.quiz_wheelz.service.challenge.StudentChallengeProjectionService(org.mockito.Mockito.mock(com.quiz_wheelz.repository.RacePlayerGameplayStateRepository.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class), org.mockito.Mockito.mock(com.quiz_wheelz.repository.RacePlayerChallengeOfferRepository.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeExecutionStateService.class)));
+            new RaceSpeedEffectMovementCalculator(new RaceMovementCalculator()), new com.quiz_wheelz.service.challenge.StudentChallengeProjectionService(org.mockito.Mockito.mock(com.quiz_wheelz.repository.RacePlayerGameplayStateRepository.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class), org.mockito.Mockito.mock(com.quiz_wheelz.repository.RacePlayerChallengeOfferRepository.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeExecutionStateService.class)), org.mockito.Mockito.mock(com.quiz_wheelz.repository.RacePlayerGameplayStateRepository.class), org.mockito.Mockito.mock(com.quiz_wheelz.repository.RacePlayerLuckDecisionRepository.class));
     private final StudentRaceRuntimeSnapshotService snapshots = new StudentRaceRuntimeSnapshotService(
             new StudentRaceRuntimeSnapshotMapper(), gameplayService);
     private final RacePlayer player = player();
@@ -77,13 +77,13 @@ class StudentRaceGameplayContractTest {
     }
 
     @Test
-    void futureExpiredAndUnsupportedEffectsDoNotAffectGameplay() {
+    void futureExpiredEffectsDoNotHideActiveBoost() {
         var unsupported = effect(3, T, T + 3000, 1);
         unsupported.setType(EffectType.SPEED_BOOST);
         when(repository.findRelevantForPlayers(List.of(1L), T, T)).thenReturn(List.of(
-                effect(1, T - 1000, T, 1), effect(2, T + 1, T + 3000, 1), unsupported));
-        assertEquals(1.3, snapshot(T).getGameplay().effectiveSpeed());
-        assertTrue(snapshot(T).getGameplay().activeEffects().isEmpty());
+                effect(1, T - 1000, T, 1), effect(2, T + 3000, T + 6000, 1), unsupported));
+        assertEquals(1.4, snapshot(T).getGameplay().effectiveSpeed());
+        assertEquals(3L, snapshot(T).getGameplay().activeEffects().getFirst().effectId());
     }
 
     @Test
@@ -120,8 +120,14 @@ class StudentRaceGameplayContractTest {
         JsonNode json = new ObjectMapper().valueToTree(snapshot(T));
         assertEquals(StudentRaceSnapshotContractFixture.SNAPSHOT_FIELDS, names(json));
         JsonNode gameplay = json.get("gameplay");
-        assertEquals(Set.of("mode", "effectiveSpeed", "activeEffects", "challenge"), names(gameplay));
+        assertEquals(Set.of("mode", "effectiveSpeed", "activeEffects", "challenge", "powerUps", "luck"), names(gameplay));
         assertEquals("NORMAL", gameplay.get("mode").asText());
+        assertEquals(Set.of("guardShieldCharges", "guardShieldAwardQuestionId"), names(gameplay.get("powerUps")));
+        assertEquals(0, gameplay.path("powerUps").path("guardShieldCharges").asInt());
+        assertTrue(gameplay.path("powerUps").path("guardShieldAwardQuestionId").isNull());
+        assertEquals(Set.of("recentEvents"), names(gameplay.get("luck")));
+        assertTrue(gameplay.path("luck").path("recentEvents").isArray());
+        assertTrue(gameplay.path("luck").path("recentEvents").isEmpty());
         JsonNode effect = gameplay.get("activeEffects").get(0);
         assertEquals(Set.of("effectId", "type", "source", "magnitudeTenths",
                 "startsAtEpochMs", "endsAtEpochMs"), names(effect));
@@ -131,6 +137,29 @@ class StudentRaceGameplayContractTest {
         assertEquals(1, effect.get("magnitudeTenths").asInt());
         assertEquals(T, effect.get("startsAtEpochMs").asLong());
         assertEquals(T + 3000, effect.get("endsAtEpochMs").asLong());
+    }
+
+    @Test
+    void additiveLuckFieldsSerializeExactEnumsAndIdsWithImmutableHistory() {
+        var events = new ArrayList<StudentRaceLuckResponse.Event>();
+        events.add(new StudentRaceLuckResponse.Event(456L, LuckEventType.MUD_SPLASH, LuckEventType.MUD_SPLASH,
+                LuckOutcome.BLOCKED_BY_SHIELD, T));
+        var luck = new StudentRaceLuckResponse(events);
+        events.clear();
+        var shield = new StudentRacePowerUpsResponse(0, 123L);
+        var json = new ObjectMapper().valueToTree(new StudentRaceGameplayResponse(RacePlayerGameplayMode.NORMAL, 1.0,
+                List.of(), new StudentChallengeResponse(15, 100, null, null, null), shield, luck));
+        var event = json.path("luck").path("recentEvents").get(0);
+        assertEquals(Set.of("eventId", "selectedType", "appliedType", "outcome", "occurredAtEpochMs"), names(event));
+        assertEquals(456L, event.path("eventId").asLong());
+        assertEquals("MUD_SPLASH", event.path("selectedType").asText());
+        assertEquals("MUD_SPLASH", event.path("appliedType").asText());
+        assertEquals("BLOCKED_BY_SHIELD", event.path("outcome").asText());
+        assertEquals(T, event.path("occurredAtEpochMs").asLong());
+        assertEquals(123L, json.path("powerUps").path("guardShieldAwardQuestionId").asLong());
+        assertEquals(0, json.path("powerUps").path("guardShieldCharges").asInt());
+        assertEquals(Set.of("energy", "threshold", "offer", "run", "lastResult"), names(json.path("challenge")));
+        assertThrows(UnsupportedOperationException.class, () -> luck.recentEvents().clear());
     }
 
     @Test

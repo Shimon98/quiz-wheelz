@@ -91,10 +91,10 @@ class RaceSpeedEffectMovementTest {
     }
 
     @Test
-    void unrelatedLegacyBoostIsNotActivated() {
+    void persistedBoostIsNowAuthoritative() {
         RacePlayerSpeedEffect boost = effect(0, 10000, 2);
         boost.setType(EffectType.SPEED_BOOST);
-        assertEquals(40.0, project(0, 10000, boost).position());
+        assertEquals(48.0, project(0, 10000, boost).position());
     }
 
     @Test

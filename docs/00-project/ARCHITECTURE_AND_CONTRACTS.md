@@ -592,3 +592,101 @@ Do not return an entire live page model from every command.
 
 WebSocket remains unapproved until a two-way real-time interaction cannot be handled
 cleanly by REST commands plus SSE.
+
+## S4-04 B2 student gameplay contract and C5 handoff
+
+Local server contract on feature/s4-04-fair-luck, based on approved B1 commit
+206405d8b36b6e34bc498bc836ca5f7a1ef75967. Luck answer generation remains OFF by
+default. This section specifies the server handoff; client implementation and
+rollout require separate approval.
+
+Every shared student runtime snapshot retains its existing fields. Gameplay keeps
+mode, effectiveSpeed, activeEffects and the unchanged Challenge contract
+(energy, threshold, offer, run, lastResult), and adds these non-null objects:
+
+```json
+{
+  "powerUps": {
+    "guardShieldCharges": 0,
+    "guardShieldAwardQuestionId": null
+  },
+  "luck": {
+    "recentEvents": []
+  }
+}
+```
+
+PowerUps charges are persisted 0/1. AwardQuestionId is null before the one-time
+award and retains the original own question ID after consumption and finish.
+It identifies the award moment, not current possession.
+
+RecentEvents contains at most two persisted tangible outcomes, ordered ascending
+by stable audit primary key. Each entry has exactly eventId, selectedType,
+appliedType, outcome and occurredAtEpochMs. OccurredAt is the stored decision epoch.
+Type vocabulary is TAILWIND / ENERGY_ORB / MUD_SPLASH. Only APPLIED and
+BLOCKED_BY_SHIELD are exposed; NO_EVENT, NO_EFFECT and non-draw decisions do not
+appear. Blocked Mud has both types MUD_SPLASH and outcome BLOCKED_BY_SHIELD,
+consumes one charge and creates no slowdown. Orb changes Energy, and does not
+create an Offer on its own. Audit query is bounded with a per-player index and
+has no locking clause. All writes still belong to the original answer transaction.
+Opponent and teacher DTOs expose no private Shield or Luck state.
+
+An active effect retains exactly effectId, type, source, magnitudeTenths,
+startsAtEpochMs and endsAtEpochMs. Both SPEED_BOOST and SPEED_SLOW use integer
+tenths in the shared segmented movement owner, including opponent projection.
+The window is [start,end); start is included and end excluded. BOOST clips to 2.0,
+SLOW floors at the unchanged effective minimum 0.1. Earned speed remains separate.
+Existing effects continue past the 80% gate until expiry or finish. The earliest
+finish crossing and MAX 2.0 finish-order bound remain authoritative. Historical
+overlap of relevant speed effects fails closed with an invariant exception; it
+never stacks or silently chooses an effect. Adjacent mixed windows are valid.
+
+MovementUnitsPerSecond is the server-owned effective rate (effectiveSpeed * 4.0),
+and positions retain their server anchors. Clients never recalculate that rate
+from magnitude or grant movement. Terminal/nonmoving snapshots report zero rate
+and no active effects while retaining Shield and tangible-event history. Opponent
+finish projections stop at their crossing without mutating durable status; finish
+arbitration retains ownership of durable finish proof and ordering.
+
+Delivery is unchanged: the accepted answer snapshot is built after the existing
+QUESTION_ANSWERED and appropriate progress/finish events in the same transaction.
+Student SSE contains only version/type/occurredAtEpochMs, with durable version as
+its ID. It exposes only committed events, in ascending order after the cursor;
+failed transactions expose no ghost version or outcome. Blocked Mud at the base
+speed floor is verified with unchanged score/position/speed and only
+QUESTION_ANSWERED, so refresh does not depend on a progress signal. No Luck/Shield/expiry
+SSE type, endpoint, cursor or bus was added. Repeated dispatch/replay does not
+create a new domain event; resume uses the existing Last-Event-ID precedence.
+
+Read-only client inspection confirms that during PLAYING an unseen
+QUESTION_ANSWERED schedules silentRefresh, version gaps request recovery, duplicate
+or late versions are ignored, and active mutations defer refresh until their own
+snapshot completes. ApplyRaceSnapshot orders snapshots by
+(eventVersion,snapshotAtEpochMs), so a newer GET at the same event version can
+replace an expired effect. Reconnect remains reconnect -> authoritative state GET;
+the reconnect response itself does not gain an invented embedded snapshot.
+
+C5 work still required before feature activation:
+
+- Map and preserve powerUps/luck: the unchanged mapper currently ignores them.
+- Render Shield continuously from charges; use awardQuestionId only for its
+  one-time award moment. Deduplicate blocked Mud and positive moments by eventId.
+- First observation establishes a baseline of historical event/award IDs without
+  replaying their moments. Every later snapshot replaces prior state; never treat
+  recentEvents as a list of commands to replay on refresh/reconnect.
+- Schedule an authoritative refresh at active-effect expiry using the snapshot
+  clock and endsAtEpochMs. If a newer snapshot already excludes or supersedes that
+  effect, cancel the stale timer. On late arrival, request current state. Refresh
+  must respect the existing mutation/session/visibility synchronization owners.
+  Do not locally grant or restore authoritative speed. Start/end timing may drive
+  presentation only. Correct server snapshots at exact expiry are tested.
+- The current client has no effect-expiry refresh timer and no new moments/HUD
+  mapping implemented by B2. Browser rendering, deduplication, audio/Pixi and C5 QA
+  remain unproved. No client file is changed in this checkpoint.
+
+Server fixtures: B2TimedMovementTest, B2RuntimeMovementIntegrationTest and its
+MySQL subclass, B2LuckSnapshotIntegrationTest and its MySQL subclass, and
+B2LuckEventDeliveryTest and its MySQL subclass. Review artifacts contain actual
+serialized empty/awarded/consumed/blocked/Tailwind/expired/Orb/Mud/two-event/finished
+snapshots and per-outcome committed SSE traces. The deployment instance/connection
+budget and production migration gates remain separate from this contract.
