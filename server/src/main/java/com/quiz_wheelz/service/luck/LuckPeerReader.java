@@ -2,21 +2,21 @@ package com.quiz_wheelz.service.luck;
 
 import lombok.RequiredArgsConstructor;
 import com.quiz_wheelz.common.LuckRules;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class LuckPeerReader {
-    private final JdbcTemplate jdbc;
+    private final LuckPeerJdbcResources resources;
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED, readOnly = true)
     public List<RaceLuckFairnessPolicy.Candidate> readCommittedPeers(long raceId, long selfId, long instant) {
-        return jdbc.query("""
+        try (var connection = resources.connection();
+             var statement = connection.prepareStatement("""
+
                 select p.id, s.luck_events_received, s.last_luck_roll_sequence,
                        s.last_accepted_manual_normal_answer_at_epoch_ms
                 from race_players p
@@ -32,8 +32,23 @@ public class LuckPeerReader {
                   and not exists (select 1 from race_player_speed_effects e where e.race_player_id = p.id
                     and e.type in ('SPEED_SLOW','SPEED_BOOST') and e.starts_at_epoch_ms <= ? and e.ends_at_epoch_ms > ?)
                 order by p.id
-                """, (row, index) -> new RaceLuckFairnessPolicy.Candidate(
-                row.getLong(1), row.getInt(2), row.getObject(3, Long.class), row.getObject(4, Long.class), true),
-                raceId, selfId, instant - LuckRules.PROVISIONAL_ACTIVITY_WINDOW_MS, instant, instant, instant, instant);
+                                """)) {
+            statement.setQueryTimeout(resources.queryTimeoutSeconds());
+            statement.setLong(1, raceId);
+            statement.setLong(2, selfId);
+            statement.setLong(3, instant - LuckRules.PROVISIONAL_ACTIVITY_WINDOW_MS);
+            statement.setLong(4, instant);
+            statement.setLong(5, instant);
+            statement.setLong(6, instant);
+            statement.setLong(7, instant);
+            var result = new ArrayList<RaceLuckFairnessPolicy.Candidate>();
+            try (var rows = statement.executeQuery()) {
+                while (rows.next()) result.add(new RaceLuckFairnessPolicy.Candidate(rows.getLong(1), rows.getInt(2),
+                        rows.getObject(3, Long.class), rows.getObject(4, Long.class), true));
+            }
+            return List.copyOf(result);
+        } catch (SQLException error) {
+            throw new DataAccessResourceFailureException("Luck peer read failed", error);
+        }
     }
 }

@@ -3,8 +3,6 @@ package com.quiz_wheelz.service.luck;
 import com.quiz_wheelz.common.LuckRules;
 import com.quiz_wheelz.entitys.*;
 import com.quiz_wheelz.repository.*;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -18,13 +16,13 @@ import java.util.Optional;
 public class FairLuckService {
     private final LuckTransactionGuard guard;
     private final GuardShieldService shields;
-    private final RaceLuckFairnessStateRepository fairnessStates;
+    private final RaceLuckFairnessStateService fairnessStates;
     private final RacePlayerLuckDecisionRepository decisions;
+    private final LuckDecisionSourceReader sources;
     private final LuckOwnStateReader ownState;
     private final LuckPeerReader peers;
     private final LuckRandomSource random;
     private final LuckEffectResolver effects;
-    private final EntityManager em;
     private final FairLuckEligibilityPolicy eligibility = new FairLuckEligibilityPolicy();
     private final RaceLuckFairnessPolicy fairness = new RaceLuckFairnessPolicy();
 
@@ -36,15 +34,8 @@ public class FairLuckService {
             return Optional.empty();
         }
         var state = shields.obtainForLockedPlayer(player);
-        var raceState = fairnessStates.findLockedByRaceId(player.getRace().getId()).map(existing -> {
-            em.refresh(existing, LockModeType.PESSIMISTIC_WRITE);
-            return existing;
-        }).orElseGet(() -> {
-            var created = new RaceLuckFairnessState();
-            created.setRace(player.getRace());
-            return fairnessStates.save(created);
-        });
-        if (decisions.findLockedBySource(player.getId(), question.getId()).isPresent()
+        var raceState = fairnessStates.obtainForLockedPlayer(player);
+        if (sources.alreadyRecorded(player.getId(), question.getId())
                 || Objects.equals(state.getGuardShieldAwardQuestionId(), question.getId())) {
             return Optional.empty();
         }

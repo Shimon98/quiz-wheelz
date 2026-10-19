@@ -17,10 +17,15 @@ public class LuckTransactionGuard {
 
     public void requireLocked(RacePlayer player) {
         if (!em.contains(player) || !em.contains(player.getRace())
-                || em.getLockMode(player) != LockModeType.PESSIMISTIC_WRITE
-                || em.getLockMode(player.getRace()) != LockModeType.PESSIMISTIC_WRITE) {
+                || !writeLocked(player)
+                || !writeLocked(player.getRace())) {
             throw new IllegalStateException();
         }
+    }
+
+    private boolean writeLocked(Object entity) {
+        LockModeType mode = em.getLockMode(entity);
+        return mode == LockModeType.PESSIMISTIC_WRITE || mode == LockModeType.PESSIMISTIC_FORCE_INCREMENT;
     }
 
     public void requireOwnedAnsweredNormal(RacePlayer player, PlayerQuestion question) {

@@ -44,7 +44,7 @@ public class ChallengeOfferService {
         energyService.earn(state, answeredDifficulty, question.getGameplayContext(), correct);
         if (!eligibilityService.eligible(state, unresolved(player).isPresent()) || !availability.available(player)
                 || speedEffects.findActiveAt(player, decisionEpochMs).stream()
-                .anyMatch(effect -> effect.getType() == EffectType.SPEED_SLOW)) {
+                .anyMatch(effect -> effect.getType() == EffectType.SPEED_SLOW || effect.getType() == EffectType.SPEED_BOOST)) {
             return;
         }
         var offer = new RacePlayerChallengeOffer();

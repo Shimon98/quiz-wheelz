@@ -120,7 +120,8 @@ class StudentAnswerTerminalLifecycleTest {
                 ),
                 mock(com.quiz_wheelz.service.raceengine.RaceDecisionTimeService.class),
                 Clock.fixed(NOW, ZoneId.of("UTC"))
-        , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeExecutionService.class));
+        , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeExecutionService.class),
+                org.mockito.Mockito.mock(com.quiz_wheelz.service.luck.AcceptedAnswerLuckService.class));
     }
 
     @Test

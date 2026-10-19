@@ -22,9 +22,10 @@ import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase(replace = org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE)
 @DataJpaTest(showSql = false)
 @ActiveProfiles("test")
-@Import(RacePlayerGameplayStateService.class)
+@Import({com.quiz_wheelz.support.LuckDatabaseConfiguration.class, RacePlayerGameplayStateService.class, RaceLuckFairnessStateService.class, LuckTransactionGuard.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 class LuckPersistenceTest {
     private static final AtomicInteger SEQUENCE = new AtomicInteger();
@@ -32,6 +33,7 @@ class LuckPersistenceTest {
     @Autowired PlatformTransactionManager manager;
     @Autowired RacePlayerGameplayStateService states;
     @Autowired RaceLuckFairnessStateRepository fairness;
+    @Autowired RaceLuckFairnessStateService fairnessOwner;
     @Autowired RacePlayerLuckDecisionRepository decisions;
     @Autowired RacePlayerGameplayStateRepository gameplay;
     protected TransactionTemplate tx;
@@ -43,6 +45,7 @@ class LuckPersistenceTest {
     void prepare() {
         tx = new TransactionTemplate(manager);
         tx.executeWithoutResult(status -> {
+            com.quiz_wheelz.support.LuckDatabaseEvidence.verify(em);
             String key = "L" + SEQUENCE.incrementAndGet();
             var teacher = new User();
             teacher.setUsername("luck-" + key);
@@ -200,13 +203,9 @@ class LuckPersistenceTest {
         ready.countDown();
         assertTrue(start.await(10, java.util.concurrent.TimeUnit.SECONDS));
         return tx.execute(status -> {
-            em.find(RacePlayer.class, id, LockModeType.PESSIMISTIC_WRITE);
-            var race = em.find(Race.class, raceId, LockModeType.PESSIMISTIC_WRITE);
-            var state = fairness.findByRaceId(raceId).orElseGet(() -> {
-                var created = new RaceLuckFairnessState();
-                created.setRace(race);
-                return fairness.save(created);
-            });
+            var player = em.find(RacePlayer.class, id, LockModeType.PESSIMISTIC_WRITE);
+            em.find(Race.class, raceId, LockModeType.PESSIMISTIC_WRITE);
+            var state = fairnessOwner.obtainForLockedPlayer(player);
             state.setDecisionSequence(state.getDecisionSequence() + 1);
             em.flush();
             return state.getDecisionSequence();

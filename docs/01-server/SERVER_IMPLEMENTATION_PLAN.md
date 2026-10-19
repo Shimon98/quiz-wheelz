@@ -669,7 +669,7 @@ Production migrations remain Phase 6; S4-04 / S4-05 / S4-06 remain PLANNED.
 
 ### S4-04 - Power-Ups + fair Luck
 
-**Status:** `PARTIAL - Checkpoint A approved as detached local foundation; B not started`
+**Status:** `PARTIAL - A approved; B1 implemented/verified, pending review with rollout OFF; B2 not started`
 
 Local checkpoint, 2026-10-18, `feature/s4-04-fair-luck`, based on
 `origin/main@84a44230b77f6acb469c6f969070e4c0cf409325`. Approved V5 parameters
@@ -781,6 +781,249 @@ Two earlier rollback-only test errors were corrected before the final green runs
 A local A commit requires Diana's explicit go-ahead. Push, PR and merge require
 further approval. Preserve approved probabilities, thresholds and effect sizes;
 do not expand scope or start B based solely on the A review.
+
+#### Checkpoint B1 - accepted NORMAL answer integration
+
+**Status:** `B1 implemented/verified, pending Diana review; rollout OFF; see second unblock validation below`
+
+The first-attempt blocker evidence below is historical. The latest measured status
+is recorded in the second scoped unblock validation section.
+
+Local baseline is approved A commit `466f041b85e59889a552e1500ccdcc5051274dd6`.
+The single new call is after ChallengeOfferService.afterAnswer and before
+QUESTION_ANSWERED/live mutation tracking/snapshot in StudentAnswerSubmissionService.
+It is reached only after a validated ACTIVE -> ANSWERED manual NORMAL answer.
+AcceptedAnswerLuckService delegates exactly once to the A owner, without a second
+Shield call or clock. Terminal results return without entering Luck.
+
+Rollout property: `QUIZWHEELZ_LUCK_ANSWER_ENABLED`, default **false** in the
+injection expression. No runtime profile enables it. Only dedicated B1 tests
+set it true. OFF performs no Luck provider lookup, flush, RNG or Shield/Luck
+writes; normal Challenge/answer behavior and response shape remain unchanged.
+Do not enable it for normal DEV/production gameplay or start B2.
+
+B-GATE-2 is covered by actual answer-service/JPA tests under H2 and MySQL:
+normal Energy gain survives, threshold Offer/reset persists, correct/wrong Orb
+increments survive and cap at 100 without creating an Offer in the same answer,
+and third-correct Shield can coexist with an Offer/reset. The integration flushes
+the accepted answer/Challenge changes before A's state refresh. Hibernate may
+report a dirty, flushed entity's write lock as PESSIMISTIC_FORCE_INCREMENT; the
+A guard now accepts that existing stronger write mode as well as PESSIMISTIC_WRITE.
+It does not request a stronger lock or admit read/unlocked entities.
+
+StudentAnswerSubmissionService keeps noRollbackFor=ApiException. The integration
+wraps internal Luck ApiException failures in IllegalStateException, so an internal
+overlap/invariant failure cannot use the entry point's unrelated API-error
+exception to commit half an answer. Tests inject infrastructure, real constraint,
+overlap and post-Shield/Offer event failures and verify complete DB rollback.
+The pre-existing terminal-race nested-engine rollback-only exception remains
+unchanged; explicit OFF/ON tests characterize UnexpectedRollbackException there.
+
+ChallengeOfferService now suppresses new offers for both active SPEED_SLOW and
+SPEED_BOOST with existing [start,end) queries, preserving Energy 100. There is no
+new movement, DTO, SSE, client, timeout or schema integration.
+
+**B-GATE-1 remains BLOCKED with measured evidence:**
+
+- In disposable MySQL 8.4.11 / REPEATABLE_READ, two actual answer transactions
+  in two distinct races fill a Hikari pool configured to maximum/minimum size 2
+  with 1,500 ms acquisition timeout. A latch at the existing own-effect query
+  ensures both outer connections are held; the test observes two queued nested
+  connection requests. The unchanged REQUIRES_NEW readers time out. Failed
+  transactions leave no partial answer, score, Energy or Luck audit/counter.
+  Fairness rows are preinitialized only in this steady-state test to isolate pool
+  behavior. This is a failure-characterization test, not runtime approval.
+- An initial unprimed two-race answer test also exposed InnoDB error 1213: the
+  unique race_id index in race_luck_fairness_states has conflicting gap locks
+  from findLockedByRaceId followed by lazy INSERT. SHOW ENGINE INNODB STATUS was
+  captured. A separate bounded test reproduces the issue through the real answer
+  service after coordinating the missing-row locking reads and checks loser
+  rollback. The approved initialization algorithm has not been redesigned.
+- Runtime-safe resource ownership/admission and atomic missing-row initialization
+  require a reviewed decision. Options include a separately budgeted read pool
+  or admission before outer JDBC acquisition, plus an approved initialization
+  strategy that avoids competing missing-row gap locks. No global isolation
+  change, peer RacePlayer lock, unspecified pool enlargement or automatic retry
+  was introduced. The feature stays OFF pending approval and revalidation.
+
+Single-race actual answer tests cover 2/4/8 students and duplicate same-question
+submissions. A's stale-snapshot and 2/4/8-player tests are retained. Exclusion
+coverage includes manual correct/wrong, timeout, STRICT focus forfeit, refresh,
+reconnect, rejected/replayed answers, Challenge choices, post-answer 80% and
+finish, active effects, cooldown, cap and Shield-blocked Mud. Final counts,
+commands, complete failure history and patch are local review artifacts under
+server/target/b1-*; do not infer readiness from passing characterization tests.
+
+B2 movement/client/snapshot contracts and the explicit production migration gate
+remain open. No commit, push, PR, merge, DEV/production DDL or B2 is authorized.
+
+#### Scoped B1 unblock attempt - 2026-10-19
+
+**Status:** `B1 PARTIAL - BLOCKED: cross-race luck-audit gap deadlock; candidate not approved`
+
+The 19-file B1 worktree was verified byte-for-byte against its submitted patch
+before this attempt. The existing accepted-answer hook, default-OFF gate, gameplay
+rules, Challenge coordination and rollback wrapper were preserved. Nothing was
+staged or committed. The preceding blocker report remains historical evidence;
+this section describes the stopped candidate at that review.
+
+The approved preferred approaches were implemented as candidates:
+
+- LuckPeerJdbcResources privately owns a lazy, bounded Hikari pool against the
+  primary datasource's exact JDBC URL/properties/credentials. It is not a second
+  DataSource bean or transaction manager. LuckPeerReader uses an explicit raw
+  JDBC connection in auto-commit READ_COMMITTED, one nonlocking peer projection
+  and try-with-resources, bypassing Spring's outer transaction-bound connection
+  and Hibernate persistence context. REQUIRES_NEW on the writer manager is gone.
+- Pool maximum/acquisition timeout/query timeout have explicit configuration keys:
+  QUIZWHEELZ_LUCK_PEER_POOL_MAX_SIZE (default 2),
+  QUIZWHEELZ_LUCK_PEER_ACQUIRE_TIMEOUT_MS (default 2000), and
+  QUIZWHEELZ_LUCK_PEER_QUERY_TIMEOUT_SECONDS (default 2). No peer pool is created
+  until a read. Shutdown has an explicit PreDestroy close owner. Lifecycle,
+  failure-path release and resource-budget rejection tests remain unfinished
+  because the required cross-race acceptance failed and triggered the stop rule.
+- A read requires explicit positive deployment settings:
+  QUIZWHEELZ_DB_MAX_APPLICATION_INSTANCES,
+  QUIZWHEELZ_DB_APPLICATION_CONNECTION_BUDGET,
+  QUIZWHEELZ_DB_RESERVED_CONNECTIONS. Their runtime defaults are zero (fail closed
+  on a read, while OFF does not initialize the pool). The candidate checks
+  instances * (primary maximum + peer maximum) <= application budget and, on
+  MySQL, application budget + reserved <= @@max_connections. Deployment must
+  enforce the declared instance maximum; these checks are not a scale proof.
+  The test profile alone supplies 1 instance / 64 application / 10 reserved.
+- RaceLuckFairnessStateService validates existing player/Race locks, performs a
+  native INSERT ... ON DUPLICATE KEY UPDATE race_id = race_id, then locks and
+  refreshes the now-existing row. It does not reset counters/recipient/history.
+  FairLuckService and the A sequence test use this owner; no production caller
+  performs the former missing-row locking read before this insert.
+
+The first real MySQL run passed A's 38 tests including stale-snapshot visibility
+and same-race 2/4/8-player ordering. In the original primary-pool-size-2 test, the
+assertions verified one primary DataSource bean, the existing JpaTransactionManager
+and its primary datasource, two active writers with no primary waiters, and one
+active / one queued read on a separate peer pool capped at 1. However, BOTH
+cross-race answer tests FAILED later at race_player_luck_decisions INSERT.
+
+InnoDB now identifies index uk_luck_player_question in race_player_luck_decisions:
+findLockedBySource searches absent audit rows with FOR UPDATE, taking shared-gap
+exclusive locks before concurrent inserts for distinct players/races. The native
+fairness upsert no longer appears as the failing INSERT in these traces, but the
+complete answer path is still unsafe. The tests now require both commits and
+remain RED; no characterization assertion was weakened to hide the issue.
+
+Per the directive's stop condition, no audit/duplicate-source redesign, new
+schema, retry, global isolation change, peer RacePlayer lock, pool enlargement
+or alternative architecture was implemented after this discovery. Review options:
+
+1. A nonlocking committed audit lookup using the independent primary reader,
+   combined with an explicit outer-transaction pending/own-write guard and the
+   existing player/question serialization and UNIQUE defense. It must prove
+   duplicate-source behavior for old snapshots, repeated calls in one transaction,
+   concurrent requests and rollback before adoption.
+2. A durable decision reference/claim owned by the already-locked PlayerQuestion,
+   if a schema expansion is explicitly approved; it needs its own lifecycle and
+   migration review. No new audit outcomes or placeholders have been introduced.
+3. If the candidate fairness upsert is not retained, the directive's fallback is
+   eager fairness-row creation at race creation/start plus an approved idempotent
+   backfill before activation. This is not implemented and would not by itself
+   solve the separate audit-table gap locks.
+
+Focused regression also exposed H2 compatibility work: DataJpaTest replacement
+creates H2 databases without MySQL mode, so the MySQL upsert syntax is rejected
+in those fixtures despite the configured test-profile URL. No H2 success is
+claimed. An explicit test-only dialect/mode setup or reviewed portable initializer
+is still needed; production initialization was not replaced with an unproven
+fallback after the stop.
+
+Final stopped-candidate focused run: 343 executed, 307 passed, 7 failures,
+29 errors, zero skips. Full regression: 1,159 executed, 1,121 passed, 7 failures,
+29 errors, two existing C2 MySQL skips. Actual MySQL: 70 passed / 2 failed;
+A freshness and B1 Energy/rollback remain green on MySQL. The remaining failures
+are the MySQL cross-race audit deadlock and H2 upsert compatibility. These are
+red results, not a completed checkpoint.
+
+Final stopped-candidate focused/full logs and every failure/stack trace are under
+server/target/unblock-*. Cross-race repeated 2/4/8-race load, p95/p99 acceptance,
+resource lifecycle/failure-budget tests and a green full suite are NOT established.
+Do not label B1 complete or enable QUIZWHEELZ_LUCK_ANSWER_ENABLED. B2 and the
+production migration gate remain untouched; no commit/push/PR/merge is authorized.
+
+#### Second scoped B1 unblock validation - 2026-10-19
+
+**Status:** `B1 implemented/verified in the measured envelope; pending Diana review; rollout OFF`
+
+This section supersedes the earlier B1 blocker statuses, while retaining their
+failure evidence. No schema or gameplay-policy change was required. The original
+B1 accepted-answer integration and the private-reader/fairness-upsert candidates
+were preserved; their acceptance remains subject to Diana's review.
+
+- RacePlayerLuckDecisionRepository no longer exposes the missing-source FOR UPDATE
+  lookup. LuckDecisionSourceReader explicitly flushes the existing writer, uses a
+  nonlocking own-write-aware repository check, and, if absent, a short nonlocking
+  READ_COMMITTED lookup through the private JDBC pool against the same primary.
+  This accounts for both uncommitted own audits and commits hidden by an old RR
+  view. The existing player -> Race locks serialize valid same-source writers;
+  UNIQUE(player, source question) remains the final enforcement layer. No audit,
+  RNG outcome, effect, counter or event is written through the reader pool.
+- Repeated direct calls for an audited source are idempotent no-ops, including
+  same-transaction calls and old-view replays after the original cooldown has
+  elapsed. Public duplicate requests retain QUESTION_NOT_ACTIVE. The trusted
+  first-accepted signal still belongs to the existing ACTIVE -> ANSWERED owner;
+  no processed marker or audit is invented for no-roll sources.
+- Fairness initialization still performs the atomic no-reset upsert before any
+  locking read. Repeated initialization preserves sequence, last-event sequence,
+  recipient and existing audit rows on both H2 and MySQL.
+- Affected persistence/answer slices opt out of embedded replacement. A test-only
+  DynamicPropertyRegistrar gives each H2 context an isolated in-memory URL with
+  MODE=MySQL while retaining explicitly configured disposable MySQL URLs. Runtime
+  assertions verify JDBC URL, database product, Hibernate dialect, H2 settings and
+  MySQL RR isolation. No production dialect fallback or initialization stub exists.
+- Reader-resource tests cover concurrent lazy creation, pool bounds, acquisition
+  timeout, actual MySQL query timeout, release after SQL exceptions, close and
+  PreDestroy, invalid deployment limits and application/server budget rejection.
+  OFF performs no acquisition or Luck mutation. Reader failures while ON roll the
+  complete accepted answer back. The primary DataSource/JpaTransactionManager
+  wiring remains unchanged and is asserted in the original pool-size-2 scenario.
+- An actual duplicate-key insert after QUESTION_ANSWERED is recorded proves full
+  rollback of question, score, Energy, Shield, audits, counters, fairness state,
+  speed effects and durable events/version on H2 and MySQL. Existing rollback,
+  Challenge, exclusions, Shield precedence, cooldown and fairness tests remain.
+
+Final focused regression: 388 tests, zero failures/errors/skips. Full regression:
+1,204 tests, 1,202 passed, zero failures/errors, two existing RaceArbitrationMySqlTest
+skips because its separate C2 MySQL environment is not configured. All 109 Luck
+MySQL tests executed and passed, including the strengthened after-cooldown stale
+source check in the final full run. Both original cross-race reproducers now
+require successful commits and pass; no failure characterization substitutes
+for success.
+
+Disposable MySQL 8.4.11, RR writers: ten repetitions for each of 2/4/8 cold distinct
+races and 2/4/8 same-race players, in both focused and full regressions. Each run
+contains 280 measured successful answers. Full-run p99/worst latency in ms:
+separate races 134.321 / 102.613 / 209.851; same race 269.978 / 465.144 / 945.762.
+These are service/transaction harness measurements, not network latency or a
+production capacity claim. The report includes all samples, p50/p95, timing
+boundaries and 1 ms sampled active/idle/waiting peaks. Cross-race writer/read maxima
+were 8/2; at eight races observed active peaks were 8/2 and reader waiting peak 4.
+The forced original scenario uses writer/read maxima 2/1 and proves 2 active
+writers, no writer waiters, one active reader and one waiting reader.
+
+Test deployment declaration: one instance, application connection budget 64,
+reserved 10, MySQL max_connections 151. Runtime defaults for undeclared deployment
+budgets still fail closed on first read. Final fresh InnoDB metrics report zero
+deadlocks and zero lock timeouts; stress cases have zero unexpected errors or
+timeouts. Pool sizing remains bounded by the measured envelope, not universally
+proven sufficient.
+
+Complete working-tree patch, Hebrew report, exact commands, final Git state,
+JUnit XML, failure history, latency/pool evidence and InnoDB diagnostics are local
+ignored review artifacts under server/target/second-unblock-*. All changed code
+files satisfy the 500-line/no-comment rule and git diff --check passes. The index
+is empty and HEAD remains approved A commit 466f041b85e59889a552e1500ccdcc5051274dd6.
+
+QUIZWHEELZ_LUCK_ANSWER_ENABLED remains false by default. B2, movement/client work,
+production migration approval, staging, commit, push, PR and merge remain outside
+this authorization. Stop for Diana's review.
 
 ### S4-05 — Hidden Recovery
 

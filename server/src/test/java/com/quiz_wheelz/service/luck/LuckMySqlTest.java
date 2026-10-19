@@ -174,6 +174,7 @@ class LuckMySqlTest extends LuckOrchestrationTest {
     void concurrentDuplicateSourceUsesCurrentAuditReadWithoutExtraRandom() throws Exception {
         org.mockito.Mockito.when(random.nextDouble()).thenReturn(0.6);
         var snapshotsReady = new CountDownLatch(2);
+        var calls = new java.util.concurrent.atomic.AtomicInteger();
         try (var executor = Executors.newFixedThreadPool(2)) {
             var futures = new java.util.ArrayList<Future<Boolean>>();
             for (int index = 0; index < 2; index++) {
@@ -183,8 +184,9 @@ class LuckMySqlTest extends LuckOrchestrationTest {
                     await(snapshotsReady);
                     var player = em.find(RacePlayer.class, playerId, LockModeType.PESSIMISTIC_WRITE);
                     em.find(Race.class, raceId, LockModeType.PESSIMISTIC_WRITE);
+                    long instant = calls.incrementAndGet() == 1 ? 100 : 100000;
                     return luck.afterAcceptedManualNormalAnswer(player, em.find(PlayerQuestion.class, questionId),
-                            false, true, 100).isPresent();
+                            false, true, instant).isPresent();
                 })));
             }
             int accepted = 0;

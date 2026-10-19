@@ -26,6 +26,7 @@ import com.quiz_wheelz.service.raceplayer.StudentRaceStandingService;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import com.quiz_wheelz.service.challenge.ChallengeOfferService;
 import com.quiz_wheelz.service.challenge.ChallengeExecutionService;
+import com.quiz_wheelz.service.luck.AcceptedAnswerLuckService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,6 +52,7 @@ public class StudentAnswerSubmissionService {
     private final Clock clock;
     private final ChallengeOfferService challengeOffers;
     private final ChallengeExecutionService challengeExecution;
+    private final AcceptedAnswerLuckService acceptedAnswerLuck;
 
     public StudentAnswerSubmissionService(
             PlayerQuestionRepository playerQuestionRepository,
@@ -65,7 +67,8 @@ public class StudentAnswerSubmissionService {
             RaceDecisionTimeService decisionTimeService,
             Clock clock,
             ChallengeOfferService challengeOffers,
-            ChallengeExecutionService challengeExecution
+            ChallengeExecutionService challengeExecution,
+            AcceptedAnswerLuckService acceptedAnswerLuck
     ) {
         this.playerQuestionRepository = Objects.requireNonNull(playerQuestionRepository);
         this.playerQuestionChoiceRepository = Objects.requireNonNull(playerQuestionChoiceRepository);
@@ -80,6 +83,7 @@ public class StudentAnswerSubmissionService {
         this.clock = Objects.requireNonNull(clock);
         this.challengeOffers = Objects.requireNonNull(challengeOffers);
         this.challengeExecution = Objects.requireNonNull(challengeExecution);
+        this.acceptedAnswerLuck = Objects.requireNonNull(acceptedAnswerLuck);
     }
 
     @Transactional(noRollbackFor = ApiException.class)
@@ -161,6 +165,7 @@ public class StudentAnswerSubmissionService {
         if (normal) {
             challengeOffers.afterAnswer(lockedRacePlayer, savedQuestion,
                     answerRaceImpact.getAnsweredDifficulty(), correct, decisionEpochMs);
+            acceptedAnswerLuck.afterAcceptedNormalAnswer(lockedRacePlayer, savedQuestion, correct, decisionEpochMs);
         }
 
         if (liveContext.active()) {

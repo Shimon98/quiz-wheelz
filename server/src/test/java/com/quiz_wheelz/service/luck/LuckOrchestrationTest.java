@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @Import({FairLuckService.class, GuardShieldService.class, LuckTransactionGuard.class,
-        LuckEffectResolver.class, LuckOwnStateReader.class, LuckPeerReader.class, RacePlayerSpeedEffectService.class})
+        LuckEffectResolver.class, LuckOwnStateReader.class, LuckPeerReader.class, LuckPeerJdbcResources.class, LuckDecisionSourceReader.class, RaceLuckFairnessStateService.class, RacePlayerSpeedEffectService.class})
 class LuckOrchestrationTest extends LuckPersistenceTest {
     @Autowired FairLuckService luck;
     @Autowired LuckPeerReader peers;
@@ -51,13 +51,48 @@ class LuckOrchestrationTest extends LuckPersistenceTest {
         when(random.nextDouble()).thenReturn(0.6);
         tx.executeWithoutResult(status -> assertEquals(LuckOutcome.NO_EVENT, attempt(100).getOutcome()));
         tx.executeWithoutResult(status -> assertNull(attempt(100)));
+        tx.executeWithoutResult(status -> assertNull(attempt(100000)));
         verify(random, times(1)).nextDouble();
         tx.executeWithoutResult(status -> {
             var state = gameplay.findByRacePlayerId(playerId).orElseThrow();
             assertEquals(1, state.getLuckRollsTaken());
             assertEquals(0, state.getLuckEventsReceived());
             assertEquals(45100L, state.getNextLuckRollNotBeforeEpochMs());
+            assertEquals(100L, state.getLastAcceptedManualNormalAnswerAtEpochMs());
             assertEquals(1L, fairness.findByRaceId(raceId).orElseThrow().getDecisionSequence());
+        });
+    }
+
+    @Test
+    void repeatedDirectCallInSameWriterTransactionSeesOwnAuditAndIsNoOp() {
+        when(random.nextDouble()).thenReturn(0.6);
+        tx.executeWithoutResult(status -> {
+            assertNotNull(attempt(100));
+            assertNull(attempt(100000));
+            assertEquals(1, decisions.findByRacePlayerIdOrderByDecisionSequenceAsc(playerId).size());
+            assertEquals(45100L, gameplay.findByRacePlayerId(playerId).orElseThrow().getNextLuckRollNotBeforeEpochMs());
+            assertEquals(100L, gameplay.findByRacePlayerId(playerId).orElseThrow().getLastAcceptedManualNormalAnswerAtEpochMs());
+        });
+        verify(random, times(1)).nextDouble();
+    }
+
+    @Test
+    void initializingExistingFairnessPreservesSequenceRecipientAndAudits() {
+        when(random.nextDouble()).thenReturn(0.0);
+        tx.executeWithoutResult(status -> assertNotNull(attempt(100)));
+        tx.executeWithoutResult(status -> {
+            var player = locked();
+            var before = fairness.findByRaceId(raceId).orElseThrow();
+            assertEquals(1L, before.getDecisionSequence());
+            assertEquals(1L, before.getLastEventSequence());
+            assertEquals(playerId, before.getLastEventRecipient().getId());
+            for (int index = 0; index < 3; index++) {
+                var current = fairnessOwner.obtainForLockedPlayer(player);
+                assertEquals(1L, current.getDecisionSequence());
+                assertEquals(1L, current.getLastEventSequence());
+                assertEquals(playerId, current.getLastEventRecipient().getId());
+            }
+            assertEquals(1, decisions.findByRacePlayerIdOrderByDecisionSequenceAsc(playerId).size());
         });
     }
 
