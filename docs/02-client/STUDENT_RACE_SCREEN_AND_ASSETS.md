@@ -234,7 +234,8 @@ react-overlay-decoration
 World-art model (C1-06F, locked): existing raw FAR/road/scenery art stays in
 the private vision area and is processed deterministically (alpha lift,
 seam heal, WebP) into this tree. The new thicket and flowering verge trials
-below use lossless WebP encodings of their private generated PNGs.
+below used lossless WebP encodings of their private generated PNGs; since
+2026-10-19 both runtime files are quality-85 lossy WebP with byte-identical alpha.
 Static sky/ground gradients sit behind
 a static FAR horizon sprite anchored to the horizon;
 projected surfaces (ground plane, road, optional MID verge) and projected
@@ -287,10 +288,11 @@ generated transparent cluster that fills the forest interior behind
 individual trees. It joins the existing two trees, palm, two rocks and
 bush in `sceneryConfig.props`; with the flowering verge below, all eight
 assets share `SceneryLayer`.
-The runtime WebP is 1254×1254 pixels and 2,136,844 bytes (2.14 MB).
-It was encoded losslessly from the generated PNG, with every decoded RGBA
-byte verified as identical. No resizing, recoloring or artwork edits were
-applied. The 2,835,611-byte source PNG stays private at
+The runtime WebP is 1254×1254 pixels. It was first encoded losslessly from
+the generated PNG (2,136,844 bytes, every decoded RGBA byte verified as
+identical); since 2026-10-19 it is quality-85 lossy WebP (633,756 bytes) with
+byte-identical alpha, chosen after an in-game comparison. No resizing,
+recoloring or artwork edits were applied. The 2,835,611-byte source PNG stays private at
 `docs/vision/world-art-source/jungle-thicket-01.png`; only the WebP is
 consumed by `sceneryConfig`. It belongs to the accepted world composition;
 physical-phone performance remains a required pre-release check carried from C1-06G. Its filename and URL
@@ -319,9 +321,10 @@ Use case: stylized-concept. Generate one production-ready transparent PNG sprite
 
 `client/src/assets/game/studentRace/scenery/jungle-verge-flowers-01.webp`
 is a low, dense roadside clump generated with the built-in image generator.
-Its lossless RGBA WebP is 1774×887 pixels and 1,344,364 bytes, with decoded
-pixels verified identical to the generated source. No crop, resize or color
-edit was applied. The private source is
+Its RGBA WebP is 1774×887 pixels: first lossless (1,344,364 bytes, decoded
+pixels verified identical to the generated source), since 2026-10-19
+quality-85 lossy (360,908 bytes) with byte-identical alpha. No crop, resize or
+color edit was applied. The private source is
 `docs/vision/world-art-source/jungle-verge-flowers-01.png`.
 
 `sceneryConfig.props` owns its asset URL, width and `anchorY` 0.94. About

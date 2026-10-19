@@ -367,10 +367,11 @@ Implemented A–G:
   the shoulder join. Road width, camera and logical depth zones are unchanged.
   Shimon accepted the current world design; this composition is the baseline
   for feedback polish and C2 rather than an open art trial.
-- The thicket and new `jungle-verge-flowers-01.webp` are packaged as lossless
+- The thicket and new `jungle-verge-flowers-01.webp` were first packaged as lossless
   WebP with every decoded RGBA byte verified against their private generated
-  PNGs; artwork, dimensions and colors are unchanged. The flowers are
-  1774×887 pixels / 1,344,364 bytes;
+  PNGs; since 2026-10-19 both ship as quality-85 lossy WebP with byte-identical
+  alpha (client quality package 1, 3,481,208 → 994,664 bytes together); artwork,
+  dimensions and colors are unchanged. The flowers are 1774×887 pixels / 360,908 bytes;
   metadata `anchorY` 0.94 places their dense base at the road edge without
   cropping the image. Side-ground texture density and a 48-row ground
   mesh reduce near-ground stretching and projection coarseness. Road sampling
@@ -751,7 +752,10 @@ Current audio matrix:
   with the kart recolour pipeline); 0 visible pixels change in the kart body, so the anchor,
   size and nozzle centres are identical. Only the player's kart uses them. The player's two poses
   load and upload to the GPU about 1.5 s after the kart art appears (`kartPoses` in
-  `raceAnimationConfig`); a failed one retries at most twice, 5 s apart, never offline; a pose
+  `raceAnimationConfig`); they and the painted exhaust then stay on the GPU for the whole race
+  screen (`StudentRaceRenderer`'s prepare step exempts only these sources from Pixi's 60 s GPU
+  collector; Pixi frees them with the renderer), so a late Turbo or Safe does not upload them
+  again; a failed one retries at most twice, 5 s apart, never offline; a pose
   blends in over 320 ms and returns from Turbo in 160 ms on an isolated surface
   (`KartArtCrossfade`, the shared body stays opaque); the blend filter is warmed up in the same
   quiet moment, so the first Turbo win does not stall on compiling it; reduced motion swaps at

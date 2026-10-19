@@ -1261,6 +1261,23 @@ Built in tracks by server contract: Track A uses only the merged S4-01 vocabular
   1,641/1,641 (178 files), lint and build pass. Performance was measured on the DEV build only:
   a physical-phone check and production profiling remain open, and dedicated challenge sounds
   are still AUDIO ASSET REQUIRED. Evidence: `docs/vision/C5_03/final_gate_2026-10-18/` (local).
+- **Client quality package 1, GPU residency of the challenge art — IMPLEMENTED LOCALLY (not
+  committed, 2026-10-19):** Pixi's GPU collector frees textures left undrawn for 60 s, so the
+  preloaded Turbo/Safe poses and the painted exhaust were freed about 90 s after the preload and
+  uploaded again at a later Turbo win or Safe start (DEV: 2 uploads at the win, 0.9–16.5 ms of
+  main-thread time). The renderer's prepare step now marks only those three sources as not
+  collectable before uploading them; the collector settings are unchanged and Pixi frees them with
+  the renderer. DEV verification: a Turbo win and a Safe start at about 126 s and 133 s upload
+  nothing and compile no shader; five race screens in a row with different colours release their
+  contexts and pin three sources each; blocked art pins nothing and keeps the fallbacks; a lost
+  context recovers (the art uploads again at its next use). A colour change in the middle of a race
+  keeps the previous colour's two poses until the screen closes. Client suite 1,644/1,644
+  (179 files), lint and build pass. The two lossless scenery WebPs (`jungle-thicket-01`,
+  `jungle-verge-flowers-01`) are now quality-85 lossy WebP with byte-identical alpha and the same
+  size, approved by Shimon on 2026-10-19 after an in-game comparison (supersedes the lossless
+  packaging recorded under C1-06F): 3,481,208 → 994,664 bytes, and the game's frames match the
+  reviewed candidate pixel for pixel. Production preview and physical phones: NOT TESTED.
+  Evidence: `docs/vision/p1_gpu_scenery_2026-10-19/` (local).
 
 ### C5 gameplay UI — after S4-02 onward
 

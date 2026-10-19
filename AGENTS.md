@@ -207,8 +207,10 @@ Full workflow: `docs/03-quality/ISSUE_PR_AND_AI_WORKFLOW.md`.
 
 ## 12. Code quality limits
 
-- Added or modified `.java`, `.js` and `.jsx` files contain no comments or
-  Javadocs. Use focused types, small methods and explicit names instead.
+- Prefer focused types, small methods and explicit names over comments. Never
+  delete existing comments in unrelated edits. Add a short comment only where
+  it explains non-obvious behavior (why, not what) — never a comment per line,
+  no Javadoc boilerplate.
 - An added or modified code or test file must not exceed 500 lines. Split by
   responsibility before extending a file that is already near the limit.
 - Logger templates and repeated operation labels belong to focused constants,
