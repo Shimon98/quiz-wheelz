@@ -98,13 +98,17 @@ abstract class RaceChronologyIntegrationFixture {
     void prepareChronology() {
         clock.set(T);
         transactions = new TransactionTemplate(transactionManager);
-        transactions.executeWithoutResult(status -> com.quiz_wheelz.support.LuckDatabaseEvidence.verify(entityManager));
+        transactions.executeWithoutResult(status -> verifyChronologyDatabase());
         transactions.executeWithoutResult(status -> persistRace());
         firstRequest = session(firstId);
         secondRequest = session(secondId);
         when(redisPresenceService.isOnline(anyLong(), anyLong())).thenReturn(true);
         when(redisPresenceService.findLastGameplayActivityAt(anyLong(), anyLong()))
                 .thenReturn(Optional.of(Instant.ofEpochMilli(T)));
+    }
+
+    void verifyChronologyDatabase() {
+        com.quiz_wheelz.support.LuckDatabaseEvidence.verify(entityManager);
     }
 
     HttpServletRequest session(Long playerId) {

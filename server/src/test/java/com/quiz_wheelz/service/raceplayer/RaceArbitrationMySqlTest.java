@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @EnabledIfEnvironmentVariable(
         named = "QUIZWHEELZ_C2_MYSQL_TEST_URL",
@@ -17,6 +18,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 )
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class RaceArbitrationMySqlTest extends RaceArbitrationIsolationTest {
+
+    @Override
+    void verifyChronologyDatabase() {
+        var factory = entityManager.getEntityManagerFactory()
+                .unwrap(org.hibernate.engine.spi.SessionFactoryImplementor.class);
+        assertEquals("MySQLDialect", factory.getJdbcServices().getDialect().getClass().getSimpleName());
+        entityManager.unwrap(org.hibernate.Session.class).doWork(connection -> {
+            String url = connection.getMetaData().getURL();
+            assertEquals(System.getenv("QUIZWHEELZ_C2_MYSQL_TEST_URL"), url);
+            assertTrue(url.matches("jdbc:mysql://127\\.0\\.0\\.1:[0-9]+/quizwheelz_c2_test"));
+            assertEquals("MySQL", connection.getMetaData().getDatabaseProductName());
+            assertEquals(Connection.TRANSACTION_REPEATABLE_READ, connection.getTransactionIsolation());
+        });
+    }
 
     @BeforeEach
     void verifyRealMySqlWithRepeatableReadDefault() throws SQLException {

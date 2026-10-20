@@ -669,7 +669,7 @@ Production migrations remain Phase 6; S4-04 / S4-05 / S4-06 remain PLANNED.
 
 ### S4-04 - Power-Ups + fair Luck
 
-**Status:** `PARTIAL - A/B1 approved locally; B2 SERVER READY FOR REVIEW; rollout OFF`
+**Status:** `A/B1/B2/C1 approved locally; C2 integration-readiness review pending; rollout OFF`
 
 Local checkpoint, 2026-10-18, `feature/s4-04-fair-luck`, based on
 `origin/main@84a44230b77f6acb469c6f969070e4c0cf409325`. Approved V5 parameters
@@ -1163,6 +1163,77 @@ exit codes, code hashes, logs/XML, fairness/load JSON, schema inventory, patch a
 Hebrew report. Future PR-review readiness is separate from merge/deploy/activation
 approval. Keep QUIZWHEELZ_LUCK_ANSWER_ENABLED=false and stop for Diana's review;
 no client work, C2, staging, commit, push, PR, merge, deployment or migrations.
+
+#### Checkpoint C2 - server integration safety and release gates
+
+**Status:** `LOCAL REHEARSAL COMPLETE; REVIEW PENDING; deployment/activation NOT approved`
+
+A/B1/B2/C1 are approved local commits; C2 starts from C1 commit
+733cbb16be508b63ce4fe6a9108923cde9d8ce1b. Earlier checkpoint review/status paragraphs
+are historical. This C2 is a server integration-readiness gate, distinct from the
+pre-existing optional RaceArbitrationMySqlTest environment gate.
+
+Production/client source, dependencies, actual workflows, gameplay, lock order,
+transactions and B2/C1 contracts are unchanged. Review-only proposals and six reports
+are in reviews/s4-04-c2/. Generated evidence and the complete patch are ignored under
+server/target/c2-evidence. No migration framework or operational policy is adopted.
+One existing SSE security test receives a dedicated H2 URL/context; its real
+scheduler and all assertions remain. The initial full run had one NoInteractionsWanted
+failure from presence calls on shared fixtures. Standalone/paired diagnostics passed;
+small slices did not deterministically reproduce it. The supported test-interference
+diagnosis and unchanged production SSE path are documented, and original red log/XML
+remain as history-full-before-isolation*. Final runs validate the isolated test.
+The separate legacy arbitration MySQL gate first failed in shared fixture setup
+because the default Luck database guard requires the different Luck schema name.
+A test-only verification hook preserves that default and lets the legacy subclass
+assert its exact allowed environment URL, schema regex, MySQL product/dialect and
+RR isolation. Its original assertions/test bodies remain. The two setup failures are
+retained as history; both arbitration scenarios pass after this guard-only fix.
+No production Java or Luck database-verifier change is involved. Three test files
+are changed in total and all final runs use identical Java hashes.
+
+
+The exact local main baseline 84a44230b77f6acb469c6f969070e4c0cf409325 was exported
+without a ref/checkout change, built and used to generate a synthetic pre-Luck schema.
+Eight existing gameplay/participant/question rows and two Challenge histories were
+rehearsed on disposable mysql:8.4.11 only, with tmpfs and localhost port 13319.
+Draft expansion adds exactly ten columns and two tables. All original data/columns,
+IDs, Energy and timestamps compare equal. Native enums, BIT defaults, FKs, unique and
+descending indexes and enforced CHECKs are captured; four valid audit outcomes and
+23 expected constraint failures pass. Real current application validate startup and
+restart close with exit 0; old main mapping also validates the expansion. Unmigrated
+and partially migrated negative controls exit 1 despite Luck OFF. These are mapping
+startup checks, not prod-profile/Redis/deployment or application rollback acceptance.
+
+Controlled partial DDL preserves its committed ALTER before a failed CREATE and is
+refused by the rerun guard. A real metadata-lock holder causes bounded expected DDL
+timeout without a new column. No script-atomic rollback or online-migration guarantee
+is claimed. Target history/schema/version/data and migration ownership/ledger/restore
+policy remain unknown: MIGRATION_POLICY_UNDECIDED. No target DB was accessed.
+
+CI is an unapplied three-job proposal with separate H2, Luck MySQL and legacy
+arbitration schemas. YAML parsing and Bash syntax pass; Linux/hosted CI remains
+unexecuted/PENDING. Current local regression results:
+
+- full: 1360 total, 1358 passed, 2 skipped, zero failures/errors.
+- focused: 491 total, 489 passed, 2 skipped, zero failures/errors.
+- ordinary: 1250 total, 1185 passed, 65 skipped, zero failures/errors.
+- arbitration: 2 total, 2 passed, 0 skipped, zero failures/errors.
+
+Exact commands/timing/profile/source hashes and new XML are retained per run. Skips
+are not passes; expected rollback/create-drop warnings and helper failure history
+are retained. Cached-context connection peaks and service test timings are not
+production sizing/SLA evidence. Lab startup writer maximum is 10, reader default 2;
+actual deployed N/W/B/reserve/DB maximum remain required owner inputs satisfying
+SUM_i(W_i+R_i)<=B and B+reserved<=DB_max_connections. No default is changed.
+
+Read-only ls-remote observed remote main equal to the local main baseline; no fetch,
+merge or ref mutation occurred. Review readiness is separate from merge/deployment:
+target schema/policy, hosted CI and pool topology gates remain open. Activation also
+needs product approval of the unchanged provisional 60000ms window and Shimon's
+client acceptance. React/Pixi/HUD/effects/audio/expiry scheduling remain Shimon's.
+QUIZWHEELZ_LUCK_ANSWER_ENABLED remains false. Disposable DB/credential cleanup is
+recorded. No staging, commit, publication, deployment or next checkpoint is authorized.
 
 ### S4-05 — Hidden Recovery
 

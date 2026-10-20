@@ -1,0 +1,227 @@
+# DRAFT ONLY. Unapplied example; action tags must be resolved to reviewed immutable SHAs before adoption.
+name: proposed-server-review
+on:
+  pull_request:
+    paths: ['server/**', 'docs/01-server/**', 'docs/00-project/ARCHITECTURE_AND_CONTRACTS.md']
+permissions:
+  contents: read
+concurrency:
+  group: proposed-server-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  ordinary-server:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      QUIZWHEELZ_LUCK_ANSWER_ENABLED: 'false'
+      SPRING_DOCKER_COMPOSE_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: server/pom.xml
+      - name: Verify approved wrapper source and record toolchain
+        working-directory: server
+        shell: bash
+        run: |
+          set -euo pipefail
+          export MAVEN_USER_HOME="$RUNNER_TEMP/s4-04-wrapper-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          test ! -e "$MAVEN_USER_HOME"
+          echo "MAVEN_USER_HOME=$MAVEN_USER_HOME" >> "$GITHUB_ENV"
+          echo "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02  mvnw" | sha256sum -c -
+          echo "488e1b3f2e641779d4636abf9390845f901e64607261bc3c0b0bfe4fe96e6706  .mvn/wrapper/maven-wrapper.properties" | sha256sum -c -
+          # Draft ephemeral checkout preparation, not a committed wrapper policy change.
+          dist=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.16/apache-maven-3.9.16-bin.zip
+          curl --fail --silent --show-error --location "$dist" -o "$RUNNER_TEMP/maven.zip"
+          curl --fail --silent --show-error --location "$dist.sha512" -o "$RUNNER_TEMP/maven.sha512"
+          expected=$(tr -d '[:space:]' < "$RUNNER_TEMP/maven.sha512")
+          printf '%s  %s\n' "$expected" "$RUNNER_TEMP/maven.zip" | sha512sum -c -
+          digest=$(sha256sum "$RUNNER_TEMP/maven.zip" | cut -d' ' -f1)
+          printf '\ndistributionSha256Sum=%s\n' "$digest" >> .mvn/wrapper/maven-wrapper.properties
+          bash ./mvnw -B --version
+      - name: Ordinary H2 verification
+        working-directory: server
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p target
+          bash ./mvnw -B verify 2>&1 | tee target/ci-ordinary.log
+      - name: Retain redacted evidence even after test failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ordinary-${{ github.run_id }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            server/target/surefire-reports/TEST-*.xml
+            server/target/ci-ordinary.log
+  isolated-luck-mysql:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      mysql:
+        image: mysql@sha256:b3b90af2a6552ae30c266fdb7d5dd55f3afb72404bb78d37fe8a23eb857fd3fb
+        env:
+          MYSQL_DATABASE: quizwheelz_s4_luck_test
+          MYSQL_ROOT_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}-ephemeral
+        ports:
+          - 3306/tcp
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=5s --health-timeout=3s --health-retries=30
+    env:
+      QUIZWHEELZ_LUCK_ANSWER_ENABLED: 'false'
+      SPRING_DOCKER_COMPOSE_ENABLED: 'false'
+      QUIZWHEELZ_LUCK_MYSQL_TEST_URL: jdbc:mysql://127.0.0.1:${{ job.services.mysql.ports[3306] }}/quizwheelz_s4_luck_test
+      QUIZWHEELZ_LUCK_MYSQL_TEST_USER: root
+      QUIZWHEELZ_LUCK_MYSQL_TEST_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}-ephemeral
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: server/pom.xml
+      - name: Verify approved wrapper source and record toolchain
+        working-directory: server
+        shell: bash
+        run: |
+          set -euo pipefail
+          export MAVEN_USER_HOME="$RUNNER_TEMP/s4-04-wrapper-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          test ! -e "$MAVEN_USER_HOME"
+          echo "MAVEN_USER_HOME=$MAVEN_USER_HOME" >> "$GITHUB_ENV"
+          echo "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02  mvnw" | sha256sum -c -
+          echo "488e1b3f2e641779d4636abf9390845f901e64607261bc3c0b0bfe4fe96e6706  .mvn/wrapper/maven-wrapper.properties" | sha256sum -c -
+          # Draft ephemeral checkout preparation, not a committed wrapper policy change.
+          dist=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.16/apache-maven-3.9.16-bin.zip
+          curl --fail --silent --show-error --location "$dist" -o "$RUNNER_TEMP/maven.zip"
+          curl --fail --silent --show-error --location "$dist.sha512" -o "$RUNNER_TEMP/maven.sha512"
+          expected=$(tr -d '[:space:]' < "$RUNNER_TEMP/maven.sha512")
+          printf '%s  %s\n' "$expected" "$RUNNER_TEMP/maven.zip" | sha512sum -c -
+          digest=$(sha256sum "$RUNNER_TEMP/maven.zip" | cut -d' ' -f1)
+          printf '\ndistributionSha256Sum=%s\n' "$digest" >> .mvn/wrapper/maven-wrapper.properties
+          bash ./mvnw -B --version
+      - name: Mask disposable credential and run isolated suite
+        working-directory: server
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "::add-mask::$QUIZWHEELZ_LUCK_MYSQL_TEST_PASSWORD"
+          mkdir -p target
+          bash ./mvnw -B "-Dtest=*Luck*,B2*,C1*,*Challenge*,*RaceArbitration*" test 2>&1 | tee target/ci-isolated-luck-mysql.log
+      - name: Redact disposable credential from retained files
+        id: redact
+        if: always()
+        working-directory: server
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, pathlib
+          secret = os.environ['QUIZWHEELZ_LUCK_MYSQL_TEST_PASSWORD']
+          paths = list(pathlib.Path('target/surefire-reports').glob('TEST-*.xml'))
+          paths += list(pathlib.Path('target').glob('ci-*.log'))
+          for path in paths:
+              value = path.read_text(encoding='utf-8')
+              path.write_text(value.replace(secret, '[REDACTED]'), encoding='utf-8')
+          PY
+      - name: Retain redacted evidence even after test failure
+        if: always() && steps.redact.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: isolated-luck-mysql-${{ github.run_id }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            server/target/surefire-reports/TEST-*.xml
+            server/target/ci-isolated-luck-mysql.log
+  independent-arbitration-mysql:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      mysql:
+        image: mysql@sha256:b3b90af2a6552ae30c266fdb7d5dd55f3afb72404bb78d37fe8a23eb857fd3fb
+        env:
+          MYSQL_DATABASE: quizwheelz_c2_test
+          MYSQL_ROOT_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}-ephemeral
+        ports:
+          - 3306/tcp
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=5s --health-timeout=3s --health-retries=30
+    env:
+      QUIZWHEELZ_LUCK_ANSWER_ENABLED: 'false'
+      SPRING_DOCKER_COMPOSE_ENABLED: 'false'
+      QUIZWHEELZ_C2_MYSQL_TEST_URL: jdbc:mysql://127.0.0.1:${{ job.services.mysql.ports[3306] }}/quizwheelz_c2_test
+      QUIZWHEELZ_C2_MYSQL_TEST_USER: root
+      QUIZWHEELZ_C2_MYSQL_TEST_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}-ephemeral
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: server/pom.xml
+      - name: Verify approved wrapper source and record toolchain
+        working-directory: server
+        shell: bash
+        run: |
+          set -euo pipefail
+          export MAVEN_USER_HOME="$RUNNER_TEMP/s4-04-wrapper-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          test ! -e "$MAVEN_USER_HOME"
+          echo "MAVEN_USER_HOME=$MAVEN_USER_HOME" >> "$GITHUB_ENV"
+          echo "cae96cef89ebea3531221f4ae17c23cf8edf67d00eae8306d4186ae1bbed4d02  mvnw" | sha256sum -c -
+          echo "488e1b3f2e641779d4636abf9390845f901e64607261bc3c0b0bfe4fe96e6706  .mvn/wrapper/maven-wrapper.properties" | sha256sum -c -
+          # Draft ephemeral checkout preparation, not a committed wrapper policy change.
+          dist=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.16/apache-maven-3.9.16-bin.zip
+          curl --fail --silent --show-error --location "$dist" -o "$RUNNER_TEMP/maven.zip"
+          curl --fail --silent --show-error --location "$dist.sha512" -o "$RUNNER_TEMP/maven.sha512"
+          expected=$(tr -d '[:space:]' < "$RUNNER_TEMP/maven.sha512")
+          printf '%s  %s\n' "$expected" "$RUNNER_TEMP/maven.zip" | sha512sum -c -
+          digest=$(sha256sum "$RUNNER_TEMP/maven.zip" | cut -d' ' -f1)
+          printf '\ndistributionSha256Sum=%s\n' "$digest" >> .mvn/wrapper/maven-wrapper.properties
+          bash ./mvnw -B --version
+      - name: Mask disposable credential and run isolated suite
+        working-directory: server
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "::add-mask::$QUIZWHEELZ_C2_MYSQL_TEST_PASSWORD"
+          mkdir -p target
+          bash ./mvnw -B -Dtest=RaceArbitrationMySqlTest test 2>&1 | tee target/ci-independent-arbitration-mysql.log
+      - name: Redact disposable credential from retained files
+        id: redact
+        if: always()
+        working-directory: server
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, pathlib
+          secret = os.environ['QUIZWHEELZ_C2_MYSQL_TEST_PASSWORD']
+          paths = list(pathlib.Path('target/surefire-reports').glob('TEST-*.xml'))
+          paths += list(pathlib.Path('target').glob('ci-*.log'))
+          for path in paths:
+              value = path.read_text(encoding='utf-8')
+              path.write_text(value.replace(secret, '[REDACTED]'), encoding='utf-8')
+          PY
+      - name: Retain redacted evidence even after test failure
+        if: always() && steps.redact.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: independent-arbitration-mysql-${{ github.run_id }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            server/target/surefire-reports/TEST-*.xml
+            server/target/ci-independent-arbitration-mysql.log
