@@ -158,7 +158,8 @@ Source-of-truth rules locked by C1-01:
   race-state request; JS never reads tokens.
 - `sessionStorage` joinData is an optional display cache only (name, lane,
   cached counters); a missing cache never redirects, and race-state's
-  `raceTitle`/`roomCode` win over it.
+  `raceTitle`/`roomCode` win over it. Only the six fields the waiting room shows
+  are stored (2026-10-19, `BROWSER_CACHE_AND_STORAGE.md`).
 - Waiting polling is a temporary change-detection trigger; a future SSE
   event replaces the trigger, never the race-state truth.
 
@@ -1041,7 +1042,7 @@ is merged (PR #76). The C5-03 presentation groundwork and the C5-01h slowdown ex
 merged (PR #78). The server Challenge contract (S4-02 energy/offer/choice + S4-03 Turbo/Safe
 execution) is merged (PR #77). C5-02 (Track B) is committed locally on
 `feature/C5-02-challenge-choice-energy` (`f6b9878`, not pushed); the rest of C5-03 (Track C) is
-implemented on the same branch, not committed, pending review; live QA passed on the local
+implemented on the same branch, not yet merged to main; live QA passed on the local
 server. The gameplay UI renders server-owned game events and effects, so each further
 part starts from an audit of that real server code; never from a text handoff alone. The
 carried-forward release QA can proceed meanwhile.
@@ -1164,26 +1165,26 @@ Built in tracks by server contract: Track A uses only the merged S4-01 vocabular
   / `invalid`) instead of trusting an HTTP 200, and no late read after the screen moved on;
   live QA against a local silent server (race 160): the real axios timeouts ended the choice at
   4.0 s and the check at 3.0 s, with one POST and the manual sync instead of an endless wait.
-- **C5-03d Safe progress — IMPLEMENTED LOCALLY (Track C, not committed):** "question N of 3"
+- **C5-03d Safe progress — IMPLEMENTED LOCALLY (Track C, not yet merged to main):** "question N of 3"
   and pips beside the Safe badge, from the server's run only.
-- **C5-03e result moments — IMPLEMENTED LOCALLY (Track C, not committed):** one moment per
+- **C5-03e result moments — IMPLEMENTED LOCALLY (Track C, not yet merged to main):** one moment per
   `lastResult.challengeId` through the existing moment pipeline (baseline first, never replayed
   after a refresh), result lines, the Turbo failure slowdown notice, four result effects and
   reused approved sounds.
-- **C5-03f kart thrusters — IMPLEMENTED LOCALLY (Track C, not committed):** glow on the art's
+- **C5-03f kart thrusters — IMPLEMENTED LOCALLY (Track C, not yet merged to main):** glow on the art's
   measured nozzles (Turbo gold flicker, Safe calm blue), one burst per result, reduced-motion
   safe. Painted exhaust is integrated locally in C5-03j. Dedicated challenge sounds: AUDIO ASSET REQUIRED.
-- **C5-03g hardening — IMPLEMENTED LOCALLY (Track C, not committed):** bounded runtime request
+- **C5-03g hardening — IMPLEMENTED LOCALLY (Track C, not yet merged to main):** bounded runtime request
   timeouts (5 s / 8 s, join unbounded), light-theme feedback contrast, and the DEV preview
   question keeps its served context. Live QA: race 161 (every outcome, a reload mid-Safe, a
   missed offer) and soak race 162 (eight players, a slow and a failed choice).
-- **C5-03h closeout — IMPLEMENTED LOCALLY (Track C, not committed, 2026-10-18):** monkey poses
+- **C5-03h closeout — IMPLEMENTED LOCALLY (Track C, not yet merged to main, 2026-10-18):** monkey poses
   composited onto the shipped kart bodies (8 colours, player-only, lazy), challenge answers
   without combo claims, calmer Safe Perfect, neutral Safe-complete copy, clear sync error,
   lost-acknowledgement integration test, q90 colour karts. Live QA passed on the local server
   (final code: race 172, 23/23 — Turbo win, Safe Perfect, and a Turbo win whose acknowledgement
   was lost after the server counted it: one POST, the server's score).
-- **C5-03i Turbo polish and stutter audit — IMPLEMENTED LOCALLY (Track C, not committed,
+- **C5-03i Turbo polish and stutter audit — IMPLEMENTED LOCALLY (Track C, not yet merged to main,
   2026-10-18):** measured first: in the production build the first Turbo entry blocked one
   frame for about 63 ms (the first GPU upload of the pose image). The player's two poses now
   load and upload about 1.5 s after the kart art appears (a failed one retries at most twice,
@@ -1203,13 +1204,13 @@ Built in tracks by server contract: Track A uses only the merged S4-01 vocabular
   on a fresh `TURBO_SUCCESS`; poses blend in over 320 ms and return from Turbo in 160 ms; the
   blend filter is prewarmed in a quiet moment (final gate below).
 
-- **C5-03j restrained Turbo presentation — IMPLEMENTED LOCALLY (not committed, 2026-10-18):**
+- **C5-03j restrained Turbo presentation — IMPLEMENTED LOCALLY (not yet merged to main, 2026-10-18):**
   a shared 192 x 288 transparent painted exhaust WebP (11,968 bytes) is loaded once through
   `studentRaceEffectManifest` and placed on the measured nozzle anchors. Quiet code fallback
   on asset failure; no Turbo star particles or filled ground disc. The initial compression,
   short middle dissolve and camera push are superseded by C5-03k below.
 
-- **C5-03k success timing and clean transitions — IMPLEMENTED LOCALLY (not committed, 2026-10-18):**
+- **C5-03k success timing and clean transitions — IMPLEMENTED LOCALLY (not yet merged to main, 2026-10-18):**
   - Turbo selection/question: idle composite and original blue nozzles, no launch flame.
   - Fresh accepted `TURBO_SUCCESS`: launch pose for 1.3 s, painted exhaust for 1.1 s; no
     replay from old results, ordinary correct answers, failures or entry into Turbo.
@@ -1229,7 +1230,7 @@ Built in tracks by server contract: Track A uses only the merged S4-01 vocabular
     dedicated challenge audio. Diana owns requested question sequence/difficulty changes.
     The client does not invent a Turbo sequence or timed speed boost.
 
-- **C5-03l restrained Safe presentation — IMPLEMENTED LOCALLY (not committed, 2026-10-18):**
+- **C5-03l restrained Safe presentation — IMPLEMENTED LOCALLY (not yet merged to main, 2026-10-18):**
   Safe Complete and Safe Perfect use a thin blue ground ellipse and a contained blue nozzle
   pulse, without stars, gold rays, large rings or flame. Steady Safe nozzle opacity is 0.45;
   complete/perfect pulses ease in/out for 550/800 ms, with maximum opacity 0.45/0.65.
@@ -1239,7 +1240,7 @@ Built in tracks by server contract: Track A uses only the merged S4-01 vocabular
   `docs/vision/C5_03/codex_safe_2026-10-18/`. Final live-race and physical-phone acceptance,
   C5-03 review/commit and dedicated audio remain open; server sequence/difficulty is Diana's work.
 
-- **C5-03m sharp return and readable slowdown — IMPLEMENTED LOCALLY (not committed, 2026-10-18):**
+- **C5-03m sharp return and readable slowdown — IMPLEMENTED LOCALLY (not yet merged to main, 2026-10-18):**
   The isolated blend surface inherits renderer resolution and antialiasing instead of
   downsampling to resolution 1. Turbo return lasts 160 ms; entry/Safe retain 320 ms and
   reversal preserves the current blend. Server `SPEED_SLOW` from `CHALLENGE_TIMEOUT` or
@@ -1261,8 +1262,8 @@ Built in tracks by server contract: Track A uses only the merged S4-01 vocabular
   1,641/1,641 (178 files), lint and build pass. Performance was measured on the DEV build only:
   a physical-phone check and production profiling remain open, and dedicated challenge sounds
   are still AUDIO ASSET REQUIRED. Evidence: `docs/vision/C5_03/final_gate_2026-10-18/` (local).
-- **Client quality package 1, GPU residency of the challenge art — IMPLEMENTED LOCALLY (not
-  committed, 2026-10-19):** Pixi's GPU collector frees textures left undrawn for 60 s, so the
+- **Client quality package 1, GPU residency of the challenge art — IMPLEMENTED LOCALLY (not yet
+  merged to main, 2026-10-19):** Pixi's GPU collector frees textures left undrawn for 60 s, so the
   preloaded Turbo/Safe poses and the painted exhaust were freed about 90 s after the preload and
   uploaded again at a later Turbo win or Safe start (DEV: 2 uploads at the win, 0.9–16.5 ms of
   main-thread time). The renderer's prepare step now marks only those three sources as not
@@ -1278,8 +1279,8 @@ Built in tracks by server contract: Track A uses only the merged S4-01 vocabular
   packaging recorded under C1-06F): 3,481,208 → 994,664 bytes, and the game's frames match the
   reviewed candidate pixel for pixel. Production preview and physical phones: NOT TESTED.
   Evidence: `docs/vision/p1_gpu_scenery_2026-10-19/` (local).
-- **Client quality package 2, challenge sounds and results music — IMPLEMENTED LOCALLY (not
-  committed, 2026-10-19):** five in-house cues approved by ear in the challenge Sound Lab (offer A,
+- **Client quality package 2, challenge sounds and results music — IMPLEMENTED LOCALLY (not yet
+  merged to main, 2026-10-19):** five in-house cues approved by ear in the challenge Sound Lab (offer A,
   Turbo arm A, Turbo launch B, Turbo fizzle A, Safe perfect A) live in `assets/audio/sfx/` with
   catalog keys of one voice and a 1 s cooldown (Turbo launch was approved at full level and uses
   0.95, since every catalog gain stays under 1); all five are preloaded with the race screen.
@@ -1299,6 +1300,61 @@ Built in tracks by server contract: Track A uses only the merged S4-01 vocabular
   package). Open for package 4 (final QA): preload the race sounds in the student waiting room,
   review that budget for a busy classroom network, and test the production preview, a live server
   race and physical phones (NOT TESTED). Evidence: `docs/vision/p2_audio_2026-10-19/` (local).
+- **Client quality package 3, browser storage, fonts and caching — IMPLEMENTED LOCALLY (not yet
+  merged to main, 2026-10-19):** the join keeps only the six fields the waiting room shows (name,
+  lane, race title, room code, player counts) through one allowlist that also filters what it reads
+  back, so ids, vehicle keys, tokens or future server fields never reach `sessionStorage`; a blocked
+  or full storage no longer leaves the student on the join form after the server accepted the join,
+  and a value stored before the allowlist is trimmed to those fields the first time the waiting room
+  reads it (2026-10-20).
+  Fredoka and Varela Round are self-hosted (the exact Google Fonts files and rules, SIL OFL 1.1,
+  licenses beside the files), the Google links and preconnects are gone and the page title is
+  `QuizWheelz`. DEV check with a fresh browser profile and fixture API answers (the backend was
+  down): 80 screens (landing, teacher sign-in and registration, join, waiting room; widths 320,
+  390, 768 and 1440; Hebrew and English; light and dark) match the old fonts within the noise of
+  two runs of the old code, no request leaves the app on those pages, and the join, refresh, old,
+  broken, wrong-typed and blocked-storage cases behave as recorded in `BROWSER_CACHE_AND_STORAGE.md`,
+  which also holds the storage inventory and the future HTTP caching specification. Client suite
+  1,683/1,683 (184 files), lint and build pass. A live server join, the other routes, the
+  production preview and physical phones are NOT TESTED; cookie names, flags and lifetimes stay
+  OPEN for Diana, and the privacy notice stays an unpublished draft (a link in the existing settings
+  dialog is the preferred placement) until the cookie facts, data retention and the operator's
+  contact are confirmed. Open for package 4: the teacher dashboard at 320 px, where the stat-card
+  icons cover their labels and the create-race button text is cut (pre-existing, left untouched).
+  Evidence: `docs/vision/p3_cache_privacy_2026-10-19/` (local).
+
+- **Entry illustration alignment — IMPLEMENTED LOCALLY (not yet merged to main, 2026-10-19):**
+  Replaced five legacy wheeled-kart illustrations with generated hover-kart art: shared
+  landing/login/registration, student join, student waiting, and desktop/mobile dashboard
+  greetings. Retained file paths and alpha; no gameplay, storage or font changes (the tablet
+  banner and focal point changes of 2026-10-21 are described below). Browser crop checks and
+  before/after assets are in `docs/vision/hover_entry_assets_2026-10-19/` (local);
+  physical-device QA is not claimed.
+  On 2026-10-20 the greeting variants were sized to 600×450 and 400×300 (about twice and three
+  times their display size; the dashboard loads both), approved by Shimon. The same day five
+  more art passes regenerated all five; the final one places the game's front-view hover kart
+  and the monkey in the blue helmet and yellow scarf into the original scenes. A private
+  deterministic Pillow pipeline (`docs/vision/entry-hero-source/`, local) builds the five files
+  from the approved masters with the alpha lift of the other art sets (the generator's opaque
+  253 becomes 255): quality 86 WebP, lossless greeting alpha, backgrounds at their master size
+  except the waiting scene. That one is cut, not resampled, to the join scene's 4:3 frame
+  (988×741), and join and waiting share one focal point in `studentShellConfig.js`, so the
+  monkey stays in place when the waiting screen replaces the join screen (approved by Shimon on
+  2026-10-21; the cut is slightly softer on large desktops). 741,660 bytes together; landing and
+  join match the generator export byte for byte, and `entryHeroArt.test.js` pins the format,
+  size and alpha of all five and the shared join/waiting frame. DEV first-screen captures from
+  320 to 1920 px in Hebrew and English show the join and waiting monkey at the same place, and
+  96 screens against the previous files differ only inside the illustrations. Tablets, also
+  2026-10-21 and approved by Shimon: the wide tablet banner showed only a strip of the art and
+  cut the monkey's head (portrait iPad Pro, every landscape tablet). From tablet width the
+  banner may now grow to 36rem (`entryShellStyles.js`; phones keep 26rem, desktops the split
+  layout), and the vertical focal points moved to 35% (landing) and 33% (join and waiting).
+  Every portrait tablet from 712 to 1024 px now shows the whole monkey and kart; landscape
+  tablets and phones keep the head in view with the kart partly under the card (the full
+  scene there would need wider art). Phones in portrait and desktops are pixel-identical before
+  and after (72 screens). Evidence:
+  `docs/vision/hover_scene_integration_2026-10-20/`, `docs/vision/entry-hero-source/` and
+  `docs/vision/p3_cache_privacy_2026-10-19/art_recheck_2026-10-20/` (local).
 
 ### C5 gameplay UI — after S4-02 onward
 

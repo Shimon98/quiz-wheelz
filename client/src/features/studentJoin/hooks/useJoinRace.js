@@ -4,15 +4,15 @@ import { useNavigate } from "react-router-dom";
 import { joinRace } from "../../../api/racePlayerApi";
 import { ROUTES } from "../../../constants/routeConstants";
 import { showApiErrorNotification } from "../../../shared/notifications/appNotifications";
-import { STUDENT_JOIN_STORAGE_KEY } from "../config/studentJoinConfig";
+import { storeJoinData } from "../utils/readStoredJoinData";
 
 /**
  * useJoinRace — submits the single smart join form. A failed join NEVER
  * navigates the child anywhere: the localized error pops as a notification
  * over the SAME form (field validation stays inline at the inputs, and the
- * card never grows to fit an error). Success stores the join response (the
- * waiting page's only data source until the server grows a student
- * room-state endpoint) and moves to the waiting room.
+ * card never grows to fit an error). Success stores the join response's
+ * display fields (the waiting page's only data source until the server grows
+ * a student room-state endpoint) and moves to the waiting room.
  */
 export default function useJoinRace() {
   const navigate = useNavigate();
@@ -25,10 +25,7 @@ export default function useJoinRace() {
     try {
       const joinResponse = await joinRace({ roomCode, displayName });
 
-      sessionStorage.setItem(
-        STUDENT_JOIN_STORAGE_KEY,
-        JSON.stringify(joinResponse),
-      );
+      storeJoinData(joinResponse);
 
       navigate(ROUTES.STUDENT_WAITING);
     } catch (requestError) {

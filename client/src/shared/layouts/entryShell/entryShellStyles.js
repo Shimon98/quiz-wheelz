@@ -53,8 +53,10 @@ export const ENTRY_SHELL_STYLES = Object.freeze({
 
   // Hero side — full-width top banner on phone/tablet; full-height half
   // bleeding to the outer (end) edge on desktop, curved inner edge.
+  // From tablet width the banner may grow to 36rem: a portrait tablet's wide
+  // banner shows only a strip of the art, and 26rem cut the monkey there.
   heroSide:
-    "relative z-0 h-[clamp(16rem,46dvh,26rem)] w-full shrink-0 overflow-hidden min-[75rem]:absolute min-[75rem]:inset-y-0 min-[75rem]:end-0 min-[75rem]:h-full min-[75rem]:w-[58%] min-[75rem]:rounded-s-[3rem]",
+    "relative z-0 h-[clamp(16rem,46dvh,26rem)] w-full shrink-0 overflow-hidden md:h-[clamp(16rem,46dvh,36rem)] min-[75rem]:absolute min-[75rem]:inset-y-0 min-[75rem]:end-0 min-[75rem]:h-full min-[75rem]:w-[58%] min-[75rem]:rounded-s-[3rem]",
   // Hero image fills its side; the focal point (object-position) is per-flow
   // config, applied as inline style — each painting has its own center of
   // interest. Mirrored in LTR so the art keeps facing the card; the focal

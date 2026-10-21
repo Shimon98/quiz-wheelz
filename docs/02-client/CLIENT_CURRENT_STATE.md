@@ -10,14 +10,14 @@
 > then update this document in the same pull request.
 Local checkpoint, 2026-10-17 (C5-03): **C5-02 committed locally** as `f6b9878` on
 `feature/C5-02-challenge-choice-energy` (not pushed), and **the rest of C5-03 implemented
-locally on the same branch** (not committed, pending review): Safe progress ("question N of 3"
+locally on the same branch** (not yet merged to main): Safe progress ("question N of 3"
 with pips) from the server's run, one-shot Turbo/Safe result moments (once per
 `lastResult.challengeId`, never replayed after a refresh), result lines that name the outcome,
 player-only kart thrusters on the art's own nozzles (Turbo success-only fire, Safe calm blue, one
 burst per result), result effects, reused approved sounds, bounded timeouts for the runtime
 requests and readable feedback colors in the light theme. Live QA passed on the local server
 (race 161: every outcome, a reload mid-Safe and a missed offer; soak race 162: eight
-players, a slow and a failed choice). Closeout 2026-10-18 (same branch, not committed): monkey
+players, a slow and a failed choice). Closeout 2026-10-18 (same branch, not yet merged to main): monkey
 poses on the real kart bodies (Safe lounging with a can, Turbo leaning forward; eight colours,
 player-only, preloaded shortly after the kart appears), no combo claims for challenge answers, a calmer Safe Perfect
 effect, neutral Safe-complete copy, a clear sync-failed message, a proven lost-acknowledgement
@@ -149,6 +149,20 @@ checklist in `CLIENT_IMPLEMENTATION_PLAN.md`.
 
 ### Public and teacher UI
 
+- Art refresh, 2026-10-19/21 (local): five entry/student/dashboard WebP illustrations now show
+  the game's own character and vehicle: the monkey in the blue helmet and yellow scarf on the
+  green front-view hover kart of the race art, placed into the original scenes. Existing
+  filenames, transparent dashboard variants and components are preserved. No changes to P3
+  storage/font behavior. The student join and waiting heroes share one 4:3 frame and one focal
+  point, so the monkey stays in place when the waiting screen replaces the join screen (the
+  waiting art is cut to the join frame, 988×741). From tablet width the entry banner may grow
+  to 36rem (26rem before), and the vertical focal points (35% landing, 33% join and waiting)
+  keep the monkey's head in view on wide tablet and landscape banners, where the kart may slip
+  under the card; phones in portrait and desktops are unchanged. The two dashboard greeting
+  variants are 600×450 and 400×300, about twice and three times their 299×224 and 133×100
+  display size; the dashboard loads both, 110 KB together. All five are built from their
+  masters by a private deterministic pipeline (`docs/vision/entry-hero-source/`, local) and
+  pinned by `entryHeroArt.test.js`.
 - product landing shell
 - teacher login
 - client registration/forgot-password screens
@@ -179,7 +193,10 @@ checklist in `CLIENT_IMPLEMENTATION_PLAN.md`.
 - `StudentRacePage` + status presentations, incl. basic FINISHED state
 - shared `RacePlayerSessionGate`: invalid RacePlayer session → `/join`
 - refresh/direct entry rebuild everything from the HttpOnly cookie via
-  race-state; `sessionStorage` joinData is display cache only.
+  race-state; `sessionStorage` joinData is display cache only (since 2026-10-19 six allowlisted
+  fields, never the raw join response, and an older full value is trimmed on its first read; see
+  `BROWSER_CACHE_AND_STORAGE.md`, which also records the self-hosted fonts and every browser
+  storage key).
 
 ### Student race UI-10 foundation
 
@@ -702,7 +719,7 @@ Current audio matrix:
 - bots: `scripts/devRaceBotChallenge.mjs` (`--challenge=random|turbo|safe|none`) sends one
   request per offer, never re-sends a failed one, and counts only confirmed choices
 
-## Challenge results, Safe progress and thrusters (C5-03, local, not committed)
+## Challenge results, Safe progress and thrusters (C5-03, local, not yet merged to main)
 
 - pure selectors in `runtime/studentRaceGameplayMode.js` read only server data:
   `selectSafeRunProgress` (current = resolved + 1, only while the served Safe question and the
