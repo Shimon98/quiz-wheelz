@@ -76,6 +76,22 @@ class LuckPeerJdbcResourcesTest {
     }
 
     @Test
+    void verificationBeforeServingRunsEveryLimitAndBudgetCheckAndReleasesTheConnection() throws Exception {
+        try (var writer = writer()) {
+            var valid = reader(writer, 1, 1000, 1, 3);
+            valid.verifyBeforeServing();
+            assertTrue(valid.snapshot().started());
+            assertEquals(0, valid.snapshot().active());
+            valid.close();
+            for (var invalid : java.util.List.of(reader(writer, 1, 1000, 0, 64), reader(writer, 1, 1000, 2, 5))) {
+                assertThrows(IllegalStateException.class, invalid::verifyBeforeServing);
+                assertFalse(invalid.snapshot().started());
+                invalid.close();
+            }
+        }
+    }
+
+    @Test
     void invalidConfigurationAndCombinedDeploymentBudgetFailClosedBeforePoolCreation() throws Exception {
         try (var writer = writer()) {
             for (var reader : java.util.List.of(reader(writer, 0, 1000, 1, 64),

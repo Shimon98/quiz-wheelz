@@ -16,7 +16,7 @@ public class LuckOwnStateReader {
         em.flush();
         return !em.createNativeQuery("""
                 select id from race_player_challenge_offers where race_player_id = :id
-                and (status = 'ACTIVE' or (status = 'SELECTED' and execution_ended_at_epoch_ms is null)) for update
+                and (status = 'ACTIVE' or (status = 'SELECTED' and execution_ended_at_epoch_ms is null))
                 """).setParameter("id", playerId).getResultList().isEmpty();
     }
 
@@ -25,14 +25,14 @@ public class LuckOwnStateReader {
         return !em.createNativeQuery("""
                 select id from race_player_speed_effects where race_player_id = :id
                 and type in ('SPEED_SLOW','SPEED_BOOST') and starts_at_epoch_ms <= :instant
-                and ends_at_epoch_ms > :instant for update
+                and ends_at_epoch_ms > :instant
                 """).setParameter("id", playerId).setParameter("instant", instant).getResultList().isEmpty();
     }
     public boolean hasOverlap(long playerId, long start, long end) {
         em.flush();
         return !em.createNativeQuery("""
                 select id from race_player_speed_effects where race_player_id = :id
-                and starts_at_epoch_ms < :end and ends_at_epoch_ms > :start for update
+                and starts_at_epoch_ms < :end and ends_at_epoch_ms > :start
                 """).setParameter("id", playerId).setParameter("start", start).setParameter("end", end)
                 .getResultList().isEmpty();
     }

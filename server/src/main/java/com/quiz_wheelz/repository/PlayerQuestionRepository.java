@@ -6,6 +6,8 @@ import com.quiz_wheelz.enums.PlayerQuestionStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -36,9 +38,22 @@ public interface PlayerQuestionRepository extends JpaRepository<PlayerQuestion, 
 
     long countByRacePlayer(RacePlayer racePlayer);
 
-    List<PlayerQuestion> findByStatusInAndUpdatedAtBefore(
-            Collection<PlayerQuestionStatus> statuses,
-            LocalDateTime cutoff
+    @Query("""
+            select question from PlayerQuestion question
+            where question.status in :statuses
+              and question.updatedAt < :cutoff
+              and not exists (
+                  select decision.id from RacePlayerLuckDecision decision
+                  where decision.sourceQuestion = question
+              )
+              and not exists (
+                  select focusEvent.id from RacePlayerFocusEvent focusEvent
+                  where focusEvent.playerQuestion = question
+              )
+            """)
+    List<PlayerQuestion> findCleanupCandidates(
+            @Param("statuses") Collection<PlayerQuestionStatus> statuses,
+            @Param("cutoff") LocalDateTime cutoff
     );
 
     boolean existsByRacePlayerAndStatus(

@@ -236,6 +236,10 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - ACTIVE question ownership and the original `expiresAt` survive hidden, reload and
   reconnect transitions. An overdue ACTIVE question becomes EXPIRED exactly once
   before a next question can be created; reconnect itself never creates a question.
+- challenge questions (checkpoint 2026-10-24): Turbo draws one of five multi-step HARD
+  templates and Safe draws EASY addition or subtraction, rotating by offer id and
+  question number; the question is generated from exactly the selected template
+  (`SERVER_IMPLEMENTATION_PLAN.md`, S4-03).
 
 ### Race engine
 
@@ -301,6 +305,23 @@ Redis infrastructure failure is not absence: gameplay presence fails open, no ra
 is frozen or disconnected en masse, durable `lastSeenAt` remains available, and
 recovery never subtracts movement awarded in degraded mode.
 
+### Luck and Guard Shield (S4-04, checkpoint 2026-10-24)
+
+- On `main` since PR #79; the accepted-answer integration stays OFF by default
+  (`QUIZWHEELZ_LUCK_ANSWER_ENABLED=false`), and OFF also skips the Guard Shield award.
+  Design, evidence and release gates: `SERVER_IMPLEMENTATION_PLAN.md` (S4-04) and
+  `reviews/s4-04-c2/`.
+- Every writer of a player's challenge offers and speed effects holds that
+  RacePlayer row lock first, so the Luck eligibility checks are plain reads; locking
+  reads there deadlocked two races that drew speed events together.
+- With Luck ON, `LuckStartupVerifier` checks the peer-pool limits, the declared
+  connection budget and MySQL `max_connections` before readiness; a missing or
+  insufficient budget stops startup instead of failing student answers.
+- The nightly question cleanup keeps questions referenced by Luck decisions or focus
+  events; their retention policy is open.
+- `LuckDrawPolicy` compares speed in tenths, like movement, so a Tailwind at the shown
+  maximum becomes an Energy Orb.
+
 ## Partial or missing
 
 - Teacher live race client and results remain client work (C3/C4). The C2 server
@@ -308,7 +329,9 @@ recovery never subtracts movement awarded in degraded mode.
   arbitration (decision-instant standings, signal-only student SSE, proof-gated
   arbitration); the teacher live-state/durable-event/SSE foundation for C3 already
   exists, so further server work is driven only by actual C3/results requirements.
-- Event/effect system for junction/luck/announcements.
+- Junction (highway/dirt-road) decision events, Hidden Recovery (S4-05) and Race
+  Moments/announcements (S4-06); Luck activation with its production migration, budget
+  and retention decisions.
 - Catch-up-assistance policy.
 - Registration, email verification, reset and 2FA.
 - Database migrations and production deployment.

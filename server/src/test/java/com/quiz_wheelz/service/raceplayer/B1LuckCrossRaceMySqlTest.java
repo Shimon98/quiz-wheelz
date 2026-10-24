@@ -3,6 +3,7 @@ package com.quiz_wheelz.service.raceplayer;
 import com.quiz_wheelz.dto.answer.SubmitAnswerRequest;
 import com.quiz_wheelz.entitys.*;
 import com.quiz_wheelz.enums.*;
+import com.quiz_wheelz.service.luck.LuckOwnStateReader;
 import com.quiz_wheelz.service.luck.LuckPeerJdbcResources;
 import com.quiz_wheelz.support.LuckLoadEvidence;
 import com.zaxxer.hikari.HikariDataSource;
@@ -13,9 +14,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.util.AopTestUtils;
 import javax.sql.DataSource;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @EnabledIfEnvironmentVariable(named = "QUIZWHEELZ_LUCK_MYSQL_TEST_URL",
@@ -23,6 +28,7 @@ import static org.mockito.Mockito.*;
 class B1LuckCrossRaceMySqlTest extends B1LuckIntegrationFixture {
     @Autowired DataSource source;
     @Autowired LuckPeerJdbcResources resources;
+    @MockitoSpyBean LuckOwnStateReader ownState;
 
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry properties) {
@@ -56,10 +62,7 @@ class B1LuckCrossRaceMySqlTest extends B1LuckIntegrationFixture {
                         assertTrue(decisions.findByRacePlayerIdOrderByDecisionSequenceAsc(answer.playerId()).isEmpty());
                         ready.countDown();
                         assertTrue(await(ready));
-                        var request = new SubmitAnswerRequest();
-                        request.setQuestionId(answer.questionId());
-                        request.setChoiceId(answer.choiceId());
-                        return answerService.submitAnswer(player, request);
+                        return answerService.submitAnswer(player, requestFor(answer));
                     });
                     evidence.completed(started);
                     return response;
@@ -70,6 +73,40 @@ class B1LuckCrossRaceMySqlTest extends B1LuckIntegrationFixture {
             }
         }
         verify(random, times(10 * count)).nextDouble();
+    }
+
+    @Test
+    void coldRacesDrawingSpeedEventsAtTheSameMomentCommitBothAnswers() throws Exception {
+        when(random.nextDouble()).thenReturn(0.0);
+        var bothChecked = new CyclicBarrier(2);
+        var checkedTogether = new AtomicInteger();
+        doAnswer(invocation -> {
+            Object overlap = invocation.callRealMethod();
+            try {
+                bothChecked.await(10, TimeUnit.SECONDS);
+            } catch (TimeoutException | BrokenBarrierException error) {
+                throw new IllegalStateException("Both speed-effect checks must run before either insert", error);
+            }
+            checkedTogether.incrementAndGet();
+            return overlap;
+        }).when(AopTestUtils.<LuckOwnStateReader>getUltimateTargetObject(ownState))
+                .hasOverlap(anyLong(), anyLong(), anyLong());
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            for (int repetition = 0; repetition < 5; repetition++) {
+                var submissions = java.util.List.of(coldRace(), coldRace());
+                var futures = new java.util.ArrayList<Future<?>>();
+                for (var answer : submissions) futures.add(executor.submit(() -> answerService.submitAnswer(
+                        playerRepository.findById(answer.playerId()).orElseThrow(), requestFor(answer))));
+                for (var future : futures) assertNotNull(future.get(30, TimeUnit.SECONDS));
+                for (var answer : submissions) {
+                    verifyCommitted(answer);
+                    var decision = decisions.findByRacePlayerIdOrderByDecisionSequenceAsc(answer.playerId()).getFirst();
+                    assertEquals(LuckEventType.TAILWIND, decision.getAppliedType());
+                    assertEquals(LuckOutcome.APPLIED, decision.getOutcome());
+                }
+            }
+        }
+        assertEquals(10, checkedTogether.get());
     }
 
     @Test
@@ -90,6 +127,13 @@ class B1LuckCrossRaceMySqlTest extends B1LuckIntegrationFixture {
         } finally {
             rejected.close();
         }
+    }
+
+    private SubmitAnswerRequest requestFor(Submission answer) {
+        var request = new SubmitAnswerRequest();
+        request.setQuestionId(answer.questionId());
+        request.setChoiceId(answer.choiceId());
+        return request;
     }
 
     private boolean await(CountDownLatch ready) {

@@ -52,7 +52,7 @@ class PlayerQuestionCleanupServiceTest {
         PlayerQuestion answeredQuestion = createQuestion(PlayerQuestionStatus.ANSWERED);
         PlayerQuestion expiredQuestion = createQuestion(PlayerQuestionStatus.EXPIRED);
 
-        when(playerQuestionRepository.findByStatusInAndUpdatedAtBefore(
+        when(playerQuestionRepository.findCleanupCandidates(
                 anyCollection(),
                 any(LocalDateTime.class)
         )).thenReturn(List.of(answeredQuestion, expiredQuestion));
@@ -68,7 +68,7 @@ class PlayerQuestionCleanupServiceTest {
         ArgumentCaptor<LocalDateTime> cutoffCaptor =
                 ArgumentCaptor.forClass(LocalDateTime.class);
 
-        verify(playerQuestionRepository).findByStatusInAndUpdatedAtBefore(
+        verify(playerQuestionRepository).findCleanupCandidates(
                 statusesCaptor.capture(),
                 cutoffCaptor.capture()
         );
@@ -84,7 +84,7 @@ class PlayerQuestionCleanupServiceTest {
 
     @Test
     void shouldUseRetentionDaysFromRules() {
-        when(playerQuestionRepository.findByStatusInAndUpdatedAtBefore(
+        when(playerQuestionRepository.findCleanupCandidates(
                 anyCollection(),
                 any(LocalDateTime.class)
         )).thenReturn(List.of());
@@ -94,7 +94,7 @@ class PlayerQuestionCleanupServiceTest {
         ArgumentCaptor<LocalDateTime> cutoffCaptor =
                 ArgumentCaptor.forClass(LocalDateTime.class);
 
-        verify(playerQuestionRepository).findByStatusInAndUpdatedAtBefore(
+        verify(playerQuestionRepository).findCleanupCandidates(
                 anyCollection(),
                 cutoffCaptor.capture()
         );
@@ -107,7 +107,7 @@ class PlayerQuestionCleanupServiceTest {
 
     @Test
     void shouldReturnZeroAndNotDeleteWhenNoQuestionsMatch() {
-        when(playerQuestionRepository.findByStatusInAndUpdatedAtBefore(
+        when(playerQuestionRepository.findCleanupCandidates(
                 anyCollection(),
                 any(LocalDateTime.class)
         )).thenReturn(List.of());
@@ -120,14 +120,14 @@ class PlayerQuestionCleanupServiceTest {
 
     @Test
     void shouldRunScheduledCleanupWithoutThrowing() {
-        when(playerQuestionRepository.findByStatusInAndUpdatedAtBefore(
+        when(playerQuestionRepository.findCleanupCandidates(
                 anyCollection(),
                 any(LocalDateTime.class)
         )).thenReturn(List.of());
 
         playerQuestionCleanupService.runScheduledCleanup();
 
-        verify(playerQuestionRepository).findByStatusInAndUpdatedAtBefore(
+        verify(playerQuestionRepository).findCleanupCandidates(
                 anyCollection(),
                 any(LocalDateTime.class)
         );

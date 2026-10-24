@@ -10,8 +10,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface QuestionTemplateRepository extends JpaRepository<QuestionTemplate, Long> {
-    boolean existsBySubjectAndDifficultyAndActiveTrue(Subject subject, Difficulty difficulty);
-
     List<QuestionTemplate> findBySubjectAndActiveTrueOrderByDifficultyAsc(Subject subject);
 
     List<QuestionTemplate> findBySubjectAndDifficultyAndActiveTrue(

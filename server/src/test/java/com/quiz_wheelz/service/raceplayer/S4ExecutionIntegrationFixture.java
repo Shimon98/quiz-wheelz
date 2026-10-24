@@ -5,6 +5,7 @@ import com.quiz_wheelz.dto.question.QuestionPlan;
 import com.quiz_wheelz.dto.question.internal.*;
 import com.quiz_wheelz.dto.question.student.StudentQuestionResponse;
 import com.quiz_wheelz.dto.raceplayer.StudentChallengeChoiceRequest;
+import com.quiz_wheelz.entitys.QuestionTemplate;
 import com.quiz_wheelz.enums.*;
 import com.quiz_wheelz.repository.QuestionTemplateRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,15 +24,20 @@ abstract class S4ExecutionIntegrationFixture extends S4ChallengeIntegrationFixtu
     void specialGeneration() {
         when(generation.generate(any())).thenAnswer(invocation -> {
             QuestionPlan plan = invocation.getArgument(0);
-            var template = templates.findBySubjectAndDifficultyAndActiveTrueOrderByIdAsc(
-                    plan.getSubject(), plan.getDifficulty()).getFirst();
-            return new InternalGeneratedQuestion(template.getSubject(), template, template.getType(),
-                    template.getDifficulty(), "2 + 2", 4, template.getTimeLimitSeconds(),
-                    List.of(new InternalGeneratedQuestionChoice("4", 4, true, 1),
-                            new InternalGeneratedQuestionChoice("5", 5, false, 2),
-                            new InternalGeneratedQuestionChoice("6", 6, false, 3),
-                            new InternalGeneratedQuestionChoice("7", 7, false, 4)));
+            return generatedFrom(templates.findBySubjectAndDifficultyAndActiveTrueOrderByIdAsc(
+                    plan.getSubject(), plan.getDifficulty()).getFirst());
         });
+        when(generation.generateFromTemplate(any(), any(), any()))
+                .thenAnswer(invocation -> generatedFrom(invocation.getArgument(0)));
+    }
+
+    private InternalGeneratedQuestion generatedFrom(QuestionTemplate template) {
+        return new InternalGeneratedQuestion(template.getSubject(), template, template.getType(),
+                template.getDifficulty(), "2 + 2", 4, template.getTimeLimitSeconds(),
+                List.of(new InternalGeneratedQuestionChoice("4", 4, true, 1),
+                        new InternalGeneratedQuestionChoice("5", 5, false, 2),
+                        new InternalGeneratedQuestionChoice("6", 6, false, 3),
+                        new InternalGeneratedQuestionChoice("7", 7, false, 4)));
     }
 
     void select(ChallengeChoice choice) {

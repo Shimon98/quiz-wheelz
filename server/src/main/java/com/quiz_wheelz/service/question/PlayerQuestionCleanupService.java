@@ -38,7 +38,7 @@ public class PlayerQuestionCleanupService {
                 .minusDays(PlayerQuestionCleanupRules.RETENTION_DAYS);
 
         List<PlayerQuestion> oldInactiveQuestions =
-                playerQuestionRepository.findByStatusInAndUpdatedAtBefore(
+                playerQuestionRepository.findCleanupCandidates(
                         CLEANUP_STATUSES,
                         cutoff
                 );
