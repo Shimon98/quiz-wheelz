@@ -86,20 +86,21 @@ surface, with no squash and no transparent body dip. Safe ground-light alpha is 
 No server contract or reward changes. Claude's interrupted seven-file attempt was reverted:
 all 94 scoped paths matched the preceding delivered bundle before this repair.
 
-Latest local checkpoint, **C5-03l, 2026-10-18**: Safe Complete and Safe Perfect now use
+Local checkpoint, **C5-03l, 2026-10-18**: Safe Complete and Safe Perfect now use
 one shallow blue ground ripple and a contained blue nozzle pulse. Removed Safe stars, golden
 rays and driver-height rings; no Safe flame. The steady light is softened, result pulses ease
 in/out, and mode aura fades over the same 320 ms as the pose. Turbo success gating and normal
 motion remain intact. Local before/after evidence covers both Safe outcomes.
 
-Latest local checkpoint, **C5-03m, 2026-10-18**: pose blending inherits the renderer's
+Local checkpoint, **C5-03m, 2026-10-18**: pose blending inherits the renderer's
 resolution/antialiasing and Turbo returns to idle in 160 ms (Safe remains 320 ms). Active
 server challenge slowdown dims the nozzles and adds an amber speedometer label plus a
 compact, playful notice. No local speed penalty or duration is invented. Existing audio
 is preserved; additional mode music is deferred by the user's latest priority.
 
 C5-03 status, **final gate, 2026-10-18**: implemented and tested on
-`feature/C5-02-challenge-choice-energy`; **not merged to `main`**. The final code passed a live
+`feature/C5-02-challenge-choice-energy` and merged to `main` with the C5 client PR (checkpoint
+below). The final code passed a live
 race on the local server, race 190: 39/39 (Turbo win and failure, a missed offer, Safe Perfect
 with a reload mid-run, Safe Complete, a lost answer acknowledgement with one POST and the
 server's score). Race 183 (pose and exhaust images blocked) passed 12/12 and race 180 (reduced
@@ -109,12 +110,21 @@ pose-blend filter compiled its shader on first use and is now warmed up in a qui
 Performance was measured on the DEV build only; a physical-phone check and production profiling
 remain open, and dedicated challenge sounds are still audio work.
 
-Next: a physical-phone check (before classroom or production use), then the S4-04 handoff and
-C5-04 planning. Diana owns the requested Turbo question sequence and
-question difficulty on the server; the client does not simulate these. Dedicated challenge
-sounds and calm student results music were added locally on 2026-10-19 (client quality
-package 2). Browser fixtures and unit tests are local evidence, not release
-acceptance. Full review bundle: `docs/vision/C5_03/codex_clarity_2026-10-18/` (local, ignored).
+C5 checkpoint, 2026-10-24: C5-02, C5-03 and client quality packages 1–3 (GPU residency of the
+challenge art, challenge sounds and calm student results music, browser storage, self-hosted
+fonts and the hover-kart entry art) are merged to `main` with the C5 client PR from
+`feature/C5-02-challenge-choice-energy` (`f6b9878` … `863a2e3`); 1,689 client tests, lint and
+build pass. The S4-04 server work (Guard Shield and fair Luck) reached `main` at `77cd396` with
+the Luck flag off by default; its integration-readiness review is pending
+(`../01-server/SERVER_IMPLEMENTATION_PLAN.md`). The client does not read the new
+`gameplay.powerUps` and `gameplay.luck` fields yet.
+
+Next: the S4-04 review, then C5-04 (Luck and Guard Shield presentation) planned from the
+reviewed server code, a physical-phone check (before classroom or production use) and client
+quality package 4. Diana owns the requested Turbo question sequence and question difficulty on
+the server; the client does not simulate these. Browser fixtures and unit tests are local
+evidence, not release acceptance. C5-03 review bundle:
+`docs/vision/C5_03/codex_clarity_2026-10-18/` (local, ignored).
 
 
 ## Executive summary

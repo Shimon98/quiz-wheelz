@@ -8,6 +8,14 @@
 > The code is authoritative for what is implemented. This document is authoritative
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
+
+Checkpoint, 2026-10-24: **C5-02, C5-03 and client quality packages 1–3 merged to `main`** with
+the C5 client PR from `feature/C5-02-challenge-choice-energy` (`f6b9878` … `863a2e3`; 1,689 tests
+in 185 files, lint and build pass). The checkpoints below record how that work was built and
+verified; their "local" and "not yet merged" notes describe the branch before this merge. The
+S4-04 server fields `gameplay.powerUps` and `gameplay.luck` are on `main`, but the client does
+not read them until C5-04.
+
 Local checkpoint, 2026-10-17 (C5-03): **C5-02 committed locally** as `f6b9878` on
 `feature/C5-02-challenge-choice-energy` (not pushed), and **the rest of C5-03 implemented
 locally on the same branch** (not yet merged to main): Safe progress ("question N of 3"
@@ -719,7 +727,7 @@ Current audio matrix:
 - bots: `scripts/devRaceBotChallenge.mjs` (`--challenge=random|turbo|safe|none`) sends one
   request per offer, never re-sends a failed one, and counts only confirmed choices
 
-## Challenge results, Safe progress and thrusters (C5-03, local, not yet merged to main)
+## Challenge results, Safe progress and thrusters (C5-03)
 
 - pure selectors in `runtime/studentRaceGameplayMode.js` read only server data:
   `selectSafeRunProgress` (current = resolved + 1, only while the served Safe question and the
