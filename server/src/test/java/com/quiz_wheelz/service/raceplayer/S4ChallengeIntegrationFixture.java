@@ -18,7 +18,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@Import({ChallengeQuestionDeliveryService.class, ChallengeQuestionPlanService.class, StudentChallengeChoiceService.class, StudentRaceStateService.class,
+@Import({ChallengeQuestionDeliveryService.class, StudentChallengeChoiceService.class, StudentRaceStateService.class,
         StudentQuestionDeliveryService.class, PlayerQuestionPersistenceService.class,
         StudentQuestionResponseMapper.class, RacePlayerReconnectService.class, RacePlayerDisconnectService.class})
 abstract class S4ChallengeIntegrationFixture extends RaceChronologyIntegrationFixture {
@@ -44,13 +44,13 @@ abstract class S4ChallengeIntegrationFixture extends RaceChronologyIntegrationFi
             var easy = questionRepository.findById(questionId).orElseThrow().getQuestionTemplate();
             var hard = new QuestionTemplate();
             hard.setSubject(easy.getSubject());
-            hard.setType(easy.getType());
+            hard.setType(QuestionType.ORDER_OF_OPERATIONS);
             hard.setDifficulty(Difficulty.HARD);
             hard.setMinValue(easy.getMinValue());
             hard.setMaxValue(easy.getMaxValue());
             hard.setTimeLimitSeconds(45);
             hard.setChoicesCount(easy.getChoicesCount());
-            hard.setGenerationPattern(easy.getGenerationPattern());
+            hard.setGenerationPattern(QuestionGenerationPattern.ADD_THEN_MULTIPLY);
             entityManager.persist(hard);
         });
     }
@@ -93,6 +93,7 @@ abstract class S4ChallengeIntegrationFixture extends RaceChronologyIntegrationFi
                             new InternalGeneratedQuestionChoice("6", 6, false, 3),
                             new InternalGeneratedQuestionChoice("7", 7, false, 4)));
             org.mockito.Mockito.doReturn(generated).when(generation).generate(any());
+            org.mockito.Mockito.doReturn(generated).when(generation).generateFromTemplate(any(), any(), any());
         });
     }
 }

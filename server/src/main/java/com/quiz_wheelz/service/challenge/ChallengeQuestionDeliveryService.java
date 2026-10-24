@@ -1,6 +1,7 @@
 package com.quiz_wheelz.service.challenge;
 
 import com.quiz_wheelz.common.ChallengeExecutionRules;
+import com.quiz_wheelz.common.QuestionRules;
 import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.QuestionGameplayContext;
@@ -33,7 +34,8 @@ public class ChallengeQuestionDeliveryService {
             return active;
         }
         var offer = running.get();
-        var generated = generation.generate(plans.build(offer));
+        var generated = generation.generateFromTemplate(plans.selectTemplate(offer),
+                QuestionRules.DEFAULT_ADAPTIVE_MODE, QuestionRules.DEFAULT_ASSISTANCE_LEVEL);
         return Optional.of(persistence.persistGeneratedQuestion(player, generated,
                 QuestionGameplayContext.valueOf(offer.getChoice().name()), offer,
                 ChallengeExecutionRules.TIME_LIMIT_SECONDS));

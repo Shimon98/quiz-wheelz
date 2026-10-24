@@ -119,7 +119,7 @@ public class QuestionTemplateSelectionService {
         }
     }
 
-    private void validateTemplateConfig(QuestionTemplate template) {
+    public void validateTemplateConfig(QuestionTemplate template) {
         if (template == null
                 || template.getMinValue() == null
                 || template.getMaxValue() == null

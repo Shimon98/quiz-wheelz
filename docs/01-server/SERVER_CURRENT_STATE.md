@@ -236,6 +236,10 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - ACTIVE question ownership and the original `expiresAt` survive hidden, reload and
   reconnect transitions. An overdue ACTIVE question becomes EXPIRED exactly once
   before a next question can be created; reconnect itself never creates a question.
+- challenge questions (checkpoint 2026-10-24): Turbo draws one of five multi-step HARD
+  templates and Safe draws EASY addition or subtraction, rotating by offer id and
+  question number; the question is generated from exactly the selected template
+  (`SERVER_IMPLEMENTATION_PLAN.md`, S4-03).
 
 ### Race engine
 

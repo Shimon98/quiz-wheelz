@@ -123,11 +123,14 @@ S4-04 checkpoint, 2026-10-24: the review reproduced four Luck-ON defects on `mai
 between two races drawing speed events together, a nightly question cleanup blocked by Luck and
 focus references, Luck ON without a declared connection budget failing every answer, and a
 no-op Tailwind at the maximum speed). The S4-04 stability fixes change no game rule and keep
-Luck OFF by default. A question audit also found that Turbo always draws the first HARD template
-(two-number addition up to 12) and Safe's third question is multiplication up to 10×10; the
-challenge question difficulty is a separate follow-up that needs a product decision.
+Luck OFF by default. A question audit also found that Turbo always drew the first HARD template
+(two-number addition up to 12) and Safe's third question was multiplication up to 10×10. By
+Shimon's 2026-10-24 decision Turbo now draws one of five multi-step HARD templates (order of
+operations, parentheses, a short multiplication chain) and Safe draws addition and subtraction
+up to 10, each generated from exactly the selected template; the 15-second limit and rewards are
+unchanged.
 
-Next: the S4-04 stability PR and the challenge-difficulty decision, then C5-04 (Luck and Guard
+Next: the S4-04 stability PR (Luck fixes and challenge questions), then C5-04 (Luck and Guard
 Shield presentation) planned from the
 reviewed server code, a physical-phone check (before classroom or production use) and client
 quality package 4. Diana owns the requested Turbo question sequence and question difficulty on

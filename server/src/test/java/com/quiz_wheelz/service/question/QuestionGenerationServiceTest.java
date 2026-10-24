@@ -27,7 +27,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -132,6 +135,49 @@ class QuestionGenerationServiceTest {
         assertEquals(selectedTemplate.getGenerationPattern(), generatedPlan.getGenerationPattern());
         assertEquals(requestPlan.getAdaptiveMode(), generatedPlan.getAdaptiveMode());
         assertEquals(requestPlan.getAssistanceLevel(), generatedPlan.getAssistanceLevel());
+    }
+
+    @Test
+    void shouldGenerateFromTheGivenTemplateWithoutSelectingAnotherOne() {
+        Subject subject = createMathSubject();
+        QuestionTemplate givenTemplate = createTemplate(subject);
+        givenTemplate.setMinValue(5);
+        givenTemplate.setMaxValue(9);
+        MathQuestionData mathQuestionData = new MathQuestionData("6 + 7 = ?", 13, 6, 7, QuestionType.ADDITION);
+
+        when(mathQuestionGenerator.generate(any(QuestionPlan.class))).thenReturn(mathQuestionData);
+        when(answerChoiceGenerator.generateChoices(any(MathQuestionData.class), any())).thenReturn(List.of(
+                new InternalGeneratedQuestionChoice("13", 13, true, 1),
+                new InternalGeneratedQuestionChoice("12", 12, false, 2),
+                new InternalGeneratedQuestionChoice("14", 14, false, 3),
+                new InternalGeneratedQuestionChoice("15", 15, false, 4)
+        ));
+
+        InternalGeneratedQuestion result = questionGenerationService.generateFromTemplate(
+                givenTemplate, AdaptiveMode.BASIC, AssistanceLevel.NONE);
+
+        assertSame(givenTemplate, result.getQuestionTemplate());
+        ArgumentCaptor<QuestionPlan> questionPlanCaptor = ArgumentCaptor.forClass(QuestionPlan.class);
+        verify(mathQuestionGenerator).generate(questionPlanCaptor.capture());
+        assertEquals(5, questionPlanCaptor.getValue().getMinValue());
+        assertEquals(9, questionPlanCaptor.getValue().getMaxValue());
+        verify(questionTemplateSelectionService).validateTemplateConfig(givenTemplate);
+        verify(questionTemplateSelectionService, never()).selectTemplate(any(QuestionPlan.class));
+    }
+
+    @Test
+    void shouldRejectAnInvalidGivenTemplateBeforeGenerating() {
+        QuestionTemplate givenTemplate = createTemplate(createMathSubject());
+        doThrow(new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG))
+                .when(questionTemplateSelectionService).validateTemplateConfig(givenTemplate);
+
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> questionGenerationService.generateFromTemplate(givenTemplate, AdaptiveMode.BASIC, AssistanceLevel.NONE)
+        );
+
+        assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
+        verifyNoInteractions(mathQuestionGenerator, answerChoiceGenerator);
     }
 
     @Test

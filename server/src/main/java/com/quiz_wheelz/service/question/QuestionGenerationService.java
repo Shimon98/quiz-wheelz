@@ -37,13 +37,33 @@ public class QuestionGenerationService {
             throw new ApiException(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG);
         }
 
-        QuestionTemplate selectedTemplate =
-                questionTemplateSelectionService.selectTemplate(questionPlan);
-
-        QuestionPlan templateBackedQuestionPlan = buildQuestionPlanFromTemplate(
-                selectedTemplate,
+        return generateFrom(
+                questionTemplateSelectionService.selectTemplate(questionPlan),
                 questionPlan.getAdaptiveMode(),
                 questionPlan.getAssistanceLevel()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public InternalGeneratedQuestion generateFromTemplate(
+            QuestionTemplate questionTemplate,
+            AdaptiveMode adaptiveMode,
+            AssistanceLevel assistanceLevel
+    ) {
+        questionTemplateSelectionService.validateTemplateConfig(questionTemplate);
+
+        return generateFrom(questionTemplate, adaptiveMode, assistanceLevel);
+    }
+
+    private InternalGeneratedQuestion generateFrom(
+            QuestionTemplate selectedTemplate,
+            AdaptiveMode adaptiveMode,
+            AssistanceLevel assistanceLevel
+    ) {
+        QuestionPlan templateBackedQuestionPlan = buildQuestionPlanFromTemplate(
+                selectedTemplate,
+                adaptiveMode,
+                assistanceLevel
         );
 
         MathQuestionData mathQuestionData =

@@ -667,6 +667,35 @@ SPEED_EFFECT_OVERLAP defensive invariant remains; no stacking or cooldown was ad
 Energy 100 does not guarantee an offer; offer existence remains server-authoritative.
 Production migrations remain Phase 6; S4-04 / S4-05 / S4-06 remain PLANNED.
 
+#### Challenge question selection - 2026-10-24
+
+**Status:** `FIX READY FOR REVIEW on fix/s4-04-luck-stability; rules and rewards unchanged`
+
+An audit of questions generated from the seeded catalog on main showed every Turbo
+question came from the first HARD template (two-number addition 2-12, e.g. "4 + 2"):
+the planner indexed the HARD list by questionsResolved, which is always 0 for the single
+Turbo question. Every third Safe question was EASY multiplication up to 10x10.
+QuestionGenerationService.generate(plan) also re-selected a template by
+subject/type/difficulty/pattern, so a challenge could receive a template other than the
+one it chose. Product decision (Shimon, 2026-10-24), owned by ChallengeExecutionRules:
+Turbo draws only HARD ADD_THEN_MULTIPLY, ADD_MULTIPLY_SUBTRACT,
+PARENTHESES_SUM_THEN_MULTIPLY, MULTIPLY_BY_PARENTHESES_SUM or SMALL_MULTIPLICATION_CHAIN
+templates (small numbers, several steps; the two-digit chains are built for 50 seconds
+and stay out of the 15-second Turbo); Safe draws only EASY ADDITION or SUBTRACTION
+BINARY_OPERATION templates. ChallengeQuestionPlanService selects
+candidates[(offerId + questionsResolved) mod n], stable for one offer and question, and
+owns the filter ChallengeQuestionAvailabilityService uses: this supersedes the first
+bullet above, so an offer needs an approved Turbo and an approved Safe template.
+ChallengeQuestionDeliveryService generates from exactly the selected template through
+QuestionGenerationService.generateFromTemplate, validated by the shared
+QuestionTemplateSelectionService.validateTemplateConfig; generate(plan) delegates to the
+same path. NORMAL questions, the 15-second limit, scoring, rewards and seeds are
+unchanged. Audit after the fix: 50 Turbo offers split 10/10/10/10/10 over the five
+templates and 90 Safe questions alternate addition and subtraction. Live check on the
+packaged server, two 8-bot races (Luck OFF, and Luck ON with a declared budget): 40 Turbo
+and 120 Safe questions, all from the approved templates with the 15-second limit, and 0
+server errors.
+
 ### S4-04 - Power-Ups + fair Luck
 
 **Status:** `A/B1/B2/C1/C2 on main (PR #79); 2026-10-24 stability fixes pending review (see below); rollout OFF`
