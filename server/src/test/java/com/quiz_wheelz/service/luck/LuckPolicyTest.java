@@ -161,6 +161,27 @@ class LuckPolicyTest {
     }
 
     @ParameterizedTest
+    @ValueSource(doubles = {1.9999999999999998, 2.0, 1.95})
+    void tailwindAtTheMaximumSpeedInTenthsBecomesAnOrbOrNoEffect(double speed) {
+        var orb = new LuckDrawPolicy(() -> 0).attempt(true, false, false, speed, 0, 0);
+        assertEquals(LuckEventType.TAILWIND, orb.selectedType());
+        assertEquals(LuckEventType.ENERGY_ORB, orb.appliedType());
+        assertEquals(LuckOutcome.APPLIED, orb.outcome());
+        assertEquals(LuckRules.ORB_ENERGY, orb.energyDelta());
+        var full = new LuckDrawPolicy(() -> 0).attempt(true, false, false, speed, 100, 0);
+        assertEquals(LuckOutcome.NO_EFFECT, full.outcome());
+        assertNull(full.appliedType());
+    }
+
+    @ParameterizedTest
+    @ValueSource(doubles = {1.94, 1.89, 0.5})
+    void tailwindBelowTheMaximumSpeedInTenthsStaysATailwind(double speed) {
+        var result = new LuckDrawPolicy(() -> 0).attempt(true, false, false, speed, 0, 0);
+        assertEquals(LuckEventType.TAILWIND, result.appliedType());
+        assertEquals(LuckOutcome.APPLIED, result.outcome());
+    }
+
+    @ParameterizedTest
     @ValueSource(doubles = {-0.1, 1.0, Double.NaN, Double.POSITIVE_INFINITY})
     void invalidRandomValuesAreRejected(double value) {
         assertThrows(IllegalArgumentException.class, () ->

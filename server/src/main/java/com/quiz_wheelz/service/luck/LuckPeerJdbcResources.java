@@ -54,6 +54,10 @@ public class LuckPeerJdbcResources {
         }
     }
 
+    public void verifyBeforeServing() throws SQLException {
+        connection().close();
+    }
+
     public int queryTimeoutSeconds() {
         return queryTimeout;
     }

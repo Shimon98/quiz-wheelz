@@ -157,9 +157,11 @@ Order:
    End-to-end Challenge execution remains local and subject to Diana review before
    any combined PR/main merge.
 4. S4-04 Power-Ups + fair Luck: the code reached `main` at `77cd396` with the Luck flag off by
-   default; its integration-readiness review is pending and it is not playable yet (see
-   `../01-server/SERVER_IMPLEMENTATION_PLAN.md`). S4-05 / S4-06 remain PLANNED; no Recovery is
-   claimed.
+   default. The 2026-10-24 review reproduced four Luck-ON defects (cross-race deadlock, nightly
+   question cleanup, startup budget check, Tailwind at the maximum speed); the S4-04 stability
+   fixes keep every rule unchanged. Luck stays OFF and not playable until its release gates
+   pass (see `../01-server/SERVER_IMPLEMENTATION_PLAN.md`). S4-05 / S4-06 remain PLANNED; no
+   Recovery is claimed.
 5. Earned Power-Ups and fair bounded Luck.
 6. Hidden Recovery policy.
 7. Race Moments / announcements.

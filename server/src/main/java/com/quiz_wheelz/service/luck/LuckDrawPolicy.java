@@ -28,7 +28,8 @@ public class LuckDrawPolicy {
                 : (typeRoll < 0.35 ? LuckEventType.TAILWIND
                 : typeRoll < 0.70 ? LuckEventType.ENERGY_ORB : LuckEventType.MUD_SPLASH);
         LuckEventType applied = selected;
-        if (selected == LuckEventType.TAILWIND && effectiveSpeed >= RaceProgressRules.MAX_RACING_SPEED) {
+        if (selected == LuckEventType.TAILWIND
+                && Math.round(effectiveSpeed * 10) >= Math.round(RaceProgressRules.MAX_RACING_SPEED * 10)) {
             applied = LuckEventType.ENERGY_ORB;
         }
         if (applied == LuckEventType.ENERGY_ORB && energy >= ChallengeRules.ENERGY_THRESHOLD) {

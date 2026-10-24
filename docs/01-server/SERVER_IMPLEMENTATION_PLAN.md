@@ -669,7 +669,7 @@ Production migrations remain Phase 6; S4-04 / S4-05 / S4-06 remain PLANNED.
 
 ### S4-04 - Power-Ups + fair Luck
 
-**Status:** `A/B1/B2/C1 approved locally; C2 integration-readiness review pending; rollout OFF`
+**Status:** `A/B1/B2/C1/C2 on main (PR #79); 2026-10-24 stability fixes pending review (see below); rollout OFF`
 
 Local checkpoint, 2026-10-18, `feature/s4-04-fair-luck`, based on
 `origin/main@84a44230b77f6acb469c6f969070e4c0cf409325`. Approved V5 parameters
@@ -1234,6 +1234,53 @@ needs product approval of the unchanged provisional 60000ms window and Shimon's
 client acceptance. React/Pixi/HUD/effects/audio/expiry scheduling remain Shimon's.
 QUIZWHEELZ_LUCK_ANSWER_ENABLED remains false. Disposable DB/credential cleanup is
 recorded. No staging, commit, publication, deployment or next checkpoint is authorized.
+
+#### Post-merge stability fixes - 2026-10-24
+
+**Status:** `FIXES READY FOR REVIEW on fix/s4-04-luck-stability; rollout OFF`
+
+A review of main@ddfbf3c reproduced four defects that appear with Luck ON (the cleanup
+one seven days later). Each has a test that failed on main and passes with the fix.
+Rules, probabilities, fairness, Shield, cooldown, cap and effect lifecycle are unchanged.
+
+1. Cross-race deadlock. This supersedes the B1 sentence that own Challenge and
+   speed-window queries are "restricted to the caller's player ID": under REPEATABLE
+   READ those SELECT ... FOR UPDATE reads took InnoDB gap locks beyond the caller's
+   rows, so two races drawing Tailwind or Mud together deadlocked on
+   race_player_speed_effects (1213, one answer rolled back). LuckOwnStateReader now
+   uses plain reads. Invariant: every writer of a player's offers and speed effects
+   holds that RacePlayer row lock first - answer (findLockedByIdAndRaceId), challenge
+   choice, leave and reconnect (resolveAndLock), heartbeat (lock), settlement worker
+   (findLockedByIdAndRaceId), finalization and finish arbitration
+   (findAllLockedByRaceIdOrderById + Race lock), Luck (LuckTransactionGuard). The
+   answer transaction starts with that locking read, so its later plain reads observe
+   every committed write of the player. The insert-time overlap check in
+   RacePlayerSpeedEffectService remains. B1LuckCrossRaceMySqlTest forces both Tailwind
+   checks before either insert with a strict barrier, five repetitions per run.
+2. Nightly question cleanup. race_player_luck_decisions.source_question_id (every RNG
+   attempt, NO_EVENT included) and race_player_focus_events.player_question_id hold
+   restricting foreign keys, so PlayerQuestionCleanupService rolled back every night
+   once an old question was referenced. PlayerQuestionRepository.findCleanupCandidates
+   skips referenced questions; Luck audit and focus history are kept.
+   PlayerQuestionCleanupIntegrationTest covers Luck-only, focus-only, both and
+   unreferenced questions and pins the tables that reference player_questions.
+   Retention of the kept questions (TTL, archive or anonymisation) is an open decision.
+3. Luck ON without a declared budget. The three QUIZWHEELZ_DB_* settings exist only in
+   the test profile, and the peer pool failed closed on the first student answer
+   (HTTP 500 for every NORMAL answer). LuckStartupVerifier, an ApplicationRunner
+   registered only when QUIZWHEELZ_LUCK_ANSWER_ENABLED is true, calls
+   LuckPeerJdbcResources.verifyBeforeServing() before readiness: positive limits,
+   N*(W+R)<=B and, on MySQL, B+reserved<=@@max_connections. The first-use checks stay.
+   Luck OFF registers no verifier and needs no peer settings.
+4. Tailwind at the maximum. Speed is an unrounded double (1.9999999999999998 after
+   correct EASY, EASY, HARD, HARD, MEDIUM answers from 0.5) while movement, snapshot and
+   LuckEffectResolver use tenths. LuckDrawPolicy now compares in tenths, so a Tailwind
+   at the shown 2.0 becomes an Energy Orb instead of a no-op event.
+
+Unexpected 500 responses are not logged by the global catch-all handler. That gap is
+older than S4-04 and is proposed as a separate change. Open release gates are
+unchanged: migration policy, target budget numbers, hosted CI, product approval of the
+provisional 60000 ms window and the client presentation (C5-04).
 
 ### S4-05 — Hidden Recovery
 
