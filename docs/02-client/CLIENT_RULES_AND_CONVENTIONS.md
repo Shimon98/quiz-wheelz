@@ -272,8 +272,10 @@ build replacement
 
 ## Code quality limits
 
-- Added or modified `.js` and `.jsx` files contain no comments. Prefer named
-  helpers, explicit state and focused hooks/components.
+- Prefer named helpers, explicit state and focused hooks/components over
+  comments. Never delete existing comments in unrelated edits; a short comment
+  is allowed only where it explains non-obvious behavior (why, not what), as
+  in `AGENTS.md` §12.
 - Added or modified code and test files stay at or below 500 lines. Split by
   lifecycle, controller, rendering or contract responsibility before extending
   a near-limit file.

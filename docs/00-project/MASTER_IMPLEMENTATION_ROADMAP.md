@@ -156,7 +156,10 @@ Order:
    DEV startup/schema/health verification passed after approved DEV-only CHECK alignment.
    End-to-end Challenge execution remains local and subject to Diana review before
    any combined PR/main merge.
-4. S4-04 / S4-05 / S4-06 remain PLANNED; no Luck, Power-Up or Recovery is claimed.
+4. S4-04 Power-Ups + fair Luck: the code reached `main` at `77cd396` with the Luck flag off by
+   default; its integration-readiness review is pending and it is not playable yet (see
+   `../01-server/SERVER_IMPLEMENTATION_PLAN.md`). S4-05 / S4-06 remain PLANNED; no Recovery is
+   claimed.
 5. Earned Power-Ups and fair bounded Luck.
 6. Hidden Recovery policy.
 7. Race Moments / announcements.
@@ -165,6 +168,28 @@ Order:
 **Gate:** each event is server-authoritative, persisted/auditable where needed,
 bounded by fairness rules, recoverable after refresh, and rendered without client
 rule duplication.
+
+Client checkpoint (2026-10-17): C5-01 (PR #76) and the Track A presentation (PR #78) are
+merged; the C5-02 Challenge choice is committed locally (`f6b9878`) and the C5-03 results, Safe
+progress and kart thrusters are implemented locally, pending review — all on the merged
+S4-02/S4-03 contract (PR #77, so items 2–3 above predate that merge). The 2026-10-18 closeout
+added the monkey poses on the real kart bodies and a Turbo-win polish (no server change; a timed
+speed boost after a win would be a separate server request). The latest C5-03k repair keeps Turbo idle until an accepted server success, removes the
+accelerated progress catch-up and camera zoom, and blends both Safe and Turbo whole-composite
+poses without squash or a body-opacity dip. Painted exhaust is success-only. C5-03l also removes Safe sparkles/rays and large rings,
+using a contained blue pulse and shallow ground ripple with gradual aura transitions.
+C5-03m preserves native renderer resolution during blending, shortens Turbo return to 160 ms,
+and clearly labels server-owned challenge slowdown with dimmed nozzles and playful copy.
+Existing audio remains; additional mode music is deferred. Final live/device
+acceptance and the C5-03 review/commit remain open. Dedicated challenge sounds were added
+locally on 2026-10-19 (client quality package 2). Diana owns the requested question
+sequence/difficulty changes; these are separate server
+work, not client simulation. S4-04 remains the next server roadmap item.
+
+Client checkpoint (2026-10-24): C5-02, C5-03 and client quality packages 1–3 are merged to
+`main` with the C5 client PR (`feature/C5-02-challenge-choice-energy`); 1,689 client tests, lint
+and build pass. Next on the client: C5-04 (Luck and Guard Shield presentation) after the S4-04
+review, the physical-phone check and client quality package 4.
 
 ## Phase 5 — Full teacher identity and 2FA
 

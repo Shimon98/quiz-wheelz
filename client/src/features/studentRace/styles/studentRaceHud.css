@@ -325,3 +325,53 @@
     animation: none;
   }
 }
+
+.race-hud-energy {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.race-hud-energy-art {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  object-fit: contain;
+}
+
+.race-hud-energy-track {
+  flex: 1;
+  height: 6px;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--qw-border);
+  box-shadow: inset 0 1px 2px var(--race-hud-depth);
+}
+
+.race-hud-energy-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--qw-violet), var(--qw-answer-violet));
+  transition: width 240ms ease;
+}
+
+.race-hud-energy-value {
+  flex: none;
+  color: var(--qw-text-muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.race-hud-energy[data-full="true"] .race-hud-energy-fill {
+  box-shadow: 0 0 6px var(--qw-answer-violet);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .race-hud-energy-fill {
+    transition: none;
+  }
+}

@@ -26,6 +26,7 @@ vi.mock("../../../../api/racePlayerApi", () => ({
   getRaceState: vi.fn(),
   getCurrentQuestion: vi.fn(),
   submitAnswer: vi.fn(),
+  chooseChallenge: vi.fn(),
   heartbeatRacePlayer: vi.fn(),
   reconnectRacePlayer: vi.fn(),
 }));
@@ -191,7 +192,7 @@ it("forwards the accepted answer feedback through question props only for its dw
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "7" })); });
 
     expect(StudentRaceContent.mock.lastCall[0].questionProps.answerFeedback).toEqual({
-      questionId: 17, correct: true, scoreDelta: 10, streak: 3,
+      questionId: 17, correct: true, scoreDelta: 10, streak: 3, gameplayContext: "NORMAL",
     });
     expect(StudentRaceContent.mock.lastCall[0].runtimeState.player.speed).toBe(0.7);
     await act(async () => { await vi.advanceTimersByTimeAsync(STUDENT_RACE_CONFIG.feedbackDelayMs); });

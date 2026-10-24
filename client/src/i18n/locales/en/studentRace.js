@@ -81,6 +81,8 @@ export default {
   },
 
   hud: {
+    slowLabel: "SLOW",
+    slowSpeedValue: "Slowdown active — speed {{speed}}",
     scoreLabel: "Score",
     rankLabel: "Place",
     rankValue: "Place {{rank}} of {{count}}",
@@ -95,6 +97,8 @@ export default {
     speedValue: "Speed {{speed}}",
     progressLabel: "Race progress",
     progressShortLabel: "Track",
+    energyLabel: "Challenge energy",
+    energyValue: "Challenge energy {{value}} of {{max}}",
   },
 
   reward: {
@@ -106,18 +110,38 @@ export default {
 
   timer: {
     label: "Time left for this question",
+    challengeLabel: "Time left to choose a challenge",
   },
 
   gameplay: {
     turbo: {
-      title: "Turbo Trial",
-      description: "Harder, worth more",
+      title: "Turbo Rush",
+      description: "One hard question · big reward!",
     },
     safe: {
-      title: "Safe Run",
-      description: "Easier, steadier",
+      title: "Banana Cruise",
+      description: "3 easy questions · steady progress",
+      progress: "Question {{current}} of {{total}}",
     },
-    slowdownNotice: "No challenge chosen in time — short slowdown",
+    slowdownNotice: "No choice? The engine chose a nap. Brief slowdown!",
+    turboSlowdownNotice: "Turbo went poof. Brief slowdown — keep going!",
+    choice: {
+      title: "Challenge unlocked! Pick one",
+      submitting: "Getting your challenge ready...",
+      submittingSlow: "Hang on — our monkey is checking your pick! 🐵",
+      reconciling: "Checking whether your choice was saved...",
+      expired: "Time is up — back to the race",
+      syncing: "Syncing with the race...",
+      syncFailed: "We could not sync with the race",
+      resync: "Try to sync",
+      retry: "You can try the same card again",
+    },
+    result: {
+      turboSuccess: "Turbo Rush nailed it! ⚡",
+      turboFailure: "The turbo fizzled this time",
+      safeComplete: "Cruise finished — keep rolling! 🍌",
+      safePerfect: "Perfect cruise — bonus! 🍌",
+    },
   },
 
   deviceAdvice: {

@@ -96,7 +96,7 @@ describe("applyRaceSnapshot gameplay", () => {
     }));
 
     expect(state.player.speed).toBe(1.3);
-    expect(state.gameplay).toEqual(slowedGameplay);
+    expect(state.gameplay).toEqual({ ...slowedGameplay, challenge: null });
     expect(state.gameplay.effectiveSpeed).toBe(1.2);
     expect(state.visual.targetSpeed).toBe(1.2);
     expect(state.visual.movementUnitsPerSecond).toBe(4.12345);
@@ -128,6 +128,26 @@ describe("applyRaceSnapshot gameplay", () => {
     }));
 
     expect(stale).toBe(state);
-    expect(stale.gameplay).toEqual(slowedGameplay);
+    expect(stale.gameplay).toEqual({ ...slowedGameplay, challenge: null });
+  });
+
+  it("calibrates the challenge offer to the server clock of the snapshot that carried it", () => {
+    const state = applyRaceSnapshot(createInitialRaceRuntimeState(), snapshot({
+      snapshotAtEpochMs: 10000,
+      gameplay: {
+        mode: "CHALLENGE_CHOICE",
+        effectiveSpeed: 1.5,
+        activeEffects: [],
+        challenge: {
+          energy: 0,
+          threshold: 100,
+          offer: { offerId: 5, expiresAtEpochMs: 22000, choices: ["TURBO_TRIAL", "SAFE_RUN"] },
+          run: null,
+          lastResult: null,
+        },
+      },
+    }), 13000);
+
+    expect(state.gameplay.challenge.offer.serverClockOffsetMs).toBe(-3000);
   });
 });

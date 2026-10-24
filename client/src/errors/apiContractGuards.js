@@ -1,5 +1,14 @@
 import { ApiContractError } from "./ApiContractError";
 
+export function mapOrNull(mapper, value) {
+  try {
+    return mapper(value);
+  } catch (error) {
+    if (error instanceof ApiContractError) return null;
+    throw error;
+  }
+}
+
 export function requireObject(value, label) {
   if (value == null || typeof value !== "object" || Array.isArray(value)) {
     throw new ApiContractError(`${label} is missing`);

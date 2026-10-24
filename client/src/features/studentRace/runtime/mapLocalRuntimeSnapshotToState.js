@@ -3,8 +3,10 @@ import {
   resolveStudentRacePresentationSpeed,
 } from "./mapStudentRaceGameplay.js";
 
-export function mapLocalRuntimeSnapshotToState(previousState, snapshot) {
-  const gameplay = mapStudentRaceGameplay(snapshot.gameplay);
+export function mapLocalRuntimeSnapshotToState(previousState, snapshot, receivedAtEpochMs = Date.now()) {
+  const gameplay = mapStudentRaceGameplay(snapshot.gameplay, {
+    serverClockOffsetMs: snapshot.snapshotAtEpochMs - receivedAtEpochMs,
+  });
 
   return {
     ...previousState,

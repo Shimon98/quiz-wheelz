@@ -43,28 +43,21 @@ describe("PlayerKartLayer gameplay aura", () => {
     expect(layer.aura.tint).toBe(RACE_GAMEPLAY_PRESENTATION[mode].kartAura.color);
   });
 
-  it("completes exactly one Turbo pulse per configured period", () => {
+  it("keeps the restrained Turbo ground light steady throughout the mode", () => {
     const layer = createLayer();
-    const { alpha, pulsePeriodMs } = RACE_GAMEPLAY_PRESENTATION.TURBO_TRIAL.kartAura;
-    const quarter = pulsePeriodMs / 4;
-
-    const strengths = [0, quarter, quarter, quarter, quarter].map((deltaMs) => {
+    const { alpha } = RACE_GAMEPLAY_PRESENTATION.TURBO_TRIAL.kartAura;
+    layer.update(frame("TURBO_TRIAL", { deltaMs: 400 }));
+    for (const deltaMs of [0, 200, 400, 800]) {
       layer.update(frame("TURBO_TRIAL", { deltaMs }));
-      return layer.aura.alpha / alpha;
-    });
-
-    expect(strengths[0]).toBeCloseTo(0.75);
-    expect(strengths[1]).toBeCloseTo(1);
-    expect(strengths[2]).toBeCloseTo(0.75);
-    expect(strengths[3]).toBeCloseTo(0.5);
-    expect(strengths[4]).toBeCloseTo(strengths[0]);
+      expect(layer.aura.alpha).toBeCloseTo(alpha);
+    }
   });
 
   it("keeps the Turbo aura steady at full strength under reduced motion", () => {
     const layer = createLayer();
-    const { alpha, pulsePeriodMs } = RACE_GAMEPLAY_PRESENTATION.TURBO_TRIAL.kartAura;
+    const { alpha } = RACE_GAMEPLAY_PRESENTATION.TURBO_TRIAL.kartAura;
 
-    for (const deltaMs of [pulsePeriodMs / 4, pulsePeriodMs / 2, pulsePeriodMs / 4]) {
+    for (const deltaMs of [200, 400, 200]) {
       layer.update(frame("TURBO_TRIAL", { deltaMs, reducedMotion: true }));
       expect(layer.aura.alpha).toBeCloseTo(alpha);
     }
@@ -74,18 +67,31 @@ describe("PlayerKartLayer gameplay aura", () => {
   it("keeps the Safe aura steady", () => {
     const layer = createLayer();
 
-    layer.update(frame("SAFE_RUN", { deltaMs: 300 }));
+    layer.update(frame("SAFE_RUN", { deltaMs: 400 }));
 
     expect(layer.aura.alpha).toBeCloseTo(RACE_GAMEPLAY_PRESENTATION.SAFE_RUN.kartAura.alpha);
   });
 
-  it("hides the aura again when the server returns to NORMAL", () => {
+  it("fades the aura in and out with the pose instead of popping", () => {
     const layer = createLayer();
 
-    layer.update(frame("SAFE_RUN"));
-    layer.update(frame("NORMAL"));
-
+    const peak = RACE_GAMEPLAY_PRESENTATION.SAFE_RUN.kartAura.alpha;
+    layer.update(frame("SAFE_RUN", { deltaMs: 160 }));
+    expect(layer.aura.alpha).toBeCloseTo(peak / 2);
+    layer.update(frame("SAFE_RUN", { deltaMs: 160 }));
+    expect(layer.aura.alpha).toBeCloseTo(peak);
+    layer.update(frame("NORMAL", { deltaMs: 160 }));
+    expect(layer.aura.alpha).toBeCloseTo(peak / 2);
+    layer.update(frame("NORMAL", { deltaMs: 160 }));
     expect(layer.aura.visible).toBe(false);
+  });
+
+  it("settles immediately when reduced motion is enabled during the fade", () => {
+    const layer = createLayer();
+    layer.update(frame("SAFE_RUN", { deltaMs: 80 }));
+    layer.update(frame("NORMAL", { deltaMs: 0, reducedMotion: true }));
+    expect(layer.aura.visible).toBe(false);
+    expect(layer.aura.alpha).toBe(0);
   });
 
   it("is destroyed with the vehicle", () => {

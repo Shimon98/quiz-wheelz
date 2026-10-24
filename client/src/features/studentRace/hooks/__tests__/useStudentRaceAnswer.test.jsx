@@ -1,11 +1,15 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { submitAnswer } from "../../../../api/racePlayerApi";
+import { RACE_PLAYER_REQUEST_TIMEOUT_MS, submitAnswer } from "../../../../api/racePlayerApi";
+import { axiosTimeoutAfter } from "../../../../test/axiosTimeout";
 import { STUDENT_RACE_CONFIG } from "../../config/studentRaceConfig";
 import useStudentRaceAnswer from "../useStudentRaceAnswer";
 
-vi.mock("../../../../api/racePlayerApi", () => ({ submitAnswer: vi.fn() }));
+vi.mock("../../../../api/racePlayerApi", async (importOriginal) => ({
+  RACE_PLAYER_REQUEST_TIMEOUT_MS: (await importOriginal()).RACE_PLAYER_REQUEST_TIMEOUT_MS,
+  submitAnswer: vi.fn(),
+}));
 
 function question(id = 17) {
   return { id, choices: [{ id: 1 }, { id: 2 }] };
@@ -116,7 +120,7 @@ describe("useStudentRaceAnswer accepted feedback", () => {
     await act(async () => { resolveResponse(accepted); });
 
     expect(applyAuthoritativeSnapshot).toHaveBeenCalledWith(accepted.raceImpact.snapshot);
-    expect(result.current.answerFeedback).toEqual({ questionId: 17, correct: true, scoreDelta: 10, streak: 3 });
+    expect(result.current.answerFeedback).toEqual({ questionId: 17, correct: true, scoreDelta: 10, streak: 3, gameplayContext: "NORMAL" });
   });
 
   it("expires accepted feedback at the dwell boundary even while the next question is still loading", async () => {
@@ -163,7 +167,7 @@ describe("useStudentRaceAnswer accepted feedback", () => {
     expect(result.current.displayedQuestion).toBe(initialQuestion);
 
     await act(async () => { resolveResponse(response()); });
-    expect(result.current.answerFeedback).toEqual({ questionId: 17, correct: true, scoreDelta: 10, streak: 3 });
+    expect(result.current.answerFeedback).toEqual({ questionId: 17, correct: true, scoreDelta: 10, streak: 3, gameplayContext: "NORMAL" });
     expect(result.current.displayedQuestion).toBe(initialQuestion);
     await act(async () => { await vi.advanceTimersByTimeAsync(STUDENT_RACE_CONFIG.feedbackDelayMs - 1); });
     expect(result.current.answerFeedback.questionId).toBe(17);
@@ -182,7 +186,7 @@ describe("useStudentRaceAnswer accepted feedback", () => {
     rerender({ currentQuestion: question(18) });
     await act(async () => { await result.current.submitChoice(1); });
 
-    expect(result.current.answerFeedback).toEqual({ questionId: 18, correct: true, scoreDelta: 10, streak: 4 });
+    expect(result.current.answerFeedback).toEqual({ questionId: 18, correct: true, scoreDelta: 10, streak: 4, gameplayContext: "NORMAL" });
     expect(first.streak).toBe(3);
   });
 
@@ -191,7 +195,7 @@ describe("useStudentRaceAnswer accepted feedback", () => {
     const { result } = setup();
     await act(async () => { await result.current.submitChoice(1); });
 
-    expect(result.current.answerFeedback).toEqual({ questionId: 17, correct: false, scoreDelta: 0, streak: 0 });
+    expect(result.current.answerFeedback).toEqual({ questionId: 17, correct: false, scoreDelta: 0, streak: 0, gameplayContext: "NORMAL" });
     expect(result.current.correctAnswerChoiceId).toBe(2);
   });
 
@@ -206,6 +210,22 @@ describe("useStudentRaceAnswer accepted feedback", () => {
     expect(result.current.answerFeedback).toBeNull();
     expect(applyAuthoritativeSnapshot).not.toHaveBeenCalled();
     expect(refreshQuestion).toHaveBeenCalledTimes(2);
+  });
+
+  it("frees a hung answer at its request timeout: no feedback, the question refreshes, the panel answers again", async () => {
+    submitAnswer.mockImplementationOnce(() => axiosTimeoutAfter(RACE_PLAYER_REQUEST_TIMEOUT_MS.SUBMIT_ANSWER))
+      .mockResolvedValueOnce(response());
+    const { result, refreshQuestion } = setup();
+    act(() => { result.current.submitChoice(1); });
+    expect(result.current.isSubmitting).toBe(true);
+
+    await act(async () => { await vi.advanceTimersByTimeAsync(RACE_PLAYER_REQUEST_TIMEOUT_MS.SUBMIT_ANSWER); });
+
+    expect(result.current.isSubmitting).toBe(false);
+    expect(result.current.answerFeedback).toBeNull();
+    expect(refreshQuestion).toHaveBeenCalledOnce();
+    await act(async () => { await result.current.submitChoice(1); });
+    expect(submitAnswer).toHaveBeenCalledTimes(2);
   });
 
   it("cancels the dwell callback when the answer flow unmounts", async () => {

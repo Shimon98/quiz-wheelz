@@ -9,6 +9,10 @@ import { PLANT_PLACEMENTS } from "../../../shared/components/decor/jungleCornerP
 import joinHero from "../../../assets/student/student-join-hero-wide.webp";
 import waitingHero from "../../../assets/student/student-waiting-hero-wide.webp";
 
+// The vertical value only acts on wide tablet/landscape banners: 33% keeps the
+// monkey's head in view there (the kart may slip under the card).
+const STUDENT_HERO_FOCUS = "60% 33%";
+
 export const STUDENT_ENTRY_SHELL_CONFIG = Object.freeze({
   // The student pages carry their own <h1> titles, so the brand title stays
   // a neutral element (on the landing page it IS the h1).
@@ -21,15 +25,17 @@ export const STUDENT_ENTRY_SHELL_CONFIG = Object.freeze({
    * Hero art per route; object-position keeps each painting's monkey in
    * frame under object-cover at every crop (mobile banner / desktop tall
    * half). Tuning a focal point = editing the percentage here.
+   * Join and waiting share one art frame, so they share the focal point and
+   * the monkey stays in place when the screen changes.
    */
   defaultHero: Object.freeze({
     image: joinHero,
-    objectPosition: "60% 55%",
+    objectPosition: STUDENT_HERO_FOCUS,
   }),
   heroes: Object.freeze({
     [ROUTES.STUDENT_WAITING]: Object.freeze({
       image: waitingHero,
-      objectPosition: "55% 55%",
+      objectPosition: STUDENT_HERO_FOCUS,
     }),
   }),
 

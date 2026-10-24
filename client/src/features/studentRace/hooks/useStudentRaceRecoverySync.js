@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
 import {
+  isChallengeChoiceRequiredError,
   isQuestionExpiredError,
   isRaceLifecycleConflictError,
   isRacePlayerReconnectRequiredError,
@@ -13,6 +14,9 @@ import useRuntimeSessionResync from "../../../shared/racePlayer/useRuntimeSessio
  * The race page's lifecycle policy: pull fresh authoritative truth on
  * session resyncs / question conflicts / non-expiry submit failures (each
  * latched per error instance), and stop presence on a final race view.
+ * C5-02: a question refused because a challenge offer is open (3034) is one
+ * more question conflict; a failed challenge choice reconciles itself in
+ * useStudentRaceChallenge, so here it only joins the reconnect check.
  */
 export default function useStudentRaceRecoverySync({
   view,
@@ -20,6 +24,7 @@ export default function useStudentRaceRecoverySync({
   raceError,
   questionError,
   answerError,
+  challengeError = null,
   reconnectNow,
   raceRetry,
   resyncToken,
@@ -34,7 +39,7 @@ export default function useStudentRaceRecoverySync({
   }, [view, stopPresence]);
 
   const reconnectRequiredHandledRef = useRef(null);
-  const reconnectRequiredError = [raceError, questionError, answerError].find(
+  const reconnectRequiredError = [raceError, questionError, answerError, challengeError].find(
     isRacePlayerReconnectRequiredError,
   );
   useEffect(() => {
@@ -50,7 +55,7 @@ export default function useStudentRaceRecoverySync({
   const conflictHandledRef = useRef(null);
   useEffect(() => {
     if (
-      isRaceLifecycleConflictError(questionError) &&
+      (isRaceLifecycleConflictError(questionError) || isChallengeChoiceRequiredError(questionError)) &&
       conflictHandledRef.current !== questionError
     ) {
       conflictHandledRef.current = questionError;

@@ -7,6 +7,7 @@ import {
   RACE_GAMEPLAY_EFFECT_TYPES,
   RACE_GAMEPLAY_MODES,
 } from "../../../constants/raceGameplayConstants";
+import { createLocalStudentRaceChallenge } from "./localStudentRaceChallenge";
 
 const LOCAL_TICK_MS = 500;
 const DEV_TOTAL_DISTANCE = 1000;
@@ -39,15 +40,21 @@ export function createLocalStudentRaceRuntime({ scenario = resolveMotionScenario
   const startedAtEpochMs = snapshotAtEpochMs;
   let intervalId = null;
   const listeners = new Set();
+  const challenge = scenario === "challenge" ? createLocalStudentRaceChallenge() : null;
 
   const isSlowed = () => scenario === "slowdown"
     && elapsedMs >= DEV_SLOWDOWN.fromMs && elapsedMs < DEV_SLOWDOWN.toMs;
 
-  const effectiveSpeed = () => (isSlowed()
-    ? Math.max(DEV_MIN_EFFECTIVE_SPEED_TENTHS, Math.round(speed * 10) - DEV_SLOWDOWN.magnitudeTenths) / 10
+  const slowdownTenths = () => (isSlowed()
+    ? DEV_SLOWDOWN.magnitudeTenths
+    : challenge?.slowdownTenths(snapshotAtEpochMs) ?? 0);
+
+  const effectiveSpeed = () => (slowdownTenths() > 0
+    ? Math.max(DEV_MIN_EFFECTIVE_SPEED_TENTHS, Math.round(speed * 10) - slowdownTenths()) / 10
     : speed);
 
   const activeEffects = () => {
+    if (challenge != null) return challenge.activeEffects(snapshotAtEpochMs);
     if (isSlowed()) {
       return [{
         effectId: 1,
@@ -83,9 +90,11 @@ export function createLocalStudentRaceRuntime({ scenario = resolveMotionScenario
       speed,
       movementUnitsPerSecond: currentEffectiveSpeed * DEV_UNITS_PER_SECOND_AT_SPEED_1,
       gameplay: {
-        mode: Object.hasOwn(DEV_SCENARIO_MODES, scenario) ? DEV_SCENARIO_MODES[scenario] : RACE_GAMEPLAY_MODES.NORMAL,
+        mode: challenge?.mode()
+          ?? (Object.hasOwn(DEV_SCENARIO_MODES, scenario) ? DEV_SCENARIO_MODES[scenario] : RACE_GAMEPLAY_MODES.NORMAL),
         effectiveSpeed: currentEffectiveSpeed,
         activeEffects: finished ? [] : activeEffects(),
+        challenge: challenge?.snapshot() ?? null,
       },
       snapshotAtEpochMs,
       vehicleAssetKey: DEV_VEHICLE_ASSET_KEY,
@@ -103,6 +112,7 @@ export function createLocalStudentRaceRuntime({ scenario = resolveMotionScenario
       ? Math.min(position, DEV_TOTAL_DISTANCE)
       : position % DEV_TOTAL_DISTANCE;
     snapshotAtEpochMs += LOCAL_TICK_MS;
+    challenge?.advanceTo(snapshotAtEpochMs);
     const snapshot = getSnapshot();
     listeners.forEach((listener) => listener(snapshot));
   };
@@ -116,6 +126,12 @@ export function createLocalStudentRaceRuntime({ scenario = resolveMotionScenario
       intervalId = null;
     },
     getSnapshot,
+    answer(correct) {
+      challenge?.answer(correct, snapshotAtEpochMs);
+    },
+    choose(choice) {
+      return challenge?.choose(choice) ?? false;
+    },
     subscribe(listener) {
       listeners.add(listener);
       return () => listeners.delete(listener);

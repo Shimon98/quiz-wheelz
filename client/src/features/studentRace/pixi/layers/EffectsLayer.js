@@ -1,6 +1,7 @@
 import { Graphics } from "pixi.js";
 
 import { STUDENT_RACE_ANIMATION_CONFIG } from "../../config/raceAnimationConfig";
+import { presentedMoments } from "../../runtime/deriveStudentRaceMoments";
 import { STUDENT_RACE_EFFECT } from "../../runtime/studentRaceRuntimeConstants";
 import { drawFeedbackEffect } from "../effects/drawFeedbackEffect";
 
@@ -15,6 +16,10 @@ const EFFECT_DURATIONS_MS = Object.freeze({
   [STUDENT_RACE_EFFECT.WRONG]: EFFECT_CONFIG.wrongEffectDurationMs,
   [STUDENT_RACE_EFFECT.BOOST]: EFFECT_CONFIG.boostEffectDurationMs,
   [STUDENT_RACE_EFFECT.FINISH]: EFFECT_CONFIG.finishEffectDurationMs,
+  [STUDENT_RACE_EFFECT.TURBO_SUCCESS]: EFFECT_CONFIG.turboSuccessEffectDurationMs,
+  [STUDENT_RACE_EFFECT.TURBO_FAILURE]: EFFECT_CONFIG.turboFailureEffectDurationMs,
+  [STUDENT_RACE_EFFECT.SAFE_COMPLETE]: EFFECT_CONFIG.safeCompleteEffectDurationMs,
+  [STUDENT_RACE_EFFECT.SAFE_PERFECT]: EFFECT_CONFIG.safePerfectEffectDurationMs,
 });
 
 export class EffectsLayer {
@@ -51,7 +56,7 @@ export class EffectsLayer {
 
   playMoments(batch) {
     if (this.reducedMotion) return;
-    batch.moments.forEach(({ type, streak = 0 }) => this.playEffect(type, { feedbackStreak: streak }));
+    presentedMoments(batch).forEach(({ type, streak = 0 }) => this.playEffect(type, { feedbackStreak: streak }));
   }
 
   resize() {}

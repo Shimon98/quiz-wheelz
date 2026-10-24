@@ -1,8 +1,17 @@
+import StudentRaceChallengePanel from "../components/StudentRaceChallengePanel";
 import StudentRaceHud from "../components/StudentRaceHud";
 import StudentRaceHudSafeArea from "../components/StudentRaceHudSafeArea";
 import StudentRaceQuestionPanel from "../components/StudentRaceQuestionPanel";
 import RacePlayerConnectionNotice from "../../../shared/racePlayer/RacePlayerConnectionNotice";
-import { hasChallengeTimeoutSlowdown } from "../runtime/studentRaceGameplayMode";
+import {
+  getChallengeResultFeedbackKey,
+  getChallengeSlowdownNoticeKey,
+} from "../config/raceGameplayPresentationConfig";
+import {
+  selectChallengeResultOutcome,
+  selectChallengeSlowdownSource,
+  selectSafeRunProgress,
+} from "../runtime/studentRaceGameplayMode";
 
 export default function StudentRaceOverlay({
   runtimeState = null,
@@ -21,15 +30,19 @@ export default function StudentRaceOverlay({
   answerFeedback = null,
   isSubmitting = false,
   isAwaitingNextQuestion = false,
+  challenge = null,
   hudControls = null,
 }) {
+  const showChallenge = challenge?.visible === true;
+
   return (
     <div className="pointer-events-none absolute inset-0 flex flex-col justify-between">
       <div>
         <StudentRaceHudSafeArea>
           <StudentRaceHud
             runtimeState={runtimeState}
-            question={question}
+            question={showChallenge ? null : question}
+            challengeOffer={showChallenge ? challenge.offer : null}
             answerFeedback={answerFeedback}
             controls={hudControls}
           />
@@ -40,20 +53,37 @@ export default function StudentRaceOverlay({
           onRetry={onConnectionRetry}
         />
       </div>
-      <StudentRaceQuestionPanel
-        question={question}
-        error={questionError}
-        isExpired={questionExpired}
-        onRetry={onQuestionRetry}
-        interactionEnabled={interactionEnabled}
-        onChoiceSelect={onChoiceSelect}
-        selectedChoiceId={selectedChoiceId}
-        correctAnswerChoiceId={correctAnswerChoiceId}
-        feedbackState={feedbackState}
-        isSubmitting={isSubmitting}
-        isAwaitingNextQuestion={isAwaitingNextQuestion}
-        slowdownNotice={hasChallengeTimeoutSlowdown(runtimeState?.gameplay)}
-      />
+      {showChallenge ? (
+        <StudentRaceChallengePanel
+          offer={challenge.offer}
+          phase={challenge.phase}
+          selectedChoice={challenge.selectedChoice}
+          openChoices={challenge.openChoices}
+          isExpired={challenge.isExpired}
+          interactionEnabled={interactionEnabled}
+          onChoose={challenge.onChoose}
+          onResync={challenge.onResync}
+        />
+      ) : (
+        <StudentRaceQuestionPanel
+          question={question}
+          error={questionError}
+          isExpired={questionExpired}
+          onRetry={onQuestionRetry}
+          interactionEnabled={interactionEnabled}
+          onChoiceSelect={onChoiceSelect}
+          selectedChoiceId={selectedChoiceId}
+          correctAnswerChoiceId={correctAnswerChoiceId}
+          feedbackState={feedbackState}
+          isSubmitting={isSubmitting}
+          isAwaitingNextQuestion={isAwaitingNextQuestion}
+          slowdownNoticeKey={getChallengeSlowdownNoticeKey(selectChallengeSlowdownSource(runtimeState?.gameplay))}
+          safeProgress={selectSafeRunProgress(runtimeState?.gameplay, question?.gameplayContext)}
+          resultFeedbackKey={getChallengeResultFeedbackKey(
+            selectChallengeResultOutcome(runtimeState?.gameplay, question?.gameplayContext),
+          )}
+        />
+      )}
     </div>
   );
 }

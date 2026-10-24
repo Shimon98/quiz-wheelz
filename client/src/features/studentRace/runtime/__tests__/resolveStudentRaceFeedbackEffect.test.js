@@ -91,6 +91,13 @@ describe("applyFeedbackEffectToRuntime", () => {
       .toBe(presentation);
   });
 
+  it("presents a challenge answer as a plain correct answer, since the server keeps the streak out of challenges", () => {
+    const feedback = { questionId: 21, correct: true, scoreDelta: 8, streak: 9, gameplayContext: "SAFE_RUN" };
+    const presentation = applyFeedbackEffectToRuntime(createInitialRaceRuntimeState(), STUDENT_RACE_FEEDBACK.CORRECT, feedback);
+
+    expect(presentation.visual).toMatchObject({ activeEffect: STUDENT_RACE_EFFECT.CORRECT, feedbackEventId: 21, feedbackStreak: 0 });
+  });
+
   it("changes the event identity for consecutive correct answers without requiring an idle render", () => {
     const first = applyFeedbackEffectToRuntime(createInitialRaceRuntimeState(), STUDENT_RACE_FEEDBACK.CORRECT, {
       questionId: 17, correct: true, scoreDelta: 10, streak: 3,

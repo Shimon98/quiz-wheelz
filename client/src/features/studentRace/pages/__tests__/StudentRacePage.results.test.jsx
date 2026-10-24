@@ -34,6 +34,7 @@ vi.mock("../../../../api/racePlayerApi", () => ({
   getRaceState: vi.fn(),
   getCurrentQuestion: vi.fn(),
   submitAnswer: vi.fn(),
+  chooseChallenge: vi.fn(),
   heartbeatRacePlayer: vi.fn(),
   reconnectRacePlayer: vi.fn(),
 }));

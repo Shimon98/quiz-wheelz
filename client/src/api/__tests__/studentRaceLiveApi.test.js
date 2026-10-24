@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import httpClient from "../httpClient.js";
+import { RACE_PLAYER_REQUEST_TIMEOUT_MS } from "../racePlayerApi.js";
 import { createStudentRaceEventSource, requestFinishArbitration } from "../studentRaceLiveApi.js";
 import { API_ENDPOINTS } from "../../constants/apiEndpointConstants.js";
 
@@ -27,5 +28,7 @@ it("posts arbitration without a body or client identity and unwraps the existing
   const data = { raceId: 7 };
   const post = vi.spyOn(httpClient, "post").mockResolvedValue({ success: true, data });
   expect(await requestFinishArbitration()).toBe(data);
-  expect(post).toHaveBeenCalledExactlyOnceWith(API_ENDPOINTS.RACE_PLAYERS.FINISH_ARBITRATION);
+  expect(post).toHaveBeenCalledExactlyOnceWith(API_ENDPOINTS.RACE_PLAYERS.FINISH_ARBITRATION, undefined, {
+    timeout: RACE_PLAYER_REQUEST_TIMEOUT_MS.FINISH_ARBITRATION,
+  });
 });

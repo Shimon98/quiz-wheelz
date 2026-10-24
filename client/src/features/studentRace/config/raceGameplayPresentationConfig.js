@@ -1,22 +1,52 @@
 import { ShieldCheck, Zap } from "lucide-react";
 
-import { RACE_GAMEPLAY_MODES } from "../../../constants/raceGameplayConstants";
+import {
+  RACE_CHALLENGE_OUTCOMES,
+  RACE_GAMEPLAY_EFFECT_SOURCES,
+  RACE_GAMEPLAY_MODES,
+} from "../../../constants/raceGameplayConstants";
+import { KART_THRUSTER_PALETTES } from "./kartThrusterConfig";
+import { RACE_CHALLENGE_ART } from "./raceChallengeArt";
 
 export const RACE_GAMEPLAY_PRESENTATION = Object.freeze({
   [RACE_GAMEPLAY_MODES.TURBO_TRIAL]: Object.freeze({
     icon: Zap,
+    emblemArt: RACE_CHALLENGE_ART.turboEmblem,
     titleKey: "gameplay.turbo.title",
     descriptionKey: "gameplay.turbo.description",
-    kartAura: Object.freeze({ color: 0xf5a623, alpha: 0.85, pulsePeriodMs: 800 }),
+    kartAura: Object.freeze({ color: 0xc98542, alpha: 0.12, pulsePeriodMs: null }),
+    kartThrusters: null,
   }),
   [RACE_GAMEPLAY_MODES.SAFE_RUN]: Object.freeze({
     icon: ShieldCheck,
+    emblemArt: RACE_CHALLENGE_ART.safeEmblem,
     titleKey: "gameplay.safe.title",
     descriptionKey: "gameplay.safe.description",
-    kartAura: Object.freeze({ color: 0x4fa6e8, alpha: 0.65, pulsePeriodMs: null }),
+    kartAura: Object.freeze({ color: 0x4fa6e8, alpha: 0.18, pulsePeriodMs: null }),
+    kartThrusters: KART_THRUSTER_PALETTES.safe,
   }),
 });
 
 export function getRaceGameplayPresentation(key) {
   return Object.hasOwn(RACE_GAMEPLAY_PRESENTATION, key) ? RACE_GAMEPLAY_PRESENTATION[key] : null;
+}
+
+const CHALLENGE_SLOWDOWN_NOTICE_KEYS = Object.freeze({
+  [RACE_GAMEPLAY_EFFECT_SOURCES.CHALLENGE_TIMEOUT]: "gameplay.slowdownNotice",
+  [RACE_GAMEPLAY_EFFECT_SOURCES.TURBO_FAILURE]: "gameplay.turboSlowdownNotice",
+});
+
+export function getChallengeSlowdownNoticeKey(source) {
+  return Object.hasOwn(CHALLENGE_SLOWDOWN_NOTICE_KEYS, source) ? CHALLENGE_SLOWDOWN_NOTICE_KEYS[source] : null;
+}
+
+const CHALLENGE_RESULT_FEEDBACK_KEYS = Object.freeze({
+  [RACE_CHALLENGE_OUTCOMES.TURBO_SUCCESS]: "gameplay.result.turboSuccess",
+  [RACE_CHALLENGE_OUTCOMES.TURBO_FAILURE]: "gameplay.result.turboFailure",
+  [RACE_CHALLENGE_OUTCOMES.SAFE_COMPLETE]: "gameplay.result.safeComplete",
+  [RACE_CHALLENGE_OUTCOMES.SAFE_PERFECT]: "gameplay.result.safePerfect",
+});
+
+export function getChallengeResultFeedbackKey(outcome) {
+  return Object.hasOwn(CHALLENGE_RESULT_FEEDBACK_KEYS, outcome) ? CHALLENGE_RESULT_FEEDBACK_KEYS[outcome] : null;
 }

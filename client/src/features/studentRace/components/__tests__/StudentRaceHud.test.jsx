@@ -177,6 +177,22 @@ describe("StudentRaceHud", () => {
     expect(screen.getByLabelText(i18n.t("studentRace:hud.streakValue", { count: 4 }))).toBeInTheDocument();
   });
 
+  it.each(["TURBO_TRIAL", "SAFE_RUN"])("shows a %s answer's server points without claiming a combo", (gameplayContext) => {
+    render(
+      <StudentRaceHud
+        runtimeState={buildRuntimeState({ streak: 12 })}
+        answerFeedback={{ questionId: 9, correct: true, scoreDelta: 40, streak: 12, gameplayContext }}
+      />,
+    );
+
+    const reward = screen.getByRole("status");
+    expect(reward).toHaveAttribute("data-kind", "correct");
+    expect(reward).toHaveTextContent(i18n.t("studentRace:reward.correctTitle"));
+    expect(reward).toHaveTextContent("+40");
+    expect(reward).not.toHaveTextContent(i18n.t("studentRace:reward.comboTitle"));
+    expect(reward).not.toHaveTextContent(i18n.t("studentRace:reward.streak", { count: 12 }));
+  });
+
   it("remounts the reward for each accepted answer and clears it after dwell", () => {
     const runtimeState = buildRuntimeState();
     const feedback = { questionId: 7, correct: true, scoreDelta: 10, streak: 2 };

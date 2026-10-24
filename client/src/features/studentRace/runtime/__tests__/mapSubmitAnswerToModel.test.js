@@ -41,7 +41,7 @@ describe("mapSubmitAnswerToModel accepted feedback", () => {
     const source = response();
     const result = mapSubmitAnswerToModel(source, request);
 
-    expect(result.feedback).toEqual({ questionId: 17, correct: true, scoreDelta: 15, streak: 4 });
+    expect(result.feedback).toEqual({ questionId: 17, correct: true, scoreDelta: 15, streak: 4, gameplayContext: "NORMAL" });
     expect(result.snapshot).toBe(source.raceImpact.snapshot);
     expect(result.correctAnswerChoiceId).toBeNull();
     expect(source.raceImpact.snapshot.position).toBe(110);
@@ -50,8 +50,15 @@ describe("mapSubmitAnswerToModel accepted feedback", () => {
   it("preserves an accepted wrong answer and its revealed choice", () => {
     const result = mapSubmitAnswerToModel(response({ correct: false, scoreDelta: 0, streak: 0 }), request);
 
-    expect(result.feedback).toEqual({ questionId: 17, correct: false, scoreDelta: 0, streak: 0 });
+    expect(result.feedback).toEqual({ questionId: 17, correct: false, scoreDelta: 0, streak: 0, gameplayContext: "NORMAL" });
     expect(result.correctAnswerChoiceId).toBe(2);
+  });
+
+  it("carries the served question's challenge context with the feedback", () => {
+    const challengeQuestion = { ...question, gameplayContext: "SAFE_RUN" };
+    const result = mapSubmitAnswerToModel(response(), { question: challengeQuestion, choiceId: 1 });
+
+    expect(result.feedback.gameplayContext).toBe("SAFE_RUN");
   });
 
   it.each([-20, 0, 10])("preserves signed authoritative score delta %s", (scoreDelta) => {
@@ -107,6 +114,6 @@ describe("mapSubmitAnswerToModel accepted feedback", () => {
 
     const result = mapSubmitAnswerToModel(source, request);
     expect(result.snapshot).toBe(source.raceImpact.snapshot);
-    expect(result.feedback).toEqual({ questionId: 17, correct: true, scoreDelta: 20, streak: 7 });
+    expect(result.feedback).toEqual({ questionId: 17, correct: true, scoreDelta: 20, streak: 7, gameplayContext: "NORMAL" });
   });
 });

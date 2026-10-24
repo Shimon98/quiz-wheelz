@@ -55,7 +55,16 @@ export class StudentRaceRenderer {
     this.finishLineLayer = new FinishLineLayer(this.worldContainer);
     this.sceneryLayer = new SceneryLayer(this.worldContainer);
     this.opponentLayer = new OpponentLayer(this.worldContainer);
-    this.playerKartLayer = new PlayerKartLayer(this.worldContainer);
+    this.playerKartLayer = new PlayerKartLayer(this.worldContainer, {
+      // Pixi's GPU collector frees textures left undrawn for a minute, so a late Turbo or Safe would upload
+      // its pose and flame again at that very moment. Only these stay; Pixi frees them with this renderer.
+      prepareTexture: (texture) => {
+        const gpuTextures = this.app.renderer?.texture;
+        if (gpuTextures?.initSource == null) return;
+        texture.source.autoGarbageCollect = false;
+        gpuTextures.initSource(texture.source);
+      },
+    });
     this.effectsLayer = new EffectsLayer(this.effectsContainer);
     this.layers = [
       this.jungleLayer,
@@ -93,6 +102,7 @@ export class StudentRaceRenderer {
 
   playMoments(batch) {
     this.effectsLayer.playMoments(batch);
+    this.playerKartLayer.playMoments(batch);
   }
 
   updateRuntimeState(nextState) {

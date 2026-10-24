@@ -6,11 +6,13 @@ import { mergeRaceStateIntoRuntime } from "../runtime/mergeRaceStateIntoRuntime.
 import { getRaceView, RACE_VIEWS } from "../../../shared/racePlayer/getRaceView.js";
 import useStudentRaceEventStream from "./useStudentRaceEventStream.js";
 import { requestFinishArbitration as requestArbitration } from "../../../api/studentRaceLiveApi.js";
+import { getRaceState } from "../../../api/racePlayerApi.js";
 import { ApiContractError } from "../../../errors/ApiContractError.js";
 import { mapStudentRaceFinishArbitration } from "../runtime/mapStudentRaceFinishArbitration.js";
 import { mergeStudentRaceFinishOrder } from "../runtime/mergeStudentRaceFinishOrder.js";
 import { RACE_LIVE_EVENT_TYPES } from "../../../constants/raceLiveEventConstants.js";
 import { STUDENT_RESULTS_PHASES } from "../config/studentRaceResultsConfig.js";
+import { STUDENT_RACE_STATE_READ } from "../runtime/studentRaceRuntimeConstants.js";
 import { resolveStudentResultsPhase } from "../utils/studentRaceResultsStatus.js";
 
 const PLAYING_REFRESH_SIGNALS = new Set([
@@ -89,7 +91,7 @@ export default function useStudentRaceSynchronization({
   }, []);
 
   const ingestRaceState = useCallback((response) => {
-    if (response == null) return;
+    if (response == null) return false;
     try {
       const previous = runtimeRef.current;
       const next = mergeRaceStateIntoRuntime(previous, response);
@@ -105,8 +107,10 @@ export default function useStudentRaceSynchronization({
         setAwaitingResync(false);
       }
       publish(next);
+      return true;
     } catch (rawError) {
       setError(normalizeApiError(rawError));
+      return false;
     }
   }, [publish, invalidateMutations]);
 
@@ -222,6 +226,23 @@ export default function useStudentRaceSynchronization({
     return pending;
   }, [beginAuthoritativeMutation, endAuthoritativeMutation, isMutationCurrent, applyAuthoritativeSnapshot]);
 
+  // C5-02: a race-state read the caller can await. It starts now, so it proves
+  // truth newer than a failure seen before the call, and goes through the same
+  // ingest (identity + freshness) as every other race state. The result says
+  // whether it really landed: an HTTP 200 alone proves nothing.
+  const readAuthoritativeRaceState = useCallback(async ({ timeoutMs } = {}) => {
+    const token = beginAuthoritativeMutation();
+    try {
+      const response = await getRaceState({ timeoutMs });
+      if (!isMutationCurrent(token)) return STUDENT_RACE_STATE_READ.STALE;
+      if (!ingestRaceState(response)) return STUDENT_RACE_STATE_READ.INVALID;
+      // An identity change inside the ingest starts a new generation.
+      return isMutationCurrent(token) ? STUDENT_RACE_STATE_READ.CURRENT : STUDENT_RACE_STATE_READ.STALE;
+    } finally {
+      endAuthoritativeMutation(token);
+    }
+  }, [beginAuthoritativeMutation, endAuthoritativeMutation, isMutationCurrent, ingestRaceState]);
+
   const sessionFailed = isRacePlayerSessionError(requestError ?? error);
   const resultsWatch = finishSyncEnabled && isResultsWatchState(runtimeState) && !sessionFailed;
 
@@ -236,5 +257,5 @@ export default function useStudentRaceSynchronization({
 
   return { runtimeState, finishOrder, requestFinishArbitration, error, streamError, applyAuthoritativeSnapshot,
     beginAuthoritativeMutation, endAuthoritativeMutation, isMutationCurrent,
-    prepareAuthoritativeResync, observeSignal, resultsWatch };
+    prepareAuthoritativeResync, readAuthoritativeRaceState, observeSignal, resultsWatch };
 }

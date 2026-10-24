@@ -28,6 +28,10 @@ export function isRaceLifecycleConflictError(error) {
   );
 }
 
+export function isChallengeChoiceRequiredError(error) {
+  return error?.errorName === SERVER_ERROR_NAMES.CHALLENGE_CHOICE_REQUIRED;
+}
+
 export function isQuestionExpiredError(error) {
   return error?.errorName === SERVER_ERROR_NAMES.QUESTION_EXPIRED;
 }

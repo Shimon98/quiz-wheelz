@@ -27,4 +27,14 @@ describe("StudentRaceSpeedometer", () => {
     rerender(<StudentRaceSpeedometer speed={NaN} />);
     expect(container).toBeEmptyDOMElement();
   });
+  it("labels an active slowdown without changing the authoritative speed number", () => {
+    const { rerender } = render(<StudentRaceSpeedometer speed={0.9} slowing />);
+    expect(screen.getByRole("img")).toHaveAttribute("data-slowing", "true");
+    expect(screen.getByText(i18n.t("studentRace:hud.slowLabel"))).toBeInTheDocument();
+    expect(screen.getByText("×0.9")).toBeInTheDocument();
+    rerender(<StudentRaceSpeedometer speed={1.2} />);
+    expect(screen.getByRole("img")).toHaveAttribute("data-slowing", "false");
+    expect(screen.queryByText(i18n.t("studentRace:hud.slowLabel"))).not.toBeInTheDocument();
+  });
+
 });

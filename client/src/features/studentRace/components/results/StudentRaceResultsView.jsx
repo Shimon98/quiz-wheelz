@@ -9,6 +9,9 @@ import { RotateCcw } from "lucide-react";
 import { I18N_NAMESPACES } from "../../../../i18n/i18nConstants";
 import { UI_TONES } from "../../../../app/theme/quizWheelzTheme";
 import { ROUTES } from "../../../../constants/routeConstants";
+import { useSceneMusic } from "../../../../shared/audio";
+import { GAME_AUDIO } from "../../../../shared/gameAudio/gameAudioCatalog";
+import { STUDENT_RACE_SOUND } from "../../audio/studentRaceSounds";
 import { STUDENT_RACE_WORLD_ART } from "../../config/worldArtConfig";
 import { STUDENT_RESULTS_STYLES as S } from "../../styles/studentRaceResultsStyles";
 import { resolveResultsEnterMotion } from "../../utils/studentResultsPresentation";
@@ -23,6 +26,7 @@ export default function StudentRaceResultsView({ model }) {
   const reducedMotion = useReducedMotion();
   const titleRef = useRef(null);
   const final = model.raceFinished;
+  useSceneMusic(GAME_AUDIO.MUSIC_GAME, STUDENT_RACE_SOUND.resultsMusicGain);
 
   useEffect(() => {
     titleRef.current?.focus();

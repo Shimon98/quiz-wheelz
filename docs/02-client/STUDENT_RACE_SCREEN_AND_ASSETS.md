@@ -234,7 +234,8 @@ react-overlay-decoration
 World-art model (C1-06F, locked): existing raw FAR/road/scenery art stays in
 the private vision area and is processed deterministically (alpha lift,
 seam heal, WebP) into this tree. The new thicket and flowering verge trials
-below use lossless WebP encodings of their private generated PNGs.
+below used lossless WebP encodings of their private generated PNGs; since
+2026-10-19 both runtime files are quality-85 lossy WebP with byte-identical alpha.
 Static sky/ground gradients sit behind
 a static FAR horizon sprite anchored to the horizon;
 projected surfaces (ground plane, road, optional MID verge) and projected
@@ -287,10 +288,11 @@ generated transparent cluster that fills the forest interior behind
 individual trees. It joins the existing two trees, palm, two rocks and
 bush in `sceneryConfig.props`; with the flowering verge below, all eight
 assets share `SceneryLayer`.
-The runtime WebP is 1254×1254 pixels and 2,136,844 bytes (2.14 MB).
-It was encoded losslessly from the generated PNG, with every decoded RGBA
-byte verified as identical. No resizing, recoloring or artwork edits were
-applied. The 2,835,611-byte source PNG stays private at
+The runtime WebP is 1254×1254 pixels. It was first encoded losslessly from
+the generated PNG (2,136,844 bytes, every decoded RGBA byte verified as
+identical); since 2026-10-19 it is quality-85 lossy WebP (633,756 bytes) with
+byte-identical alpha, chosen after an in-game comparison. No resizing,
+recoloring or artwork edits were applied. The 2,835,611-byte source PNG stays private at
 `docs/vision/world-art-source/jungle-thicket-01.png`; only the WebP is
 consumed by `sceneryConfig`. It belongs to the accepted world composition;
 physical-phone performance remains a required pre-release check carried from C1-06G. Its filename and URL
@@ -319,9 +321,10 @@ Use case: stylized-concept. Generate one production-ready transparent PNG sprite
 
 `client/src/assets/game/studentRace/scenery/jungle-verge-flowers-01.webp`
 is a low, dense roadside clump generated with the built-in image generator.
-Its lossless RGBA WebP is 1774×887 pixels and 1,344,364 bytes, with decoded
-pixels verified identical to the generated source. No crop, resize or color
-edit was applied. The private source is
+Its RGBA WebP is 1774×887 pixels: first lossless (1,344,364 bytes, decoded
+pixels verified identical to the generated source), since 2026-10-19
+quality-85 lossy (360,908 bytes) with byte-identical alpha. No crop, resize or
+color edit was applied. The private source is
 `docs/vision/world-art-source/jungle-verge-flowers-01.png`.
 
 `sceneryConfig.props` owns its asset URL, width and `anchorY` 0.94. About
@@ -416,7 +419,9 @@ Server owns `vehicleTypeKey` and `vehicleColorKey`. Client maps keys to
 whole-asset art (opponents follow the same composite concept later).
 
 Vehicle frame processing (C1-06C): the 1254px master is center-cropped to
-1046px and scaled to 768px WebP (`hoverKarts/hover-kart-<color>-idle-NN.webp`).
+1046px and scaled to 768px WebP (`hoverKarts/hover-kart-<color>-idle-NN.webp`),
+q90 lossy with lossless alpha for every colour (the seven recoloured frames
+were re-encoded from lossless on 2026-10-18: about 88 KB each).
 Every idle frame of a vehicle goes through the exact same box, never a
 per-frame auto-trim — otherwise the shared anchor drifts between frames.
 
@@ -436,7 +441,7 @@ runtime.gameplay.mode / question.gameplayContext
 ```
 
 - The bottom panel geometry has one owner, `StudentRacePanelSurface`; the
-  question (and later the Challenge choice) render inside it. A mode accent
+  question and the Challenge choice (C5-02) render inside it. A mode accent
   is a 4 px inset shadow, so the NORMAL panel keeps its exact geometry and
   the Pixi kart anchor (`resolveStudentRaceLayoutMetrics`) stays correct.
 - Normal, Turbo and Safe questions share one question component; only the
@@ -444,12 +449,61 @@ runtime.gameplay.mode / question.gameplayContext
 - The player kart gets one ground aura between its shadow and the kart body,
   drawn once and recolored by tint with additive blending, so it reads as a
   glow on the orange road. It is a permitted overlay on the composite art,
-  not a redraw of the art. Turbo pulses, Safe stays steady, reduced motion
-  removes only the pulse. Opponents get nothing until the server exposes
+  not a redraw of the art. Turbo now uses a restrained steady alpha of 0.12;
+  Safe stays steady at alpha 0.18. Both mode auras fade in/out over 320 ms with the pose
+  and settle immediately under reduced motion. Opponents get nothing until the server exposes
   their mode.
-- Not yet: burner art, new poses, flames, lean and speed lines. Speed lines
-  belong to the future Turbo success one-shot moment in `EffectsLayer`, not
-  to a persistent mode layer.
+- Thrusters (C5-03, local): a player-only glow drawn on the art's own rear
+  nozzles — centres and radius measured in the 768 px art and recorded in
+  the vehicle manifest (`thrusters`, `thrusterRadius`, identical on every
+  color). Turbo question entry keeps the original blue nozzles and idle pose. Only a fresh
+  accepted `TURBO_SUCCESS` moment uses the painted transparent exhaust, aimed toward the
+  camera with subtle length modulation; Safe keeps a calm blue light. A small tapered
+  code flame is the asset-failure fallback.
+  It is an overlay, not a redraw of the art.
+- Safe results (C5-03l): a shallow thin blue ground ellipse, no stars or large driver-height
+  rings. Nozzle acknowledgement stays inside its housing, with no halo, gold rays or fire.
+  Safe Complete uses a shorter, quieter pulse than Safe Perfect; both ease in and out.
+- Monkey poses (C5-03, local): `hover-kart-<color>-safe-01.webp` (lounging,
+  banana can) and `-turbo-01.webp` (leaning forward), one per colour. Each is
+  the shipped idle image with only the zone above the cockpit rim replaced by
+  the aligned candidate monkey; the kart body below the rim is unchanged
+  (0 visible pixels), so the anchor, size and nozzle centres match the idle
+  frame. Player only, preloaded shortly after the kart art appears and
+  transitioned over 320 ms without changing kart scale (Turbo return: 160 ms, C5-03m).
+  The blend filter inherits renderer resolution and antialiasing to preserve native sharpness.
+  Weighted images are summed on an
+  isolated Pixi surface during the blend, then composited normally so the shared kart body
+  remains opaque. Reversing a transition preserves the current blend. Safe follows its
+  server mode; Turbo launch follows a fresh accepted success moment for 1.3 s. No driver/body
+  splitting or articulated rig is introduced. These remain two-pose dissolves, not newly
+  authored intermediate animation frames.
+- Challenge slowdown (C5-03m): active server `SPEED_SLOW` with source `CHALLENGE_TIMEOUT`
+  or `TURBO_FAILURE` dims the nozzle overlays and shows an amber speedometer label and
+  compact notice. This is presentation of the existing penalty, never a local speed/timer rule.
+- Exhaust art: `assets/game/studentRace/effects/turbo-exhaust-painted.webp`, 192 x 288,
+  11,968 bytes, transparent alpha; imported only by `studentRaceEffectManifest`. Generated
+  with built-in imagegen on 2026-10-18 from an original downward painted jet-flame prompt,
+  then resized and WebP-encoded; no third-party source image. No metal, text or nozzle is
+  baked into this overlay. One texture is shared by both nozzles and all eight kart colors.
+- Turbo success has restrained side speed lines and nozzle fire, without star particles
+  or a filled ground disc. No camera push or special motion acceleration is applied; the
+  server progress reward uses normal interpolation and live speed remains server-owned.
+
+### Challenge choice art (C5-02, committed locally)
+
+- Three WebPs in `client/src/assets/game/challenge/`: `turbo-emblem.webp`,
+  `safe-emblem.webp` (choice cards) and `challenge-energy.webp` (HUD meter).
+  One manifest owns them: `features/studentRace/config/raceChallengeArt.js`
+  (`RACE_CHALLENGE_ART`); the presentation table and the HUD read it, no
+  component imports the files directly. Masters and the recolor script stay
+  in the private `docs/vision/` folder.
+- Card art is `clamp(56px, 22vw, 112px)`, 48 px when the viewport is at most
+  620 px tall (phone landscape); title and description stay text (i18n).
+- The energy meter sits in the HUD progress column under the track bar:
+  crystal art, a violet bar clamped to the server threshold, and a visible
+  `75/100` value (tabular digits, `dir="ltr"`). Checked at 320, 390, 430 px
+  and 844×390 without overflow.
 
 ## Continuous world flow (C1-03M)
 

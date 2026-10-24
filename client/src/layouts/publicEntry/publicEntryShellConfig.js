@@ -14,11 +14,13 @@ export const PUBLIC_ENTRY_SHELL_CONFIG = Object.freeze({
   // The wide desktop card (36rem) — auth forms and the role picker breathe.
   cardWidth: "wide",
 
-  // One hero for every public/auth screen; 30%/55% keeps the monkey+kart
+  // One hero for every public/auth screen; 30%/35% keeps the monkey+kart
   // (lower-left third of the art) in frame under object-cover at every size.
+  // The vertical value only acts on wide tablet/landscape banners: 35% keeps
+  // the monkey's head in view there (the kart may slip under the card).
   defaultHero: Object.freeze({
     image: heroImage,
-    objectPosition: "30% 55%",
+    objectPosition: "30% 35%",
   }),
 
   // Desktop dead-space foliage on the open (start) side, heavily faded —

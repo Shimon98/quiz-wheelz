@@ -1,18 +1,21 @@
 import { resolveRacePlacement } from "../../../shared/components/raceRank/racePlacementConfig";
 import { getRaceProgressRatio } from "./getRaceProgressRatio";
 import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig";
+import { RACE_GAMEPLAY_MODES } from "../../../constants/raceGameplayConstants";
+import { isChallengeAnswer, selectChallengeSlowdownSource } from "../runtime/studentRaceGameplayMode";
 
 function getRewardModel(feedback, playerFinished, formatter) {
   if (playerFinished || feedback?.correct !== true || feedback.questionId == null) return null;
   const streak = Number.isSafeInteger(feedback.streak) && feedback.streak >= 0
     ? feedback.streak
     : 0;
-  const isCombo = streak >= STUDENT_RACE_CONFIG.comboMinStreak;
+  const challenge = isChallengeAnswer(feedback);
+  const isCombo = !challenge && streak >= STUDENT_RACE_CONFIG.comboMinStreak;
   return {
     id: feedback.questionId,
     kind: isCombo ? "combo" : "correct",
     titleKey: isCombo ? "reward.comboTitle" : "reward.correctTitle",
-    streak,
+    streak: challenge ? null : streak,
     pointsText: Number.isSafeInteger(feedback.scoreDelta) && feedback.scoreDelta !== 0
       ? formatter.format(feedback.scoreDelta)
       : null,
@@ -22,6 +25,19 @@ function getRewardModel(feedback, playerFinished, formatter) {
 function hasSharedRank(player, playerCount, opponents) {
   if (!Array.isArray(opponents) || opponents.length + 1 !== playerCount) return false;
   return opponents.some((opponent) => opponent?.rank === player.rank);
+}
+
+function getEnergyModel(gameplay, formatter) {
+  const challenge = gameplay?.challenge;
+  if (gameplay?.mode !== RACE_GAMEPLAY_MODES.NORMAL || challenge == null) return null;
+  const value = Math.min(challenge.energy, challenge.threshold);
+  return {
+    value,
+    max: challenge.threshold,
+    full: value === challenge.threshold,
+    text: `${formatter.format(value)}/${formatter.format(challenge.threshold)}`,
+    style: { width: `${(value / challenge.threshold) * 100}%` },
+  };
 }
 
 export function getStudentRaceHudModel(runtimeState, language = "he", answerFeedback = null) {
@@ -54,11 +70,13 @@ export function getStudentRaceHudModel(runtimeState, language = "he", answerFeed
     streakLabelKey: isCombo ? "hud.comboLabel" : "hud.streakShortLabel",
     isCombo,
     speed: runtimeState.visual.targetSpeed,
+    slowing: runtimeState.playerFinished !== true && selectChallengeSlowdownSource(runtimeState.gameplay) != null,
     reward,
     rewardKey: reward?.id ?? "steady",
     style: { "--race-reward-duration": `${STUDENT_RACE_CONFIG.feedbackDelayMs}ms` },
     progressPercent,
     progressText: progressPercent == null ? null : `${progressPercent}%`,
     progressStyle: { width: `${progressPercent ?? 0}%` },
+    energy: getEnergyModel(runtimeState.gameplay, new Intl.NumberFormat(language)),
   };
 }

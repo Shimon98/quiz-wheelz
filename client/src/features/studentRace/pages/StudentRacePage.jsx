@@ -5,10 +5,16 @@ import { Smartphone } from "lucide-react";
 import useRaceBootstrap from "../hooks/useRaceBootstrap";
 import useStudentRaceQuestion from "../hooks/useStudentRaceQuestion";
 import useStudentRaceAnswer from "../hooks/useStudentRaceAnswer";
+import useStudentRaceChallenge from "../hooks/useStudentRaceChallenge";
 import useStudentRaceRecoverySync from "../hooks/useStudentRaceRecoverySync";
 import useStudentRaceFinishExperience from "../hooks/useStudentRaceFinishExperience.js";
 import useStudentResultsProof from "../hooks/useStudentResultsProof.js";
 import { buildStudentRaceResultsViewModel } from "../utils/buildStudentRaceResultsViewModel.js";
+import {
+  isChallengeChoiceMode,
+  isQuestionForGameplayMode,
+  isQuestionGameplayMode,
+} from "../runtime/studentRaceGameplayMode.js";
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { RACE_VIEWS } from "../../../shared/racePlayer/getRaceView";
 import RacePlayerSessionGate from "../../../shared/racePlayer/RacePlayerSessionGate";
@@ -16,7 +22,7 @@ import useRacePlayerRuntimeSession from "../../../shared/racePlayer/useRacePlaye
 import PreferredDeviceNotice from "../../../shared/responsive/PreferredDeviceNotice";
 import usePreferredDeviceNotice from "../../../shared/responsive/usePreferredDeviceNotice";
 import { PREFERRED_DEVICE_PROFILES } from "../../../shared/responsive/preferredDeviceProfiles";
-import { isRacePlayerSessionError } from "../../../errors/errorChecks";
+import { isChallengeChoiceRequiredError, isRacePlayerSessionError } from "../../../errors/errorChecks";
 import StudentRaceContent from "../components/StudentRaceContent";
 import StudentRaceSessionConnecting from "../components/StudentRaceSessionConnecting";
 
@@ -33,6 +39,7 @@ function ResolvedStudentRacePage({ runtimeSession }) {
     beginAuthoritativeMutation,
     endAuthoritativeMutation,
     isMutationCurrent,
+    readAuthoritativeRaceState,
     finishOrder,
     requestFinishArbitration,
     resultsWatch,
@@ -51,9 +58,11 @@ function ResolvedStudentRacePage({ runtimeSession }) {
     [runtimeState, finishOrder],
   );
 
+  const gameplay = runtimeState?.gameplay ?? null;
+  const gameplayActive = runtimeSession.isGameplayConnectionReady && view === RACE_VIEWS.PLAYING;
   const questionEnabled =
-    runtimeSession.isGameplayConnectionReady &&
-    view === RACE_VIEWS.PLAYING &&
+    gameplayActive &&
+    isQuestionGameplayMode(gameplay?.mode) &&
     !isRacePlayerSessionError(raceError);
 
   const {
@@ -66,6 +75,7 @@ function ResolvedStudentRacePage({ runtimeSession }) {
   const {
     submitChoice,
     displayedQuestion,
+    isFeedbackDwellActive,
     isAwaitingNextQuestion,
     isSubmitting,
     selectedChoiceId,
@@ -74,8 +84,18 @@ function ResolvedStudentRacePage({ runtimeSession }) {
     answerFeedback,
     answerError,
   } = useStudentRaceAnswer({
-    question,
+    question: isQuestionForGameplayMode(question, gameplay?.mode) ? question : null,
     refreshQuestion,
+    applyAuthoritativeSnapshot,
+    beginAuthoritativeMutation,
+    endAuthoritativeMutation,
+    isMutationCurrent,
+  });
+
+  const challenge = useStudentRaceChallenge({
+    gameplay,
+    enabled: gameplayActive,
+    readAuthoritativeRaceState,
     applyAuthoritativeSnapshot,
     beginAuthoritativeMutation,
     endAuthoritativeMutation,
@@ -88,6 +108,7 @@ function ResolvedStudentRacePage({ runtimeSession }) {
     raceError,
     questionError,
     answerError,
+    challengeError: challenge.error,
     reconnectNow: runtimeSession.reconnectNow,
     raceRetry,
     resyncToken: runtimeSession.resyncToken,
@@ -99,49 +120,59 @@ function ResolvedStudentRacePage({ runtimeSession }) {
     enabled: view === RACE_VIEWS.PLAYING,
   });
 
+  const sessionError =
+    [raceError, questionError, answerError, challenge.error].find(isRacePlayerSessionError) ?? null;
+  const visibleQuestion = isFeedbackDwellActive || isQuestionForGameplayMode(displayedQuestion, gameplay?.mode)
+    ? displayedQuestion
+    : null;
+
   return (
-    <RacePlayerSessionGate error={raceError}>
-      <RacePlayerSessionGate error={questionError}>
-        <RacePlayerSessionGate error={answerError}>
-          <StudentRaceContent
-            runtimeState={runtimeState}
-            view={view}
-            isLoading={isLoading}
-            error={raceError}
-            retry={raceRetry}
-            keepRaceScreen={finishExperience.keepRaceScreen}
-            finishPresentation={finishExperience.presentation}
-            resultsModel={resultsModel}
-            questionProps={{
-              question: displayedQuestion,
-              questionError,
-              questionExpired,
-              onQuestionRetry: refreshQuestion,
-              interactionEnabled:
-                view === RACE_VIEWS.PLAYING &&
-                runtimeSession.isGameplayConnectionReady,
-              onChoiceSelect: submitChoice,
-              selectedChoiceId,
-              correctAnswerChoiceId,
-              feedbackState,
-              answerFeedback,
-              isSubmitting,
-              isAwaitingNextQuestion,
-              connectionState: runtimeSession.connectionState,
-              connectionError: runtimeSession.error,
-              onConnectionRetry: runtimeSession.reconnectNow,
-            }}
-          />
-          <PreferredDeviceNotice
-            open={deviceNotice.open}
-            title={t("deviceAdvice.title")}
-            body={t("deviceAdvice.body")}
-            confirmLabel={t("deviceAdvice.confirm")}
-            icon={Smartphone}
-            onDismiss={deviceNotice.dismiss}
-          />
-        </RacePlayerSessionGate>
-      </RacePlayerSessionGate>
+    <RacePlayerSessionGate error={sessionError}>
+      <StudentRaceContent
+        runtimeState={runtimeState}
+        view={view}
+        isLoading={isLoading}
+        error={raceError}
+        retry={raceRetry}
+        keepRaceScreen={finishExperience.keepRaceScreen}
+        finishPresentation={finishExperience.presentation}
+        resultsModel={resultsModel}
+        questionProps={{
+          question: visibleQuestion,
+          questionError: isChallengeChoiceRequiredError(questionError) ? null : questionError,
+          questionExpired,
+          onQuestionRetry: refreshQuestion,
+          interactionEnabled: gameplayActive,
+          onChoiceSelect: submitChoice,
+          selectedChoiceId,
+          correctAnswerChoiceId,
+          feedbackState,
+          answerFeedback,
+          isSubmitting,
+          isAwaitingNextQuestion,
+          challenge: {
+            visible: isChallengeChoiceMode(gameplay) && !isFeedbackDwellActive,
+            offer: challenge.offer,
+            phase: challenge.phase,
+            selectedChoice: challenge.selectedChoice,
+            openChoices: challenge.openChoices,
+            isExpired: challenge.isExpired,
+            onChoose: challenge.choose,
+            onResync: challenge.resync,
+          },
+          connectionState: runtimeSession.connectionState,
+          connectionError: runtimeSession.error,
+          onConnectionRetry: runtimeSession.reconnectNow,
+        }}
+      />
+      <PreferredDeviceNotice
+        open={deviceNotice.open}
+        title={t("deviceAdvice.title")}
+        body={t("deviceAdvice.body")}
+        confirmLabel={t("deviceAdvice.confirm")}
+        icon={Smartphone}
+        onDismiss={deviceNotice.dismiss}
+      />
     </RacePlayerSessionGate>
   );
 }
