@@ -5,8 +5,14 @@ import { render } from "@testing-library/react";
 import { STUDENT_RACE_MOMENT } from "../../runtime/studentRaceRuntimeConstants";
 import useStudentRaceMoments from "../useStudentRaceMoments";
 
-function runtime({ activeEffect = null, feedbackEventId = null, feedbackStreak = 0, playerFinished = false, targetSpeed = 1 } = {}) {
-  return { playerFinished, visual: { activeEffect, feedbackEventId, feedbackStreak, targetSpeed } };
+function runtime({
+  activeEffect = null, feedbackEventId = null, feedbackStreak = 0, playerFinished = false, targetSpeed = 1, luck = [],
+} = {}) {
+  return {
+    playerFinished,
+    visual: { activeEffect, feedbackEventId, feedbackStreak, targetSpeed },
+    gameplay: { luck: { recentEvents: luck } },
+  };
 }
 
 function Owner({ presentation, consumers }) {
@@ -89,6 +95,26 @@ describe("useStudentRaceMoments", () => {
     render(<Owner presentation={present} consumers={[consumer]} />);
 
     expect(consumer).not.toHaveBeenCalled();
+  });
+
+  it("delivers a fresh Luck event once through StrictMode and replays none of it after a remount", () => {
+    const consumer = vi.fn();
+    const consumers = [consumer];
+    const mud = { eventId: 31, selectedType: "MUD_SPLASH", appliedType: "MUD_SPLASH", outcome: "APPLIED", occurredAtEpochMs: 1 };
+    const lucky = runtime({ luck: [mud] });
+    const strict = (presentation) => (
+      <StrictMode>
+        <Owner presentation={presentation} consumers={consumers} />
+      </StrictMode>
+    );
+
+    const { rerender, unmount } = render(strict(runtime()));
+    rerender(strict(lucky));
+    unmount();
+    render(strict(lucky));
+
+    expect(consumer).toHaveBeenCalledTimes(1);
+    expect(consumer.mock.calls[0][0].moments).toEqual([{ type: STUDENT_RACE_MOMENT.LUCK_MUD, id: "luck-31", luckEventId: 31 }]);
   });
 
   it("keeps delivering to the other consumers when one of them fails", () => {

@@ -1,11 +1,11 @@
 package com.quiz_wheelz.service.question;
 
 import com.quiz_wheelz.common.QuestionRules;
-import com.quiz_wheelz.dto.question.QuestionPlan;
 import com.quiz_wheelz.dto.question.internal.InternalGeneratedQuestion;
 import com.quiz_wheelz.dto.question.student.StudentQuestionResponse;
 import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.entitys.PlayerQuestionChoice;
+import com.quiz_wheelz.entitys.QuestionTemplate;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
 import com.quiz_wheelz.enums.RacePlayerStatus;
@@ -14,6 +14,7 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.QueryTimeoutException;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -40,7 +42,7 @@ class StudentQuestionDeliveryGenerationTest {
     void shouldGenerateAndPersistWhenNoActiveQuestionExists() {
         RacePlayer racePlayer = fixture.createRacePlayer();
         RacePlayer lockedRacePlayer = fixture.createRacePlayer();
-        QuestionPlan plan = fixture.createQuestionPlan();
+        QuestionTemplate template = fixture.createTemplate();
         InternalGeneratedQuestion generated = fixture.createGeneratedQuestion();
         PlayerQuestion persisted = fixture.createPlayerQuestion(
                 PlayerQuestionStatus.ACTIVE,
@@ -48,7 +50,7 @@ class StudentQuestionDeliveryGenerationTest {
         );
         List<PlayerQuestionChoice> choices = fixture.createPlayerQuestionChoices(persisted);
         StudentQuestionResponse expected = fixture.createStudentQuestionResponse();
-        prepareGeneration(lockedRacePlayer, plan, generated, persisted, choices, expected);
+        prepareGeneration(lockedRacePlayer, template, generated, persisted, choices, expected);
 
         StudentQuestionResponse result = fixture.studentQuestionDeliveryService
                 .getOrCreateCurrentQuestion(racePlayer);
@@ -58,9 +60,47 @@ class StudentQuestionDeliveryGenerationTest {
                 lockedRacePlayer,
                 StudentQuestionDeliveryTestFixture.FIXED_INSTANT
         );
-        verify(fixture.questionGenerationService).generate(plan);
+        verify(fixture.questionGenerationService).generateFromTemplate(
+                template,
+                QuestionRules.DEFAULT_ADAPTIVE_MODE,
+                QuestionRules.DEFAULT_ASSISTANCE_LEVEL
+        );
         verify(fixture.playerQuestionPersistenceService)
                 .persistGeneratedQuestion(lockedRacePlayer, generated);
+    }
+
+    @Test
+    void shouldNeverTreatADatabaseOrUnrelatedFailureAsABrokenTemplate() {
+        RacePlayer racePlayer = fixture.createRacePlayer();
+        RacePlayer lockedRacePlayer = fixture.createRacePlayer();
+        QuestionTemplate first = fixture.createTemplate();
+        QuestionTemplate next = fixture.createTemplate();
+        prepareGeneration(
+                lockedRacePlayer,
+                first,
+                fixture.createGeneratedQuestion(),
+                fixture.createPlayerQuestion(PlayerQuestionStatus.ACTIVE, fixture.now()),
+                List.of(),
+                fixture.createStudentQuestionResponse()
+        );
+        when(fixture.racePlayerQuestionPlanService.templatesInTurn(lockedRacePlayer))
+                .thenReturn(List.of(first, next));
+        when(fixture.questionGenerationService.generateFromTemplate(same(first), any(), any()))
+                .thenThrow(new QueryTimeoutException("lock wait timeout"))
+                .thenThrow(new ApiException(ErrorCode.RACE_PLAYER_NOT_FOUND));
+
+        assertThrows(
+                QueryTimeoutException.class,
+                () -> fixture.studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer)
+        );
+        ApiException exception = assertThrows(
+                ApiException.class,
+                () -> fixture.studentQuestionDeliveryService.getOrCreateCurrentQuestion(racePlayer)
+        );
+
+        assertEquals(ErrorCode.RACE_PLAYER_NOT_FOUND, exception.getErrorCode());
+        verify(fixture.questionGenerationService, never()).generateFromTemplate(same(next), any(), any());
+        verify(fixture.playerQuestionPersistenceService, never()).persistGeneratedQuestion(any(), any());
     }
 
     @Test
@@ -79,7 +119,7 @@ class StudentQuestionDeliveryGenerationTest {
         );
 
         assertEquals(ErrorCode.RACE_PLAYER_NOT_RACING, exception.getErrorCode());
-        verify(fixture.questionGenerationService, never()).generate(any());
+        verify(fixture.questionGenerationService, never()).generateFromTemplate(any(), any(), any());
     }
 
     @Test
@@ -98,7 +138,7 @@ class StudentQuestionDeliveryGenerationTest {
         );
 
         assertEquals(ErrorCode.RACE_NOT_IN_PROGRESS, exception.getErrorCode());
-        verify(fixture.questionGenerationService, never()).generate(any());
+        verify(fixture.questionGenerationService, never()).generateFromTemplate(any(), any(), any());
     }
 
     @Test
@@ -127,7 +167,7 @@ class StudentQuestionDeliveryGenerationTest {
 
     private void prepareGeneration(
             RacePlayer lockedRacePlayer,
-            QuestionPlan plan,
+            QuestionTemplate template,
             InternalGeneratedQuestion generated,
             PlayerQuestion persisted,
             List<PlayerQuestionChoice> choices,
@@ -139,9 +179,13 @@ class StudentQuestionDeliveryGenerationTest {
                         lockedRacePlayer,
                         PlayerQuestionStatus.ACTIVE
                 )).thenReturn(Optional.empty());
-        when(fixture.racePlayerQuestionPlanService.buildQuestionPlan(lockedRacePlayer))
-                .thenReturn(plan);
-        when(fixture.questionGenerationService.generate(plan)).thenReturn(generated);
+        when(fixture.racePlayerQuestionPlanService.templatesInTurn(lockedRacePlayer))
+                .thenReturn(List.of(template));
+        when(fixture.questionGenerationService.generateFromTemplate(
+                template,
+                QuestionRules.DEFAULT_ADAPTIVE_MODE,
+                QuestionRules.DEFAULT_ASSISTANCE_LEVEL
+        )).thenReturn(generated);
         when(fixture.playerQuestionPersistenceService.persistGeneratedQuestion(
                 lockedRacePlayer,
                 generated

@@ -41,6 +41,11 @@ export const STUDENT_RACE_MOMENT = Object.freeze({
   SAFE_PERFECT: STUDENT_RACE_EFFECT.SAFE_PERFECT,
   CHALLENGE_OFFER: "challenge-offer",
   TURBO_ARMED: "turbo-armed",
+  // Luck moments carry no effect, cue or HUD yet: every consumer ignores a type it does not know (C5-04).
+  LUCK_TAILWIND: "luck-tailwind",
+  LUCK_ENERGY_ORB: "luck-energy-orb",
+  LUCK_MUD: "luck-mud",
+  LUCK_SHIELD_BLOCKED: "luck-shield-blocked",
 });
 
 // Phases of one challenge choice request, keyed to its offer (C5-02).

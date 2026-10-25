@@ -19,6 +19,14 @@ describe("student race sounds", () => {
     expect(soundForMoment({ type: "constructor" })).toBeNull();
   });
 
+  it.each(["LUCK_TAILWIND", "LUCK_ENERGY_ORB", "LUCK_MUD", "LUCK_SHIELD_BLOCKED"])(
+    "keeps the %s moment silent until its cue is approved",
+    (name) => {
+      expect(STUDENT_RACE_MOMENT[name]).toEqual(expect.any(String));
+      expect(soundForMoment({ type: STUDENT_RACE_MOMENT[name] })).toBeNull();
+    },
+  );
+
   it("turns a correct answer into the combo sound from the HUD's combo streak, in three tiers", () => {
     const keyFor = (streak) => soundForMoment({ type: STUDENT_RACE_MOMENT.CORRECT, streak });
 

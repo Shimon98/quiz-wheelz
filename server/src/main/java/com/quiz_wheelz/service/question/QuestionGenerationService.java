@@ -44,7 +44,7 @@ public class QuestionGenerationService {
         );
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, noRollbackFor = ApiException.class)
     public InternalGeneratedQuestion generateFromTemplate(
             QuestionTemplate questionTemplate,
             AdaptiveMode adaptiveMode,

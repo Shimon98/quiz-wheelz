@@ -9,6 +9,23 @@
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
 
+Local checkpoint, 2026-10-24 (C5-04 part 1, `feature/C5-04-luck-shield-foundation`, not yet
+merged): **the client reads `gameplay.powerUps` and `gameplay.luck`** through the one gameplay
+mapper. Guard Shield charges are the only shield state (the award question is history, never a
+charge); an older snapshot gets no shield and no Luck history, and a malformed part or event is
+dropped on its own without resetting the rest of the gameplay. The existing moment owner
+announces each new Luck event once per race player by its server `eventId` (`luck-tailwind`,
+`luck-energy-orb`, `luck-mud`, `luck-shield-blocked`, named by the applied type and the server
+outcome), never on the first observation and never with or after the finish. The same change
+closes an identity gap: answer, time-up and finish memories now restart when the race or race
+player changes, as offers, runs and results already did. Luck moments have no effect, cue or HUD
+yet (every consumer ignores them) until the C5-04 presentation part. 1,732 tests in 186 files;
+lint and build pass. The same branch also carries the server S4-03 template-safety fix
+(`docs/01-server/SERVER_IMPLEMENTATION_PLAN.md`). The client needs no change for it: when the
+server ends a Turbo/Safe run that no template can serve, question/current already returns a
+NORMAL question, the page shows it as soon as the next snapshot reports NORMAL mode, and no
+challenge result appears because the server records none.
+
 Checkpoint, 2026-10-24: **C5-02, C5-03 and client quality packages 1–3 merged to `main`** with
 the C5 client PR from `feature/C5-02-challenge-choice-energy` (`f6b9878` … `863a2e3`; 1,689 tests
 in 185 files, lint and build pass). The checkpoints below record how that work was built and

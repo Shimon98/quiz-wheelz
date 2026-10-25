@@ -240,6 +240,18 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
   templates and Safe draws EASY addition or subtraction, rotating by offer id and
   question number; the question is generated from exactly the selected template
   (`SERVER_IMPLEMENTATION_PLAN.md`, S4-03).
+- challenge template safety (local, 2026-10-25, `feature/C5-04-luck-shield-foundation`,
+  not merged): only templates that pass `validateTemplateConfig` and that the generator can
+  turn into a question make or serve a challenge; a run that no valid template can serve ends
+  as a neutral technical abort
+  (no result, reward or penalty), its Energy is restored once, and the same request serves
+  a NORMAL question. NORMAL questions skip a broken template too: the templates of the race
+  subject at the player's difficulty are tried in the existing fair turn, each at most once,
+  straight from the template tried, and the first one that works is saved once; when none
+  works the student gets `QUESTION_TEMPLATE_NOT_AVAILABLE_FOR_PLAYER` (409) and nothing is
+  created. One shared `QuestionTemplateFallbackService` holds that loop and the template-error
+  filter for NORMAL and Challenge. A question that cannot be planned, generated or persisted
+  now answers with its own error code instead of a 500 (`SERVER_IMPLEMENTATION_PLAN.md`, S4-03).
 
 ### Race engine
 

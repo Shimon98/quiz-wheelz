@@ -557,7 +557,7 @@ observed. Production migrations remain Phase 6 work.
 
 ### S4-02 — Challenge Energy + offer + choice
 
-**Status:** `Complete locally / held from main until combined S4-03 review`
+**Status:** `MERGED with S4-03 (PR #77, main@6808d16)`
 
 Integration branch: `feature/s4-02-03-challenge-flow`. S4-02 must not be merged to
 main alone; S4-03 must first implement the selected Turbo Trial / Safe Run flow.
@@ -612,7 +612,7 @@ S4-03 is implemented locally / under review as recorded below.
 
 ### S4-03 — Turbo Trial + Safe Run
 
-**Status:** `Implemented locally / under review / not merged to main`
+**Status:** `MERGED (PR #77, main@6808d16); template-safety bug fix below, not merged yet`
 
 Local baseline: S4-02 commit `75bcc5e288217fb898ceb70fe9492c22aa46271a` on
 `feature/s4-02-03-challenge-flow`. The combined Challenge flow is implemented locally;
@@ -669,7 +669,7 @@ Production migrations remain Phase 6; S4-04 / S4-05 / S4-06 remain PLANNED.
 
 #### Challenge question selection - 2026-10-24
 
-**Status:** `FIX READY FOR REVIEW on fix/s4-04-luck-stability; rules and rewards unchanged`
+**Status:** `MERGED (PR #80, main@9a41ce7); rules and rewards unchanged`
 
 An audit of questions generated from the seeded catalog on main showed every Turbo
 question came from the first HARD template (two-number addition 2-12, e.g. "4 + 2"):
@@ -696,9 +696,141 @@ packaged server, two 8-bot races (Luck OFF, and Luck ON with a declared budget):
 and 120 Safe questions, all from the approved templates with the 15-second limit, and 0
 server errors.
 
+#### Challenge template safety - 2026-10-24/25 (S4-03 bug fix)
+
+**Status:** `FIXED (prevention + recovery + NORMAL fallback) on feature/C5-04-luck-shield-foundation; PR to main, not merged; for Diana's review`
+
+This is a bug fix inside S4-03, not S4-05 Hidden Recovery. Rules, rewards, timings, the API,
+the schema and the offer state machine are unchanged.
+
+What broke (each case reproduced by a test that failed before the fix):
+
+- An offer spends Energy 100 when it is created, but the candidate filter checked only
+  difficulty, pattern and Safe type. A malformed active template (for example minValue above
+  maxValue) made a Challenge available and then failed inside generateFromTemplate.
+- When every template of the chosen side became unusable after the choice, the run stayed
+  SELECTED without a question: every question/current answered
+  QUESTION_TEMPLATE_NOT_AVAILABLE_FOR_PLAYER, the student stayed in TURBO_TRIAL or SAFE_RUN and
+  the Energy was gone.
+- A template that passes validateTemplateConfig but fails in the generator (the operator range
+  checks in MathQuestionPlanValidator, or QUESTION_GENERATION_FAILED) was worse: the read-only
+  @Transactional generator marked the whole request rollback-only, so the answer became a 500
+  (UnexpectedRollbackException) and nothing the request did was saved. The NORMAL path had
+  the same defect: a NORMAL question that could not be built became a 500.
+- NORMAL never skipped a broken template: the template whose turn it was (questions generated so
+  far modulo the active templates) failed the player's question, with no fallback. And
+  QuestionGenerationService.generate(QuestionPlan) chose the template again by its fields (the
+  first active one with the same type, difficulty and pattern), so a look-alike template could
+  replace the one whose turn it was.
+
+Shared fallback: QuestionTemplateFallbackService (service/question) holds the one template loop
+and the one template-error filter, and both NORMAL and Challenge use it.
+generateFromFirstUsable(templates) generates straight from each template in the given order
+through QuestionGenerationService.generateFromTemplate (validateTemplateConfig plus the real
+generator), each template at most once, and returns the first question. Only
+INVALID_QUESTION_TEMPLATE_CONFIG, QUESTION_TYPE_NOT_SUPPORTED and QUESTION_GENERATION_FAILED
+move to the next template; database, timeout, programming and every other error propagate.
+hasValidConfig(template) is the same filter around validateTemplateConfig. A skipped template
+is logged at DEBUG only.
+
+Prevention: ChallengeQuestionPlanService drops every candidate that
+QuestionTemplateSelectionService.validateTemplateConfig rejects (the one validator the generator
+already uses; no new validator). Validation runs before the Turbo/Safe approval, so a template
+without a type or pattern is skipped instead of failing the approval check. Availability needs,
+for both Turbo and Safe, a valid template that QuestionGenerationService.generateFromTemplate can
+actually turn into a question (the generator is the only complete judge: a template can pass the
+config check and still fail its operator ranges). This dry run happens only when a player is
+eligible for an offer, so it is rare, and it stops after the first template that works. A broken
+side keeps Energy and makes no offer. Without the dry run, a template that can never generate
+was offered again after every correct answer once the recovery had refunded the Energy (proven
+by a test). A database or timeout failure is never read as "no template".
+
+Recovery: ChallengeQuestionPlanService.generateQuestion hands the valid templates of the choice,
+in turn (the stable (offerId + questionsResolved) selection first), to the shared fallback.
+When no template produces a question,
+ChallengeQuestionDeliveryService.resolve calls ChallengeOfferService.endUndeliverableRun, which ends
+the run with ChallengeExecutionStateService.abort
+(executionEndedAtEpochMs set, outcome null: no Turbo/Safe result, reward or penalty, and Safe
+answers already given keep their rewards) and restores the Energy to ENERGY_THRESHOLD. The
+refund happens only when abort reports that it ended an open run, under the RacePlayer lock
+that getOrCreateCurrentQuestion already holds, so a retry, a refresh or a concurrent request
+can never refund twice. The same request then continues with a NORMAL question. No offer is
+created there (offers still come only from a correct NORMAL answer, and availability stays false
+while a side is broken). A finished or non-racing player never reaches this path: the request
+guard's terminal cancel ends such a run first, without a refund. A short "why" comment sits at
+the recovery in ChallengeQuestionDeliveryService.resolve, and every technical abort logs one
+warning with the offer, the race player and the choice, so a broken catalog stays visible to
+operators.
+
+NORMAL fallback: RacePlayerQuestionPlanService.templatesInTurn (it replaces buildQuestionPlan)
+returns the active templates of the race subject at the player's current difficulty, rotated so
+that the template the existing fair turn picks comes first and the others follow once in
+catalog order. StudentQuestionDeliveryService gives that list to the shared fallback and persists
+the first generated question once; nothing is written before a template succeeds. The subject,
+difficulty, adaptive mode, assistance level, choices count and time limit still come from the
+player and the template that produced the question: there is no switch to another difficulty or
+subject. When no template works, the student gets QUESTION_TEMPLATE_NOT_AVAILABLE_FOR_PLAYER
+(409, the same code as "no active template") instead of a template error code or a 500, nothing
+is created, and one warning names the race player and the difficulty. The same request still
+keeps a technical abort and its refund. Once a template is repaired, the next request succeeds
+with no cleanup. A short "why" comment sits in StudentQuestionDeliveryService.
+
+Transactions: RacePlayerQuestionPlanService.templatesInTurn,
+QuestionGenerationService.generateFromTemplate and
+PlayerQuestionPersistenceService.persistGeneratedQuestion now declare noRollbackFor =
+ApiException. Their ApiExceptions are validation outcomes (persistence checks everything
+before its single save), so they no longer veto the commit that getOrCreateCurrentQuestion
+already declares for ApiException. Without this, the recovery and the NORMAL fallback were
+rolled back (proven by the tests). Effect: a question that cannot be built reaches the student
+as its own error code instead of a 500, and the request's other changes (movement settlement,
+live events, a recovery) are kept. Infrastructure failures still roll back everything, so
+nothing is half-saved and the next request retries cleanly.
+
+Energy decision (Shimon, 2026-10-25): a one-time full refund to the threshold, because the fault
+is the system's and not the student's.
+
+Tests: ChallengeQuestionPlanServiceTest (turn order, malformed templates, availability by
+generation, first template in turn that generates, unrelated failures never read as a template);
+S4ExecutionDeliveryTest (prevention; a database failure or an unrelated error is not recovered;
+a rejected NORMAL question after the abort keeps the abort and the refund); S4ChallengeRecoveryTest
+with the real question services (stuck Turbo run, generator failure on a validated template,
+healthy alternative, NORMAL failure after the abort, Safe run cut short after a correct answer,
+two concurrent requests, finished race, templates that never generate make no offer, no renewed
+offer for a malformed or a never-generating side, NORMAL failure regression, an ended run
+falling back past a broken NORMAL template), run on H2
+and on MySQL through S4ChallengeRecoveryMySqlTest. NormalQuestionFallbackTest with the real
+question services (broken template in turn gives way within the same subject and level, healthy
+templates keep their fair turn, the question comes from the template in turn even next to a
+look-alike, a validated template the generator rejects gives way, every template broken ends in
+QUESTION_TEMPLATE_NOT_AVAILABLE_FOR_PLAYER with no state change and no borrowing from another
+level or subject and works again after repair, generator-only failures end in the same code
+instead of a 500, two parallel requests share one question, refresh returns the same question),
+run on H2 and on MySQL through NormalQuestionFallbackMySqlTest. StudentQuestionDeliveryGenerationTest
+proves that a database or unrelated failure on the first template propagates, the next
+template is never tried and nothing is persisted. The S4 test fixtures share one
+S4ChallengeFlowFixture, so the mocked and the real-service suites use the same helpers.
+
+Verified 2026-10-25 on the branch: the full H2 suite (1,338 tests, 85 of them MySQL-only and
+skipped there), all fourteen MySQL classes in one run on a disposable MySQL 8.4 (198 tests),
+the live HTTP check against the packaged server (14/14), and a two-student run in a real
+browser (headless Chrome, 36/36): the student who chose Turbo sees an answerable NORMAL
+question about 1.3 s after the templates break and the same question after a reload; Safe cut
+short after one correct answer keeps that answer and shows no Safe result; with 10 of 11
+templates of the player's level broken the next NORMAL question comes from the healthy one;
+healthy Turbo and Safe behave as before; a recovery on a slow network with a 1.5 s disconnect
+still ends once with one NORMAL question. No HTTP 5xx and no page errors.
+
+Follow-up for Diana (not part of this fix): QuestionGenerationService.generate(QuestionPlan)
+and the three QuestionTemplateSelectionService.selectTemplate overloads no longer have a
+production caller (only their own unit tests). They are left unchanged; remove them or keep
+them as you prefer.
+
 ### S4-04 - Power-Ups + fair Luck
 
-**Status:** `A/B1/B2/C1/C2 on main (PR #79); 2026-10-24 stability fixes pending review (see below); rollout OFF`
+**Status:** `A/B1/B2/C1/C2 on main (PR #79); 2026-10-24 stability fixes on main (PR #80, main@9a41ce7); rollout OFF`
+
+The checkpoint statuses below record each review gate as it stood at the time; every
+checkpoint reached main with PR #79, and the post-merge stability fixes with PR #80.
 
 Local checkpoint, 2026-10-18, `feature/s4-04-fair-luck`, based on
 `origin/main@84a44230b77f6acb469c6f969070e4c0cf409325`. Approved V5 parameters
@@ -1266,7 +1398,7 @@ recorded. No staging, commit, publication, deployment or next checkpoint is auth
 
 #### Post-merge stability fixes - 2026-10-24
 
-**Status:** `FIXES READY FOR REVIEW on fix/s4-04-luck-stability; rollout OFF`
+**Status:** `MERGED (PR #80, main@9a41ce7); rollout OFF`
 
 A review of main@ddfbf3c reproduced four defects that appear with Luck ON (the cleanup
 one seven days later). Each has a test that failed on main and passes with the fix.

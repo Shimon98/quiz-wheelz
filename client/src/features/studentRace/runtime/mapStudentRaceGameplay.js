@@ -10,8 +10,54 @@ import {
 import { RACE_GAMEPLAY_MODES } from "../../../constants/raceGameplayConstants.js";
 import { mapStudentRaceChallenge } from "./mapStudentRaceChallenge.js";
 
+// A snapshot from before power-ups and Luck, or a malformed part of one, means no shield and no Luck history.
+const NO_POWER_UPS = Object.freeze({ guardShieldCharges: 0, guardShieldAwardQuestionId: null });
+const NO_LUCK = Object.freeze({ recentEvents: Object.freeze([]) });
+
 export function createDefaultStudentRaceGameplay() {
-  return { mode: RACE_GAMEPLAY_MODES.NORMAL, effectiveSpeed: null, activeEffects: [], challenge: null };
+  return {
+    mode: RACE_GAMEPLAY_MODES.NORMAL,
+    effectiveSpeed: null,
+    activeEffects: [],
+    challenge: null,
+    powerUps: NO_POWER_UPS,
+    luck: NO_LUCK,
+  };
+}
+
+// The award question is history: only the charges say whether a shield is up.
+function mapPowerUps(raw) {
+  requireObject(raw, "Gameplay power-ups");
+
+  return {
+    guardShieldCharges: requireSafeInteger(raw.guardShieldCharges, "Guard shield charges", { min: 0 }),
+    guardShieldAwardQuestionId: raw.guardShieldAwardQuestionId == null
+      ? null
+      : requireSafeInteger(raw.guardShieldAwardQuestionId, "Guard shield award question", { min: 1 }),
+  };
+}
+
+// Types and outcomes stay strings: a value from a newer server is kept and simply not presented.
+function mapLuckEvent(raw) {
+  requireObject(raw, "Luck event");
+
+  return {
+    eventId: requireSafeInteger(raw.eventId, "Luck event id", { min: 1 }),
+    selectedType: requireNonEmptyString(raw.selectedType, "Luck selected type"),
+    appliedType: requireNonEmptyString(raw.appliedType, "Luck applied type"),
+    outcome: requireNonEmptyString(raw.outcome, "Luck outcome"),
+    occurredAtEpochMs: requireSafeInteger(raw.occurredAtEpochMs, "Luck event time", { min: 1 }),
+  };
+}
+
+function mapLuck(raw) {
+  requireObject(raw, "Gameplay luck");
+
+  return {
+    recentEvents: requireArray(raw.recentEvents, "Luck events")
+      .map((event) => mapOrNull(mapLuckEvent, event))
+      .filter(Boolean),
+  };
 }
 
 function mapActiveEffect(raw) {
@@ -45,6 +91,8 @@ function mapGameplay(raw, clock) {
       .map((effect) => mapOrNull(mapActiveEffect, effect))
       .filter(Boolean),
     challenge: mapStudentRaceChallenge(raw.challenge, clock),
+    powerUps: mapOrNull(mapPowerUps, raw.powerUps) ?? NO_POWER_UPS,
+    luck: mapOrNull(mapLuck, raw.luck) ?? NO_LUCK,
   };
 }
 

@@ -22,9 +22,95 @@ function gameplay(overrides = {}) {
   return { mode: "NORMAL", effectiveSpeed: 1.2, activeEffects: [slowdown()], ...overrides };
 }
 
+function luckEvent(overrides = {}) {
+  return {
+    eventId: 31,
+    selectedType: "TAILWIND",
+    appliedType: "TAILWIND",
+    outcome: "APPLIED",
+    occurredAtEpochMs: 100500,
+    ...overrides,
+  };
+}
+
+const NO_POWER_UPS = { guardShieldCharges: 0, guardShieldAwardQuestionId: null };
+const NO_LUCK = { recentEvents: [] };
+
 describe("mapStudentRaceGameplay", () => {
-  it("maps the server gameplay as it arrives", () => {
-    expect(mapStudentRaceGameplay(gameplay())).toEqual({ ...gameplay(), challenge: null });
+  it("maps the server gameplay as it arrives, with no shield and no Luck history when the snapshot has none", () => {
+    expect(mapStudentRaceGameplay(gameplay()))
+      .toEqual({ ...gameplay(), challenge: null, powerUps: NO_POWER_UPS, luck: NO_LUCK });
+  });
+
+  it("starts with no shield and no Luck history", () => {
+    expect(createDefaultStudentRaceGameplay()).toMatchObject({ powerUps: NO_POWER_UPS, luck: NO_LUCK });
+  });
+
+  it.each([
+    ["a charged shield", { guardShieldCharges: 1, guardShieldAwardQuestionId: 77 }],
+    ["a shield that was awarded and already used", { guardShieldCharges: 0, guardShieldAwardQuestionId: 77 }],
+    ["no shield", NO_POWER_UPS],
+  ])("maps %s as the server holds it", (_, powerUps) => {
+    expect(mapStudentRaceGameplay(gameplay({ powerUps })).powerUps).toEqual(powerUps);
+  });
+
+  it("maps the Luck history as it arrives, keeping what was selected apart from what was applied", () => {
+    const recentEvents = [
+      luckEvent(),
+      luckEvent({ eventId: 32, selectedType: "TAILWIND", appliedType: "ENERGY_ORB" }),
+    ];
+
+    expect(mapStudentRaceGameplay(gameplay({ luck: { recentEvents } })).luck).toEqual({ recentEvents });
+  });
+
+  it("preserves a Luck type or outcome it cannot present yet", () => {
+    const future = luckEvent({ eventId: 40, selectedType: "FUTURE_TYPE", appliedType: "FUTURE_TYPE", outcome: "NO_EFFECT" });
+
+    expect(mapStudentRaceGameplay(gameplay({ luck: { recentEvents: [future] } })).luck.recentEvents).toEqual([future]);
+  });
+
+  it.each([
+    ["a missing id", { eventId: null }],
+    ["a non-positive id", { eventId: 0 }],
+    ["a missing selected type", { selectedType: null }],
+    ["a blank applied type", { appliedType: " " }],
+    ["a missing outcome", { outcome: undefined }],
+    ["a missing time", { occurredAtEpochMs: undefined }],
+  ])("drops only the Luck event with %s", (_, broken) => {
+    const first = luckEvent();
+    const last = luckEvent({ eventId: 33, selectedType: "MUD_SPLASH", appliedType: "MUD_SPLASH" });
+    const mapped = mapStudentRaceGameplay(gameplay({
+      luck: { recentEvents: [first, luckEvent({ eventId: 32, ...broken }), null, "TAILWIND", last] },
+    }));
+
+    expect(mapped.luck.recentEvents).toEqual([first, last]);
+    expect(mapped.effectiveSpeed).toBe(1.2);
+  });
+
+  it.each([
+    ["power-ups that are not an object", "shield"],
+    ["a negative shield charge", { guardShieldCharges: -1, guardShieldAwardQuestionId: null }],
+    ["a fractional shield charge", { guardShieldCharges: 0.5, guardShieldAwardQuestionId: null }],
+    ["an award question that is not an id", { guardShieldCharges: 1, guardShieldAwardQuestionId: 0 }],
+  ])("drops only the power-ups for %s", (_, powerUps) => {
+    const recentEvents = [luckEvent()];
+    const mapped = mapStudentRaceGameplay(gameplay({ powerUps, luck: { recentEvents } }));
+
+    expect(mapped.powerUps).toEqual(NO_POWER_UPS);
+    expect(mapped.luck).toEqual({ recentEvents });
+    expect(mapped.activeEffects).toEqual([slowdown()]);
+  });
+
+  it.each([
+    ["Luck that is not an object", []],
+    ["a Luck history that is not a list", { recentEvents: null }],
+  ])("drops only the Luck history for %s", (_, luck) => {
+    const powerUps = { guardShieldCharges: 1, guardShieldAwardQuestionId: 77 };
+    const mapped = mapStudentRaceGameplay(gameplay({ powerUps, luck }));
+
+    expect(mapped.luck).toEqual(NO_LUCK);
+    expect(mapped.powerUps).toEqual(powerUps);
+    expect(mapped.effectiveSpeed).toBe(1.2);
   });
 
   it("maps the challenge part with the clock it was given", () => {

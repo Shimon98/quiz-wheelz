@@ -31,3 +31,14 @@ export const RACE_CHALLENGE_OUTCOMES = Object.freeze({
   SAFE_COMPLETE: "SAFE_COMPLETE",
   SAFE_PERFECT: "SAFE_PERFECT",
 });
+
+export const RACE_LUCK_EVENT_TYPES = Object.freeze({
+  TAILWIND: "TAILWIND",
+  ENERGY_ORB: "ENERGY_ORB",
+  MUD_SPLASH: "MUD_SPLASH",
+});
+
+export const RACE_LUCK_OUTCOMES = Object.freeze({
+  APPLIED: "APPLIED",
+  BLOCKED_BY_SHIELD: "BLOCKED_BY_SHIELD",
+});

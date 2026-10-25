@@ -1044,7 +1044,10 @@ execution) is merged (PR #77). C5-02 (Track B), the rest of C5-03 (Track C) and 
 packages 1–3 are merged to `main` with the C5 client PR from
 `feature/C5-02-challenge-choice-energy`; live QA passed on the local server. The S4-04 server
 work (Guard Shield and fair Luck) is on `main` with the Luck flag off by default and its review
-pending; C5-04 presents it after that review. The gameplay UI renders server-owned game events and effects, so each further
+pending; C5-04 presents it after that review. C5-04 part 1 (data and moments only: the
+`powerUps`/`luck` mapping and once-only Luck moments per race player, no effect, cue or HUD) is
+implemented on `feature/C5-04-luck-shield-foundation`, not yet merged; the presentation part
+follows in the same C5-04. The gameplay UI renders server-owned game events and effects, so each further
 part starts from an audit of that real server code; never from a text handoff alone. The
 carried-forward release QA can proceed meanwhile.
 

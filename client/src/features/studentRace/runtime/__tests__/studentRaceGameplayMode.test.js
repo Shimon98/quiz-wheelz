@@ -79,6 +79,7 @@ describe("studentRaceGameplayMode", () => {
     expect(selectChallengeSlowdownSource({ activeEffects: [slowdown({ source: "TURBO_FAILURE" })] }))
       .toBe("TURBO_FAILURE");
     expect(selectChallengeSlowdownSource({ activeEffects: [slowdown({ source: "POWER_UP" })] })).toBeNull();
+    expect(selectChallengeSlowdownSource({ activeEffects: [slowdown({ source: "LUCK_EVENT" })] })).toBeNull();
     expect(selectChallengeSlowdownSource({ activeEffects: [slowdown({ type: "SPEED_BOOST" })] })).toBeNull();
     expect(selectChallengeSlowdownSource({ activeEffects: [] })).toBeNull();
     expect(selectChallengeSlowdownSource(null)).toBeNull();

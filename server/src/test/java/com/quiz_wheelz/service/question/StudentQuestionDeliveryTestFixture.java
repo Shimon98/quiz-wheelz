@@ -1,7 +1,6 @@
 package com.quiz_wheelz.service.question;
 
 import com.quiz_wheelz.common.QuestionRules;
-import com.quiz_wheelz.dto.question.QuestionPlan;
 import com.quiz_wheelz.dto.question.internal.InternalGeneratedQuestion;
 import com.quiz_wheelz.dto.question.internal.InternalGeneratedQuestionChoice;
 import com.quiz_wheelz.dto.question.student.StudentQuestionChoiceResponse;
@@ -12,8 +11,6 @@ import com.quiz_wheelz.entitys.QuestionTemplate;
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.entitys.Subject;
-import com.quiz_wheelz.enums.AdaptiveMode;
-import com.quiz_wheelz.enums.AssistanceLevel;
 import com.quiz_wheelz.enums.Difficulty;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
 import com.quiz_wheelz.enums.QuestionGenerationPattern;
@@ -22,6 +19,7 @@ import com.quiz_wheelz.enums.RacePlayerStatus;
 import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.repository.PlayerQuestionChoiceRepository;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
+import com.quiz_wheelz.repository.QuestionTemplateRepository;
 import com.quiz_wheelz.repository.RacePlayerRepository;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.service.liveevent.RaceLiveEventChangeRecorder;
@@ -55,6 +53,11 @@ final class StudentQuestionDeliveryTestFixture {
             mock(RacePlayerQuestionPlanService.class);
     final QuestionGenerationService questionGenerationService =
             mock(QuestionGenerationService.class);
+    final QuestionTemplateFallbackService questionTemplateFallbackService =
+            new QuestionTemplateFallbackService(
+                    new QuestionTemplateSelectionService(mock(QuestionTemplateRepository.class)),
+                    questionGenerationService
+            );
     final PlayerQuestionPersistenceService playerQuestionPersistenceService =
             mock(PlayerQuestionPersistenceService.class);
     final StudentQuestionResponseMapper studentQuestionResponseMapper =
@@ -72,7 +75,7 @@ final class StudentQuestionDeliveryTestFixture {
                     playerQuestionRepository,
                     playerQuestionChoiceRepository,
                     racePlayerQuestionPlanService,
-                    questionGenerationService,
+                    questionTemplateFallbackService,
                     playerQuestionPersistenceService,
                     studentQuestionResponseMapper,
                     gameplayRequestGuard,
@@ -102,19 +105,17 @@ final class StudentQuestionDeliveryTestFixture {
         return racePlayer;
     }
 
-    QuestionPlan createQuestionPlan() {
-        return new QuestionPlan(
-                createMathSubject(),
-                QuestionType.ADDITION,
-                Difficulty.EASY,
-                1,
-                10,
-                QuestionRules.DEFAULT_TIME_LIMIT_SECONDS,
-                QuestionRules.DEFAULT_CHOICES_COUNT,
-                QuestionGenerationPattern.BINARY_OPERATION,
-                AdaptiveMode.BASIC,
-                AssistanceLevel.NONE
-        );
+    QuestionTemplate createTemplate() {
+        QuestionTemplate template = new QuestionTemplate();
+        template.setSubject(createMathSubject());
+        template.setType(QuestionType.ADDITION);
+        template.setDifficulty(Difficulty.EASY);
+        template.setMinValue(1);
+        template.setMaxValue(10);
+        template.setTimeLimitSeconds(QuestionRules.DEFAULT_TIME_LIMIT_SECONDS);
+        template.setChoicesCount(QuestionRules.DEFAULT_CHOICES_COUNT);
+        template.setGenerationPattern(QuestionGenerationPattern.BINARY_OPERATION);
+        return template;
     }
 
     InternalGeneratedQuestion createGeneratedQuestion() {

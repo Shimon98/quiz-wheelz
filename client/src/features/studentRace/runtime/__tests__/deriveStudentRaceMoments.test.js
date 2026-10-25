@@ -5,9 +5,14 @@ import { deriveStudentRaceMoments } from "../deriveStudentRaceMoments";
 
 function runtime({
   activeEffect = null, targetSpeed = 1, playerFinished = false,
-  feedbackEventId = null, feedbackStreak = 0, timeUpQuestionId = null,
+  feedbackEventId = null, feedbackStreak = 0, timeUpQuestionId = null, raceId = null, racePlayerId = null,
 } = {}) {
-  return { playerFinished, visual: { activeEffect, targetSpeed, feedbackEventId, feedbackStreak, timeUpQuestionId } };
+  return {
+    race: { id: raceId },
+    player: { racePlayerId },
+    playerFinished,
+    visual: { activeEffect, targetSpeed, feedbackEventId, feedbackStreak, timeUpQuestionId },
+  };
 }
 
 function run(...runtimes) {
@@ -156,5 +161,30 @@ describe("deriveStudentRaceMoments", () => {
 
   it("lets the finish silence a late time-up", () => {
     expect(run(runtime(), runtime({ playerFinished: true, timeUpQuestionId: 9 }))).toEqual([[], ["finish"]]);
+  });
+
+  it("starts a new baseline when the race or the player changes, so nothing from before the switch plays", () => {
+    expect(run(
+      runtime({ raceId: 7, racePlayerId: 1 }),
+      runtime({ raceId: 8, racePlayerId: 2, activeEffect: "correct", feedbackEventId: 90, timeUpQuestionId: 91 }),
+    )).toEqual([[], []]);
+  });
+
+  it("does not celebrate a finish that another race player already shows on its first observation", () => {
+    expect(run(
+      runtime({ raceId: 7, racePlayerId: 1 }),
+      runtime({ raceId: 7, racePlayerId: 2, playerFinished: true }),
+    )).toEqual([[], []]);
+  });
+
+  it("never lets another race player's memory silence a genuine answer or time-up", () => {
+    expect(run(
+      runtime({ raceId: 7, racePlayerId: 1 }),
+      runtime({ raceId: 7, racePlayerId: 1, activeEffect: "correct", feedbackEventId: 41 }),
+      runtime({ raceId: 7, racePlayerId: 1, timeUpQuestionId: 42 }),
+      runtime({ raceId: 8, racePlayerId: 2 }),
+      runtime({ raceId: 8, racePlayerId: 2, activeEffect: "correct", feedbackEventId: 41 }),
+      runtime({ raceId: 8, racePlayerId: 2, timeUpQuestionId: 42 }),
+    )).toEqual([[], ["correct"], ["time-up"], [], ["correct"], ["time-up"]]);
   });
 });

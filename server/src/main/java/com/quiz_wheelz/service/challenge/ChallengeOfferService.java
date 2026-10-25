@@ -99,6 +99,12 @@ public class ChallengeOfferService {
                 .setChallengeEnergy(ChallengeRules.EXPIRY_RESTORE_ENERGY);
     }
 
+    public void endUndeliverableRun(RacePlayer player, long decisionEpochMs) {
+        if (executions.abort(player, decisionEpochMs)) {
+            stateService.obtainForLockedPlayer(player).setChallengeEnergy(ChallengeRules.ENERGY_THRESHOLD);
+        }
+    }
+
     public void cancelActive(RacePlayer player, long decisionEpochMs) {
         executions.abort(player, decisionEpochMs);
         repository.findFirstByRacePlayerIdAndStatusOrderByIdDesc(player.getId(), ChallengeOfferStatus.ACTIVE)

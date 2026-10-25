@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 class S4ChallengeChoiceQuestionTest extends S4ChallengeIntegrationFixture {
@@ -169,6 +170,7 @@ class S4ChallengeChoiceQuestionTest extends S4ChallengeIntegrationFixture {
     @Test
     void activeOfferBlocksNormalGenerationAndReturnsSpecificError() {
         openOffer();
+        clearInvocations(plans, generation);
         error(ErrorCode.CHALLENGE_CHOICE_REQUIRED, () -> questions.getOrCreateCurrentQuestion(second()));
         verifyNoInteractions(plans, generation);
         assertTrue(transactions.<Boolean>execute(status -> questionRepository

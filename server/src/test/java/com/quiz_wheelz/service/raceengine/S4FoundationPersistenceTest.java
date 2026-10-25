@@ -39,7 +39,7 @@ import static org.mockito.Mockito.*;
 @DataJpaTest(showSql = false)
 @ActiveProfiles("test")
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
-@Import({com.quiz_wheelz.config.TimeConfig.class, com.quiz_wheelz.service.challenge.ChallengeQuestionAvailabilityService.class, com.quiz_wheelz.service.challenge.ChallengeQuestionPlanService.class, com.quiz_wheelz.service.challenge.ChallengeExecutionStateService.class, com.quiz_wheelz.service.challenge.ChallengeOfferService.class, com.quiz_wheelz.service.challenge.ChallengeEnergyService.class, com.quiz_wheelz.service.challenge.ChallengeEligibilityService.class, com.quiz_wheelz.service.challenge.StudentChallengeProjectionService.class,
+@Import({com.quiz_wheelz.config.TimeConfig.class, com.quiz_wheelz.support.QuestionGenerationConfiguration.class, com.quiz_wheelz.service.challenge.ChallengeQuestionAvailabilityService.class, com.quiz_wheelz.service.challenge.ChallengeQuestionPlanService.class, com.quiz_wheelz.service.question.QuestionTemplateSelectionService.class,com.quiz_wheelz.service.challenge.ChallengeExecutionStateService.class, com.quiz_wheelz.service.challenge.ChallengeOfferService.class, com.quiz_wheelz.service.challenge.ChallengeEnergyService.class, com.quiz_wheelz.service.challenge.ChallengeEligibilityService.class, com.quiz_wheelz.service.challenge.StudentChallengeProjectionService.class,
 RacePlayerGameplayStateService.class, RacePlayerSpeedEffectService.class, RacePlayerJoinService.class,
         RaceSpeedEffectMovementCalculator.class, RaceMovementCalculator.class,
         com.quiz_wheelz.service.raceplayer.StudentRaceGameplayProjectionService.class,
