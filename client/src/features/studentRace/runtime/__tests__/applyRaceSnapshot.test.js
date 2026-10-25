@@ -96,7 +96,7 @@ describe("applyRaceSnapshot gameplay", () => {
     }));
 
     expect(state.player.speed).toBe(1.3);
-    expect(state.gameplay).toEqual({ ...slowedGameplay, challenge: null });
+    expect(state.gameplay).toEqual({ ...createDefaultStudentRaceGameplay(), ...slowedGameplay });
     expect(state.gameplay.effectiveSpeed).toBe(1.2);
     expect(state.visual.targetSpeed).toBe(1.2);
     expect(state.visual.movementUnitsPerSecond).toBe(4.12345);
@@ -128,7 +128,28 @@ describe("applyRaceSnapshot gameplay", () => {
     }));
 
     expect(stale).toBe(state);
-    expect(stale.gameplay).toEqual({ ...slowedGameplay, challenge: null });
+    expect(stale.gameplay).toEqual({ ...createDefaultStudentRaceGameplay(), ...slowedGameplay });
+  });
+
+  it("keeps the shield and the Luck history when an older snapshot arrives", () => {
+    const powerUps = { guardShieldCharges: 1, guardShieldAwardQuestionId: 77 };
+    const luck = { recentEvents: [{
+      eventId: 31, selectedType: "TAILWIND", appliedType: "ENERGY_ORB", outcome: "APPLIED", occurredAtEpochMs: 9500,
+    }] };
+    const state = applyRaceSnapshot(createInitialRaceRuntimeState(), snapshot({
+      gameplay: { ...slowedGameplay, powerUps, luck },
+    }));
+    const stale = applyRaceSnapshot(state, snapshot({
+      snapshotAtEpochMs: 9999,
+      gameplay: {
+        ...slowedGameplay,
+        powerUps: { guardShieldCharges: 0, guardShieldAwardQuestionId: 77 },
+        luck: { recentEvents: [] },
+      },
+    }));
+
+    expect(stale.gameplay.powerUps).toEqual(powerUps);
+    expect(stale.gameplay.luck).toEqual(luck);
   });
 
   it("calibrates the challenge offer to the server clock of the snapshot that carried it", () => {
