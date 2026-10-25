@@ -33,7 +33,7 @@ public class PlayerQuestionPersistenceService {
         this.clock = Objects.requireNonNull(clock);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = ApiException.class)
     public PlayerQuestion persistGeneratedQuestion(
             RacePlayer racePlayer,
             InternalGeneratedQuestion generatedQuestion
@@ -42,7 +42,7 @@ public class PlayerQuestionPersistenceService {
                 generatedQuestion == null ? null : generatedQuestion.getTimeLimitSeconds());
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = ApiException.class)
     public PlayerQuestion persistGeneratedQuestion(RacePlayer racePlayer, InternalGeneratedQuestion generatedQuestion,
                                                    QuestionGameplayContext context, RacePlayerChallengeOffer offer,
                                                    Integer timeLimitSeconds) {

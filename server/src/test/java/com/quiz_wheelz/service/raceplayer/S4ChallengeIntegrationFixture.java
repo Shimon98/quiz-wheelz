@@ -1,16 +1,10 @@
 package com.quiz_wheelz.service.raceplayer;
 
 import com.quiz_wheelz.dto.question.internal.*;
-import com.quiz_wheelz.dto.raceplayer.*;
-import com.quiz_wheelz.entitys.*;
+import com.quiz_wheelz.entitys.QuestionTemplate;
 import com.quiz_wheelz.enums.*;
-import com.quiz_wheelz.repository.*;
-import com.quiz_wheelz.service.challenge.*;
 import com.quiz_wheelz.service.question.*;
-import com.quiz_wheelz.service.raceengine.RacePlayerGameplayTimelineService;
 import org.junit.jupiter.api.BeforeEach;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
@@ -18,69 +12,23 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@Import({ChallengeQuestionDeliveryService.class, StudentChallengeChoiceService.class, StudentRaceStateService.class,
-        StudentQuestionDeliveryService.class, PlayerQuestionPersistenceService.class,
-        StudentQuestionResponseMapper.class, RacePlayerReconnectService.class, RacePlayerDisconnectService.class})
-abstract class S4ChallengeIntegrationFixture extends RaceChronologyIntegrationFixture {
-    @Autowired ChallengeOfferService offers;
-    @Autowired RacePlayerGameplayStateService stateService;
-    @Autowired RacePlayerChallengeOfferRepository offerRepository;
-    @Autowired RacePlayerGameplayStateRepository stateRepository;
-    @Autowired RacePlayerSpeedEffectRepository effectRepository;
-    @Autowired StudentChallengeChoiceService choiceService;
-    @Autowired StudentRaceStateService raceStates;
-    @Autowired StudentQuestionDeliveryService questions;
-    @Autowired RacePlayerGameplayTimelineService timeline;
-    @Autowired RacePlayerReconnectService reconnect;
+abstract class S4ChallengeIntegrationFixture extends S4ChallengeFlowFixture {
     @MockitoBean RacePlayerQuestionPlanService plans;
     @MockitoBean QuestionGenerationService generation;
 
     @BeforeEach
-    void prepareChallenge() {
-        secondPosition(100.0);
-        transactions.executeWithoutResult(status -> {
-            var player = locked();
-            stateService.obtainForLockedPlayer(player);
-            var easy = questionRepository.findById(questionId).orElseThrow().getQuestionTemplate();
-            var hard = new QuestionTemplate();
-            hard.setSubject(easy.getSubject());
-            hard.setType(QuestionType.ORDER_OF_OPERATIONS);
-            hard.setDifficulty(Difficulty.HARD);
-            hard.setMinValue(easy.getMinValue());
-            hard.setMaxValue(easy.getMaxValue());
-            hard.setTimeLimitSeconds(45);
-            hard.setChoicesCount(easy.getChoicesCount());
-            hard.setGenerationPattern(QuestionGenerationPattern.ADD_THEN_MULTIPLY);
-            entityManager.persist(hard);
-        });
+    void specialGeneration() {
+        when(generation.generateFromTemplate(any(), any(), any()))
+                .thenAnswer(invocation -> generatedFrom(invocation.getArgument(0)));
     }
 
-    RacePlayer locked() {
-        return playerRepository.findLockedByIdAndRaceId(secondId, raceId).orElseThrow();
-    }
-
-    void energy(int amount) {
-        transactions.executeWithoutResult(status -> stateRepository.findByRacePlayerId(secondId)
-                .orElseThrow().setChallengeEnergy(amount));
-    }
-
-    int energy() {
-        return transactions.execute(status -> stateRepository.findByRacePlayerId(secondId)
-                .orElseThrow().getChallengeEnergy());
-    }
-
-    Long openOffer() {
-        energy(80);
-        var snapshot = answerSecond().getRaceImpact().getSnapshot();
-        return snapshot.getGameplay().challenge().offer().offerId();
-    }
-
-    RacePlayerChallengeOffer offer(Long id) {
-        return transactions.execute(status -> offerRepository.findById(id).orElseThrow());
-    }
-
-    StudentRaceRuntimeSnapshotResponse snapshot() {
-        return raceStates.getRaceState(secondRequest).getSnapshot();
+    private InternalGeneratedQuestion generatedFrom(QuestionTemplate template) {
+        return new InternalGeneratedQuestion(template.getSubject(), template, template.getType(),
+                template.getDifficulty(), "2 + 2", 4, template.getTimeLimitSeconds(),
+                List.of(new InternalGeneratedQuestionChoice("4", 4, true, 1),
+                        new InternalGeneratedQuestionChoice("5", 5, false, 2),
+                        new InternalGeneratedQuestionChoice("6", 6, false, 3),
+                        new InternalGeneratedQuestionChoice("7", 7, false, 4)));
     }
 
     void allowGeneration() {
@@ -92,7 +40,7 @@ abstract class S4ChallengeIntegrationFixture extends RaceChronologyIntegrationFi
                             new InternalGeneratedQuestionChoice("5", 5, false, 2),
                             new InternalGeneratedQuestionChoice("6", 6, false, 3),
                             new InternalGeneratedQuestionChoice("7", 7, false, 4)));
-            org.mockito.Mockito.doReturn(generated).when(generation).generate(any());
+            org.mockito.Mockito.doReturn(List.of(template)).when(plans).templatesInTurn(any());
             org.mockito.Mockito.doReturn(generated).when(generation).generateFromTemplate(any(), any(), any());
         });
     }

@@ -71,7 +71,7 @@ class StudentQuestionReloadHardeningTest {
                 fixture.playerQuestionRepository,
                 fixture.playerQuestionChoiceRepository,
                 fixture.racePlayerQuestionPlanService,
-                fixture.questionGenerationService,
+                fixture.questionTemplateFallbackService,
                 fixture.playerQuestionPersistenceService,
                 new StudentQuestionResponseMapper(),
                 requestGuard,
@@ -125,9 +125,9 @@ class StudentQuestionReloadHardeningTest {
                 .thenReturn(Optional.empty())
                 .thenReturn(Optional.of(current))
                 .thenReturn(Optional.of(current));
-        when(fixture.racePlayerQuestionPlanService.buildQuestionPlan(racePlayer))
-                .thenReturn(fixture.createQuestionPlan());
-        when(fixture.questionGenerationService.generate(any()))
+        when(fixture.racePlayerQuestionPlanService.templatesInTurn(racePlayer))
+                .thenReturn(List.of(fixture.createTemplate()));
+        when(fixture.questionGenerationService.generateFromTemplate(any(), any(), any()))
                 .thenReturn(fixture.createGeneratedQuestion());
         when(fixture.playerQuestionPersistenceService.persistGeneratedQuestion(
                 eq(racePlayer),
@@ -148,7 +148,7 @@ class StudentQuestionReloadHardeningTest {
         assertEquals(currentExpiresAt, current.getExpiresAt());
         verify(fixture.playerQuestionRepository).save(expired);
         verify(raceEngineService).applyTimeoutResult(racePlayer);
-        verify(fixture.questionGenerationService).generate(any());
+        verify(fixture.questionGenerationService).generateFromTemplate(any(), any(), any());
         verify(fixture.playerQuestionPersistenceService)
                 .persistGeneratedQuestion(any(), any());
         verify(fixture.playerQuestionChoiceRepository, times(2))

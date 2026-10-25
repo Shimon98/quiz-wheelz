@@ -1,11 +1,11 @@
 package com.quiz_wheelz.service.question;
 
 import com.quiz_wheelz.common.QuestionRules;
-import com.quiz_wheelz.dto.question.QuestionPlan;
 import com.quiz_wheelz.dto.question.internal.InternalGeneratedQuestion;
 import com.quiz_wheelz.dto.question.student.StudentQuestionResponse;
 import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.entitys.PlayerQuestionChoice;
+import com.quiz_wheelz.entitys.QuestionTemplate;
 import com.quiz_wheelz.entitys.RacePlayer;
 import com.quiz_wheelz.enums.PlayerQuestionStatus;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
@@ -139,7 +139,7 @@ class RacePlayerQuestionReconnectContinuityTest {
                         StudentQuestionDeliveryTestFixture.FIXED_ZONE
                 )
         );
-        verify(fixture.questionGenerationService, never()).generate(any());
+        verify(fixture.questionGenerationService, never()).generateFromTemplate(any(), any(), any());
         verify(fixture.playerQuestionPersistenceService, never())
                 .persistGeneratedQuestion(any(), any());
         verify(raceMovementService, times(2)).reanchorAt(
@@ -160,7 +160,7 @@ class RacePlayerQuestionReconnectContinuityTest {
                 PlayerQuestionStatus.ACTIVE,
                 originalExpiresAt
         );
-        QuestionPlan questionPlan = fixture.createQuestionPlan();
+        QuestionTemplate template = fixture.createTemplate();
         InternalGeneratedQuestion generatedQuestion = fixture.createGeneratedQuestion();
         PlayerQuestion nextQuestion = fixture.createPlayerQuestion(
                 PlayerQuestionStatus.ACTIVE,
@@ -187,16 +187,19 @@ class RacePlayerQuestionReconnectContinuityTest {
         assertEquals(originalExpiresAt, expiredQuestion.getExpiresAt());
         verify(fixture.playerQuestionRepository, times(1)).save(expiredQuestion);
         verify(raceEngineService, times(1)).applyTimeoutResult(racePlayer);
-        verify(fixture.questionGenerationService, never()).generate(any());
+        verify(fixture.questionGenerationService, never()).generateFromTemplate(any(), any(), any());
 
         when(fixture.racePlayerRepository.findLockedByIdAndRaceId(
                 StudentQuestionDeliveryTestFixture.RACE_PLAYER_ID,
                 StudentQuestionDeliveryTestFixture.RACE_ID
         )).thenReturn(Optional.of(racePlayer));
-        when(fixture.racePlayerQuestionPlanService.buildQuestionPlan(racePlayer))
-                .thenReturn(questionPlan);
-        when(fixture.questionGenerationService.generate(questionPlan))
-                .thenReturn(generatedQuestion);
+        when(fixture.racePlayerQuestionPlanService.templatesInTurn(racePlayer))
+                .thenReturn(List.of(template));
+        when(fixture.questionGenerationService.generateFromTemplate(
+                template,
+                QuestionRules.DEFAULT_ADAPTIVE_MODE,
+                QuestionRules.DEFAULT_ASSISTANCE_LEVEL
+        )).thenReturn(generatedQuestion);
         when(fixture.playerQuestionPersistenceService.persistGeneratedQuestion(
                 racePlayer,
                 generatedQuestion
@@ -215,7 +218,11 @@ class RacePlayerQuestionReconnectContinuityTest {
                 .getOrCreateCurrentQuestion(racePlayer);
 
         assertSame(expected, delivered);
-        verify(fixture.questionGenerationService).generate(questionPlan);
+        verify(fixture.questionGenerationService).generateFromTemplate(
+                template,
+                QuestionRules.DEFAULT_ADAPTIVE_MODE,
+                QuestionRules.DEFAULT_ASSISTANCE_LEVEL
+        );
         verify(fixture.playerQuestionPersistenceService).persistGeneratedQuestion(
                 racePlayer,
                 generatedQuestion

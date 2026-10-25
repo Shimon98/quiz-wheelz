@@ -60,9 +60,10 @@ public class ChallengeExecutionStateService {
         }
     }
 
-    public void abort(RacePlayer player, long epochMs) {
-        offers.findFirstByRacePlayerIdAndStatusAndExecutionEndedAtEpochMsIsNullOrderByIdDesc(
-                player.getId(), ChallengeOfferStatus.SELECTED).ifPresent(offer -> {
+    public boolean abort(RacePlayer player, long epochMs) {
+        var running = offers.findFirstByRacePlayerIdAndStatusAndExecutionEndedAtEpochMsIsNullOrderByIdDesc(
+                player.getId(), ChallengeOfferStatus.SELECTED);
+        running.ifPresent(offer -> {
             long terminalEpoch = player.getFinishedAtEpochMs() != null ? player.getFinishedAtEpochMs()
                     : player.getRace().getFinishedAt() != null
                         ? DateTimeUtils.toEpochMilli(player.getRace().getFinishedAt(), clock.getZone()) : epochMs;
@@ -71,6 +72,7 @@ public class ChallengeExecutionStateService {
                     .filter(question -> question.getGameplayContext() != QuestionGameplayContext.NORMAL)
                     .ifPresent(question -> question.setStatus(PlayerQuestionStatus.EXPIRED));
         });
+        return running.isPresent();
     }
 
     private ApiException invalid() {

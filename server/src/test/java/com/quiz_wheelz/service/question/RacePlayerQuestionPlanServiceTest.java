@@ -1,7 +1,6 @@
 package com.quiz_wheelz.service.question;
 
 import com.quiz_wheelz.common.QuestionRules;
-import com.quiz_wheelz.dto.question.QuestionPlan;
 import com.quiz_wheelz.entitys.QuestionTemplate;
 import com.quiz_wheelz.entitys.Race;
 import com.quiz_wheelz.entitys.RacePlayer;
@@ -21,7 +20,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
@@ -35,7 +33,7 @@ class RacePlayerQuestionPlanServiceTest {
     private PlayerQuestionRepository playerQuestionRepository;
 
     @Test
-    void shouldBuildQuestionPlanFromRacePlayerDifficultyAndRaceSubject() {
+    void shouldListRaceSubjectTemplatesAtRacePlayerDifficulty() {
         Subject subject = createMathSubject();
         RacePlayer racePlayer = createRacePlayer(subject, Difficulty.EASY);
         QuestionTemplate template = createTemplate(Difficulty.EASY, QuestionType.ADDITION);
@@ -46,22 +44,13 @@ class RacePlayerQuestionPlanServiceTest {
         )).thenReturn(List.of(template));
         when(playerQuestionRepository.countByRacePlayer(racePlayer)).thenReturn(0L);
 
-        QuestionPlan result = createService().buildQuestionPlan(racePlayer);
+        List<QuestionTemplate> result = createService().templatesInTurn(racePlayer);
 
-        assertSame(subject, result.getSubject());
-        assertEquals(Difficulty.EASY, result.getDifficulty());
-        assertEquals(QuestionType.ADDITION, result.getQuestionType());
-        assertEquals(template.getMinValue(), result.getMinValue());
-        assertEquals(template.getMaxValue(), result.getMaxValue());
-        assertEquals(template.getTimeLimitSeconds(), result.getTimeLimitSeconds());
-        assertEquals(template.getChoicesCount(), result.getChoicesCount());
-        assertEquals(template.getGenerationPattern(), result.getGenerationPattern());
-        assertEquals(QuestionRules.DEFAULT_ADAPTIVE_MODE, result.getAdaptiveMode());
-        assertEquals(QuestionRules.DEFAULT_ASSISTANCE_LEVEL, result.getAssistanceLevel());
+        assertEquals(List.of(template), result);
     }
 
     @Test
-    void shouldSelectTemplateByPlayerQuestionCountRotation() {
+    void shouldStartTheTurnByPlayerQuestionCountRotation() {
         Subject subject = createMathSubject();
         RacePlayer racePlayer = createRacePlayer(subject, Difficulty.EASY);
         QuestionTemplate firstTemplate = createTemplate(Difficulty.EASY, QuestionType.ADDITION);
@@ -75,9 +64,9 @@ class RacePlayerQuestionPlanServiceTest {
         )).thenReturn(List.of(firstTemplate, secondTemplate, thirdTemplate, fourthTemplate));
         when(playerQuestionRepository.countByRacePlayer(racePlayer)).thenReturn(2L);
 
-        QuestionPlan result = createService().buildQuestionPlan(racePlayer);
+        List<QuestionTemplate> result = createService().templatesInTurn(racePlayer);
 
-        assertEquals(QuestionType.MULTIPLICATION, result.getQuestionType());
+        assertEquals(List.of(thirdTemplate, fourthTemplate, firstTemplate, secondTemplate), result);
     }
 
     @Test
@@ -92,17 +81,16 @@ class RacePlayerQuestionPlanServiceTest {
         )).thenReturn(List.of(template));
         when(playerQuestionRepository.countByRacePlayer(racePlayer)).thenReturn(0L);
 
-        QuestionPlan result = createService().buildQuestionPlan(racePlayer);
+        List<QuestionTemplate> result = createService().templatesInTurn(racePlayer);
 
-        assertEquals(Difficulty.MEDIUM, result.getDifficulty());
-        assertEquals(QuestionType.MULTIPLICATION, result.getQuestionType());
+        assertEquals(List.of(template), result);
     }
 
     @Test
     void shouldRejectMissingRacePlayer() {
         ApiException exception = assertThrows(
                 ApiException.class,
-                () -> createService().buildQuestionPlan(null)
+                () -> createService().templatesInTurn(null)
         );
 
         assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
@@ -115,7 +103,7 @@ class RacePlayerQuestionPlanServiceTest {
 
         ApiException exception = assertThrows(
                 ApiException.class,
-                () -> createService().buildQuestionPlan(racePlayer)
+                () -> createService().templatesInTurn(racePlayer)
         );
 
         assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
@@ -130,7 +118,7 @@ class RacePlayerQuestionPlanServiceTest {
 
         ApiException exception = assertThrows(
                 ApiException.class,
-                () -> createService().buildQuestionPlan(racePlayer)
+                () -> createService().templatesInTurn(racePlayer)
         );
 
         assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
@@ -143,7 +131,7 @@ class RacePlayerQuestionPlanServiceTest {
 
         ApiException exception = assertThrows(
                 ApiException.class,
-                () -> createService().buildQuestionPlan(racePlayer)
+                () -> createService().templatesInTurn(racePlayer)
         );
 
         assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
@@ -161,14 +149,14 @@ class RacePlayerQuestionPlanServiceTest {
 
         ApiException exception = assertThrows(
                 ApiException.class,
-                () -> createService().buildQuestionPlan(racePlayer)
+                () -> createService().templatesInTurn(racePlayer)
         );
 
         assertEquals(ErrorCode.QUESTION_TEMPLATE_NOT_AVAILABLE_FOR_PLAYER, exception.getErrorCode());
     }
 
     @Test
-    void shouldRejectInvalidSelectedTemplate() {
+    void shouldLeaveInvalidTemplateInItsTurnForTheFallbackToSkip() {
         Subject subject = createMathSubject();
         RacePlayer racePlayer = createRacePlayer(subject, Difficulty.EASY);
         QuestionTemplate invalidTemplate = createTemplate(Difficulty.EASY, QuestionType.ADDITION);
@@ -180,12 +168,7 @@ class RacePlayerQuestionPlanServiceTest {
         )).thenReturn(List.of(invalidTemplate));
         when(playerQuestionRepository.countByRacePlayer(racePlayer)).thenReturn(0L);
 
-        ApiException exception = assertThrows(
-                ApiException.class,
-                () -> createService().buildQuestionPlan(racePlayer)
-        );
-
-        assertEquals(ErrorCode.INVALID_QUESTION_TEMPLATE_CONFIG, exception.getErrorCode());
+        assertEquals(List.of(invalidTemplate), createService().templatesInTurn(racePlayer));
     }
 
     private RacePlayerQuestionPlanService createService() {

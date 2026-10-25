@@ -69,6 +69,7 @@ class C1MixedMySqlTest extends B2LuckIntegrationFixture {
         assertEquals(1, history().size());
         verify(random, times(2)).nextDouble();
         writeExample("C1-MIXED-" + scenario, finalState);
+        java.nio.file.Files.createDirectories(java.nio.file.Path.of("target", "c1-evidence"));
         java.nio.file.Files.writeString(java.nio.file.Path.of("target", "c1-evidence", "mixed-" + scenario + ".json"),
                 new com.fasterxml.jackson.databind.ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(outcomes));
     }

@@ -1,7 +1,6 @@
 package com.quiz_wheelz.service.question;
 
 import com.quiz_wheelz.common.QuestionRules;
-import com.quiz_wheelz.dto.question.QuestionPlan;
 import com.quiz_wheelz.dto.question.student.StudentQuestionResponse;
 import com.quiz_wheelz.entitys.PlayerQuestion;
 import com.quiz_wheelz.entitys.PlayerQuestionChoice;
@@ -63,8 +62,8 @@ class StudentQuestionDeliveryExistingQuestionTest {
                 lockedRacePlayer,
                 StudentQuestionDeliveryTestFixture.FIXED_INSTANT
         );
-        verify(fixture.racePlayerQuestionPlanService, never()).buildQuestionPlan(any());
-        verify(fixture.questionGenerationService, never()).generate(any(QuestionPlan.class));
+        verify(fixture.racePlayerQuestionPlanService, never()).templatesInTurn(any());
+        verify(fixture.questionGenerationService, never()).generateFromTemplate(any(), any(), any());
         verify(fixture.playerQuestionPersistenceService, never())
                 .persistGeneratedQuestion(any(), any());
     }
@@ -158,7 +157,7 @@ class StudentQuestionDeliveryExistingQuestionTest {
                 fixture.playerQuestionRepository,
                 fixture.playerQuestionChoiceRepository,
                 fixture.racePlayerQuestionPlanService,
-                fixture.questionGenerationService,
+                fixture.questionTemplateFallbackService,
                 fixture.playerQuestionPersistenceService,
                 fixture.studentQuestionResponseMapper,
                 fixture.gameplayRequestGuard,
