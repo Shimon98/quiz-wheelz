@@ -10,6 +10,7 @@ public final class ConfigPropertyKeys {
     public static final String QUIZWHEELZ_DB_RESERVED_CONNECTIONS = "QUIZWHEELZ_DB_RESERVED_CONNECTIONS";
 
     public static final String QUIZWHEELZ_LUCK_ANSWER_ENABLED = "QUIZWHEELZ_LUCK_ANSWER_ENABLED";
+    public static final String QUIZWHEELZ_RECOVERY_ENABLED = "QUIZWHEELZ_RECOVERY_ENABLED";
 
     public static final String TOKEN_SECRET = "TOKEN_SECRET";
     public static final String TOKEN_EXPIRATION_MINUTES = "TOKEN_EXPIRATION_MINUTES";

@@ -32,6 +32,7 @@ export default function StudentRaceOverlay({
   isAwaitingNextQuestion = false,
   challenge = null,
   hudControls = null,
+  announcedLuckEventId = null,
 }) {
   const showChallenge = challenge?.visible === true;
 
@@ -82,6 +83,8 @@ export default function StudentRaceOverlay({
           resultFeedbackKey={getChallengeResultFeedbackKey(
             selectChallengeResultOutcome(runtimeState?.gameplay, question?.gameplayContext),
           )}
+          gameplay={runtimeState?.gameplay ?? null}
+          announcedLuckEventId={announcedLuckEventId}
         />
       )}
     </div>

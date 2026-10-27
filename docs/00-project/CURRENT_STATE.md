@@ -130,10 +130,23 @@ operations, parentheses, a short multiplication chain) and Safe draws addition a
 up to 10, each generated from exactly the selected template; the 15-second limit and rewards are
 unchanged.
 
-Next: the S4-04 stability PR (Luck fixes and challenge questions), then C5-04 (Luck and Guard
-Shield presentation) planned from the
-reviewed server code, a physical-phone check (before classroom or production use) and client
-quality package 4. Diana owns the requested Turbo question sequence and question difficulty on
+Checkpoint, 2026-10-25: the S4-04 stability fixes (PR #80) and the S4-03 template safety with
+C5-04 part 1 (PR #81, `main@5ed8a39`) are merged. On `feature/S4-05-C5-04-recovery-luck-shield`
+(local, not merged): S4-05 Hidden Recovery on the server, behind its own flag and OFF by default
+(a player who is both behind and struggling gets +10 Challenge Energy once, hidden from every
+API), and C5-04 part 2 on the client (the Guard Shield, Tailwind, Energy Orb, Mud and a shield
+block shown with temporary Pixi `Graphics` and text notices, no new art or sound). Server
+maintenance in the same branch: unexpected 500s are logged with their stack trace and no
+generated Spring password is created any more. Luck and Recovery stay OFF by default. An
+independent review (2026-10-26) was answered on the same branch: one-shot Luck news is never
+retold after a refresh, the shield is announced to screen readers, every Luck type is proven on
+snapshots the server wrote, and an unrecognized I/O failure on a started response leaves one
+WARN line. Recovery stays OFF until Diana approves two rules in writing (a finished leader is
+not part of the field; a STRICT focus forfeit counts as a failure), its DDL is applied before
+deployment and a p50/p95 measurement passes (see the S4-05 section of the server plan).
+
+Next: review and merge of that branch, the final Luck and Guard Shield art and sound, a
+physical-phone check (before classroom or production use) and client quality package 4. Diana owns the requested Turbo question sequence and question difficulty on
 the server; the client does not simulate these. Browser fixtures and unit tests are local
 evidence, not release acceptance. C5-03 review bundle:
 `docs/vision/C5_03/codex_clarity_2026-10-18/` (local, ignored).

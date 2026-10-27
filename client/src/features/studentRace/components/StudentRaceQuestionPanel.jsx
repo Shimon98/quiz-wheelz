@@ -4,7 +4,9 @@ import { Snail } from "lucide-react";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
-import { getRaceGameplayPresentation } from "../config/raceGameplayPresentationConfig";
+import { isQuestionUnavailableError } from "../../../errors/errorChecks";
+import { getLuckNoticePresentation, getRaceGameplayPresentation } from "../config/raceGameplayPresentationConfig";
+import useStudentRaceLuckNotice from "../hooks/useStudentRaceLuckNotice";
 import { STUDENT_RACE_FEEDBACK } from "../runtime/studentRaceRuntimeConstants";
 import { STUDENT_RACE_PANEL_STYLES } from "../styles/studentRacePanelStyles";
 import { isQuestionTimeUp } from "../utils/isQuestionTimeUp";
@@ -48,8 +50,9 @@ function SafeProgress({ progress }) {
   );
 }
 
-function IdleLine({ gameplayContext, slowdownNoticeKey, safeProgress }) {
+function IdleLine({ gameplayContext, slowdownNoticeKey, safeProgress, gameplay, announcedLuckEventId }) {
   const { t } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
+  const luckNotice = getLuckNoticePresentation(useStudentRaceLuckNotice(gameplay, announcedLuckEventId));
 
   if (slowdownNoticeKey != null) {
     return (
@@ -69,11 +72,29 @@ function IdleLine({ gameplayContext, slowdownNoticeKey, safeProgress }) {
     );
   }
 
+  // Luck comes only from NORMAL answers, so it stands in for the plain instruction and never for a challenge badge.
+  if (luckNotice != null) {
+    const LuckIcon = luckNotice.icon;
+
+    return (
+      <p role="status" data-tone={luckNotice.tone}
+        className={`race-luck-notice ${STUDENT_RACE_PANEL_STYLES.statusLine} text-[var(--qw-text)]`}>
+        <LuckIcon aria-hidden="true" className="race-luck-notice-icon size-4 shrink-0" />
+        <span>{t(luckNotice.messageKey)}</span>
+      </p>
+    );
+  }
+
   return (
     <p className="text-center text-sm font-semibold text-[var(--qw-text-muted)]">
       {t("question.instruction")}
     </p>
   );
+}
+
+// No usable question is a classroom problem the teacher can fix, so it is named; any other failure keeps the title.
+function awaitingErrorKey(error) {
+  return isQuestionUnavailableError(error) ? `${I18N_NAMESPACES.ERRORS}:${error.messageKey}` : "question.errorTitle";
 }
 
 export default function StudentRaceQuestionPanel({
@@ -91,6 +112,8 @@ export default function StudentRaceQuestionPanel({
   slowdownNoticeKey = null,
   safeProgress = null,
   resultFeedbackKey = null,
+  gameplay = null,
+  announcedLuckEventId = null,
 }) {
   const { t } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
 
@@ -143,7 +166,7 @@ export default function StudentRaceQuestionPanel({
       {isAwaitingNextQuestion ? (
         <p role="status" className={`${STUDENT_RACE_PANEL_STYLES.statusLine} text-[var(--qw-text-muted)]`}>
           <span>
-            {t(error ? "question.errorTitle" : "question.loadingNext")}
+            {t(error ? awaitingErrorKey(error) : "question.loadingNext")}
           </span>
           {error ? <StudentRaceInlineRetryButton onRetry={onRetry} /> : null}
         </p>
@@ -163,7 +186,7 @@ export default function StudentRaceQuestionPanel({
         </p>
       ) : (
         <IdleLine gameplayContext={question.gameplayContext} slowdownNoticeKey={slowdownNoticeKey}
-          safeProgress={safeProgress} />
+          safeProgress={safeProgress} gameplay={gameplay} announcedLuckEventId={announcedLuckEventId} />
       )}
 
       <p className="text-center text-3xl font-bold leading-snug text-[var(--qw-text)]">

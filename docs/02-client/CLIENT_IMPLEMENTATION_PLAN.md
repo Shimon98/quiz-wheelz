@@ -1046,8 +1046,9 @@ packages 1–3 are merged to `main` with the C5 client PR from
 work (Guard Shield and fair Luck) is on `main` with the Luck flag off by default and its review
 pending; C5-04 presents it after that review. C5-04 part 1 (data and moments only: the
 `powerUps`/`luck` mapping and once-only Luck moments per race player, no effect, cue or HUD) is
-implemented on `feature/C5-04-luck-shield-foundation`, not yet merged; the presentation part
-follows in the same C5-04. The gameplay UI renders server-owned game events and effects, so each further
+merged (PR #81, `main@5ed8a39`). C5-04 part 2, the functional presentation with temporary Pixi
+`Graphics` and text notices, is implemented on `feature/S4-05-C5-04-recovery-luck-shield`, not
+yet merged; final art and sound remain. The gameplay UI renders server-owned game events and effects, so each further
 part starts from an audit of that real server code; never from a text handoff alone. The
 carried-forward release QA can proceed meanwhile.
 
@@ -1360,11 +1361,53 @@ Built in tracks by server contract: Track A uses only the merged S4-01 vocabular
   `docs/vision/hover_scene_integration_2026-10-20/`, `docs/vision/entry-hero-source/` and
   `docs/vision/p3_cache_privacy_2026-10-19/art_recheck_2026-10-20/` (local).
 
+### C5-04 — Luck and Guard Shield presentation
+
+Built on the merged S4-04 contract (`gameplay.powerUps`, `gameplay.luck`, Luck speed effects
+with source `LUCK_EVENT`); the server decides every Luck event and the shield.
+
+- **C5-04a data and once-only moments — DONE (PR #81):** one mapper, defaults for older
+  snapshots, one moment per server `eventId`, named by the applied type and the outcome.
+- **C5-04b clocks and selectors — DONE (local, 2026-10-25):** effects and Luck events carry the
+  clock offset of their snapshot; `isGameplayEffectActiveAt`, `selectActiveLuckEffect`,
+  `selectLuckNotice` and `hasGuardShield` in `studentRaceGameplayMode.js`; `presentedMoments`
+  keeps a Luck moment next to a challenge result.
+- **C5-04c temporary Pixi marks and bursts — DONE (local, 2026-10-25):** `KartLuckMarks`
+  (shield bubble and Tailwind wind inside the bobbing kart, Mud puddle on the ground, Mud also
+  dims the thrusters) and four short bursts in `drawLuckEffect.js` (450/550 ms; the finish wins,
+  reduced motion plays none). Plain `Graphics`, no new assets.
+- **C5-04d text notices — DONE (local, 2026-10-25; review fixes 2026-10-26):** the question
+  panel's notice line; priority: challenge slowdown notice, then the Turbo/Safe badge, then Luck,
+  then the plain instruction. A Tailwind or Mud notice lasts as long as its server window, also
+  after a refresh. One-shot news (an Energy Orb, a shield block) is told only for the Luck event
+  the moments pipeline announced on this screen (`newestLuckEventId` → `announcedLuckEventId`),
+  so a refresh, a reconnect or another student never retells it. The line wakes up once, when the
+  told notice can change (`selectLuckNoticeChangeAt`), and keeps no timer otherwise. Its resting
+  clock is floored by the latest Luck instant the server sent (`selectLuckClockFloor`), so Luck
+  that arrives after minutes without Luck is told on the very render it arrives.
+- **C5-04 shield for screen readers — DONE (local, 2026-10-26):** the HUD keeps one
+  visually hidden `aria-live="polite"` line that says the shield is ready while
+  `guardShieldCharges > 0` (HE/EN), announced when the shield comes up and never again while the
+  race moves; the panel's notice already tells when the shield blocks mud.
+- **C5-04e dev preview — DONE (local, 2026-10-25):** `/dev/race?motionScenario=luck` cycles the
+  shield, a Tailwind, an Energy Orb, a blocked Mud Splash and a Mud Splash that lands. It is a
+  visual showcase, not one legal race (four events every 26 s, while the server allows two per
+  race player, 45 s apart), and proves no gameplay balance or server contract.
+- **C5-04 server-made snapshots — DONE (local, 2026-10-26):** `runtime/serverLuckTestFixtures.js`
+  holds, value for value, the snapshots `B2LuckSnapshotMySqlTest` writes on a disposable MySQL
+  (Tailwind, Energy Orb, Mud, blocked Mud, shield, two events, closed windows), in the same
+  `*TestFixtures.js` style as the other test data.
+  `StudentRaceScreen.serverLuck.test.jsx` runs them through the production mapper, the moments
+  pipeline, the screen and the real Pixi layers: each type plays once with its answer, a refresh
+  keeps only open windows, a reconnect and a student switch replay nothing.
+- **C5-04f final art and sound — PLANNED:** replaces the placeholders; product approval and a
+  physical-phone check remain release gates, with Luck still OFF on the server by default.
+
 ### C5 gameplay UI — after S4-02 onward
 
 - junction offer
 - highway/dirt-road question modes
-- fair luck effects
+- fair luck effects (C5-04)
 - assistance presentation
 - live announcements.
 

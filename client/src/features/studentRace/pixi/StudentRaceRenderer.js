@@ -138,6 +138,8 @@ export class StudentRaceRenderer {
       raceObjectCameraPosition: position - this.raceObjectGeometry.playerReferenceDistance,
       deltaMs: ticker.deltaMS,
       elapsedMs: ticker.elapsedMS ?? ticker.deltaMS,
+      // One device clock reading per frame; server-clock windows (Luck) add their own snapshot offset to it.
+      clientNowEpochMs: Date.now(),
       width: this.width,
       height: this.height,
       visualPosition: position,

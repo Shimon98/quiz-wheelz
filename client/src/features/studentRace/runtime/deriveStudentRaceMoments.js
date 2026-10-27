@@ -20,6 +20,7 @@ const LUCK_APPLIED_MOMENTS = Object.freeze({
   [RACE_LUCK_EVENT_TYPES.ENERGY_ORB]: STUDENT_RACE_MOMENT.LUCK_ENERGY_ORB,
   [RACE_LUCK_EVENT_TYPES.MUD_SPLASH]: STUDENT_RACE_MOMENT.LUCK_MUD,
 });
+const LUCK_MOMENTS = new Set([...Object.values(LUCK_APPLIED_MOMENTS), STUDENT_RACE_MOMENT.LUCK_SHIELD_BLOCKED]);
 // Only recent IDs can come back in a stale sample, so a short memory is enough.
 const SEEN_ID_LIMIT = 64;
 
@@ -52,7 +53,7 @@ function luckEventsOf(runtimeState) {
 }
 
 // Only the server's outcome reveals a shield block: a shield count that drops proves nothing.
-function luckMomentTypeOf({ appliedType, outcome }) {
+export function luckMomentTypeOf({ appliedType, outcome }) {
   if (outcome === RACE_LUCK_OUTCOMES.BLOCKED_BY_SHIELD) {
     return appliedType === RACE_LUCK_EVENT_TYPES.MUD_SPLASH ? STUDENT_RACE_MOMENT.LUCK_SHIELD_BLOCKED : null;
   }
@@ -101,10 +102,17 @@ function freshResultMoment(previous, observed, runtimeState) {
   return type == null ? null : { type, id: `challenge-${resultId}`, challengeId: resultId };
 }
 
+// The newest Luck event a batch announced. Presenters that tell only news read it instead of the server history,
+// which a refresh or a reconnect hands back whole.
+export function newestLuckEventId({ moments }) {
+  return moments.filter(({ type }) => LUCK_MOMENTS.has(type)).at(-1)?.luckEventId ?? null;
+}
+
 // A challenge result arrives with the answer that caused it and stands in for it, in sound and on screen.
+// Luck is a server event of its own and is already marked seen, so it is presented next to the result, never lost.
 export function presentedMoments({ moments }) {
   const results = moments.filter(({ type }) => RESULT_MOMENTS.has(type));
-  return results.length > 0 ? results : moments;
+  return results.length > 0 ? [...results, ...moments.filter(({ type }) => LUCK_MOMENTS.has(type))] : moments;
 }
 
 export function deriveStudentRaceMoments(previous, runtimeState) {

@@ -9,8 +9,37 @@
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
 
-Local checkpoint, 2026-10-24 (C5-04 part 1, `feature/C5-04-luck-shield-foundation`, not yet
-merged): **the client reads `gameplay.powerUps` and `gameplay.luck`** through the one gameplay
+Local checkpoint, 2026-10-26 (independent review fixes on the same branch, not yet merged): an
+Energy Orb or a shield block is told in the notice line only for the Luck event the moments
+pipeline announced on this screen, so a refresh, a reconnect or a student switch no longer
+retells it (Tailwind and Mud notices still last as long as their window). The line keeps no
+timer between notices: it wakes up once when the told notice can change. The HUD gives screen
+readers one live line while a shield is up (HE/EN). Each Luck type is now proven on snapshots
+the server itself wrote on a disposable MySQL (`serverLuckTestFixtures.js`), through the mapper,
+the screen and the real Pixi layers; the dev Luck preview is documented as a visual showcase,
+not a legal race. Luck that arrives after a long quiet stretch is told on the render it arrives
+(the line's resting clock is floored by the latest Luck instant). 1,874 tests in 197 files; lint
+and build pass.
+
+Local checkpoint, 2026-10-25 (C5-04 part 2, `feature/S4-05-C5-04-recovery-luck-shield`, not yet
+merged): **Luck and the Guard Shield are presented with temporary Pixi `Graphics`** (no new art
+or sound; the final assets come later in C5-04). The kart shows a shield bubble while the server
+reports a charge, wind streaks during a Tailwind window and a mud puddle with dimmed thrusters
+during a Mud window; each new Luck event plays one short burst (the finish still wins, reduced
+motion plays none). Effects and Luck events now carry the clock offset of the snapshot that
+delivered them, like offers, so a window ends on time between snapshots. The question panel's
+notice line tells the news (Tailwind and Mud while their window lasts, an Energy Orb or a shield
+block for a short while; the challenge slowdown notice and the Turbo/Safe badge keep priority),
+so reduced-motion and screen-reader players get it too. A Luck event that arrives with a
+challenge result is no longer dropped from presentation. The 409
+`QUESTION_TEMPLATE_NOT_AVAILABLE_FOR_PLAYER` now tells the student to ask the teacher, and a
+question newer than the race state triggers one race-state read instead of a skeleton until the
+next poll. Dev preview: `/dev/race?motionScenario=luck`. A live race against the real server
+(Luck and Recovery ON) showed two real Tailwinds and a real Guard Shield end to end. 1,830 tests
+in 195 files; lint and build pass.
+
+Checkpoint, 2026-10-24 (C5-04 part 1, merged with PR #81, `main@5ed8a39`): **the client reads
+`gameplay.powerUps` and `gameplay.luck`** through the one gameplay
 mapper. Guard Shield charges are the only shield state (the award question is history, never a
 charge); an older snapshot gets no shield and no Luck history, and a malformed part or event is
 dropped on its own without resetting the rest of the gameplay. The existing moment owner

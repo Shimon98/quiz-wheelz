@@ -1,12 +1,17 @@
 import { Graphics } from "pixi.js";
 import { KART_THRUSTER_PALETTES } from "../../config/kartThrusterConfig.js";
-import { selectChallengeSlowdownSource } from "../../runtime/studentRaceGameplayMode.js";
+import {
+  hasGuardShield,
+  selectActiveLuckEffect,
+  selectChallengeSlowdownSource,
+} from "../../runtime/studentRaceGameplayMode.js";
 
-import { RACE_GAMEPLAY_MODES } from "../../../../constants/raceGameplayConstants.js";
+import { RACE_GAMEPLAY_MODES, RACE_LUCK_EVENT_TYPES } from "../../../../constants/raceGameplayConstants.js";
 import { STUDENT_RACE_ANIMATION_CONFIG } from "../../config/raceAnimationConfig.js";
 import { getRaceGameplayPresentation } from "../../config/raceGameplayPresentationConfig.js";
 import { STUDENT_RACE_EFFECT } from "../../runtime/studentRaceRuntimeConstants.js";
 import { KartArtCrossfade } from "../vehicles/KartArtCrossfade.js";
+import { KartLuckMarks } from "../vehicles/KartLuckMarks.js";
 import { KartPoseArt } from "../vehicles/KartPoseArt.js";
 import { KartThrusters } from "../vehicles/KartThrusters.js";
 import { StudentRaceVehicleVisual } from "../vehicles/StudentRaceVehicleVisual.js";
@@ -45,6 +50,7 @@ export class PlayerKartLayer extends StudentRaceVehicleVisual {
     this.aura = createAura();
     this.auraPeakAlpha = 0;
     this.root.addChildAt(this.aura, this.root.getChildIndex(this.kart));
+    this.luckMarks = new KartLuckMarks(this.root, this.kart);
     this.thrusters = new KartThrusters(this.kart);
     this.pose = new KartPoseArt({
       ...(options.loadPoseTexture ? { loadTexture: options.loadPoseTexture } : {}),
@@ -67,6 +73,8 @@ export class PlayerKartLayer extends StudentRaceVehicleVisual {
     this.poseOverlay = this.createArtSprite(loadedResult.textures[0], loadedResult.definition);
     this.kart.addChildAt(this.poseOverlay, this.kart.getChildIndex(this.artSprite) + 1);
     this.kart.addChild(this.thrusters.container);
+    // The shield bubble and the wind stay in front of the art and its fire.
+    this.kart.addChild(this.luckMarks.front);
     this.pose.attach(loadedResult.definition, loadedResult.textures[0]);
     this.fade.attach(this.artSprite, this.poseOverlay);
     this.preloadTimer = setTimeout(() => {
@@ -111,7 +119,7 @@ export class PlayerKartLayer extends StudentRaceVehicleVisual {
     return hold.mode;
   }
 
-  update({ visualSpeed, deltaMs, layout, runtimeState, playerDepth = 1, vehicleVisualScale }) {
+  update({ visualSpeed, deltaMs, layout, runtimeState, playerDepth = 1, vehicleVisualScale, clientNowEpochMs }) {
     const reducedMotion = runtimeState?.visual?.reducedMotion === true;
     this.setGroundTransform({ ...playerKartGroundTransform(layout), zIndex: playerDepth, visualScale: vehicleVisualScale });
     this.updateIdle({
@@ -129,7 +137,10 @@ export class PlayerKartLayer extends StudentRaceVehicleVisual {
     }
     const presentation = getRaceGameplayPresentation(runtimeState?.playerFinished ? null : serverMode);
     this.updateAura(presentation?.kartAura ?? null, reducedMotion, deltaMs);
-    const slowing = !runtimeState?.playerFinished && selectChallengeSlowdownSource(runtimeState?.gameplay) != null;
+    const gameplay = runtimeState?.playerFinished ? null : runtimeState?.gameplay;
+    const luckEffect = selectActiveLuckEffect(gameplay, clientNowEpochMs);
+    this.luckMarks.update({ shield: hasGuardShield(gameplay), luckEffect, deltaMs, reducedMotion });
+    const slowing = selectChallengeSlowdownSource(gameplay) != null || luckEffect === RACE_LUCK_EVENT_TYPES.MUD_SPLASH;
     this.thrusters.update({ deltaMs, palette: slowing ? KART_THRUSTER_PALETTES.slowing : presentation?.kartThrusters ?? null, reducedMotion });
   }
 

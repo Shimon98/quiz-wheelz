@@ -99,6 +99,7 @@ export default {
     progressShortLabel: "מסלול",
     energyLabel: "אנרגיית אתגר",
     energyValue: "אנרגיית אתגר {{value}} מתוך {{max}}",
+    shieldReady: "המגן מוכן: הוא יחסום את שלולית הבוץ הבאה",
   },
 
   reward: {
@@ -125,6 +126,12 @@ export default {
     },
     slowdownNotice: "לא בחרת? המנוע בחר שנ״צ. האטה קצרה!",
     turboSlowdownNotice: "הטורבו עשה פוף. האטה קצרה — וממשיכים!",
+    luck: {
+      tailwind: "רוח גבית! דחיפה קטנה קדימה",
+      energyOrb: "כדור אנרגיה! אנרגיית האתגר עלתה",
+      mud: "שלולית בוץ! האטה קצרה",
+      shieldBlocked: "המגן חסם את הבוץ!",
+    },
     choice: {
       title: "אתגר חדש נפתח! בחרו אחד",
       submitting: "מכינים לכם את האתגר...",

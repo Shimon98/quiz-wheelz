@@ -87,16 +87,22 @@ describe("applyRaceSnapshot gameplay", () => {
       endsAtEpochMs: 12000,
     }],
   };
+  // The slowed gameplay as mapped from a snapshot received at its own server time (10000).
+  const mappedSlowedGameplay = {
+    ...createDefaultStudentRaceGameplay(),
+    ...slowedGameplay,
+    activeEffects: [{ ...slowedGameplay.activeEffects[0], serverClockOffsetMs: 0 }],
+  };
 
   it("keeps the base speed, presents the effective speed and never rewrites the server movement rate", () => {
     const state = applyRaceSnapshot(createInitialRaceRuntimeState(), snapshot({
       speed: 1.3,
       movementUnitsPerSecond: 4.12345,
       gameplay: slowedGameplay,
-    }));
+    }), 10000);
 
     expect(state.player.speed).toBe(1.3);
-    expect(state.gameplay).toEqual({ ...createDefaultStudentRaceGameplay(), ...slowedGameplay });
+    expect(state.gameplay).toEqual(mappedSlowedGameplay);
     expect(state.gameplay.effectiveSpeed).toBe(1.2);
     expect(state.visual.targetSpeed).toBe(1.2);
     expect(state.visual.movementUnitsPerSecond).toBe(4.12345);
@@ -121,14 +127,14 @@ describe("applyRaceSnapshot gameplay", () => {
   });
 
   it("keeps the previous gameplay when an older snapshot arrives", () => {
-    const state = applyRaceSnapshot(createInitialRaceRuntimeState(), snapshot({ gameplay: slowedGameplay }));
+    const state = applyRaceSnapshot(createInitialRaceRuntimeState(), snapshot({ gameplay: slowedGameplay }), 10000);
     const stale = applyRaceSnapshot(state, snapshot({
       snapshotAtEpochMs: 9999,
       gameplay: { mode: "NORMAL", effectiveSpeed: 1.5, activeEffects: [] },
     }));
 
     expect(stale).toBe(state);
-    expect(stale.gameplay).toEqual({ ...createDefaultStudentRaceGameplay(), ...slowedGameplay });
+    expect(stale.gameplay).toEqual(mappedSlowedGameplay);
   });
 
   it("keeps the shield and the Luck history when an older snapshot arrives", () => {
@@ -138,7 +144,7 @@ describe("applyRaceSnapshot gameplay", () => {
     }] };
     const state = applyRaceSnapshot(createInitialRaceRuntimeState(), snapshot({
       gameplay: { ...slowedGameplay, powerUps, luck },
-    }));
+    }), 10000);
     const stale = applyRaceSnapshot(state, snapshot({
       snapshotAtEpochMs: 9999,
       gameplay: {
@@ -149,7 +155,7 @@ describe("applyRaceSnapshot gameplay", () => {
     }));
 
     expect(stale.gameplay.powerUps).toEqual(powerUps);
-    expect(stale.gameplay.luck).toEqual(luck);
+    expect(stale.gameplay.luck).toEqual({ recentEvents: [{ ...luck.recentEvents[0], serverClockOffsetMs: 0 }] });
   });
 
   it("calibrates the challenge offer to the server clock of the snapshot that carried it", () => {
@@ -170,5 +176,14 @@ describe("applyRaceSnapshot gameplay", () => {
     }), 13000);
 
     expect(state.gameplay.challenge.offer.serverClockOffsetMs).toBe(-3000);
+  });
+
+  it("calibrates each active effect to the server clock of the snapshot that carried it", () => {
+    const state = applyRaceSnapshot(createInitialRaceRuntimeState(), snapshot({
+      snapshotAtEpochMs: 10000,
+      gameplay: slowedGameplay,
+    }), 13000);
+
+    expect(state.gameplay.activeEffects.map(({ serverClockOffsetMs }) => serverClockOffsetMs)).toEqual([-3000]);
   });
 });

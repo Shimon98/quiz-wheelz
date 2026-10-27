@@ -1,10 +1,11 @@
-import { ShieldCheck, Zap } from "lucide-react";
+import { BatteryCharging, Droplets, ShieldCheck, Wind, Zap } from "lucide-react";
 
 import {
   RACE_CHALLENGE_OUTCOMES,
   RACE_GAMEPLAY_EFFECT_SOURCES,
   RACE_GAMEPLAY_MODES,
 } from "../../../constants/raceGameplayConstants";
+import { STUDENT_RACE_MOMENT } from "../runtime/studentRaceRuntimeConstants";
 import { KART_THRUSTER_PALETTES } from "./kartThrusterConfig";
 import { RACE_CHALLENGE_ART } from "./raceChallengeArt";
 
@@ -49,4 +50,22 @@ const CHALLENGE_RESULT_FEEDBACK_KEYS = Object.freeze({
 
 export function getChallengeResultFeedbackKey(outcome) {
   return Object.hasOwn(CHALLENGE_RESULT_FEEDBACK_KEYS, outcome) ? CHALLENGE_RESULT_FEEDBACK_KEYS[outcome] : null;
+}
+
+// Luck news for the question panel's notice line; Mud is the one setback among them.
+const LUCK_NOTICES = Object.freeze({
+  [STUDENT_RACE_MOMENT.LUCK_TAILWIND]: Object.freeze({
+    icon: Wind, messageKey: "gameplay.luck.tailwind", tone: "good",
+  }),
+  [STUDENT_RACE_MOMENT.LUCK_ENERGY_ORB]: Object.freeze({
+    icon: BatteryCharging, messageKey: "gameplay.luck.energyOrb", tone: "good",
+  }),
+  [STUDENT_RACE_MOMENT.LUCK_MUD]: Object.freeze({ icon: Droplets, messageKey: "gameplay.luck.mud", tone: "setback" }),
+  [STUDENT_RACE_MOMENT.LUCK_SHIELD_BLOCKED]: Object.freeze({
+    icon: ShieldCheck, messageKey: "gameplay.luck.shieldBlocked", tone: "good",
+  }),
+});
+
+export function getLuckNoticePresentation(notice) {
+  return Object.hasOwn(LUCK_NOTICES, notice) ? LUCK_NOTICES[notice] : null;
 }

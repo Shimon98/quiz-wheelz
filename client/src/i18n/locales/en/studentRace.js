@@ -99,6 +99,7 @@ export default {
     progressShortLabel: "Track",
     energyLabel: "Challenge energy",
     energyValue: "Challenge energy {{value}} of {{max}}",
+    shieldReady: "Shield ready: it will block the next mud puddle",
   },
 
   reward: {
@@ -125,6 +126,12 @@ export default {
     },
     slowdownNotice: "No choice? The engine chose a nap. Brief slowdown!",
     turboSlowdownNotice: "Turbo went poof. Brief slowdown — keep going!",
+    luck: {
+      tailwind: "Tailwind! A little push forward",
+      energyOrb: "Energy orb! Challenge energy went up",
+      mud: "Mud puddle! A brief slowdown",
+      shieldBlocked: "Your shield blocked the mud!",
+    },
     choice: {
       title: "Challenge unlocked! Pick one",
       submitting: "Getting your challenge ready...",

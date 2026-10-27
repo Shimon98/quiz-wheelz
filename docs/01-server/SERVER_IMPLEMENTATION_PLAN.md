@@ -698,7 +698,7 @@ server errors.
 
 #### Challenge template safety - 2026-10-24/25 (S4-03 bug fix)
 
-**Status:** `FIXED (prevention + recovery + NORMAL fallback) on feature/C5-04-luck-shield-foundation; PR to main, not merged; for Diana's review`
+**Status:** `FIXED (prevention + recovery + NORMAL fallback); MERGED (PR #81, main@5ed8a39); for Diana's review`
 
 This is a bug fix inside S4-03, not S4-05 Hidden Recovery. Rules, rewards, timings, the API,
 the schema and the offer state machine are unchanged.
@@ -824,6 +824,11 @@ Follow-up for Diana (not part of this fix): QuestionGenerationService.generate(Q
 and the three QuestionTemplateSelectionService.selectTemplate overloads no longer have a
 production caller (only their own unit tests). They are left unchanged; remove them or keep
 them as you prefer.
+2026-10-25 (S4-05 package): the four methods are now marked `@Deprecated` with a one-line
+reason (choosing by fields can return a look-alike of the template whose turn it is), so new
+code does not pick them up. Plain `@Deprecated`, not `forRemoval`: removal stays your call, and
+a removal warning would also fire inside the deprecated `generate` and in every test that calls
+them. `generateFromTemplate` and `validateTemplateConfig` are in use and unchanged.
 
 ### S4-04 - Power-Ups + fair Luck
 
@@ -1439,16 +1444,127 @@ Rules, probabilities, fairness, Shield, cooldown, cap and effect lifecycle are u
    at the shown 2.0 becomes an Energy Orb instead of a no-op event.
 
 Unexpected 500 responses are not logged by the global catch-all handler. That gap is
-older than S4-04 and is proposed as a separate change. Open release gates are
+older than S4-04 and is proposed as a separate change. (Closed 2026-10-25 in the S4-05
+package: `GlobalExceptionHandler` logs the method, the path and the stack trace at ERROR, and a
+real 500 still gets the same generic body. The live run showed that the catch-all also turned
+Spring's own request errors into 500 (`GET /api/teacher/races` is POST-only: 405) and that
+every SSE stream a student closed would have been logged as a failure. Spring MVC now answers
+those request errors with their real status (405/404/400) and Spring Boot's standard error
+JSON instead of the app's error body (the client already classifies them by status), and a
+stream the student closed ends with no answer and no log line; see
+`GlobalExceptionHandlerFallbackTest`. Independent review, 2026-10-26: an IOException on a
+started response is not proof of a disconnect. Known disconnects (Spring's helper, or the
+Windows words for Winsock 10053/10054 on an IOException) stay silent; any other IOException
+after the response started leaves one WARN line and still no body.) Open release gates are
 unchanged: migration policy, target budget numbers, hosted CI, product approval of the
 provisional 60000 ms window and the client presentation (C5-04).
 
 ### S4-05 — Hidden Recovery
 
-**Status:** `PLANNED`
+**Status:** `IMPLEMENTED behind QUIZWHEELZ_RECOVERY_ENABLED=false (default); local on feature/S4-05-C5-04-recovery-luck-shield (2026-10-25), not merged; for Diana's review`
 
 Eligibility requires both actually being behind and demonstrably struggling.
 Never grant assistance solely because a leading player intentionally answers wrong.
+
+Rules (approved by Shimon on 2026-10-25, Diana's principle above), constants in
+`common/RecoveryRules`:
+- Evidence: the 6 most recent NORMAL outcomes, the current correct answer included, with
+  at least 3 failures. A failure is a wrong accepted NORMAL answer or a NORMAL timeout whose
+  penalty was applied. An expiry without consequence (a finished or disconnected player, a
+  race not in progress) and every Challenge question never count.
+- Behind: at least 12% of the track length behind the leader, at least 6% behind the median
+  of the RACING players (self included), own progress at most 65%, and at least 2 RACING
+  players. Ratios are compared as `BigDecimal`, like `ChallengeRules.FINISH_GATE_RATIO`.
+- Grant: exactly +10 Challenge Energy, once per race player, on the first accepted correct
+  NORMAL answer that meets both. It lands after the normal gain and before the offer check,
+  so a meter it fills opens the offer with the same answer. When the energy after the normal
+  gain is above 90 the right is kept for a later answer.
+- Nothing else changes: score, position, speed, difficulty, Luck, the API (no field, no
+  event) and the logs (nothing about the student). The flag is independent of the Luck flag.
+
+Design:
+- One bean, `HiddenRecoveryService`: `observeAcceptedAnswer` (from
+  `ChallengeOfferService.afterAnswer`, NORMAL, RACING, IN_PROGRESS), `observePenalizedTimeout`
+  (from `QuestionTimeoutService.applyTimeoutConsequence`, right after the NORMAL penalty) and
+  `nudgeAfterNormalGain` (after `ChallengeEnergyService.earn`). All are
+  `Propagation.MANDATORY`: they run only inside the answer or timeout transaction that
+  already holds the RacePlayer PESSIMISTIC_WRITE lock, so a rollback undoes the energy and the
+  award together.
+- The callers take `ObjectProvider<HiddenRecoveryService>`, the `AcceptedAnswerLuckService`
+  pattern: the sliced test contexts that build `ChallengeOfferService` or
+  `QuestionTimeoutService` need no Recovery bean, and in production the bean is always
+  present.
+- One standings projection per answer: `StudentAnswerSubmissionService` calculates the
+  standing once, after the answer is applied and before the offer step, and passes it to
+  `ChallengeOfferService.afterAnswer`; Recovery reads its field from it and the response reuses
+  it. Answers in a race already wait for each other on the race row, so a second projection of
+  every classmate there (two Redis reads each) would have slowed the whole race. Nothing after
+  that point moves a player at the decision instant (a Luck effect only starts then).
+- Pure, unit-tested rules in `RecoveryPolicy`, a plain policy object the service holds as a
+  field, like `GuardShieldService` holds `GuardShieldPolicy`: a 6-bit window (newest outcome in
+  bit 0, 1 = correct), failures, room for the nudge, the gaps, and the standing it returns as the
+  plain `RecoveryStanding` record (leader, an exact median and the count over the RACING
+  classmates, projected to the decision instant, and the student; a finished player is not part
+  of the field).
+- After the one grant, later answers write nothing to the Recovery row.
+- An old or repeated question id is ignored (one WARN for an older one), never thrown:
+  Recovery must never turn a student's answer into an error. The energy goes through
+  `ChallengeEnergyService.addRecoveryNudge`, which has one purpose and takes its amount from
+  `RecoveryRules`; its guard cannot fire because the policy checks the room first.
+- State: `race_player_recovery_states`, one row per race player (the window, the last
+  observed NORMAL question and the award). Question ids are plain columns, not foreign
+  keys, because the nightly cleanup deletes old questions. Nothing in the server deletes race
+  players or races, so the race player foreign key never blocks a deletion.
+
+Schema: dev (`ddl-auto=update`) and the tests create the table. Production uses `validate`,
+which checks every mapped entity at startup, so this DDL must run before this build is
+deployed, whether the flag is on or off (production migrations remain Phase 6; see the S4-04
+deployment gate). It is the table Hibernate created on MySQL 8.4 in the live run, with readable
+constraint names:
+
+```sql
+CREATE TABLE race_player_recovery_states (
+  id bigint NOT NULL AUTO_INCREMENT,
+  created_at datetime(6) NOT NULL,
+  updated_at datetime(6) DEFAULT NULL,
+  awarded_at_epoch_ms bigint DEFAULT NULL,
+  awarded_energy int NOT NULL DEFAULT '0',
+  awarded_question_id bigint DEFAULT NULL,
+  last_observed_normal_question_id bigint DEFAULT NULL,
+  recent_outcome_bits int NOT NULL DEFAULT '0',
+  recent_outcome_count int NOT NULL DEFAULT '0',
+  race_player_id bigint NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_race_player_recovery_states_player (race_player_id),
+  CONSTRAINT fk_race_player_recovery_states_player FOREIGN KEY (race_player_id)
+    REFERENCES race_players (id),
+  CONSTRAINT chk_race_player_recovery_states CHECK (recent_outcome_bits BETWEEN 0 AND 63
+    AND recent_outcome_count BETWEEN 0 AND 6 AND awarded_energy IN (0, 10))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+Evidence (2026-10-25): `RecoveryPolicyTest` 25 and `RecoveryStandingTest` 4;
+`HiddenRecoveryIntegrationTest` 14 on H2 and the same 14 on MySQL 8.4
+(`HiddenRecoveryIntegrationMySqlTest`), including a qualifying answer that projects the
+standings no more often than an ordinary one, a Challenge answer that never enters the window,
+an overdue answer whose penalized timeout commits with `QUESTION_EXPIRED`, a finished leader left
+out of the field, and two parallel submissions that grant once; `HiddenRecoveryOffIntegrationTest`
+1. The full H2 suite passes (1,409 tests) and so does the full MySQL 8.4 suite on a disposable
+container (212 tests in 15 classes). The live API run on a disposable MySQL and Redis
+passed with the four Recovery × Luck combinations, with 0 server errors and no Recovery text in
+any response: `docs/vision/s4_05_c5_04_2026-10-25/evidence/live/`.
+
+Open before Recovery is enabled (independent review, 2026-10-26; the flag stays false until all
+three are closed):
+- Product, Diana's written approval: a FINISHED player is not part of the field, so a finished
+  leader no longer makes a classmate "behind"; and a STRICT focus forfeit counts as a failure,
+  because it goes through the penalized timeout path (`forfeitActiveQuestionAsTimeout`).
+- Deployment: the DDL above runs before this build is deployed. Nothing runs DDL against an
+  existing database automatically or without approval.
+- Measurement gate, before any cache is considered: p50 and p95 of answer submission and of
+  offer opening with 2, 4 and 8 RACING students, after a warm-up, several repetitions per size,
+  with Recovery and Luck each ON and OFF. The 2026-10-25 latency run is a smoke check with few
+  offer rounds, not proof that p95 did not regress.
 
 ### S4-06 — Race Moments / announcements
 

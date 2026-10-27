@@ -36,6 +36,18 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - `@PreAuthorize` expressions
 - current-user service
 - consistent 401/403/error handling.
+- no generated in-memory user (2026-10-25): teachers sign in only through `AuthService` and
+  the JWT cookie, so `UserDetailsServiceAutoConfiguration` is excluded and the server no longer
+  logs a "generated security password" at startup.
+- the catch-all `GlobalExceptionHandler` logs every unexpected exception at ERROR with the
+  method, the path and the stack trace (2026-10-25); the client still gets only the generic body.
+  Spring's own request errors (a wrong method, an unknown path, a missing parameter) go back to
+  Spring MVC and answer 405/404/400 with Spring Boot's standard error JSON instead of 500, and
+  a client that went away (a closed tab ends its SSE stream) is neither answered nor logged as
+  a failure. A disconnect is recognized by Spring's `DisconnectedClientHelper` or by the
+  Windows words for the same thing (Winsock 10053/10054, IOException only); an IOException
+  nobody recognizes on a response that already started cannot be answered either, but it
+  leaves one WARN line (method, path, exception) instead of disappearing (2026-10-26).
 
 ### Teacher flow
 
@@ -240,8 +252,7 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
   templates and Safe draws EASY addition or subtraction, rotating by offer id and
   question number; the question is generated from exactly the selected template
   (`SERVER_IMPLEMENTATION_PLAN.md`, S4-03).
-- challenge template safety (local, 2026-10-25, `feature/C5-04-luck-shield-foundation`,
-  not merged): only templates that pass `validateTemplateConfig` and that the generator can
+- challenge template safety (on `main` since PR #81, `main@5ed8a39`): only templates that pass `validateTemplateConfig` and that the generator can
   turn into a question make or serve a challenge; a run that no valid template can serve ends
   as a neutral technical abort
   (no result, reward or penalty), its Energy is restored once, and the same request serves
@@ -334,6 +345,15 @@ recovery never subtracts movement awarded in degraded mode.
 - `LuckDrawPolicy` compares speed in tenths, like movement, so a Tailwind at the shown
   maximum becomes an Energy Orb.
 
+### Hidden Recovery (S4-05, local checkpoint 2026-10-25)
+
+- Implemented on `feature/S4-05-C5-04-recovery-luck-shield` (not merged) behind
+  `QUIZWHEELZ_RECOVERY_ENABLED`, default `false` and independent of the Luck flag.
+- A player who is both behind and struggling gets +10 Challenge Energy once per race player,
+  on an accepted correct NORMAL answer, after the normal gain and before the offer check. It
+  changes nothing else and is hidden from every API, event and log. Rules, design and the
+  production DDL of `race_player_recovery_states`: `SERVER_IMPLEMENTATION_PLAN.md` (S4-05).
+
 ## Partial or missing
 
 - Teacher live race client and results remain client work (C3/C4). The C2 server
@@ -341,9 +361,11 @@ recovery never subtracts movement awarded in degraded mode.
   arbitration (decision-instant standings, signal-only student SSE, proof-gated
   arbitration); the teacher live-state/durable-event/SSE foundation for C3 already
   exists, so further server work is driven only by actual C3/results requirements.
-- Junction (highway/dirt-road) decision events, Hidden Recovery (S4-05) and Race
-  Moments/announcements (S4-06); Luck activation with its production migration, budget
-  and retention decisions.
+- Junction (highway/dirt-road) decision events and Race Moments/announcements (S4-06);
+  Luck activation with its production migration, budget and retention decisions; Hidden
+  Recovery activation (S4-05 is implemented behind its flag; production validates every
+  entity, so its table needs the documented DDL before this build is deployed; migrations are
+  Phase 6).
 - Catch-up-assistance policy.
 - Registration, email verification, reset and 2FA.
 - Database migrations and production deployment.

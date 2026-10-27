@@ -2,7 +2,7 @@ import { resolveRacePlacement } from "../../../shared/components/raceRank/racePl
 import { getRaceProgressRatio } from "./getRaceProgressRatio";
 import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig";
 import { RACE_GAMEPLAY_MODES } from "../../../constants/raceGameplayConstants";
-import { isChallengeAnswer, selectChallengeSlowdownSource } from "../runtime/studentRaceGameplayMode";
+import { hasGuardShield, isChallengeAnswer, selectChallengeSlowdownSource } from "../runtime/studentRaceGameplayMode";
 
 function getRewardModel(feedback, playerFinished, formatter) {
   if (playerFinished || feedback?.correct !== true || feedback.questionId == null) return null;
@@ -78,5 +78,6 @@ export function getStudentRaceHudModel(runtimeState, language = "he", answerFeed
     progressText: progressPercent == null ? null : `${progressPercent}%`,
     progressStyle: { width: `${progressPercent ?? 0}%` },
     energy: getEnergyModel(runtimeState.gameplay, new Intl.NumberFormat(language)),
+    shieldUp: hasGuardShield(runtimeState.gameplay),
   };
 }

@@ -119,6 +119,9 @@ export default function StudentRaceHud({
         <StudentRaceSpeedometer speed={hud.speed} slowing={hud.slowing} />
         {controls}
       </div>
+      {/* The shield bubble lives only in Pixi. One live line that stays mounted is announced when the shield comes
+          up and never again while the race moves; the panel already tells when the shield blocks mud. */}
+      <span className="sr-only" aria-live="polite">{hud.shieldUp ? t("hud.shieldReady") : null}</span>
       <StudentRaceReward key={hud.rewardKey} reward={hud.reward} />
     </div>
   );

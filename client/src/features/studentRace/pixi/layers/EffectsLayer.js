@@ -20,6 +20,10 @@ const EFFECT_DURATIONS_MS = Object.freeze({
   [STUDENT_RACE_EFFECT.TURBO_FAILURE]: EFFECT_CONFIG.turboFailureEffectDurationMs,
   [STUDENT_RACE_EFFECT.SAFE_COMPLETE]: EFFECT_CONFIG.safeCompleteEffectDurationMs,
   [STUDENT_RACE_EFFECT.SAFE_PERFECT]: EFFECT_CONFIG.safePerfectEffectDurationMs,
+  [STUDENT_RACE_EFFECT.LUCK_TAILWIND]: EFFECT_CONFIG.luckTailwindEffectDurationMs,
+  [STUDENT_RACE_EFFECT.LUCK_ENERGY_ORB]: EFFECT_CONFIG.luckEnergyOrbEffectDurationMs,
+  [STUDENT_RACE_EFFECT.LUCK_MUD]: EFFECT_CONFIG.luckMudEffectDurationMs,
+  [STUDENT_RACE_EFFECT.LUCK_SHIELD_BLOCKED]: EFFECT_CONFIG.luckShieldBlockedEffectDurationMs,
 });
 
 export class EffectsLayer {

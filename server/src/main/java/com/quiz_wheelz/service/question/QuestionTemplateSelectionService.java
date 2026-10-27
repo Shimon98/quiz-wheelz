@@ -25,6 +25,10 @@ public class QuestionTemplateSelectionService {
         this.questionTemplateRepository = questionTemplateRepository;
     }
 
+    // The three selectTemplate overloads have no production caller since S4-03 (only the deprecated
+    // QuestionGenerationService.generate(QuestionPlan)): picking by fields can return a look-alike of the template
+    // whose turn it is. validateTemplateConfig below is still in use.
+    @Deprecated
     @Transactional(readOnly = true)
     public QuestionTemplate selectTemplate(QuestionPlan questionPlan) {
         if (questionPlan == null) {
@@ -39,6 +43,7 @@ public class QuestionTemplateSelectionService {
         );
     }
 
+    @Deprecated
     @Transactional(readOnly = true)
     public QuestionTemplate selectTemplate(
             Subject subject,
@@ -53,6 +58,7 @@ public class QuestionTemplateSelectionService {
         );
     }
 
+    @Deprecated
     @Transactional(readOnly = true)
     public QuestionTemplate selectTemplate(
             Subject subject,

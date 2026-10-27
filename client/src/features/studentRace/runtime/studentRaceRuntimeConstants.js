@@ -28,6 +28,10 @@ export const STUDENT_RACE_EFFECT = Object.freeze({
   TURBO_FAILURE: "turbo-failure",
   SAFE_COMPLETE: "safe-complete",
   SAFE_PERFECT: "safe-perfect",
+  LUCK_TAILWIND: "luck-tailwind",
+  LUCK_ENERGY_ORB: "luck-energy-orb",
+  LUCK_MUD: "luck-mud",
+  LUCK_SHIELD_BLOCKED: "luck-shield-blocked",
 });
 
 export const STUDENT_RACE_MOMENT = Object.freeze({
@@ -41,11 +45,12 @@ export const STUDENT_RACE_MOMENT = Object.freeze({
   SAFE_PERFECT: STUDENT_RACE_EFFECT.SAFE_PERFECT,
   CHALLENGE_OFFER: "challenge-offer",
   TURBO_ARMED: "turbo-armed",
-  // Luck moments carry no effect, cue or HUD yet: every consumer ignores a type it does not know (C5-04).
-  LUCK_TAILWIND: "luck-tailwind",
-  LUCK_ENERGY_ORB: "luck-energy-orb",
-  LUCK_MUD: "luck-mud",
-  LUCK_SHIELD_BLOCKED: "luck-shield-blocked",
+  // Luck moments carry a placeholder burst and a text notice but no cue yet: final art and sound come later in
+  // C5-04, and every consumer ignores a type it does not know.
+  LUCK_TAILWIND: STUDENT_RACE_EFFECT.LUCK_TAILWIND,
+  LUCK_ENERGY_ORB: STUDENT_RACE_EFFECT.LUCK_ENERGY_ORB,
+  LUCK_MUD: STUDENT_RACE_EFFECT.LUCK_MUD,
+  LUCK_SHIELD_BLOCKED: STUDENT_RACE_EFFECT.LUCK_SHIELD_BLOCKED,
 });
 
 // Phases of one challenge choice request, keyed to its offer (C5-02).

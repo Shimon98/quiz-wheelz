@@ -47,6 +47,23 @@ beforeEach(() => {
   pendingLoads.length = 0;
 });
 
+describe("StudentRaceRenderer frame clock", () => {
+  it("hands every layer the same device clock reading for a frame", async () => {
+    const renderer = createRenderer();
+    pendingLoads.forEach(({ resolve }) => resolve(loadedTexture()));
+    await renderer.ready;
+    const updates = renderer.layers.map((layer) => vi.spyOn(layer, "update"));
+    const now = vi.spyOn(Date, "now").mockReturnValue(1_700_000_000_000);
+
+    tick(renderer);
+
+    updates.forEach((update) => expect(update)
+      .toHaveBeenCalledWith(expect.objectContaining({ clientNowEpochMs: 1_700_000_000_000 })));
+    now.mockRestore();
+    renderer.destroy();
+  });
+});
+
 describe("StudentRaceRenderer initial world readiness", () => {
   it("shows one static loading surface without drawing obsolete fallback scenery", () => {
     const renderer = createRenderer();

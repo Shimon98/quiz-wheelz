@@ -36,6 +36,7 @@ const NAME_MESSAGE_KEYS = Object.freeze({
   [SERVER_ERROR_NAMES.RACE_NOT_JOINABLE]: "race.notJoinable",
   [SERVER_ERROR_NAMES.RACE_FULL]: "race.full",
   [SERVER_ERROR_NAMES.RACE_PLAYER_NAME_TAKEN]: "race.nameTaken",
+  [SERVER_ERROR_NAMES.QUESTION_TEMPLATE_NOT_AVAILABLE_FOR_PLAYER]: "question.unavailable",
 });
 
 const CATEGORY_MESSAGE_KEYS = Object.freeze({

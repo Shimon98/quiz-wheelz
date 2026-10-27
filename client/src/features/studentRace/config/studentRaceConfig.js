@@ -30,6 +30,10 @@ export const STUDENT_RACE_CONFIG = Object.freeze({
   // A choice still saving after this long swaps to a playful "still checking" line.
   challengeSlowSubmitMs: 1500,
 
+  // How long an Energy Orb or a shield block stays news after the server decided it. The answer feedback and the
+  // next-question pause cover the first ~2 s, which leaves about 2 s of notice (C5-04).
+  luckNoticeMs: 4000,
+
   // Question countdown DISPLAY (the server's expiresAt is the truth; these
   // only tune presentation). Urgency thresholds switch the timer accent —
   // one owner here, never inline in components.

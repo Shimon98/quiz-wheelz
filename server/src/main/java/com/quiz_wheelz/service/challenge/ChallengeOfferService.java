@@ -7,8 +7,11 @@ import com.quiz_wheelz.exception.ApiException;
 import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.RacePlayerChallengeOfferRepository;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayStateService;
+import com.quiz_wheelz.service.raceplayer.StudentRaceStandingResult;
 import com.quiz_wheelz.service.raceengine.RacePlayerSpeedEffectService;
+import com.quiz_wheelz.service.recovery.HiddenRecoveryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +30,7 @@ public class ChallengeOfferService {
     private final ChallengeQuestionAvailabilityService availability;
     private final ChallengeExecutionStateService executions;
     private final RacePlayerSpeedEffectService speedEffects;
+    private final ObjectProvider<HiddenRecoveryService> recovery;
 
     @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
     public Optional<RacePlayerChallengeOffer> unresolved(RacePlayer player) {
@@ -34,14 +38,21 @@ public class ChallengeOfferService {
     }
 
     public void afterAnswer(RacePlayer player, PlayerQuestion question, Difficulty answeredDifficulty,
-                            boolean correct, long decisionEpochMs) {
-        if (!correct || question.getGameplayContext() != QuestionGameplayContext.NORMAL
+                            boolean correct, long decisionEpochMs, StudentRaceStandingResult standing) {
+        if (question.getGameplayContext() != QuestionGameplayContext.NORMAL
                 || player.getStatus() != RacePlayerStatus.RACING
                 || player.getRace().getStatus() != RaceStatus.IN_PROGRESS) {
             return;
         }
+        // S4-05: a wrong NORMAL answer earns nothing but still counts as evidence for Hidden Recovery.
+        recovery.ifAvailable(service -> service.observeAcceptedAnswer(player, question, correct));
+        if (!correct) {
+            return;
+        }
         var state = stateService.obtainForLockedPlayer(player);
         energyService.earn(state, answeredDifficulty, question.getGameplayContext(), correct);
+        // The nudge lands before the offer check, so a meter it fills opens the offer with this same answer.
+        recovery.ifAvailable(service -> service.nudgeAfterNormalGain(player, question, state, decisionEpochMs, standing));
         if (!eligibilityService.eligible(state, unresolved(player).isPresent()) || !availability.available(player)
                 || speedEffects.findActiveAt(player, decisionEpochMs).stream()
                 .anyMatch(effect -> effect.getType() == EffectType.SPEED_SLOW || effect.getType() == EffectType.SPEED_BOOST)) {

@@ -22,6 +22,7 @@ import com.quiz_wheelz.service.liveevent.RaceLiveMutationContext;
 import com.quiz_wheelz.service.liveevent.RaceLiveMutationTracker;
 import com.quiz_wheelz.service.raceplayer.RacePlayerGameplayRequestGuard;
 import com.quiz_wheelz.service.raceplayer.StudentRaceRuntimeSnapshotService;
+import com.quiz_wheelz.service.raceplayer.StudentRaceStandingResult;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStandingService;
 import com.quiz_wheelz.utils.DateTimeUtils;
 import com.quiz_wheelz.service.challenge.ChallengeOfferService;
@@ -162,9 +163,12 @@ public class StudentAnswerSubmissionService {
         question.setAnsweredAt(now);
 
         PlayerQuestion savedQuestion = playerQuestionRepository.save(question);
+        // One standings projection per answer, before the offer step: Hidden Recovery may need it there and the response
+        // always does. Nothing after this point moves a player at this instant (a Luck effect only starts now).
+        StudentRaceStandingResult standing = standingService.calculate(lockedRacePlayer, decisionEpochMs);
         if (normal) {
             challengeOffers.afterAnswer(lockedRacePlayer, savedQuestion,
-                    answerRaceImpact.getAnsweredDifficulty(), correct, decisionEpochMs);
+                    answerRaceImpact.getAnsweredDifficulty(), correct, decisionEpochMs, standing);
             acceptedAnswerLuck.afterAcceptedNormalAnswer(lockedRacePlayer, savedQuestion, correct, decisionEpochMs);
         }
 
@@ -181,7 +185,7 @@ public class StudentAnswerSubmissionService {
                 snapshotMapper.fromAnswerRaceImpact(
                         answerRaceImpact,
                         lockedRacePlayer,
-                        standingService.calculate(lockedRacePlayer, decisionEpochMs),
+                        standing,
                         decisionEpochMs,
                         lockedRacePlayer.getRace().getLiveEventVersion()
                 );

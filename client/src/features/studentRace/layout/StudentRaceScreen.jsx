@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "@mantine/hooks";
 
 import { AudioSettingsButton } from "../../../shared/components/publicSettings";
@@ -8,6 +8,7 @@ import { STUDENT_RACE_VISUAL_CONFIG } from "../config/raceVisualConfig";
 import useStudentRaceMoments from "../hooks/useStudentRaceMoments";
 import useStudentRaceSound from "../hooks/useStudentRaceSound";
 import PixiStudentRaceCanvas from "../pixi/PixiStudentRaceCanvas";
+import { newestLuckEventId } from "../runtime/deriveStudentRaceMoments";
 import { applyFeedbackEffectToRuntime } from "../runtime/resolveStudentRaceFeedbackEffect";
 import { isQuestionTimeUp } from "../utils/isQuestionTimeUp";
 import StudentRaceOverlay from "./StudentRaceOverlay";
@@ -28,8 +29,17 @@ export default function StudentRaceScreen({
     [runtimeState, feedbackState, answerFeedback, reducedMotion, timeUpQuestionId],
   );
   const canvasRef = useRef(null);
+  const [announcedLuckEventId, setAnnouncedLuckEventId] = useState(null);
   const momentConsumers = useMemo(
-    () => [(batch) => canvasRef.current?.playMoments(batch), playStudentRaceMoments],
+    () => [
+      (batch) => canvasRef.current?.playMoments(batch),
+      playStudentRaceMoments,
+      // The text line tells one-shot Luck only as announced here, like the kart and the sound.
+      (batch) => {
+        const eventId = newestLuckEventId(batch);
+        if (eventId != null) setAnnouncedLuckEventId(eventId);
+      },
+    ],
     [],
   );
   useStudentRaceMoments(presentationRuntimeState, momentConsumers);
@@ -56,6 +66,7 @@ export default function StudentRaceScreen({
         />
         <StudentRaceOverlay
           runtimeState={runtimeState}
+          announcedLuckEventId={announcedLuckEventId}
           hudControls={<AudioSettingsButton size="md" className="pointer-events-auto" />}
           {...overlayProps}
         />

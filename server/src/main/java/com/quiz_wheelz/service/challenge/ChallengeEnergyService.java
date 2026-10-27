@@ -1,6 +1,7 @@
 package com.quiz_wheelz.service.challenge;
 
 import com.quiz_wheelz.common.ChallengeRules;
+import com.quiz_wheelz.common.RecoveryRules;
 import com.quiz_wheelz.entitys.RacePlayerGameplayState;
 import com.quiz_wheelz.enums.Difficulty;
 import com.quiz_wheelz.enums.QuestionGameplayContext;
@@ -28,5 +29,14 @@ public class ChallengeEnergyService {
         };
         state.setChallengeEnergy(Math.max(0, Math.min(ChallengeRules.ENERGY_THRESHOLD,
                 state.getChallengeEnergy() + gain)));
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void addRecoveryNudge(RacePlayerGameplayState state) {
+        int energy = state.getChallengeEnergy() + RecoveryRules.NUDGE_ENERGY;
+        if (energy > ChallengeRules.ENERGY_THRESHOLD) {
+            throw new IllegalStateException("The Recovery nudge must fit the energy meter");
+        }
+        state.setChallengeEnergy(energy);
     }
 }

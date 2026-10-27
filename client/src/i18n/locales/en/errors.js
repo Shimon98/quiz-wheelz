@@ -36,4 +36,7 @@ export default {
   racePlayer: {
     sessionLost: "We could not find your race connection. Join again with the room code.",
   },
+  question: {
+    unavailable: "No question is available right now. Ask your teacher for help.",
+  },
 };

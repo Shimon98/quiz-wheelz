@@ -23,6 +23,11 @@ export const STUDENT_RACE_ANIMATION_CONFIG = Object.freeze({
     turboFailureEffectDurationMs: 1000,
     safeCompleteEffectDurationMs: 900,
     safePerfectEffectDurationMs: 1300,
+    // Luck bursts stay shorter than the answer feedback they usually arrive with, so they never outlast it.
+    luckTailwindEffectDurationMs: 450,
+    luckEnergyOrbEffectDurationMs: 550,
+    luckMudEffectDurationMs: 450,
+    luckShieldBlockedEffectDurationMs: 550,
   }),
   kartPoses: Object.freeze({
     poseFadeMs: 320,

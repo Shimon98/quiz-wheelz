@@ -38,7 +38,8 @@ function mapPowerUps(raw) {
 }
 
 // Types and outcomes stay strings: a value from a newer server is kept and simply not presented.
-function mapLuckEvent(raw) {
+// The event carries the clock of its snapshot, like an effect, so its age can be judged on this device.
+function mapLuckEvent(raw, serverClockOffsetMs) {
   requireObject(raw, "Luck event");
 
   return {
@@ -47,20 +48,22 @@ function mapLuckEvent(raw) {
     appliedType: requireNonEmptyString(raw.appliedType, "Luck applied type"),
     outcome: requireNonEmptyString(raw.outcome, "Luck outcome"),
     occurredAtEpochMs: requireSafeInteger(raw.occurredAtEpochMs, "Luck event time", { min: 1 }),
+    serverClockOffsetMs: requireFiniteNumber(serverClockOffsetMs, "Luck event clock offset"),
   };
 }
 
-function mapLuck(raw) {
+function mapLuck(raw, serverClockOffsetMs) {
   requireObject(raw, "Gameplay luck");
 
   return {
     recentEvents: requireArray(raw.recentEvents, "Luck events")
-      .map((event) => mapOrNull(mapLuckEvent, event))
+      .map((event) => mapOrNull((value) => mapLuckEvent(value, serverClockOffsetMs), event))
       .filter(Boolean),
   };
 }
 
-function mapActiveEffect(raw) {
+// Like an offer, an effect carries the clock of the snapshot it came with, so its window ends on time on this device.
+function mapActiveEffect(raw, serverClockOffsetMs) {
   requireObject(raw, "Gameplay effect");
   const startsAtEpochMs = requireSafeInteger(raw.startsAtEpochMs, "Gameplay effect start", { min: 1 });
   const endsAtEpochMs = requireSafeInteger(raw.endsAtEpochMs, "Gameplay effect end", { min: 1 });
@@ -78,21 +81,23 @@ function mapActiveEffect(raw) {
       : requireSafeInteger(raw.magnitudeTenths, "Gameplay effect magnitude"),
     startsAtEpochMs,
     endsAtEpochMs,
+    serverClockOffsetMs: requireFiniteNumber(serverClockOffsetMs, "Gameplay effect clock offset"),
   };
 }
 
 function mapGameplay(raw, clock) {
   requireObject(raw, "Gameplay");
+  const { serverClockOffsetMs = 0 } = clock;
 
   return {
     mode: requireNonEmptyString(raw.mode, "Gameplay mode"),
     effectiveSpeed: requireFiniteNumber(raw.effectiveSpeed, "Gameplay effective speed", { min: 0 }),
     activeEffects: requireArray(raw.activeEffects, "Gameplay effects")
-      .map((effect) => mapOrNull(mapActiveEffect, effect))
+      .map((effect) => mapOrNull((value) => mapActiveEffect(value, serverClockOffsetMs), effect))
       .filter(Boolean),
     challenge: mapStudentRaceChallenge(raw.challenge, clock),
     powerUps: mapOrNull(mapPowerUps, raw.powerUps) ?? NO_POWER_UPS,
-    luck: mapOrNull(mapLuck, raw.luck) ?? NO_LUCK,
+    luck: mapOrNull((luck) => mapLuck(luck, serverClockOffsetMs), raw.luck) ?? NO_LUCK,
   };
 }
 

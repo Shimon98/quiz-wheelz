@@ -137,16 +137,17 @@ describe("deriveStudentRaceMoments Luck events", () => {
       .toEqual([[], ["correct", STUDENT_RACE_MOMENT.LUCK_TAILWIND]]);
   });
 
-  it("leaves a challenge result standing alone in presentation when Luck arrives with it", () => {
+  it("presents Luck that arrives with a challenge result next to the result, never losing it", () => {
     const lastResult = {
       challengeId: 9, type: "TURBO_TRIAL", outcome: "TURBO_FAILURE", questionsResolved: 1, correctAnswers: 0,
       completedAtEpochMs: 1,
     };
+    const blocked = luckEvent(31, "MUD_SPLASH", { outcome: "BLOCKED_BY_SHIELD" });
     const { moments } = deriveStudentRaceMoments(deriveStudentRaceMoments(null, runtime()).observed,
-      runtime({ luck: [luckEvent(31)], lastResult }));
+      runtime({ activeEffect: "wrong", feedbackEventId: 400, luck: [blocked], lastResult }));
 
-    expect(moments.map(({ type }) => type)).toContain(STUDENT_RACE_MOMENT.LUCK_TAILWIND);
-    expect(presentedMoments({ moments }).map(({ type }) => type)).toEqual([STUDENT_RACE_MOMENT.TURBO_FAILURE]);
+    expect(presentedMoments({ moments }).map(({ type }) => type))
+      .toEqual([STUDENT_RACE_MOMENT.TURBO_FAILURE, STUDENT_RACE_MOMENT.LUCK_SHIELD_BLOCKED]);
   });
 
   it("keeps its Luck memory bounded across a long race", () => {

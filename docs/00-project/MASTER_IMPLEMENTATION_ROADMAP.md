@@ -160,8 +160,13 @@ Order:
    default. The 2026-10-24 review reproduced four Luck-ON defects (cross-race deadlock, nightly
    question cleanup, startup budget check, Tailwind at the maximum speed); the S4-04 stability
    fixes keep every rule unchanged. Luck stays OFF and not playable until its release gates
-   pass (see `../01-server/SERVER_IMPLEMENTATION_PLAN.md`). S4-05 / S4-06 remain PLANNED; no
-   Recovery is claimed.
+   pass (see `../01-server/SERVER_IMPLEMENTATION_PLAN.md`). S4-06 remains PLANNED. S4-05
+   Hidden Recovery is implemented locally (2026-10-25, `feature/S4-05-C5-04-recovery-luck-shield`,
+   not merged) behind `QUIZWHEELZ_RECOVERY_ENABLED=false`; nothing is claimed for production
+   until the branch is reviewed. Production validates every entity at startup, so its table
+   needs the documented DDL before this build is deployed, flag on or off. Recovery is enabled
+   only after Diana's written approval of two rules (finished leader, STRICT focus forfeit) and a
+   p50/p95 measurement with 2/4/8 students (independent review, 2026-10-26).
 5. Earned Power-Ups and fair bounded Luck.
 6. Hidden Recovery policy.
 7. Race Moments / announcements.
@@ -192,6 +197,11 @@ Client checkpoint (2026-10-24): C5-02, C5-03 and client quality packages 1–3 a
 `main` with the C5 client PR (`feature/C5-02-challenge-choice-energy`); 1,689 client tests, lint
 and build pass. Next on the client: C5-04 (Luck and Guard Shield presentation) after the S4-04
 review, the physical-phone check and client quality package 4.
+
+Client checkpoint (2026-10-25): C5-04 part 1 is merged (PR #81); C5-04 part 2 (functional Luck
+and Guard Shield presentation with temporary Pixi `Graphics` and text notices, the friendly
+"no question available" message and the mode catch-up read) is implemented locally on
+`feature/S4-05-C5-04-recovery-luck-shield`. Final art and sound remain.
 
 ## Phase 5 — Full teacher identity and 2FA
 

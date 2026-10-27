@@ -189,9 +189,20 @@ html:not([data-theme="dark"]) .race-panel-tone[data-tone="error"] {
   }
 }
 
-.race-slowdown-notice {
+.race-slowdown-notice,
+.race-luck-notice {
+  --race-notice-tone: var(--qw-warning);
   border-radius: 10px;
   padding: 4px 8px;
-  background: color-mix(in srgb, var(--qw-warning) 10%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--qw-warning) 28%, transparent);
+  background: color-mix(in srgb, var(--race-notice-tone) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--race-notice-tone) 28%, transparent);
+}
+
+/* Good Luck takes the info tint; a Mud setback keeps the slowdown's warning tint. */
+.race-luck-notice[data-tone="good"] {
+  --race-notice-tone: var(--qw-info);
+}
+
+.race-luck-notice-icon {
+  color: var(--race-notice-tone);
 }

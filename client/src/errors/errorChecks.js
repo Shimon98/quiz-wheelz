@@ -62,6 +62,11 @@ export function isTransientError(error) {
   return isNetworkError(error) || isServerError(error);
 }
 
+// Every question template of the player's level failed (S4-03): only the teacher can fix it, so a retry waits on them.
+export function isQuestionUnavailableError(error) {
+  return error?.errorName === SERVER_ERROR_NAMES.QUESTION_TEMPLATE_NOT_AVAILABLE_FOR_PLAYER;
+}
+
 export function isRaceResultsNotAvailableError(error) {
   return error?.errorName === SERVER_ERROR_NAMES.RACE_RESULTS_NOT_AVAILABLE;
 }

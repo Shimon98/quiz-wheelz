@@ -18,6 +18,11 @@ function slowdown(overrides = {}) {
   };
 }
 
+// A mapped effect or Luck event carries the clock of the snapshot it came with.
+function calibrated(item, serverClockOffsetMs = 0) {
+  return { ...item, serverClockOffsetMs };
+}
+
 function gameplay(overrides = {}) {
   return { mode: "NORMAL", effectiveSpeed: 1.2, activeEffects: [slowdown()], ...overrides };
 }
@@ -39,7 +44,14 @@ const NO_LUCK = { recentEvents: [] };
 describe("mapStudentRaceGameplay", () => {
   it("maps the server gameplay as it arrives, with no shield and no Luck history when the snapshot has none", () => {
     expect(mapStudentRaceGameplay(gameplay()))
-      .toEqual({ ...gameplay(), challenge: null, powerUps: NO_POWER_UPS, luck: NO_LUCK });
+      .toEqual({
+        ...gameplay(), activeEffects: [calibrated(slowdown())], challenge: null, powerUps: NO_POWER_UPS, luck: NO_LUCK,
+      });
+  });
+
+  it("calibrates each effect to the clock it was given, so its window can be judged on this device", () => {
+    expect(mapStudentRaceGameplay(gameplay(), { serverClockOffsetMs: -250 }).activeEffects)
+      .toEqual([calibrated(slowdown(), -250)]);
   });
 
   it("starts with no shield and no Luck history", () => {
@@ -60,13 +72,20 @@ describe("mapStudentRaceGameplay", () => {
       luckEvent({ eventId: 32, selectedType: "TAILWIND", appliedType: "ENERGY_ORB" }),
     ];
 
-    expect(mapStudentRaceGameplay(gameplay({ luck: { recentEvents } })).luck).toEqual({ recentEvents });
+    expect(mapStudentRaceGameplay(gameplay({ luck: { recentEvents } })).luck)
+      .toEqual({ recentEvents: recentEvents.map((event) => calibrated(event)) });
+  });
+
+  it("calibrates each Luck event to the clock it was given, so its age can be judged on this device", () => {
+    expect(mapStudentRaceGameplay(gameplay({ luck: { recentEvents: [luckEvent()] } }), { serverClockOffsetMs: 75 })
+      .luck.recentEvents).toEqual([calibrated(luckEvent(), 75)]);
   });
 
   it("preserves a Luck type or outcome it cannot present yet", () => {
     const future = luckEvent({ eventId: 40, selectedType: "FUTURE_TYPE", appliedType: "FUTURE_TYPE", outcome: "NO_EFFECT" });
 
-    expect(mapStudentRaceGameplay(gameplay({ luck: { recentEvents: [future] } })).luck.recentEvents).toEqual([future]);
+    expect(mapStudentRaceGameplay(gameplay({ luck: { recentEvents: [future] } })).luck.recentEvents)
+      .toEqual([calibrated(future)]);
   });
 
   it.each([
@@ -83,7 +102,7 @@ describe("mapStudentRaceGameplay", () => {
       luck: { recentEvents: [first, luckEvent({ eventId: 32, ...broken }), null, "TAILWIND", last] },
     }));
 
-    expect(mapped.luck.recentEvents).toEqual([first, last]);
+    expect(mapped.luck.recentEvents).toEqual([calibrated(first), calibrated(last)]);
     expect(mapped.effectiveSpeed).toBe(1.2);
   });
 
@@ -97,8 +116,8 @@ describe("mapStudentRaceGameplay", () => {
     const mapped = mapStudentRaceGameplay(gameplay({ powerUps, luck: { recentEvents } }));
 
     expect(mapped.powerUps).toEqual(NO_POWER_UPS);
-    expect(mapped.luck).toEqual({ recentEvents });
-    expect(mapped.activeEffects).toEqual([slowdown()]);
+    expect(mapped.luck).toEqual({ recentEvents: [calibrated(luckEvent())] });
+    expect(mapped.activeEffects).toEqual([calibrated(slowdown())]);
   });
 
   it.each([
@@ -144,7 +163,7 @@ describe("mapStudentRaceGameplay", () => {
   it.each([null, 0, -2])("preserves a well-formed future effect whose magnitude is %s", (magnitudeTenths) => {
     const future = slowdown({ effectId: 99, type: "FUTURE_EFFECT", source: "FUTURE_SOURCE", magnitudeTenths });
 
-    expect(mapStudentRaceGameplay(gameplay({ activeEffects: [future] })).activeEffects).toEqual([future]);
+    expect(mapStudentRaceGameplay(gameplay({ activeEffects: [future] })).activeEffects).toEqual([calibrated(future)]);
   });
 
   it.each([
@@ -159,7 +178,7 @@ describe("mapStudentRaceGameplay", () => {
     const valid = slowdown({ effectId: 42, startsAtEpochMs: 103000, endsAtEpochMs: 106000 });
 
     expect(mapStudentRaceGameplay(gameplay({ activeEffects: [slowdown(broken), valid] })).activeEffects)
-      .toEqual([valid]);
+      .toEqual([calibrated(valid)]);
   });
 
   it.each([
