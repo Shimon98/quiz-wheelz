@@ -132,7 +132,7 @@ unchanged.
 
 Checkpoint, 2026-10-25: the S4-04 stability fixes (PR #80) and the S4-03 template safety with
 C5-04 part 1 (PR #81, `main@5ed8a39`) are merged. On `feature/S4-05-C5-04-recovery-luck-shield`
-(local, not merged): S4-05 Hidden Recovery on the server, behind its own flag and OFF by default
+(committed as `b096e10` and pushed, not merged): S4-05 Hidden Recovery on the server, behind its own flag and OFF by default
 (a player who is both behind and struggling gets +10 Challenge Energy once, hidden from every
 API), and C5-04 part 2 on the client (the Guard Shield, Tailwind, Energy Orb, Mud and a shield
 block shown with temporary Pixi `Graphics` and text notices, no new art or sound). Server

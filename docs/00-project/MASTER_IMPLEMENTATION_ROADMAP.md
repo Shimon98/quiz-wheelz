@@ -161,7 +161,7 @@ Order:
    question cleanup, startup budget check, Tailwind at the maximum speed); the S4-04 stability
    fixes keep every rule unchanged. Luck stays OFF and not playable until its release gates
    pass (see `../01-server/SERVER_IMPLEMENTATION_PLAN.md`). S4-06 remains PLANNED. S4-05
-   Hidden Recovery is implemented locally (2026-10-25, `feature/S4-05-C5-04-recovery-luck-shield`,
+   Hidden Recovery is committed on `feature/S4-05-C5-04-recovery-luck-shield` (`b096e10`, pushed,
    not merged) behind `QUIZWHEELZ_RECOVERY_ENABLED=false`; nothing is claimed for production
    until the branch is reviewed. Production validates every entity at startup, so its table
    needs the documented DDL before this build is deployed, flag on or off. Recovery is enabled

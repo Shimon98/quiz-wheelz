@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { RACE_LUCK_EVENT_TYPES } from "../../../../../constants/raceGameplayConstants";
 import { KartLuckMarks } from "../KartLuckMarks";
+import { KART_SHIELD_BUBBLE } from "../studentRaceVehicleGeometry";
 
 function mounted() {
   const root = new Container();
@@ -35,13 +36,47 @@ describe("KartLuckMarks", () => {
     expect(marks.front.visible).toBe(false);
   });
 
+  it("keeps the shield's glass behind the art and its rim in front, both bobbing with the kart", () => {
+    const { kart, marks } = mounted();
+
+    expect(marks.shieldBack.parent).toBe(kart);
+    expect(kart.getChildIndex(marks.shieldBack)).toBe(0);
+    expect(kart.getChildIndex(marks.front)).toBeGreaterThan(kart.getChildIndex(marks.shieldBack));
+  });
+
+  it("draws the standing shield on the shared bubble", () => {
+    const { marks } = mounted();
+    const { x, y, radiusX, radiusY } = KART_SHIELD_BUBBLE;
+
+    const glass = marks.shieldBack.getLocalBounds();
+
+    expect([glass.minX, glass.maxX, glass.minY, glass.maxY].map(Math.round))
+      .toEqual([x - radiusX, x + radiusX, y - radiusY, y + radiusY]);
+  });
+
+  it("fades the shield in when a charge comes up, and shows it at once under reduced motion", () => {
+    const { marks } = mounted();
+
+    step(marks, { shield: true, deltaMs: 60 });
+    const rising = marks.shield.alpha;
+    step(marks, { shield: true, deltaMs: 1000 });
+
+    expect(rising).toBeGreaterThan(0);
+    expect(rising).toBeLessThan(1);
+    expect([marks.shield.alpha, marks.shieldBack.alpha]).toEqual([1, 1]);
+
+    const still = mounted().marks;
+    step(still, { shield: true, deltaMs: 16, reducedMotion: true });
+    expect([still.shield.alpha, still.shieldBack.alpha, still.shieldBack.visible]).toEqual([1, 1, true]);
+  });
+
   it("raises the shield only while a charge is up", () => {
     const { marks } = mounted();
 
     step(marks, { shield: true });
-    expect([marks.shield.visible, marks.front.visible]).toEqual([true, true]);
+    expect([marks.shield.visible, marks.shieldBack.visible, marks.front.visible]).toEqual([true, true, true]);
     step(marks, { shield: false });
-    expect([marks.shield.visible, marks.front.visible]).toEqual([false, false]);
+    expect([marks.shield.visible, marks.shieldBack.visible, marks.front.visible]).toEqual([false, false, false]);
   });
 
   it.each([

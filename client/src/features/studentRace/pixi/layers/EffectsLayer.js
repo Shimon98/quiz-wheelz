@@ -1,9 +1,20 @@
-import { Graphics } from "pixi.js";
+import { Assets, Graphics } from "pixi.js";
 
 import { STUDENT_RACE_ANIMATION_CONFIG } from "../../config/raceAnimationConfig";
+import { STUDENT_RACE_VISUAL_CONFIG } from "../../config/raceVisualConfig";
 import { presentedMoments } from "../../runtime/deriveStudentRaceMoments";
 import { STUDENT_RACE_EFFECT } from "../../runtime/studentRaceRuntimeConstants";
+import { LUCK_EFFECT_ART } from "../assets/studentRaceEffectManifest";
+import { STUDENT_RACE_VEHICLE_MANIFEST } from "../assets/studentRaceVehicleManifest";
 import { drawFeedbackEffect } from "../effects/drawFeedbackEffect";
+import { artPixelToKartLocal, playerKartFrame, VEHICLE_UNIT_WIDTH } from "../vehicles/studentRaceVehicleGeometry";
+
+// The Luck art slots this layer draws its bursts with.
+const BURST_ART_SLOTS = Object.freeze(["energyOrb", "windLeaf", "mudSplash", "shieldImpact"]);
+// Every hover kart shares the green master's art frame, so its measured helmet top and width hold for any color.
+const KART_ART = STUDENT_RACE_VEHICLE_MANIFEST.TOY_CAR_GREEN;
+const HEAD_TOP_Y = artPixelToKartLocal(KART_ART.headTop, { width: KART_ART.artSize, height: KART_ART.artSize }, KART_ART).y;
+const ART_WIDTH = VEHICLE_UNIT_WIDTH * KART_ART.baseScale;
 
 const DUST_COLOR = 0xd9c39a;
 const MAX_PUFFS = 36;
@@ -27,16 +38,31 @@ const EFFECT_DURATIONS_MS = Object.freeze({
 });
 
 export class EffectsLayer {
-  constructor(container) {
+  constructor(container, { loadTexture = (url) => Assets.load(url), prepareTexture = null } = {}) {
     this.puffs = [];
     this.spawnAccumulator = 0;
     this.activeEffects = new Map();
     this.reducedMotion = false;
     this.destroyed = false;
+    this.luckArt = {};
 
     this.graphics = new Graphics();
     this.feedbackGraphics = new Graphics();
     container.addChild(this.graphics, this.feedbackGraphics);
+    this.artPromise = this.loadArt(loadTexture, prepareTexture);
+  }
+
+  // Art is decoration: it loads beside the world and is never waited for. A slot without a file asks for nothing,
+  // and a file that fails, or arrives after the race screen is gone, leaves the Graphics drawing in place.
+  loadArt(loadTexture, prepareTexture) {
+    const slots = BURST_ART_SLOTS.filter((slot) => LUCK_EFFECT_ART[slot]?.url != null);
+    return Promise.all(slots.map((slot) => new Promise((resolve) => resolve(loadTexture(LUCK_EFFECT_ART[slot].url)))
+      .then((texture) => {
+        if (this.destroyed || texture == null) return;
+        prepareTexture?.(texture);
+        this.luckArt[slot] = texture;
+      })
+      .catch(() => {})));
   }
 
   playEffect(effectName, { feedbackStreak = 0 } = {}) {
@@ -67,7 +93,8 @@ export class EffectsLayer {
 
   update(frameState) {
     if (this.destroyed) return;
-    const { width, visualSpeed, deltaMs, layout, runtimeState } = frameState;
+    const { width, visualSpeed, deltaMs, layout, runtimeState,
+      vehicleVisualScale = STUDENT_RACE_VISUAL_CONFIG.playerKart.visualScale } = frameState;
     const { anchorX, anchorY, maxWidth, dustOriginY } = layout.playerKart;
     const reducedMotion = runtimeState?.visual?.reducedMotion === true;
 
@@ -91,6 +118,9 @@ export class EffectsLayer {
       bottomY: layout.world.bottomY,
       size: maxWidth,
       width,
+      luckArt: this.luckArt,
+      // The kart as drawn, which Luck bursts fit to; size above is the nominal kart width the older bursts use.
+      kart: { ...playerKartFrame(layout, vehicleVisualScale), headTopY: HEAD_TOP_Y, artWidth: ART_WIDTH },
     });
   }
 

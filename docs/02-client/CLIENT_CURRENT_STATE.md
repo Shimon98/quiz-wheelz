@@ -9,6 +9,30 @@
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
 
+Local checkpoint, 2026-11-01 (C5-04f live Luck QA, no code change): with the server's Luck turned
+on only for a disposable MySQL 8.4 and Redis, real student screens showed every Luck event they
+received once, on arrival, and never again after a refresh, a network drop, a WebGL context loss or
+a student switch; 20 re-entries of a live race reused the same Luck textures. The Luck notice line
+waits for the answer feedback and the next question, so it is visible for only about 1–2 s of its
+4 s (open product decision). Sound and a physical phone remain before C5-04f closes.
+
+Local checkpoint, 2026-10-29 (C5-04f F2 visual, same branch, uncommitted): the Luck effects now
+follow the approved mix (shield A, wind A, orb A, blocked B, mud B) and are laid out on the kart
+as drawn (`playerKartFrame`, the measured helmet top, one shared shield bubble), so the Energy Orb
+no longer starts on the helmet on tablets and short phones and the blocked hit lands on the
+shield's own edge. The standing shield is glass behind the art with its rim in front. The four
+burst art slots hold painted files and load once beside the world (69 KB together): the mud
+splash (2026-10-30, a wide, low splash cut from Astra's concept A) and, since 2026-11-01, Astra's
+V3 orb, wind leaf and blocked flare with V3's motion. Luck cues are still silent. 1,913 tests in
+201 files; lint and build pass.
+
+Local checkpoint, 2026-10-29 (C5-04f F1, on top of `b096e10` of the same branch, which is pushed
+and not merged): the Luck art slots exist before any art does. The effect manifest reserves five
+slots (`LUCK_EFFECT_ART`, every url null), and `EffectsLayer` loads a slot with a file once beside
+the world, pinned in GPU memory by the renderer's own `prepareTexture`; a failed or late load is
+dropped and the Graphics drawing stays. The orb drawer draws approved art in the drawn orb's place
+with the same fade. With no files nothing changes: no request, no new sound.
+
 Local checkpoint, 2026-10-26 (independent review fixes on the same branch, not yet merged): an
 Energy Orb or a shield block is told in the notice line only for the Luck event the moments
 pipeline announced on this screen, so a refresh, a reconnect or a student switch no longer

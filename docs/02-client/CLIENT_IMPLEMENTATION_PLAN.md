@@ -1047,8 +1047,8 @@ work (Guard Shield and fair Luck) is on `main` with the Luck flag off by default
 pending; C5-04 presents it after that review. C5-04 part 1 (data and moments only: the
 `powerUps`/`luck` mapping and once-only Luck moments per race player, no effect, cue or HUD) is
 merged (PR #81, `main@5ed8a39`). C5-04 part 2, the functional presentation with temporary Pixi
-`Graphics` and text notices, is implemented on `feature/S4-05-C5-04-recovery-luck-shield`, not
-yet merged; final art and sound remain. The gameplay UI renders server-owned game events and effects, so each further
+`Graphics` and text notices, is committed on `feature/S4-05-C5-04-recovery-luck-shield` (`b096e10`,
+pushed), not yet merged; final art and sound remain. The gameplay UI renders server-owned game events and effects, so each further
 part starts from an audit of that real server code; never from a text handoff alone. The
 carried-forward release QA can proceed meanwhile.
 
@@ -1368,15 +1368,15 @@ with source `LUCK_EVENT`); the server decides every Luck event and the shield.
 
 - **C5-04a data and once-only moments — DONE (PR #81):** one mapper, defaults for older
   snapshots, one moment per server `eventId`, named by the applied type and the outcome.
-- **C5-04b clocks and selectors — DONE (local, 2026-10-25):** effects and Luck events carry the
+- **C5-04b clocks and selectors — DONE (branch `b096e10`, 2026-10-25):** effects and Luck events carry the
   clock offset of their snapshot; `isGameplayEffectActiveAt`, `selectActiveLuckEffect`,
   `selectLuckNotice` and `hasGuardShield` in `studentRaceGameplayMode.js`; `presentedMoments`
   keeps a Luck moment next to a challenge result.
-- **C5-04c temporary Pixi marks and bursts — DONE (local, 2026-10-25):** `KartLuckMarks`
+- **C5-04c temporary Pixi marks and bursts — DONE (branch `b096e10`, 2026-10-25):** `KartLuckMarks`
   (shield bubble and Tailwind wind inside the bobbing kart, Mud puddle on the ground, Mud also
   dims the thrusters) and four short bursts in `drawLuckEffect.js` (450/550 ms; the finish wins,
   reduced motion plays none). Plain `Graphics`, no new assets.
-- **C5-04d text notices — DONE (local, 2026-10-25; review fixes 2026-10-26):** the question
+- **C5-04d text notices — DONE (branch `b096e10`, 2026-10-25; review fixes 2026-10-26):** the question
   panel's notice line; priority: challenge slowdown notice, then the Turbo/Safe badge, then Luck,
   then the plain instruction. A Tailwind or Mud notice lasts as long as its server window, also
   after a refresh. One-shot news (an Energy Orb, a shield block) is told only for the Luck event
@@ -1385,23 +1385,57 @@ with source `LUCK_EVENT`); the server decides every Luck event and the shield.
   told notice can change (`selectLuckNoticeChangeAt`), and keeps no timer otherwise. Its resting
   clock is floored by the latest Luck instant the server sent (`selectLuckClockFloor`), so Luck
   that arrives after minutes without Luck is told on the very render it arrives.
-- **C5-04 shield for screen readers — DONE (local, 2026-10-26):** the HUD keeps one
+- **C5-04 shield for screen readers — DONE (branch `b096e10`, 2026-10-26):** the HUD keeps one
   visually hidden `aria-live="polite"` line that says the shield is ready while
   `guardShieldCharges > 0` (HE/EN), announced when the shield comes up and never again while the
   race moves; the panel's notice already tells when the shield blocks mud.
-- **C5-04e dev preview — DONE (local, 2026-10-25):** `/dev/race?motionScenario=luck` cycles the
+- **C5-04e dev preview — DONE (branch `b096e10`, 2026-10-25):** `/dev/race?motionScenario=luck` cycles the
   shield, a Tailwind, an Energy Orb, a blocked Mud Splash and a Mud Splash that lands. It is a
   visual showcase, not one legal race (four events every 26 s, while the server allows two per
   race player, 45 s apart), and proves no gameplay balance or server contract.
-- **C5-04 server-made snapshots — DONE (local, 2026-10-26):** `runtime/serverLuckTestFixtures.js`
+- **C5-04 server-made snapshots — DONE (branch `b096e10`, 2026-10-26):** `runtime/serverLuckTestFixtures.js`
   holds, value for value, the snapshots `B2LuckSnapshotMySqlTest` writes on a disposable MySQL
   (Tailwind, Energy Orb, Mud, blocked Mud, shield, two events, closed windows), in the same
   `*TestFixtures.js` style as the other test data.
   `StudentRaceScreen.serverLuck.test.jsx` runs them through the production mapper, the moments
   pipeline, the screen and the real Pixi layers: each type plays once with its answer, a refresh
   keeps only open windows, a reconnect and a student switch replay nothing.
-- **C5-04f final art and sound — PLANNED:** replaces the placeholders; product approval and a
+- **C5-04f final art and sound — IN PROGRESS:** replaces the placeholders; product approval and a
   physical-phone check remain release gates, with Luck still OFF on the server by default.
+  - **F1 foundation — DONE (local, 2026-10-29):** five Luck art slots in the effect manifest
+    (`LUCK_EFFECT_ART`, every url null, no import of a missing file); `EffectsLayer` loads a slot
+    that has a file once, beside the world, pinned by the renderer's own `prepareTexture`, and
+    drops a failed or late load; the orb drawer draws approved art in the drawn orb's place with
+    the same fade (`Graphics.texture`, alpha set and reset around it). Without files nothing
+    changes: no request, the Graphics drawing, the four Luck cues still silent. Contract:
+    `STUDENT_RACE_SCREEN_AND_ASSETS.md` (Luck and Guard Shield art slots).
+  - **F2 visual — DONE (local, 2026-10-29):** the approved mix (shield A, wind A, orb A, blocked B,
+    mud B) drawn in beats on kart-local geometry: `playerKartFrame` + `kartLocalToScreen`, the
+    measured helmet top (`headTop`) and one shared `KART_SHIELD_BUBBLE`. This fixes the orb
+    starting on the helmet on tablets and short phones. The standing shield is glass behind the art
+    with its rim in front and eases in; `EffectsLayer` loads the four burst slots (orb core, leaves,
+    splash, impact flash); `shieldGlint` has no owner. Tests: 1,912 in 201 files; DEV screenshots
+    at 360/390/768 and 20 re-entries plus a WebGL context loss without a leaked context.
+    2026-10-30: the painted mud splash is connected (Shimon's pick, the peak frame of Astra's
+    concept A, cut to the approved review's shape); it brings its own drops. 1,913 tests.
+    2026-11-01: Astra's V3 is connected for the orb, the wind leaf and the blocked flare (Shimon's
+    approval), with V3's motion: the orb drawn whole with a light pulse and two motes instead of a
+    ring, three-band wind ribbons, painted-look mud blobs, a shorter flash pinned at the flare's own
+    point of contact. The mud and the standing shield stay as they were; `shieldGlint` still has
+    no owner. Four burst files, 69 KB; 20 re-entries and a WebGL context loss with the real files.
+  - **Live Luck QA — DONE (local, 2026-11-01, no code change):** the packaged server of
+    `b096e10` with Luck ON through environment variables only (Recovery OFF) on a disposable
+    MySQL 8.4 and Redis 7.4. Luck OFF changed nothing. With Luck ON, every roll of an
+    eight-student race matched MySQL, and ten real student screens (two races, real clicks) showed
+    each event they got once, on arrival: Tailwind, Energy Orb, a Tailwind applied as an Orb at
+    top speed, and the shield block. Nothing replayed after a refresh, a 5 s network drop, a
+    WebGL context loss or a student switch in the same tab, and 20 re-entries reused the same
+    textures. Not seen on a screen: a plain Mud (the shield comes on the third right answer and
+    blocks it, so a plain Mud is practically a first-roll event) and a Tailwind window that
+    outlives a page reload. Found for a product decision: the Luck notice shares the line with the
+    answer feedback and "loading the next question", so it shows for about 1–2 s of its 4 s.
+  - **F2 sound — PLANNED:** four approved WAV cues with provenance rows, mapping in
+    `studentRaceSounds.js`, then the mix check with correct and wrong answers.
 
 ### C5 gameplay UI — after S4-02 onward
 

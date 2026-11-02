@@ -1458,10 +1458,21 @@ Windows words for Winsock 10053/10054 on an IOException) stay silent; any other 
 after the response started leaves one WARN line and still no body.) Open release gates are
 unchanged: migration policy, target budget numbers, hosted CI, product approval of the
 provisional 60000 ms window and the client presentation (C5-04).
+Live QA, 2026-11-01 (C5-04f; packaged jar of `b096e10`; Luck ON through environment variables
+only, Recovery OFF; disposable MySQL 8.4.11 with `max_connections` 151 and Redis 7.4.9): the
+startup check refused a missing budget, budget 11 (one instance × writer 10 + peer 2 = 12) and
+budget 150 + reserved 10 above 151, and accepted budgets 12 and 20 with reserved 5. In a
+five-minute race of eight students, all 23 rolls matched MySQL: types, effect windows, Orb energy
+up to the cap, the shield on the third right NORMAL answer, the 45 s cooldown (shortest gap
+45,077 ms), at most two events, no roll during another speed effect or an open challenge, and no
+roll after a finish. There were no 5xx, no deadlock and no lock-wait timeout, with a peak of 11
+app connections. With eight students answering their first question at the same moment, the
+answer p95 was 996 ms with Luck ON (every first answer rolls) against 632 ms with Luck OFF; later
+answers were unchanged. The release gates above stay open.
 
 ### S4-05 — Hidden Recovery
 
-**Status:** `IMPLEMENTED behind QUIZWHEELZ_RECOVERY_ENABLED=false (default); local on feature/S4-05-C5-04-recovery-luck-shield (2026-10-25), not merged; for Diana's review`
+**Status:** `IMPLEMENTED behind QUIZWHEELZ_RECOVERY_ENABLED=false (default); committed on feature/S4-05-C5-04-recovery-luck-shield (b096e10, pushed), not merged; for Diana's review`
 
 Eligibility requires both actually being behind and demonstrably struggling.
 Never grant assistance solely because a leading player intentionally answers wrong.
