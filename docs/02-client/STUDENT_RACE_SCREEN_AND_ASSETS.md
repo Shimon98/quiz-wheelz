@@ -151,6 +151,15 @@ world-distance placement now produces much stronger apparent acceleration
 near the driver. No zone has a separate movement multiplier. The distant
 panorama remains a static horizon; projected distant trees approach slowly.
 
+The horizon sits at `camera.horizonYRatio` (0.34) of the visible world. The
+HUD's two rows end 121–137 px down (measured 360–960 wide), so on a short
+frame that line fell under the HUD and hid the far road and the finish
+gate. Since 2026-11-03 `camera.minHorizonY` (160 px) keeps the horizon below
+the HUD there, and `camera.maxHorizonYRatio` (0.45 of the visible world)
+caps it, so a landscape phone keeps its road. Frames 753 px tall and up
+(390×844 and larger) keep the 0.34 horizon unchanged. Only the screen line
+moves: distances, the finish and every server value are untouched.
+
 `lateralRatio` is measured in road half-widths: zero is the center and
 plus/minus one are the road edges. Future opponents map server lane deltas
 to this coordinate without changing server depth. Current result:
@@ -672,7 +681,12 @@ as other track objects, retaining the default depth 0–1 visibility window.
 The gate uses projected depth as its `zIndex` in the shared world
 container: farther foliage sits behind it and nearer foliage can occlude
 it. The gate has no baked text and never decides completion; the server
-finish flag remains authoritative.
+finish flag remains authoritative. On short frames the horizon floor (see
+One projection) keeps its banner below the HUD for most of the approach:
+measured in Chrome, it is fully in view from 150 down to 20 units ahead at
+360×640, 30 at 375×667 and 60 in a 1366×768 laptop's window (before the
+floor it never showed there). Near the end the growing banner passes under
+the HUD and the posts stay in view.
 
 ## Opponents
 

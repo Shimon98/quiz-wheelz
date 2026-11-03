@@ -104,6 +104,30 @@ describe("FinishLineLayer", () => {
     layer.destroy();
   });
 
+  // The HUD's two rows end 121 px down at 360 wide, 130 at 375 and 136 from about 600 wide (measured in Chrome);
+  // 604 by 657 is a 1366 by 768 laptop's browser window. Rows 57 to 205 of the 512-row painting are its banner.
+  it.each([[360, 640, 121], [375, 667, 130], [604, 657, 136]])(
+    "shows at least half of the painted banner below the HUD on a short %s by %s frame until the last stretch",
+    async (width, height, hudBottom) => {
+      const art = new Texture({ source: new TextureSource({ width: 1024, height: 512 }) });
+      const layer = new FinishLineLayer(new Container(), { loadTexture: async () => art });
+      await layer.artPromise;
+      const painted = layer.gate.children.at(-1);
+
+      for (const ahead of [140, 120, 100, 80, 60, 45]) {
+        layer.update(frame(1000 - ahead, width, height));
+        const paintedHeight = painted.height * layer.gate.scale.y;
+        const top = layer.gate.y - painted.anchor.y * paintedHeight;
+        const bannerTop = top + paintedHeight * 57 / 512;
+        const bannerBottom = top + paintedHeight * 205 / 512;
+        const shown = (bannerBottom - Math.max(bannerTop, hudBottom)) / (bannerBottom - bannerTop);
+        expect(layer.gate.visible).toBe(true);
+        expect(shown, `${ahead} ahead`).toBeGreaterThanOrEqual(0.5);
+      }
+      layer.destroy();
+    },
+  );
+
   it("keeps the drawn gate when the painting fails, or arrives after the race screen is gone", async () => {
     const failing = new FinishLineLayer(new Container(), { loadTexture: async () => { throw new Error("404"); } });
     expect(await failing.artPromise).toBe(false);

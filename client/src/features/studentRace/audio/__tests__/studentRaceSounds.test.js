@@ -39,6 +39,23 @@ describe("student race sounds", () => {
     expect(play.mock.calls).toEqual([[GAME_AUDIO.ANSWER_WRONG], [GAME_AUDIO.LUCK_MUD]]);
   });
 
+  // Two Luck events share a batch only after a gap in polling. Each keeps its burst on screen, so each keeps its cue;
+  // mixed at the game's levels with the answer, the engine and the music they stay under full scale (measured 2026-11-03).
+  it("plays both Luck cues of one batch once each, beside the answer cue", () => {
+    const play = vi.spyOn(audioEngine, "playSfx").mockReturnValue("played");
+
+    playStudentRaceMoments({
+      id: 1,
+      moments: [
+        { type: STUDENT_RACE_MOMENT.CORRECT, id: 41, streak: 1 },
+        { type: STUDENT_RACE_MOMENT.LUCK_TAILWIND, id: "luck-7", luckEventId: 7 },
+        { type: STUDENT_RACE_MOMENT.LUCK_ENERGY_ORB, id: "luck-8", luckEventId: 8 },
+      ],
+    });
+
+    expect(play.mock.calls).toEqual([[GAME_AUDIO.ANSWER_CORRECT], [GAME_AUDIO.LUCK_TAILWIND], [GAME_AUDIO.LUCK_ENERGY_ORB]]);
+  });
+
   it("turns a correct answer into the combo sound from the HUD's combo streak, in three tiers", () => {
     const keyFor = (streak) => soundForMoment({ type: STUDENT_RACE_MOMENT.CORRECT, streak });
 

@@ -18,7 +18,7 @@ function perspectiveFor(width, height) {
 }
 
 describe("createRacePerspective", () => {
-  it.each([[360, 640], [430, 932], [960, 1366], [736, 800], [441.6, 480]])(
+  it.each([[430, 932], [960, 1366], [736, 800]])(
     "fills the near frame while preserving the horizon and panel at %s by %s",
     (width, height) => {
       const { world } = resolveStudentRaceLayoutMetrics({ width, height });
@@ -37,6 +37,34 @@ describe("createRacePerspective", () => {
       expect(mid.y).toBeCloseTo(world.bottomY * (0.34 + 0.66 * 0.25));
     },
   );
+
+  // The HUD's two rows end 121 px down at 360 wide, 130 at 375 and 136 from about 600 wide (measured in Chrome);
+  // 604 by 657 is a 1366 by 768 laptop's browser window.
+  it.each([[360, 640, 121], [375, 667, 130], [604, 657, 136]])(
+    "keeps the horizon below the HUD on a short %s by %s frame, so the far road shows",
+    (width, height, hudBottom) => {
+      const { world } = resolveStudentRaceLayoutMetrics({ width, height });
+      const projection = perspectiveFor(width, height);
+
+      expect(projection.horizonY).toBe(STUDENT_RACE_VISUAL_CONFIG.camera.minHorizonY);
+      expect(projection.horizonY).toBeGreaterThan(hudBottom);
+      expect(projection.depthToY(1)).toBeCloseTo(world.bottomY);
+      expect(projection.roadHalfWidthAt(1)).toBeCloseTo(width);
+    },
+  );
+
+  it("never lets the horizon floor swallow the road on a landscape phone", () => {
+    const { world } = resolveStudentRaceLayoutMetrics({ width: 441.6, height: 480 });
+    const projection = perspectiveFor(441.6, 480);
+    const { horizonYRatio, maxHorizonYRatio } = STUDENT_RACE_VISUAL_CONFIG.camera;
+
+    expect(projection.horizonY).toBeCloseTo(world.bottomY * maxHorizonYRatio);
+    expect(projection.horizonY).toBeGreaterThan(world.bottomY * horizonYRatio);
+    expect(projection.depthToY(1)).toBeCloseTo(world.bottomY);
+    const mid = projection.projectTrackObject(projection.distanceAtDepth(0.5));
+    expect(mid.y).toBeGreaterThan(projection.horizonY);
+    expect(mid.y).toBeLessThan(world.bottomY);
+  });
 
   it("keeps the default finish and opponent visibility bounded ahead of the player", () => {
     const projection = perspectiveFor(736, 800);

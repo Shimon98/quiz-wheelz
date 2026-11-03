@@ -1443,6 +1443,14 @@ with source `LUCK_EVENT`); the server decides every Luck event and the shield.
     it. The four Luck cues are connected too (C5-04f sound): Astra's Tailwind A, Energy Orb B, Mud A
     and Shield Blocked A, chosen by measurement, each beside the answer cue it arrives with, under
     it in level. 1,946 tests in 204 files.
+    2026-11-03, closure round: on short frames the horizon fell under the HUD, so the finish gate's
+    banner never showed at 360×640, 375×667 or in a 1366×768 laptop's window. The horizon now stays
+    below the HUD there (`camera.minHorizonY` 160, at most `maxHorizonYRatio` 0.45 of the visible
+    world for a landscape phone); frames 753 px tall and up are unchanged, and no distance or finish
+    rule moved. The four Luck cues were played through the real audio engine in Chrome and mixed at
+    the game's levels with every answer cue, the engine and the music, two Luck cues of one batch
+    included: no clipping (loudest peak −3.2 dBFS). Their A/B pick still waits for Shimon's ear.
+    1,952 tests in 204 files.
   - **Live Luck QA — DONE (local, 2026-11-01, no code change):** the packaged server of
     `b096e10` with Luck ON through environment variables only (Recovery OFF) on a disposable
     MySQL 8.4 and Redis 7.4. Luck OFF changed nothing. With Luck ON, every roll of an

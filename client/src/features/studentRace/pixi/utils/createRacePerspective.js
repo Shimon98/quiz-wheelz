@@ -5,7 +5,8 @@ export function createRacePerspective({
   camera,
   viewDistanceAhead,
 }) {
-  const horizonY = worldBottomY * camera.horizonYRatio;
+  const horizonY = Math.max(worldBottomY * camera.horizonYRatio,
+    Math.min(camera.minHorizonY ?? 0, worldBottomY * (camera.maxHorizonYRatio ?? 0)));
   const centerX = width * camera.vanishingPointXRatio;
   const topHalf = (widthUnit * camera.roadTopWidthRatio) / 2;
   const bottomHalf = Math.max(widthUnit * camera.roadBottomWidthRatio,

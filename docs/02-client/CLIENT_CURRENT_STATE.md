@@ -14,7 +14,9 @@ the painting looks better: the correct answer's rings and sparkles, the wrong an
 dust behind the kart, the Tailwind wisps, the finish's rings, confetti and gate, the Turbo failure's
 smoke and the Safe ripple; the drawing stays as the fallback. The dust, the dirt and the smoke now
 lie behind the kart instead of over it. The four Luck events have their own sounds, beside the
-answer sound. The Turbo speed lines stay drawn. A physical phone remains.
+answer sound. The Turbo speed lines stay drawn. On short screens (small phones, a 1366×768 laptop)
+the horizon now stays below the HUD, so the finish gate shows for most of its approach. The Luck
+sounds still wait for Shimon's approval by ear. A physical phone remains.
 
 Local checkpoint, 2026-11-02 (C5-04f Luck line): Luck notices have their own line under the HUD
 for the whole race, so a notice shows the moment its event arrives, beside the ✓/✕ feedback and
