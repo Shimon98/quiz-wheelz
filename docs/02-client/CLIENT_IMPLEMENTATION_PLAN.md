@@ -1435,6 +1435,14 @@ with source `LUCK_EVENT`); the server decides every Luck event and the shield.
     left): the Mud, the blocked hit and the wrong answer's splash. The answer effects, the dust, the
     wind streaks and the finish gate are still drawn; their paintings are briefed for Astra (private
     `docs/vision/c5_04f_2026-10-28/astra_v4_brief_2026-11-03/`). 1,926 tests in 203 files.
+    2026-11-03, later: Astra's V4 round is connected where it beats the drawing (Shimon left the
+    pick to the client): the correct answer's rings and sparkles, the wrong answer's dry dirt, three
+    dust puffs, the Tailwind window's wisps, the finish's rings, paper confetti and gate, the Turbo
+    failure's smoke and the Safe ripple; 13 files, 162 KB. The Turbo speed lines stay drawn. The
+    dust, the dirt and the smoke lie in the world just behind the player's kart, so they never cover
+    it. The four Luck cues are connected too (C5-04f sound): Astra's Tailwind A, Energy Orb B, Mud A
+    and Shield Blocked A, chosen by measurement, each beside the answer cue it arrives with, under
+    it in level. 1,946 tests in 204 files.
   - **Live Luck QA — DONE (local, 2026-11-01, no code change):** the packaged server of
     `b096e10` with Luck ON through environment variables only (Recovery OFF) on a disposable
     MySQL 8.4 and Redis 7.4. Luck OFF changed nothing. With Luck ON, every roll of an

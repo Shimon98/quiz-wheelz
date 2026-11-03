@@ -537,7 +537,7 @@ shared by the standing shield and the blocked hit. Before this, the orb used the
 | Shield blocked | `drawLuckEffect` | 0–90 mud closes in; flash up by 115, held to 145, gone by 260; lit edge fades 160–390; spray out to 550 | blobs, lit edge (±0.48 rad), two flattened ripples, spray | `shieldImpact`: the flare, its point of contact on the edge, turned inward; `mudDrop`: the blobs and the spray |
 
 The hit always lands on the bubble's left edge, a little above its middle: the server
-names no side. The mud puddle and the wind streaks stay with `KartLuckMarks` for the
+names no side. The mud puddle and the wind wisps stay with `KartLuckMarks` for the
 server's window. The puddle lies behind the kart, so the kart sits in it and nothing
 covers the kart; no dust rises from the kart while a Mud window is open.
 
@@ -548,8 +548,8 @@ the build never depends on a missing file. The V3 files are exported whole from 
 1254 px paintings by the private `docs/vision/c5_04f_2026-10-28/v3-source/process_v3_art.py`
 (Pillow, premultiplied resize, WebP q90 with full-quality alpha), so positions measured
 in a painting stay true. The mud crown fills only a band of its square, so it is cropped
-to its paint first and the script measures V3's ground point in the crop. The five Luck
-files weigh 73 KB together.
+to its paint first and the script measures V3's ground point in the crop. The six Luck
+files weigh 75 KB together.
 
 | Slot | File (`assets/game/studentRace/effects/`) | Size and fit (export spec) |
 |---|---|---|
@@ -558,13 +558,14 @@ files weigh 73 KB together.
 | `mudSplash` | `luck-mud-splash.webp` | **connected 2026-11-02** (V3, replacing the 2026-10-30 cut of V2 concept A): Astra's mud crown cropped to its paint, 512×183, 24.9 KB; `KartLuckMarks` lays it behind the kart, 183 units across (V3: 1.76 kart widths for the whole square), with V3's ground point (0.5, 0.77 of the square, `anchorX`/`anchorY` 0.492, 0.927 of the file) 8.6 units under the kart's ground line |
 | `mudDrop` | `luck-mud-drop.webp` | **connected 2026-11-03** (Shimon: the mud that flies to the side should be painted too): one glossy teardrop cut alone from Astra's V2 concept B mud sheet by the private `docs/vision/c5_04f_2026-10-28/mud-source/process_mud_drop.py`, turned so its head points right (+x) and its highlight up; 96×60, 3.4 KB. Drawn as thick as the drawn blob it replaces and as long as the painting, turned along its heading; a drop heading left is mirrored, never turned over. Used by the Mud burst, the blocked hit and the wrong answer's splash (`drawWrong`); without it the drawn blobs stay |
 | `shieldImpact` | `luck-shield-impact.webp` | **connected 2026-11-01** (V3): 256×256, 16.2 KB; its white-hot point of contact at `anchorX`/`anchorY` (0.43, 0.52) sits on the shield's edge; drawn 0.48 kart widths, turned to face into the bubble |
+| `windWisp` | `luck-wind-wisp.webp` | **connected 2026-11-03** (Astra V4): an upright cyan-white wisp, 25×160, 2.5 KB; `KartLuckMarks` blows one for each of the six streaks of an open Tailwind window, 36 units long, leaning 0.17 rad out from the kart, at 0.85 of the streak's strength; still under reduced motion. Without it the drawn streaks stay |
 | `shieldGlint` | `luck-shield-glint.webp` | no owner: the standing shield paints its own reflection (V3's reflection painting was not taken, 2026-11-01); give it one (a loader in `KartLuckMarks`) only if a delivered glint beats it |
 
 The kart art is 108 units wide on a 100-unit frame; transparent margins, no text,
 frame or background; one file serves all eight kart colors.
 
-Loading contract (`EffectsLayer` for the bursts, `KartLuckMarks.loadArt` for the puddle; the
-`KartThrusters.loadArt` pattern):
+Loading contract (`EffectsLayer` for the bursts, `KartLuckMarks.loadArt` for the puddle and the
+wind wisp, `FinishLineLayer.loadArt` for the gate; the `KartThrusters.loadArt` pattern):
 - A slot without a url asks for nothing and the Graphics drawing stays.
 - A slot with a url loads once, beside the world: the renderer's readiness never
   waits for decorative art. The renderer's own `prepareTexture` pins it in GPU
@@ -586,6 +587,36 @@ Loading contract (`EffectsLayer` for the bursts, `KartLuckMarks.loadArt` for the
 Adding an approved file: copy it to the path above, give its slot a static import and
 `url`, and adjust `cover` or the puddle and flare anchors only from what is measured in
 the file. Nothing else changes.
+
+### Astra V4 art (connected 2026-11-03)
+
+Astra's V4 round (private `docs/vision/astra_v4_2026-11-03/`: 14 paintings, before/after
+reviews on DEV screenshots) replaced the drawn effects that still looked plain. Shimon left
+the pick to the client ("use what is good"): 13 paintings are connected, the Turbo speed
+lines stay drawn (faint on purpose behind the flame burst, and Astra's comet-headed streak
+would lead the wrong way down the road). Lights stay drawn on purpose too: the thruster
+glow, the challenge aura, the shield's lit edge, the orb's pulse. Each painting is cropped
+to its paint and resized by the private
+`docs/vision/c5_04f_2026-10-28/v4-source/process_v4_art.py`; the 13 files weigh 162 KB, the
+gate 69 KB of it. They are slots of `STUDENT_RACE_EFFECT_ART` (the wisp is the Luck slot
+`windWisp` above) and follow the loading contract above: drawn until the file loads, drawn
+again if it fails, pinned by the renderer's `prepareTexture`, never waited for.
+
+| Slot | File | Owner | Fit |
+|---|---|---|---|
+| `burstRing` | `burst-ring.webp` (384) | `drawFeedbackEffect`, `drawChallengeResultEffect` | one white ring, tinted per use, its middle line (`radius` 0.883 of its half-width, measured) on the drawn ring's radius: the correct answer's green and gold rings and the finish's gold and white ones at 0.65 of the stroke's alpha, the Safe ripple flat on the road in sky at 1.4 of its thin stroke's alpha |
+| `sparkle` | `answer-sparkle.webp` (85×96) | `drawFeedbackEffect` | the correct answer's eight sparkles, upright, as wide as the drawn star |
+| `groundImpact` | `wrong-ground-impact.webp` (512×103) | `drawFeedbackEffect` | the wrong answer's dry dirt in the drawn orange ring's box (0.66–1.4 × 0.22–0.46 of the nominal kart width), on the road behind the kart; the painted mud drops still fly in front. Light dry dirt, not the dark wet Mud |
+| `dustPuff1`–`3` | `dust-puff-1…3.webp` (128) | `EffectsLayer` | each puff takes the next of the three in turn; born 0.025 of the screen wide, growing threefold, from 0.64 alpha fading out, turning 0.18 rad away from the kart |
+| `confettiRect`, `confettiRibbon`, `confettiStar`, `confettiDot` | `confetti-*.webp` (96) | `drawFeedbackEffect` | the finish's 14 pieces in their drawn colours (gold, white, green, sky), 0.08–0.12 of the nominal kart width, each spinning 2.3 rad over the burst from its own turn |
+| `smokePuff` | `turbo-smoke-puff.webp` (160×118) | `drawChallengeResultEffect` | the Turbo failure's eight puffs, as wide as the drawn ones, behind the kart, turning 0.3 rad away from it as they rise |
+| `finishGate` | `finish-gate.webp` (1024×512) | `FinishLineLayer` | the whole gate, anchored on the road between its feet (`anchorX`/`anchorY` 0.499, 0.987), scaled so its feet (`feetApart` 0.883 of its width) stand where the drawn posts do; about 10% taller than the drawn gate |
+
+**Behind the kart.** The dust, the wrong answer's dirt and the Turbo failure's smoke lie on
+the road: `EffectsLayer` keeps their `Graphics` in the world container (the renderer passes
+it as `groundContainer`) at `zIndex` just under `playerDepth`, so the kart covers them and
+they cover the road and everything farther away. The rest of the bursts stay in the effects
+container, above the world.
 
 ## Continuous world flow (C1-03M)
 
@@ -632,10 +663,13 @@ completion. Prediction and correction never update server-owned runtime data.
 ## Finish gate
 
 `FinishLineLayer` draws an upright gate with paired posts and a checkered
-banner once using Pixi Graphics and `finishGateConfig`. Its position and
+banner once using Pixi Graphics and `finishGateConfig`; since 2026-11-03
+Astra's painted gate (`finishGate`, see Astra V4 art) takes its place once
+it loads, its feet where the drawn posts stand, and the drawing stays as
+the fallback. Both live in one `gate` container. Its position and
 scale come from the same `projectTrackObject(totalDistance - visualPosition)`
 as other track objects, retaining the default depth 0–1 visibility window.
-The graphic uses projected depth as its `zIndex` in the shared world
+The gate uses projected depth as its `zIndex` in the shared world
 container: farther foliage sits behind it and nearer foliage can occlude
 it. The gate has no baked text and never decides completion; the server
 finish flag remains authoritative.

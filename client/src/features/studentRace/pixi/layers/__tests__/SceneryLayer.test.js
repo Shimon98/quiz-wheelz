@@ -176,10 +176,10 @@ describe("SceneryLayer", () => {
     layer.update(state);
     finish.update({ ...state, raceObjectCameraPosition: 900, runtimeState: { totalDistance: 1000 } });
     layer.container.sortChildren();
-    const gateIndex = layer.container.getChildIndex(finish.graphics);
+    const gateIndex = layer.container.getChildIndex(finish.gate);
     const shown = layer.items.filter(({ sprite }) => sprite.visible);
-    const behind = shown.filter(({ sprite }) => sprite.zIndex < finish.graphics.zIndex);
-    const ahead = shown.filter(({ sprite }) => sprite.zIndex > finish.graphics.zIndex);
+    const behind = shown.filter(({ sprite }) => sprite.zIndex < finish.gate.zIndex);
+    const ahead = shown.filter(({ sprite }) => sprite.zIndex > finish.gate.zIndex);
 
     expect(behind.length).toBeGreaterThan(0);
     expect(ahead.length).toBeGreaterThan(0);
@@ -187,8 +187,8 @@ describe("SceneryLayer", () => {
     ahead.forEach(({ sprite }) => expect(layer.container.getChildIndex(sprite)).toBeGreaterThan(gateIndex));
     layer.destroy();
     expect(layer.container.destroyed).toBe(false);
-    expect(finish.graphics.destroyed).toBe(false);
-    expect(layer.container.children).toEqual([finish.graphics]);
+    expect(finish.gate.destroyed).toBe(false);
+    expect(layer.container.children).toEqual([finish.gate]);
     finish.destroy();
     layer.container.destroy();
   });

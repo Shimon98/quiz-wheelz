@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest";
 import { LUCK_EFFECT_ART, STUDENT_RACE_EFFECT_ART } from "../studentRaceEffectManifest";
 
 describe("studentRaceEffectManifest", () => {
-  it("reserves the six Luck art slots, each empty or holding an approved file", () => {
+  it("reserves the seven Luck art slots, each empty or holding an approved file", () => {
     expect(Object.keys(LUCK_EFFECT_ART))
-      .toEqual(["energyOrb", "shieldGlint", "windLeaf", "mudSplash", "mudDrop", "shieldImpact"]);
+      .toEqual(["energyOrb", "shieldGlint", "windLeaf", "mudSplash", "mudDrop", "shieldImpact", "windWisp"]);
     Object.values(LUCK_EFFECT_ART).forEach(({ url }) => expect(url === null || typeof url === "string").toBe(true));
   });
 
@@ -17,6 +17,22 @@ describe("studentRaceEffectManifest", () => {
     [mudSplash.anchorX, mudSplash.anchorY, shieldImpact.anchorX, shieldImpact.anchorY].forEach((anchor) => {
       expect(anchor).toBeGreaterThanOrEqual(0);
       expect(anchor).toBeLessThanOrEqual(1);
+    });
+  });
+
+  it("holds Astra's V4 paintings, with the ring's middle line and the gate's feet measured", () => {
+    const { burstRing, finishGate } = STUDENT_RACE_EFFECT_ART;
+
+    ["sparkle", "burstRing", "groundImpact", "dustPuff1", "dustPuff2", "dustPuff3", "confettiRect", "confettiRibbon",
+      "confettiStar", "confettiDot", "smokePuff", "finishGate"].forEach((slot) => {
+      expect(STUDENT_RACE_EFFECT_ART[slot].url).toEqual(expect.stringMatching(/\.webp$/));
+    });
+    expect(LUCK_EFFECT_ART.windWisp.url).toEqual(expect.stringMatching(/\.webp$/));
+    expect(burstRing.radius).toBeGreaterThan(0.5);
+    expect(burstRing.radius).toBeLessThan(1);
+    [finishGate.anchorX, finishGate.anchorY, finishGate.feetApart].forEach((share) => {
+      expect(share).toBeGreaterThan(0);
+      expect(share).toBeLessThanOrEqual(1);
     });
   });
 

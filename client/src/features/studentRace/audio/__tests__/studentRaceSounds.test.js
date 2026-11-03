@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { audioEngine } from "../../../../shared/audio";
 import { GAME_AUDIO } from "../../../../shared/gameAudio/gameAudioCatalog";
 import { STUDENT_RACE_MOMENT } from "../../runtime/studentRaceRuntimeConstants";
-import { engineRateForSpeed, playStudentRaceMoments, soundForMoment } from "../studentRaceSounds";
+import { engineRateForSpeed, playStudentRaceMoments, soundForMoment, STUDENT_RACE_SOUND } from "../studentRaceSounds";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -20,12 +20,24 @@ describe("student race sounds", () => {
   });
 
   it.each(["LUCK_TAILWIND", "LUCK_ENERGY_ORB", "LUCK_MUD", "LUCK_SHIELD_BLOCKED"])(
-    "keeps the %s moment silent until its cue is approved",
+    "gives the %s moment its own approved cue, preloaded with the race",
     (name) => {
       expect(STUDENT_RACE_MOMENT[name]).toEqual(expect.any(String));
-      expect(soundForMoment({ type: STUDENT_RACE_MOMENT[name] })).toBeNull();
+      expect(soundForMoment({ type: STUDENT_RACE_MOMENT[name] })).toBe(GAME_AUDIO[name]);
+      expect(STUDENT_RACE_SOUND.preloadKeys).toContain(GAME_AUDIO[name]);
     },
   );
+
+  it("plays a Luck cue beside the answer cue it arrives with", () => {
+    const play = vi.spyOn(audioEngine, "playSfx").mockReturnValue("played");
+
+    playStudentRaceMoments({
+      id: 1,
+      moments: [{ type: STUDENT_RACE_MOMENT.WRONG, id: 41 }, { type: STUDENT_RACE_MOMENT.LUCK_MUD, id: "luck-41" }],
+    });
+
+    expect(play.mock.calls).toEqual([[GAME_AUDIO.ANSWER_WRONG], [GAME_AUDIO.LUCK_MUD]]);
+  });
 
   it("turns a correct answer into the combo sound from the HUD's combo streak, in three tiers", () => {
     const keyFor = (streak) => soundForMoment({ type: STUDENT_RACE_MOMENT.CORRECT, streak });

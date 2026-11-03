@@ -119,7 +119,9 @@ describe("EffectsLayer Luck moments", () => {
 
     const filled = ["energyOrb", "windLeaf", "mudDrop", "shieldImpact"]
       .map((slot) => LUCK_EFFECT_ART[slot].url).filter((url) => url != null);
-    expect(loadTexture.mock.calls.map(([url]) => url)).toEqual(filled);
+    // The V4 paintings load beside them; of the Luck art, only the burst slots are asked for.
+    const luckUrls = Object.values(LUCK_EFFECT_ART).map(({ url }) => url);
+    expect(loadTexture.mock.calls.map(([url]) => url).filter((url) => luckUrls.includes(url))).toEqual(filled);
     const actions = layer.feedbackGraphics.context.instructions.map(({ action }) => action);
     expect(actions).not.toContain("texture");
     expect(actions.length).toBeGreaterThan(0);

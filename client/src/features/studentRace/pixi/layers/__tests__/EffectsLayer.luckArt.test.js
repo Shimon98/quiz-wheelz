@@ -57,7 +57,8 @@ describe("EffectsLayer Luck art", () => {
     const layer = new EffectsLayer(new Container(), { loadTexture, prepareTexture });
     await layer.artPromise;
 
-    expect(loadTexture.mock.calls.map(([url]) => url))
+    // The bare names are the mocked Luck slots; the V4 paintings load beside them under their own paths.
+    expect(loadTexture.mock.calls.map(([url]) => url).filter((url) => /^\w+\.webp$/.test(url)))
       .toEqual(["energyOrb.webp", "windLeaf.webp", "mudDrop.webp", "shieldImpact.webp"]);
     expect(prepareTexture.mock.calls.map(([texture]) => texture)).toEqual([...textures.values()]);
     layer.destroy();
@@ -98,7 +99,8 @@ describe("EffectsLayer Luck art", () => {
     const loadTexture = vi.fn(() => new Promise((resolve) => { finishers.push(resolve); }));
     const prepareTexture = vi.fn();
     const layer = new EffectsLayer(new Container(), { loadTexture, prepareTexture });
-    expect(loadTexture).toHaveBeenCalledTimes(4);
+    // Four Luck bursts and the eleven V4 paintings of the effects layer.
+    expect(loadTexture).toHaveBeenCalledTimes(15);
 
     layer.destroy();
     finishers.forEach((finish) => finish(slotArt()));
@@ -106,6 +108,7 @@ describe("EffectsLayer Luck art", () => {
 
     expect(prepareTexture).not.toHaveBeenCalled();
     expect(layer.luckArt).toEqual({});
+    expect(layer.effectArt).toEqual({});
   });
 
   it("plays no burst under reduced motion, art or not", async () => {

@@ -114,6 +114,39 @@ describe("KartLuckMarks", () => {
   });
 });
 
+describe("KartLuckMarks wind wisps", () => {
+  const wispArt = () => new Texture({ source: new TextureSource({ width: 25, height: 160 }) });
+  const wispsOf = (marks) => marks.wind.context.instructions.filter(({ action }) => action === "texture");
+
+  it("blows Astra's painted wisps once the painting loads, pinned, even when the wind stands still", async () => {
+    const wisp = wispArt();
+    const prepareTexture = vi.fn();
+    const { marks } = mounted();
+
+    await marks.loadArt(async (url) => (url === LUCK_EFFECT_ART.windWisp.url ? wisp : puddleArt()), prepareTexture);
+    step(marks, { luckEffect: RACE_LUCK_EVENT_TYPES.TAILWIND, reducedMotion: true });
+
+    expect(prepareTexture).toHaveBeenCalledWith(wisp);
+    expect(wispsOf(marks)).toHaveLength(6);
+    wispsOf(marks).forEach(({ data }) => expect(data.image).toBe(wisp));
+    expect(marks.wind.context.instructions.some(({ action }) => action === "stroke")).toBe(false);
+  });
+
+  it("keeps the drawn streaks when the wisp painting fails", async () => {
+    const { marks } = mounted();
+
+    await marks.loadArt(async (url) => {
+      if (url === LUCK_EFFECT_ART.windWisp.url) throw new Error("404");
+      return puddleArt();
+    }, vi.fn());
+    step(marks, { luckEffect: RACE_LUCK_EVENT_TYPES.TAILWIND });
+
+    expect(wispsOf(marks)).toEqual([]);
+    expect(marks.wind.context.instructions.filter(({ action }) => action === "stroke")).toHaveLength(6);
+    expect(marks.mudDrawn.visible).toBe(false);
+  });
+});
+
 describe("KartLuckMarks mud puddle", () => {
   it("lays Astra's painted puddle around the kart's foot once it loads, pinned, in place of the drawn one", async () => {
     const art = puddleArt();

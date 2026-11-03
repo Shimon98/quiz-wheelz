@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import i18n from "../../../../i18n/i18n";
 import { audioEngine } from "../../../../shared/audio";
+import { GAME_AUDIO } from "../../../../shared/gameAudio/gameAudioCatalog";
 import { STUDENT_RACE_ANIMATION_CONFIG } from "../../config/raceAnimationConfig";
 import { createPixiStudentRaceApp } from "../../pixi/createPixiStudentRaceApp";
 import { applyRaceSnapshot } from "../../runtime/applyRaceSnapshot";
@@ -99,6 +100,10 @@ async function answerArrives(snapshot, before = joinedRace()) {
   return { ...view, after };
 }
 
+const LUCK_CUES = new Set([GAME_AUDIO.LUCK_TAILWIND, GAME_AUDIO.LUCK_ENERGY_ORB, GAME_AUDIO.LUCK_MUD,
+  GAME_AUDIO.LUCK_SHIELD_BLOCKED]);
+const luckCuesPlayed = () => audioEngine.playSfx.mock.calls.map(([key]) => key).filter((key) => LUCK_CUES.has(key));
+
 const luckMomentsPlayed = ({ played }) => played.mock.calls
   .flatMap(([batch]) => batch.moments.map(({ type }) => type))
   .filter((type) => LUCK_MOMENTS.has(type));
@@ -141,15 +146,19 @@ afterEach(() => {
 
 describe("StudentRaceScreen with the server's own Luck snapshots", () => {
   it.each([
-    ["a Tailwind", tailwind, [STUDENT_RACE_MOMENT.LUCK_TAILWIND], "gameplay.luck.tailwind", { wind: true }],
-    ["an Energy Orb", orb, [STUDENT_RACE_MOMENT.LUCK_ENERGY_ORB], "gameplay.luck.energyOrb", {}],
-    ["a Mud Splash", mud, [STUDENT_RACE_MOMENT.LUCK_MUD], "gameplay.luck.mud", { mud: true }],
+    ["a Tailwind", tailwind, [STUDENT_RACE_MOMENT.LUCK_TAILWIND], "gameplay.luck.tailwind", { wind: true },
+      [GAME_AUDIO.LUCK_TAILWIND]],
+    ["an Energy Orb", orb, [STUDENT_RACE_MOMENT.LUCK_ENERGY_ORB], "gameplay.luck.energyOrb", {},
+      [GAME_AUDIO.LUCK_ENERGY_ORB]],
+    ["a Mud Splash", mud, [STUDENT_RACE_MOMENT.LUCK_MUD], "gameplay.luck.mud", { mud: true }, [GAME_AUDIO.LUCK_MUD]],
     ["two events in one snapshot", twoEvents, [STUDENT_RACE_MOMENT.LUCK_ENERGY_ORB, STUDENT_RACE_MOMENT.LUCK_MUD],
-      "gameplay.luck.mud", { mud: true }],
-  ])("plays and tells %s that arrives with an answer, once", async (_, snapshot, moments, noticeKey, marks) => {
+      "gameplay.luck.mud", { mud: true }, [GAME_AUDIO.LUCK_ENERGY_ORB, GAME_AUDIO.LUCK_MUD]],
+  ])("plays, sounds and tells %s that arrives with an answer, once", async (_, snapshot, moments, noticeKey, marks,
+    cues) => {
     const view = await answerArrives(snapshot);
 
     expect(luckMomentsPlayed(view)).toEqual(moments);
+    expect(luckCuesPlayed()).toEqual(cues);
     expect(pixiFrame(view.renderer)).toEqual({ ...NO_MARKS, ...marks, luckEffects: moments });
     expect(screen.getByText(text(noticeKey))).toBeInTheDocument();
 
@@ -158,6 +167,7 @@ describe("StudentRaceScreen with the server's own Luck snapshots", () => {
     view.rerender(raceScreen(joinedRace()));
     view.rerender(raceScreen({ ...view.after }));
     expect(luckMomentsPlayed(view)).toEqual(moments);
+    expect(luckCuesPlayed()).toEqual(cues);
   });
 
   it("raises the shield from the server award, tells screen readers, and drops both once it blocks the mud", async () => {
@@ -165,6 +175,7 @@ describe("StudentRaceScreen with the server's own Luck snapshots", () => {
     const view = await answerArrives(blocked, shieldUp);
 
     expect(luckMomentsPlayed(view)).toEqual([STUDENT_RACE_MOMENT.LUCK_SHIELD_BLOCKED]);
+    expect(luckCuesPlayed()).toEqual([GAME_AUDIO.LUCK_SHIELD_BLOCKED]);
     expect(pixiFrame(view.renderer)).toEqual({ ...NO_MARKS, luckEffects: [STUDENT_RACE_MOMENT.LUCK_SHIELD_BLOCKED] });
     expect(screen.getByText(text("gameplay.luck.shieldBlocked"))).toBeInTheDocument();
     expect(shieldLine(view.container)).toBeEmptyDOMElement();
@@ -193,6 +204,7 @@ describe("StudentRaceScreen with the server's own Luck snapshots", () => {
     else expect(luckLine(view.container)).toHaveTextContent(text(noticeKey));
     expect(screen.getByText(text("question.instruction"))).toBeInTheDocument();
     expect(luckMomentsPlayed(view)).toEqual([]);
+    expect(luckCuesPlayed()).toEqual([]);
   });
 
   it("tells a student the screen has just started racing as nothing that happened before", async () => {

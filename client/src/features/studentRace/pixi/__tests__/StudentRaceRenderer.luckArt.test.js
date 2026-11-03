@@ -66,4 +66,29 @@ describe("StudentRaceRenderer Luck art", () => {
     expect(initSource).toHaveBeenCalledWith(puddle.source);
     renderer.destroy();
   });
+
+  it("pins the painted finish gate and lays the dust in the world, sorted just behind the player's kart", async () => {
+    vi.spyOn(Assets, "load").mockImplementation(async () => collectable());
+    const initSource = vi.fn();
+    const app = {
+      screen: { width: 520, height: 800 },
+      stage: new Container(),
+      ticker: { add: vi.fn(), remove: vi.fn() },
+      renderer: { texture: { initSource } },
+    };
+
+    const renderer = new StudentRaceRenderer(app);
+    await renderer.ready;
+    await renderer.finishLineLayer.artPromise;
+    renderer.tick({ deltaMS: 16, elapsedMS: 16 });
+    renderer.worldContainer.sortChildren();
+    const gate = renderer.finishLineLayer.gate.children.at(-1).texture;
+    const world = renderer.worldContainer.children;
+
+    expect(gate.source.autoGarbageCollect).toBe(false);
+    expect(initSource).toHaveBeenCalledWith(gate.source);
+    expect(renderer.effectsLayer.graphics.parent).toBe(renderer.worldContainer);
+    expect(world.indexOf(renderer.effectsLayer.graphics)).toBe(world.indexOf(renderer.playerKartLayer.root) - 1);
+    renderer.destroy();
+  });
 });

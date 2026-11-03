@@ -7,6 +7,7 @@ import {
   VEHICLE_GROUND_Y,
   VEHICLE_UNIT_WIDTH,
 } from "../vehicles/studentRaceVehicleGeometry";
+import { paintArt } from "./paintArt";
 
 // Luck bursts (C5-04f): placed on the player's kart in kart-local units, so they fit it on every screen, and played
 // in beats timed in ms of their configured life. Approved art stands in for one part of a burst; the rest is drawn.
@@ -83,16 +84,6 @@ const easeIn = (t) => t * t;
 // How far a burst is through one of its beats: 0 before startMs, 1 from endMs on.
 const beat = (ms, startMs, endMs) => clamp01((ms - startMs) / (endMs - startMs));
 const lerp = (from, to, t) => from + (to - from) * t;
-
-// Approved art at its own alpha. Graphics.texture takes its alpha from the fill style, which every fill leaves
-// behind, so the alpha is set inside a saved state and the brush comes back as it was. The context's rotate turns
-// any translate already made, so the art turns first and moves second.
-function paintArt(g, texture, { x, y, width, alpha, rotation = 0, anchorX = 0.5, anchorY = 0.5 }) {
-  const height = width * texture.height / texture.width;
-  if (!(alpha > 0) || !(width > 0) || !(height > 0)) return;
-  g.save().rotateTransform(rotation).translateTransform(x, y).setFillStyle({ alpha })
-    .texture(texture, WHITE, -width * anchorX, -height * anchorY, width, height).restore();
-}
 
 // A soft round light: a faint wide disc under a brighter small one.
 function drawGlow(g, x, y, radius, color, alpha) {

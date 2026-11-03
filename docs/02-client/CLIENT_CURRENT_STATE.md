@@ -9,6 +9,13 @@
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
 
+Local checkpoint, 2026-11-03 (C5-04f Astra V4): the effects that were still drawn are painted where
+the painting looks better: the correct answer's rings and sparkles, the wrong answer's dry dirt, the
+dust behind the kart, the Tailwind wisps, the finish's rings, confetti and gate, the Turbo failure's
+smoke and the Safe ripple; the drawing stays as the fallback. The dust, the dirt and the smoke now
+lie behind the kart instead of over it. The four Luck events have their own sounds, beside the
+answer sound. The Turbo speed lines stay drawn. A physical phone remains.
+
 Local checkpoint, 2026-11-02 (C5-04f Luck line): Luck notices have their own line under the HUD
 for the whole race, so a notice shows the moment its event arrives, beside the ✓/✕ feedback and
 while the next question loads, instead of waiting for the question card's status line. The timing,

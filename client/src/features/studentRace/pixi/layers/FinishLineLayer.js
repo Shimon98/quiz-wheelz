@@ -1,17 +1,38 @@
-import { Graphics } from "pixi.js";
+import { Assets, Container, Graphics, Sprite } from "pixi.js";
 
 import { STUDENT_RACE_FINISH_GATE } from "../../config/finishGateConfig";
+import { STUDENT_RACE_EFFECT_ART } from "../assets/studentRaceEffectManifest";
 
 const SIDES = Object.freeze([-1, 1]);
 
 export class FinishLineLayer {
-  constructor(container) {
+  constructor(container, { loadTexture = (url) => Assets.load(url), prepareTexture = null } = {}) {
     this.isVisible = false;
+    this.gate = new Container();
+    this.gate.eventMode = "none";
+    this.gate.visible = false;
     this.graphics = new Graphics();
-    this.graphics.eventMode = "none";
-    this.graphics.visible = false;
-    container.addChild(this.graphics);
+    this.gate.addChild(this.graphics);
+    container.addChild(this.gate);
     this.drawGate();
+    this.artPromise = this.loadArt(loadTexture, prepareTexture);
+  }
+
+  // Astra's painted gate takes the drawn one's place once it loads, pinned like the effect art, its feet where the
+  // drawn poles stand; a failed or late load keeps the drawn gate. The race never waits for it.
+  loadArt(loadTexture, prepareTexture) {
+    const { url, anchorX, anchorY, feetApart } = STUDENT_RACE_EFFECT_ART.finishGate;
+    if (url == null) return Promise.resolve(false);
+    return Promise.resolve().then(() => loadTexture(url)).then((texture) => {
+      if (texture == null || this.gate.destroyed) return false;
+      prepareTexture?.(texture);
+      const art = new Sprite(texture);
+      art.anchor.set(anchorX, anchorY);
+      art.scale.set(2 * STUDENT_RACE_FINISH_GATE.poleLateralRatio / (feetApart * texture.width));
+      this.gate.addChild(art);
+      this.graphics.visible = false;
+      return true;
+    }).catch(() => false);
   }
 
   drawGate() {
@@ -98,15 +119,15 @@ export class FinishLineLayer {
       ? null
       : perspective.projectTrackObject(totalDistance - raceObjectCameraPosition);
     this.isVisible = projected?.visible === true;
-    this.graphics.visible = this.isVisible;
+    this.gate.visible = this.isVisible;
     if (!this.isVisible) return;
 
-    this.graphics.position.set(projected.x, projected.y);
-    this.graphics.scale.set(projected.roadHalfWidth);
-    this.graphics.zIndex = projected.depth;
+    this.gate.position.set(projected.x, projected.y);
+    this.gate.scale.set(projected.roadHalfWidth);
+    this.gate.zIndex = projected.depth;
   }
 
   destroy() {
-    this.graphics.destroy();
+    this.gate.destroy({ children: true });
   }
 }

@@ -4,6 +4,7 @@ import { RACE_LUCK_EVENT_TYPES } from "../../../../constants/raceGameplayConstan
 import { STUDENT_RACE_ANIMATION_CONFIG } from "../../config/raceAnimationConfig.js";
 import { STUDENT_RACE_EFFECT } from "../../runtime/studentRaceRuntimeConstants.js";
 import { LUCK_EFFECT_ART } from "../assets/studentRaceEffectManifest.js";
+import { paintArt } from "../effects/paintArt.js";
 import { KART_SHIELD_BUBBLE, VEHICLE_GROUND_Y, VEHICLE_UNIT_WIDTH } from "./studentRaceVehicleGeometry.js";
 
 // Marks for the Guard Shield and the open Luck windows, in kart-local units: plain Graphics drawn once, and Astra's
@@ -32,6 +33,9 @@ const WIND_LENGTH = 16;
 const WIND_BEND = 3;
 // A phase where every streak shows, so the still wind of reduced motion still reads as wind.
 const WIND_START_PHASE = 0.25;
+// Astra's painted wisp stands in for each streak once it loads: `length` units long, leaning `lean` radians out from
+// the kart (V4's review), and a little stronger than the thin drawn streak.
+const WIND_WISP = Object.freeze({ length: 36, lean: 0.17, alpha: 0.85 });
 // The drawn stand-in for the painted puddle, until its file loads or if it fails. [x, depth below the ground line,
 // radius x, radius y, alpha]: one puddle wider than the kart and a few splashes at its edge, so the mud shows beside
 // and in front of the hover pads instead of hiding under them.
@@ -90,12 +94,17 @@ function drawMud(g) {
   g.ellipse(40, VEHICLE_GROUND_Y + 3, 34, 3).fill({ color: MUD_SHINE_COLOR, alpha: 0.3 });
 }
 
-function drawWind(g, phase) {
+function drawWind(g, phase, art = null) {
   g.clear();
   WIND_STREAKS.forEach(({ x, delay }) => {
     const life = (phase + delay) % 1;
     const top = VEHICLE_GROUND_Y - 8 - WIND_RISE * life;
     const side = x < VEHICLE_UNIT_WIDTH / 2 ? -1 : 1;
+    if (art != null) {
+      paintArt(g, art, { x, y: top + WIND_LENGTH / 2, width: WIND_WISP.length * art.width / art.height,
+        alpha: WIND_WISP.alpha * Math.sin(Math.PI * life), rotation: side * WIND_WISP.lean });
+      return;
+    }
     g.moveTo(x, top + WIND_LENGTH)
       .quadraticCurveTo(x + side * WIND_BEND, top + WIND_LENGTH / 2, x + side * WIND_BEND * 0.7, top)
       .stroke({ color: WIND_COLOR, alpha: 0.6 * Math.sin(Math.PI * life), width: 2, cap: "round" });
@@ -118,6 +127,7 @@ export class KartLuckMarks {
     this.front = new Container();
     this.front.addChild(this.wind, this.shield);
     this.windPhase = WIND_START_PHASE;
+    this.windArt = null;
     this.shieldAlpha = 0;
     drawMud(this.mudDrawn);
     drawShieldBack(this.shieldBack);
@@ -129,22 +139,35 @@ export class KartLuckMarks {
     kart.addChild(this.front);
   }
 
-  // The painted puddle loads beside the race and is never waited for, pinned like the other Luck art; a slot without
-  // a file asks for nothing, and a failed or late load leaves the drawn puddle in place.
+  // The painted puddle and wind wisp load beside the race and are never waited for, pinned like the other Luck art; a
+  // slot without a file asks for nothing, and a failed or late load leaves the drawn mark in place. Resolves true once
+  // every painting is in.
   loadArt(loadTexture = (url) => Assets.load(url), prepareTexture = null) {
-    const { url, anchorX, anchorY } = LUCK_EFFECT_ART.mudSplash;
-    if (url == null) return Promise.resolve(false);
-    this.artPromise = Promise.resolve().then(() => loadTexture(url)).then((texture) => {
-      if (texture == null || this.mud.destroyed) return false;
-      prepareTexture?.(texture);
-      const art = new Sprite(texture);
-      art.anchor.set(anchorX, anchorY);
-      art.position.copyFrom(this.mud.pivot);
-      art.scale.set(MUD_PUDDLE.width / texture.width);
-      this.mud.addChild(art);
-      this.mudDrawn.visible = false;
-      return true;
-    }).catch(() => false);
+    const load = (slot, place) => {
+      const { url } = LUCK_EFFECT_ART[slot];
+      if (url == null) return Promise.resolve(false);
+      return Promise.resolve().then(() => loadTexture(url)).then((texture) => {
+        if (texture == null || this.mud.destroyed || this.wind.destroyed) return false;
+        prepareTexture?.(texture);
+        place(texture);
+        return true;
+      }).catch(() => false);
+    };
+    this.artPromise = Promise.all([
+      load("mudSplash", (texture) => {
+        const { anchorX, anchorY } = LUCK_EFFECT_ART.mudSplash;
+        const art = new Sprite(texture);
+        art.anchor.set(anchorX, anchorY);
+        art.position.copyFrom(this.mud.pivot);
+        art.scale.set(MUD_PUDDLE.width / texture.width);
+        this.mud.addChild(art);
+        this.mudDrawn.visible = false;
+      }),
+      load("windWisp", (texture) => {
+        this.windArt = texture;
+        drawWind(this.wind, this.windPhase, texture);
+      }),
+    ]).then((loaded) => loaded.every(Boolean));
     return this.artPromise;
   }
 
@@ -166,7 +189,7 @@ export class KartLuckMarks {
     this.front.visible = this.shield.visible || this.wind.visible;
     if (!this.wind.visible || reducedMotion) return;
     this.windPhase = (this.windPhase + Math.max(0, deltaMs) / WIND_PERIOD_MS) % 1;
-    drawWind(this.wind, this.windPhase);
+    drawWind(this.wind, this.windPhase, this.windArt);
   }
 
   // The puddle lies there for the whole Mud window and fades out after it; reduced motion skips the burst and the fade.
