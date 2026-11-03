@@ -3,8 +3,9 @@ import { describe, expect, it } from "vitest";
 import { LUCK_EFFECT_ART, STUDENT_RACE_EFFECT_ART } from "../studentRaceEffectManifest";
 
 describe("studentRaceEffectManifest", () => {
-  it("reserves the five Luck art slots, each empty or holding an approved file", () => {
-    expect(Object.keys(LUCK_EFFECT_ART)).toEqual(["energyOrb", "shieldGlint", "windLeaf", "mudSplash", "shieldImpact"]);
+  it("reserves the six Luck art slots, each empty or holding an approved file", () => {
+    expect(Object.keys(LUCK_EFFECT_ART))
+      .toEqual(["energyOrb", "shieldGlint", "windLeaf", "mudSplash", "mudDrop", "shieldImpact"]);
     Object.values(LUCK_EFFECT_ART).forEach(({ url }) => expect(url === null || typeof url === "string").toBe(true));
   });
 

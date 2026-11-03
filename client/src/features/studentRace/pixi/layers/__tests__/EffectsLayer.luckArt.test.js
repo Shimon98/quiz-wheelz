@@ -17,7 +17,7 @@ vi.mock("../../assets/studentRaceEffectManifest", async (importOriginal) => {
 const BURST_ART = [
   [STUDENT_RACE_MOMENT.LUCK_ENERGY_ORB, "energyOrb", 120],
   [STUDENT_RACE_MOMENT.LUCK_TAILWIND, "windLeaf", 180],
-  [STUDENT_RACE_MOMENT.LUCK_MUD, "mudSplash", 140],
+  [STUDENT_RACE_MOMENT.LUCK_MUD, "mudDrop", 40],
   [STUDENT_RACE_MOMENT.LUCK_SHIELD_BLOCKED, "shieldImpact", 130],
 ];
 
@@ -50,7 +50,7 @@ function play(layer, type, atMs, options) {
 describe("EffectsLayer Luck art", () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it("loads each approved burst art once, pins it, and leaves the shield glint to its own owner", async () => {
+  it("loads each approved burst art once, pins it, and leaves the shield glint and the mud puddle to their own owners", async () => {
     const textures = new Map();
     const loadTexture = vi.fn(async (url) => textures.set(url, slotArt()).get(url));
     const prepareTexture = vi.fn();
@@ -58,7 +58,7 @@ describe("EffectsLayer Luck art", () => {
     await layer.artPromise;
 
     expect(loadTexture.mock.calls.map(([url]) => url))
-      .toEqual(["energyOrb.webp", "windLeaf.webp", "mudSplash.webp", "shieldImpact.webp"]);
+      .toEqual(["energyOrb.webp", "windLeaf.webp", "mudDrop.webp", "shieldImpact.webp"]);
     expect(prepareTexture.mock.calls.map(([texture]) => texture)).toEqual([...textures.values()]);
     layer.destroy();
   });
@@ -78,15 +78,15 @@ describe("EffectsLayer Luck art", () => {
   it("keeps the other art when one file fails, and draws that burst without it", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     const loadTexture = vi.fn(async (url) => {
-      if (url === "mudSplash.webp") throw new Error("404");
+      if (url === "windLeaf.webp") throw new Error("404");
       return slotArt();
     });
     const layer = new EffectsLayer(new Container(), { loadTexture, prepareTexture: vi.fn() });
     await layer.artPromise;
 
-    play(layer, STUDENT_RACE_MOMENT.LUCK_MUD, 140);
+    play(layer, STUDENT_RACE_MOMENT.LUCK_TAILWIND, 180);
 
-    expect(Object.keys(layer.luckArt).sort()).toEqual(["energyOrb", "shieldImpact", "windLeaf"]);
+    expect(Object.keys(layer.luckArt).sort()).toEqual(["energyOrb", "mudDrop", "shieldImpact"]);
     expect(drawnActions(layer)).not.toContain("texture");
     expect(drawnActions(layer).length).toBeGreaterThan(0);
     expect(error).not.toHaveBeenCalled();

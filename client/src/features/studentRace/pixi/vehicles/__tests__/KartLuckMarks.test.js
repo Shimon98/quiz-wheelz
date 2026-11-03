@@ -1,9 +1,16 @@
-import { Container } from "pixi.js";
-import { describe, expect, it } from "vitest";
+import { Container, Point, Texture, TextureSource } from "pixi.js";
+import { describe, expect, it, vi } from "vitest";
 
 import { RACE_LUCK_EVENT_TYPES } from "../../../../../constants/raceGameplayConstants";
+import { STUDENT_RACE_EFFECT } from "../../../runtime/studentRaceRuntimeConstants";
+import { LUCK_EFFECT_ART } from "../../assets/studentRaceEffectManifest";
 import { KartLuckMarks } from "../KartLuckMarks";
-import { KART_SHIELD_BUBBLE } from "../studentRaceVehicleGeometry";
+import { KART_SHIELD_BUBBLE, VEHICLE_GROUND_Y, VEHICLE_UNIT_WIDTH } from "../studentRaceVehicleGeometry";
+
+const MUD = RACE_LUCK_EVENT_TYPES.MUD_SPLASH;
+// One kart width as Astra's V3 measures its effects: the 108-unit art frame.
+const KART_WIDTH = 108;
+const puddleArt = () => new Texture({ source: new TextureSource({ width: 512, height: 183 }) });
 
 function mounted() {
   const root = new Container();
@@ -104,5 +111,103 @@ describe("KartLuckMarks", () => {
     step(marks, { luckEffect: RACE_LUCK_EVENT_TYPES.TAILWIND, deltaMs: 100, reducedMotion: true });
     expect(marks.windPhase).toBe(still);
     expect(marks.wind.visible).toBe(true);
+  });
+});
+
+describe("KartLuckMarks mud puddle", () => {
+  it("lays Astra's painted puddle around the kart's foot once it loads, pinned, in place of the drawn one", async () => {
+    const art = puddleArt();
+    const prepareTexture = vi.fn();
+    const { marks } = mounted();
+
+    expect(await marks.loadArt(async () => art, prepareTexture)).toBe(true);
+
+    const painted = marks.mud.children.at(-1);
+    const ground = painted.toGlobal(new Point(0, 0));
+    expect(painted.texture).toBe(art);
+    expect(prepareTexture).toHaveBeenCalledWith(art);
+    expect([painted.anchor.x, painted.anchor.y]).toEqual([LUCK_EFFECT_ART.mudSplash.anchorX, LUCK_EFFECT_ART.mudSplash.anchorY]);
+    expect(ground.x).toBeCloseTo(VEHICLE_UNIT_WIDTH / 2);
+    expect(ground.y).toBeGreaterThan(VEHICLE_GROUND_Y);
+    expect(ground.y).toBeLessThan(VEHICLE_GROUND_Y + 0.1 * KART_WIDTH);
+    expect(painted.width / KART_WIDTH).toBeCloseTo(1.7, 1);
+    expect(marks.mudDrawn.visible).toBe(false);
+  });
+
+  it("keeps the drawn puddle when the painting fails, or arrives after the race screen is gone", async () => {
+    const failing = mounted().marks;
+    expect(await failing.loadArt(async () => { throw new Error("404"); }, vi.fn())).toBe(false);
+    expect(failing.mud.children).toEqual([failing.mudDrawn]);
+    expect(failing.mudDrawn.visible).toBe(true);
+
+    const { root, marks } = mounted();
+    const prepareTexture = vi.fn();
+    let finish = null;
+    const late = new Promise((resolve) => { finish = resolve; });
+    const loading = marks.loadArt(() => late, prepareTexture);
+    root.destroy({ children: true });
+    finish(puddleArt());
+
+    expect(await loading).toBe(false);
+    expect(prepareTexture).not.toHaveBeenCalled();
+  });
+
+  it("bursts the puddle up on a Mud moment once the blobs land, then settles it lower and keeps it", () => {
+    const { marks } = mounted();
+    const scale = () => [marks.mud.scale.x, marks.mud.scale.y];
+
+    marks.play(STUDENT_RACE_EFFECT.LUCK_MUD);
+    step(marks, { luckEffect: MUD, deltaMs: 40 });
+    expect(marks.mud.visible).toBe(false);
+    step(marks, { luckEffect: MUD, deltaMs: 50 });
+    const [springingX, springingY] = scale();
+    step(marks, { luckEffect: MUD, deltaMs: 70 });
+    const peak = scale();
+    step(marks, { luckEffect: MUD, deltaMs: 400 });
+    const settled = scale();
+    step(marks, { luckEffect: MUD, deltaMs: 2000 });
+
+    expect(marks.mud.visible).toBe(true);
+    expect(springingX).toBeGreaterThan(0.6);
+    expect(springingX).toBeLessThan(1);
+    expect(springingY).toBe(springingX);
+    expect(peak).toEqual([1, 1]);
+    expect(settled[0]).toBe(1);
+    expect(settled[1]).toBeLessThan(0.7);
+    expect(scale()).toEqual(settled);
+  });
+
+  it("shows the puddle settled at once without a moment (a refresh mid-window) and under reduced motion", () => {
+    const burst = mounted().marks;
+    burst.play(STUDENT_RACE_EFFECT.LUCK_MUD);
+    step(burst, { luckEffect: MUD, deltaMs: 1000 });
+
+    const refreshed = mounted().marks;
+    step(refreshed, { luckEffect: MUD, deltaMs: 16 });
+    const still = mounted().marks;
+    still.play(STUDENT_RACE_EFFECT.LUCK_MUD);
+    step(still, { luckEffect: MUD, deltaMs: 16, reducedMotion: true });
+
+    [refreshed, still].forEach((marks) => {
+      expect(marks.mud.visible).toBe(true);
+      expect([marks.mud.scale.x, marks.mud.scale.y]).toEqual([burst.mud.scale.x, burst.mud.scale.y]);
+    });
+  });
+
+  it("fades the puddle out after its window closes, and drops it at once under reduced motion", () => {
+    const { marks } = mounted();
+    step(marks, { luckEffect: MUD });
+    step(marks, { luckEffect: null, deltaMs: 100 });
+    const fading = marks.mud.alpha;
+    step(marks, { luckEffect: null, deltaMs: 1000 });
+
+    expect(fading).toBeGreaterThan(0);
+    expect(fading).toBeLessThan(1);
+    expect(marks.mud.visible).toBe(false);
+
+    const still = mounted().marks;
+    step(still, { luckEffect: MUD, reducedMotion: true });
+    step(still, { luckEffect: null, deltaMs: 16, reducedMotion: true });
+    expect(still.mud.visible).toBe(false);
   });
 });

@@ -348,7 +348,10 @@ recovery never subtracts movement awarded in degraded mode.
 ### Hidden Recovery (S4-05, local checkpoint 2026-10-25)
 
 - Implemented on `feature/S4-05-C5-04-recovery-luck-shield` (not merged) behind
-  `QUIZWHEELZ_RECOVERY_ENABLED`, default `false` and independent of the Luck flag.
+  `QUIZWHEELZ_RECOVERY_ENABLED`, default `false` and independent of the Luck flag. Since
+  2026-11-02 the dev profile sets it to `true` (an environment variable `false` switches it off);
+  the test and prod profiles keep the default. Live QA with Luck ON and OFF: see
+  `SERVER_IMPLEMENTATION_PLAN.md` (S4-05, update 2026-11-02).
 - A player who is both behind and struggling gets +10 Challenge Energy once per race player,
   on an accepted correct NORMAL answer, after the normal gain and before the offer check. It
   changes nothing else and is hidden from every API, event and log. Rules, design and the

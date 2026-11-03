@@ -1,16 +1,19 @@
 import { Assets, Graphics } from "pixi.js";
 
+import { RACE_LUCK_EVENT_TYPES } from "../../../../constants/raceGameplayConstants";
 import { STUDENT_RACE_ANIMATION_CONFIG } from "../../config/raceAnimationConfig";
 import { STUDENT_RACE_VISUAL_CONFIG } from "../../config/raceVisualConfig";
 import { presentedMoments } from "../../runtime/deriveStudentRaceMoments";
+import { selectActiveLuckEffect } from "../../runtime/studentRaceGameplayMode";
 import { STUDENT_RACE_EFFECT } from "../../runtime/studentRaceRuntimeConstants";
 import { LUCK_EFFECT_ART } from "../assets/studentRaceEffectManifest";
 import { STUDENT_RACE_VEHICLE_MANIFEST } from "../assets/studentRaceVehicleManifest";
 import { drawFeedbackEffect } from "../effects/drawFeedbackEffect";
 import { artPixelToKartLocal, playerKartFrame, VEHICLE_UNIT_WIDTH } from "../vehicles/studentRaceVehicleGeometry";
 
-// The Luck art slots this layer draws its bursts with.
-const BURST_ART_SLOTS = Object.freeze(["energyOrb", "windLeaf", "mudSplash", "shieldImpact"]);
+// The Luck art slots this layer draws its bursts with. The mud puddle's painting is KartLuckMarks' own: it lies
+// behind the kart, under this layer.
+const BURST_ART_SLOTS = Object.freeze(["energyOrb", "windLeaf", "mudDrop", "shieldImpact"]);
 // Every hover kart shares the green master's art frame, so its measured helmet top and width hold for any color.
 const KART_ART = STUDENT_RACE_VEHICLE_MANIFEST.TOY_CAR_GREEN;
 const HEAD_TOP_Y = artPixelToKartLocal(KART_ART.headTop, { width: KART_ART.artSize, height: KART_ART.artSize }, KART_ART).y;
@@ -93,7 +96,7 @@ export class EffectsLayer {
 
   update(frameState) {
     if (this.destroyed) return;
-    const { width, visualSpeed, deltaMs, layout, runtimeState,
+    const { width, visualSpeed, deltaMs, layout, runtimeState, clientNowEpochMs,
       vehicleVisualScale = STUDENT_RACE_VISUAL_CONFIG.playerKart.visualScale } = frameState;
     const { anchorX, anchorY, maxWidth, dustOriginY } = layout.playerKart;
     const reducedMotion = runtimeState?.visual?.reducedMotion === true;
@@ -108,7 +111,10 @@ export class EffectsLayer {
       return;
     }
     this.agePuffs(deltaMs);
-    this.spawnPuffs(anchorX, dustOriginY, visualSpeed, deltaMs, width);
+    // No dust rises from the mud puddle the kart sits in while a Mud window is open (KartLuckMarks, same rule).
+    const inMud = selectActiveLuckEffect(runtimeState?.playerFinished ? null : runtimeState?.gameplay, clientNowEpochMs)
+      === RACE_LUCK_EVENT_TYPES.MUD_SPLASH;
+    this.spawnPuffs(anchorX, dustOriginY, inMud ? 0 : visualSpeed, deltaMs, width);
     this.drawPuffs(width);
     this.ageEffects(deltaMs);
     this.drawEffects({

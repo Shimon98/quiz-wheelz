@@ -1472,7 +1472,7 @@ answers were unchanged. The release gates above stay open.
 
 ### S4-05 — Hidden Recovery
 
-**Status:** `IMPLEMENTED behind QUIZWHEELZ_RECOVERY_ENABLED=false (default); committed on feature/S4-05-C5-04-recovery-luck-shield (b096e10, pushed), not merged; for Diana's review`
+**Status:** `IMPLEMENTED; ON in the dev profile since 2026-11-02 (kill switch QUIZWHEELZ_RECOVERY_ENABLED=false), code default, test and prod OFF; committed on feature/S4-05-C5-04-recovery-luck-shield (b096e10, pushed), not merged; for Diana's review`
 
 Eligibility requires both actually being behind and demonstrably struggling.
 Never grant assistance solely because a leading player intentionally answers wrong.
@@ -1576,6 +1576,38 @@ three are closed):
   offer opening with 2, 4 and 8 RACING students, after a warm-up, several repetitions per size,
   with Recovery and Luck each ON and OFF. The 2026-10-25 latency run is a smoke check with few
   offer rounds, not proof that p95 did not regress.
+
+Update, 2026-11-02 (Shimon's decision, after live QA): Recovery is ON in the dev profile, where the
+team runs and plays the game. `application-dev.properties` sets `QUIZWHEELZ_RECOVERY_ENABLED=true`
+explicitly, and an environment variable `QUIZWHEELZ_RECOVERY_ENABLED=false` switches it off (kill
+switch, proven on a jar of that profile). The code default, the test profile and the prod profile
+stay OFF. The first two gates above still hold for production. The measurement gate is measured:
+on a disposable MySQL 8.4 and Redis on one laptop, after a warm-up, three repetitions per size, with
+2/4/8 students answering at the same moment (p50/p95 ms):
+
+| Luck / Recovery | 2 students | 4 students | 8 students | Offer opening, 8 students |
+|---|---|---|---|---|
+| OFF / OFF | 180 / 393 | 264 / 728 | 529 / 1,162 | 469 / 1,373 |
+| OFF / ON | 224 / 466 | 310 / 706 | 615 / 1,266 | 668 / 1,266 |
+| ON / OFF | 216 / 432 | 301 / 721 | 570 / 1,208 | 437 / 916 |
+| ON / ON | 211 / 673 | 384 / 805 | 631 / 1,488 | 644 / 1,609 |
+
+There were no 5xx and no lock-wait timeouts. Hidden Recovery adds about 90 ms p50 at eight
+simultaneous answers on this machine. The run-to-run spread is of the same order, so a load test
+with a full class on target hardware remains a deployment gate.
+
+Live QA, 2026-11-02 (packaged jar, flags only from the environment): the four Luck × Recovery
+combinations, a natural eight-student race each, no database edits. A replay of the Recovery rules
+on the API's own numbers judged more than 160 right answers per race. It matched MySQL on every
+grant and every refusal: the grant came on the first qualifying answer, struggling but not far
+enough behind was refused, a meter without room for all 10 kept the right for later, and a student
+who struggled near the front got nothing. The window started at the first answer seen with the
+flag ON (no history from an OFF period). It survived two server restarts, and the +10 landed on the
+sixth outcome after them. A real student screen showed the grant on its own energy meter (50 → 80).
+`HiddenRecoveryWithLuckIntegrationTest` (H2 and MySQL) pins the same-answer order. A nudge then an
+Energy Orb fill the meter exactly to 100 with no offer, and the next right answer opens one offer.
+A nudge that fills the meter opens the offer, and Luck does not roll on that answer. The same
+answer posted twice grants and rolls once.
 
 ### S4-06 — Race Moments / announcements
 

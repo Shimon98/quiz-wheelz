@@ -5,8 +5,7 @@ import { Snail } from "lucide-react";
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
 import { isQuestionUnavailableError } from "../../../errors/errorChecks";
-import { getLuckNoticePresentation, getRaceGameplayPresentation } from "../config/raceGameplayPresentationConfig";
-import useStudentRaceLuckNotice from "../hooks/useStudentRaceLuckNotice";
+import { getRaceGameplayPresentation } from "../config/raceGameplayPresentationConfig";
 import { STUDENT_RACE_FEEDBACK } from "../runtime/studentRaceRuntimeConstants";
 import { STUDENT_RACE_PANEL_STYLES } from "../styles/studentRacePanelStyles";
 import { isQuestionTimeUp } from "../utils/isQuestionTimeUp";
@@ -50,9 +49,9 @@ function SafeProgress({ progress }) {
   );
 }
 
-function IdleLine({ gameplayContext, slowdownNoticeKey, safeProgress, gameplay, announcedLuckEventId }) {
+// Luck is told on its own line (StudentRaceLuckNotice), never here: this line gives way to the answer feedback.
+function IdleLine({ gameplayContext, slowdownNoticeKey, safeProgress }) {
   const { t } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
-  const luckNotice = getLuckNoticePresentation(useStudentRaceLuckNotice(gameplay, announcedLuckEventId));
 
   if (slowdownNoticeKey != null) {
     return (
@@ -68,19 +67,6 @@ function IdleLine({ gameplayContext, slowdownNoticeKey, safeProgress, gameplay, 
       <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center text-sm">
         <StudentRaceGameplayBadge gameplay={gameplayContext} />
         {safeProgress != null ? <SafeProgress progress={safeProgress} /> : null}
-      </p>
-    );
-  }
-
-  // Luck comes only from NORMAL answers, so it stands in for the plain instruction and never for a challenge badge.
-  if (luckNotice != null) {
-    const LuckIcon = luckNotice.icon;
-
-    return (
-      <p role="status" data-tone={luckNotice.tone}
-        className={`race-luck-notice ${STUDENT_RACE_PANEL_STYLES.statusLine} text-[var(--qw-text)]`}>
-        <LuckIcon aria-hidden="true" className="race-luck-notice-icon size-4 shrink-0" />
-        <span>{t(luckNotice.messageKey)}</span>
       </p>
     );
   }
@@ -112,8 +98,6 @@ export default function StudentRaceQuestionPanel({
   slowdownNoticeKey = null,
   safeProgress = null,
   resultFeedbackKey = null,
-  gameplay = null,
-  announcedLuckEventId = null,
 }) {
   const { t } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
 
@@ -186,7 +170,7 @@ export default function StudentRaceQuestionPanel({
         </p>
       ) : (
         <IdleLine gameplayContext={question.gameplayContext} slowdownNoticeKey={slowdownNoticeKey}
-          safeProgress={safeProgress} gameplay={gameplay} announcedLuckEventId={announcedLuckEventId} />
+          safeProgress={safeProgress} />
       )}
 
       <p className="text-center text-3xl font-bold leading-snug text-[var(--qw-text)]">

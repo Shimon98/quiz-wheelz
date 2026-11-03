@@ -1384,7 +1384,9 @@ with source `LUCK_EVENT`); the server decides every Luck event and the shield.
   so a refresh, a reconnect or another student never retells it. The line wakes up once, when the
   told notice can change (`selectLuckNoticeChangeAt`), and keeps no timer otherwise. Its resting
   clock is floored by the latest Luck instant the server sent (`selectLuckClockFloor`), so Luck
-  that arrives after minutes without Luck is told on the very render it arrives.
+  that arrives after minutes without Luck is told on the very render it arrives. Since 2026-11-02
+  Luck has its own line (C5-04f, Luck line); the panel's line keeps the slowdown notice, the badge
+  and the instruction.
 - **C5-04 shield for screen readers — DONE (branch `b096e10`, 2026-10-26):** the HUD keeps one
   visually hidden `aria-live="polite"` line that says the shield is ready while
   `guardShieldCharges > 0` (HE/EN), announced when the shield comes up and never again while the
@@ -1423,6 +1425,16 @@ with source `LUCK_EVENT`); the server decides every Luck event and the shield.
     ring, three-band wind ribbons, painted-look mud blobs, a shorter flash pinned at the flare's own
     point of contact. The mud and the standing shield stay as they were; `shieldGlint` still has
     no owner. Four burst files, 69 KB; 20 re-entries and a WebGL context loss with the real files.
+    2026-11-02: the mud is Astra's V3 too (Shimon, after the live race showed the drawn puddle
+    under the kart for the whole slowdown). `KartLuckMarks` lays the painted crown behind the kart:
+    it bursts up as the blobs land and settles into the puddle that stays for the Mud window, then
+    fades out; a refresh or reduced motion shows it settled at once. The burst keeps the blobs and
+    V3's four drops, and no dust rises while the kart is in the mud. 1,923 tests in 203 files.
+    2026-11-03: every flying mud blob and drop is painted (`mudDrop`, a glossy teardrop cut from
+    Astra's V2 concept B, head first along its path, mirrored rather than turned over when it heads
+    left): the Mud, the blocked hit and the wrong answer's splash. The answer effects, the dust, the
+    wind streaks and the finish gate are still drawn; their paintings are briefed for Astra (private
+    `docs/vision/c5_04f_2026-10-28/astra_v4_brief_2026-11-03/`). 1,926 tests in 203 files.
   - **Live Luck QA — DONE (local, 2026-11-01, no code change):** the packaged server of
     `b096e10` with Luck ON through environment variables only (Recovery OFF) on a disposable
     MySQL 8.4 and Redis 7.4. Luck OFF changed nothing. With Luck ON, every roll of an
@@ -1434,6 +1446,16 @@ with source `LUCK_EVENT`); the server decides every Luck event and the shield.
     blocks it, so a plain Mud is practically a first-roll event) and a Tailwind window that
     outlives a page reload. Found for a product decision: the Luck notice shares the line with the
     answer feedback and "loading the next question", so it shows for about 1–2 s of its 4 s.
+  - **Luck line — DONE (local, 2026-11-02):** Luck notices left the question card's status line for
+    their own line under the HUD, mounted for the whole race (`StudentRaceLuckNotice` in
+    `StudentRaceOverlay`). A notice now shows on the render its event arrives, beside the ✓/✕
+    feedback, while the next question loads, with no question and beside the challenge cards. It
+    keeps the existing timing (the server window for Tailwind and Mud; `luckNoticeMs` for an Orb or
+    a block, only when the moments pipeline announced it) through the same hook. There is no new
+    timer, and the card keeps its height. One polite live region tells each notice once. Tests:
+    `StudentRaceLuckNotice.test.jsx`, `StudentRaceOverlay.luck.test.jsx` (a mutation check fails 15
+    tests). Live, Luck and Recovery ON: every notice showed at once (+0 ms after the page learned
+    the event), beside ✓/✕, at 360, 390 and 768.
   - **F2 sound — PLANNED:** four approved WAV cues with provenance rows, mapping in
     `studentRaceSounds.js`, then the mix check with correct and wrong answers.
 

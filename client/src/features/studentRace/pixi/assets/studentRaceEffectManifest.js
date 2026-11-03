@@ -1,4 +1,5 @@
 import luckEnergyOrb from "../../../../assets/game/studentRace/effects/luck-energy-orb.webp";
+import luckMudDrop from "../../../../assets/game/studentRace/effects/luck-mud-drop.webp";
 import luckMudSplash from "../../../../assets/game/studentRace/effects/luck-mud-splash.webp";
 import luckShieldImpact from "../../../../assets/game/studentRace/effects/luck-shield-impact.webp";
 import luckWindLeaf from "../../../../assets/game/studentRace/effects/luck-wind-leaf.webp";
@@ -16,9 +17,13 @@ export const LUCK_EFFECT_ART = Object.freeze({
   // No owner draws a glint file yet: the standing shield paints its own reflection.
   shieldGlint: Object.freeze({ url: null }),
   windLeaf: Object.freeze({ url: luckWindLeaf }),
-  // anchorX, anchorY is where the kart's ground line crosses the painting, under the kart's middle (measured by the
-  // private cutting script from the approved review, docs/vision/c5_04f_2026-10-28/mud-source).
-  mudSplash: Object.freeze({ url: luckMudSplash, anchorX: 0.5, anchorY: 0.884 }),
+  // Astra's V3 mud puddle, cropped to its paint; anchorX, anchorY is V3's ground point (0.5, 0.77 of its square) in
+  // the cropped file (measured by the private docs/vision/c5_04f_2026-10-28/v3-source script). KartLuckMarks owns it.
+  mudSplash: Object.freeze({ url: luckMudSplash, anchorX: 0.492, anchorY: 0.927 }),
+  // One painted mud drop, its round head pointing right (+x) and its highlight up, cut from Astra's V2 concept B by
+  // the private docs/vision/c5_04f_2026-10-28/mud-source script. Every flying mud blob and drop flies it: the Mud, the
+  // blocked hit and the wrong answer's splash.
+  mudDrop: Object.freeze({ url: luckMudDrop }),
   // anchorX, anchorY is the flare's white-hot point of contact, which sits on the shield's edge (measured by V3).
   shieldImpact: Object.freeze({ url: luckShieldImpact, anchorX: 0.43, anchorY: 0.52 }),
 });

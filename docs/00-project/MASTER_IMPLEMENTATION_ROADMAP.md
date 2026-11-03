@@ -166,7 +166,10 @@ Order:
    until the branch is reviewed. Production validates every entity at startup, so its table
    needs the documented DDL before this build is deployed, flag on or off. Recovery is enabled
    only after Diana's written approval of two rules (finished leader, STRICT focus forfeit) and a
-   p50/p95 measurement with 2/4/8 students (independent review, 2026-10-26).
+   p50/p95 measurement with 2/4/8 students (independent review, 2026-10-26). Since 2026-11-02 it
+   is ON in the dev profile (Shimon's decision after live QA, kill switch by environment
+   variable) and the p50/p95 measurement is done; production stays OFF until Diana's approval and
+   the DDL.
 5. Earned Power-Ups and fair bounded Luck.
 6. Hidden Recovery policy.
 7. Race Moments / announcements.

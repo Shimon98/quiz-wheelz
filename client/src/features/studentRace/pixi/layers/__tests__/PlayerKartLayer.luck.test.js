@@ -2,6 +2,7 @@ import { Container, Texture, TextureSource } from "pixi.js";
 import { describe, expect, it, vi } from "vitest";
 
 import { KART_THRUSTER_PALETTES } from "../../../config/kartThrusterConfig";
+import { STUDENT_RACE_MOMENT } from "../../../runtime/studentRaceRuntimeConstants";
 import { STUDENT_RACE_VEHICLE_MANIFEST } from "../../assets/studentRaceVehicleManifest";
 import { PlayerKartLayer } from "../PlayerKartLayer";
 
@@ -85,6 +86,27 @@ describe("PlayerKartLayer Luck and shield", () => {
     expect(layer.thrusters.palette).toBe(KART_THRUSTER_PALETTES.slowing);
     layer.update(frame({ activeEffects: mud, clientNowEpochMs: NOW + 2_000 }));
     expect(layer.thrusters.palette).toBeNull();
+    layer.destroy();
+  });
+
+  it("lays the painted mud puddle with the renderer's pin, and bursts it up only on a Mud moment", async () => {
+    const puddle = new Texture({ source: new TextureSource({ width: 512, height: 183 }) });
+    const prepareTexture = vi.fn();
+    const layer = new PlayerKartLayer(new Container(), {
+      loadVehicleAssets: vi.fn(), loadLuckTexture: async () => puddle, prepareTexture,
+    });
+    await layer.luckMarks.artPromise;
+    const mud = [luckWindow("SPEED_SLOW")];
+
+    layer.update(frame({ activeEffects: mud }));
+    const settled = layer.luckMarks.mud.scale.y;
+    layer.playMoments({ id: 2, moments: [{ type: STUDENT_RACE_MOMENT.LUCK_MUD, id: "luck-3" }] });
+    layer.update(frame({ activeEffects: mud }));
+
+    expect(prepareTexture).toHaveBeenCalledWith(puddle);
+    expect(layer.luckMarks.mud.children.at(-1).texture).toBe(puddle);
+    expect(settled).toBeLessThan(1);
+    expect(layer.luckMarks.mud.scale.y).toBeGreaterThan(settled);
     layer.destroy();
   });
 

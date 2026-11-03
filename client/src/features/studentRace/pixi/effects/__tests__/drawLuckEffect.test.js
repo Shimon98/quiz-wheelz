@@ -39,6 +39,8 @@ const KART_WIDTH = VEHICLE_UNIT_WIDTH * KART_ART.baseScale * KART.scale;
 const MUD_COLORS = new Set([0x663b22]);
 
 const art = () => new Texture({ source: new TextureSource({ width: 256, height: 256 }) });
+// The painted drop's own proportions: its head points along +x and its highlight up.
+const dropArt = () => new Texture({ source: new TextureSource({ width: 96, height: 60 }) });
 const atMs = (durationMs, ms) => ms / durationMs;
 
 function paint(effect, progress, luckArt = {}) {
@@ -62,6 +64,12 @@ function artPoint({ data }, anchorX = 0.5, anchorY = 0.5) {
   return data.transform.apply({ x: data.dx + data.dw * anchorX, y: data.dy + data.dh * anchorY });
 }
 const artCentre = (instruction) => artPoint(instruction);
+// Where a direction in a drawn image points on screen, through the transform it was drawn with.
+function artDirection({ data }, x, y) {
+  const from = data.transform.apply({ x: 0, y: 0 });
+  const to = data.transform.apply({ x, y });
+  return { x: to.x - from.x, y: to.y - from.y };
+}
 const shapeBounds = (instruction) => instruction.data.path.bounds;
 const onBubble = ({ x, y }) => {
   const centre = kartLocalToScreen(KART, KART_SHIELD_BUBBLE.x, KART_SHIELD_BUBBLE.y);
@@ -182,32 +190,37 @@ describe("Mud splash", () => {
     });
   });
 
-  it("splashes low on the road under the kart, below the driver", () => {
-    const bounds = paint(MUD, atMs(DURATION, 140)).getLocalBounds();
+  it("throws four drops out beside the kart, under the driver, and fades them as the puddle settles", () => {
+    const drops = (ms) => circles(paint(MUD, atMs(DURATION, ms))).filter(({ color }) => MUD_COLORS.has(color));
+    const flying = drops(300);
 
-    expect(bounds.maxY).toBeGreaterThan(GROUND_Y);
-    expect(bounds.minY).toBeGreaterThan(kartLocalToScreen(KART, 50, 0).y);
+    expect(flying.filter(({ x }) => x < ART_LEFT)).toHaveLength(2);
+    expect(flying.filter(({ x }) => x > ART_RIGHT)).toHaveLength(2);
+    flying.forEach(({ y }) => {
+      expect(y).toBeGreaterThan(HELMET_Y);
+      expect(y).toBeLessThan(GROUND_Y + KART_WIDTH * 0.1);
+    });
+    expect(Math.max(...drops(400).map(({ alpha }) => alpha))).toBeLessThan(Math.min(...drops(150).map(({ alpha }) => alpha)));
   });
 
-  it("lets painted splash art bring its own drops", () => {
-    const drops = (luckArt) => circles(paint(MUD, atMs(DURATION, 300), luckArt)).filter(({ color }) => MUD_COLORS.has(color));
-
-    expect(drops({}).length).toBeGreaterThan(0);
-    expect(drops({ mudSplash: art() })).toEqual([]);
+  it("paints no puddle of its own: the kart's marks lay the painting behind the kart", () => {
+    expect(drawn(paint(MUD, atMs(DURATION, 160), { mudSplash: art() }), "texture")).toEqual([]);
   });
 
-  it("spreads approved splash art wide and low along the kart's own ground line", () => {
-    const splash = art();
-    const [painted, ...extra] = drawn(paint(MUD, atMs(DURATION, 140), { mudSplash: splash }), "texture");
-    const { anchorX, anchorY } = LUCK_EFFECT_ART.mudSplash;
+  it("flies the painted drop for every blob and drop, head first along its arc and highlight up", () => {
+    const drop = dropArt();
+    const painted = (ms) => drawn(paint(MUD, atMs(DURATION, ms), { mudDrop: drop }), "texture");
 
-    const ground = artPoint(painted, anchorX, anchorY);
-    expect(extra).toEqual([]);
-    expect(painted.data.image).toBe(splash);
-    expect(ground.x).toBeCloseTo(KART.x);
-    expect(ground.y).toBeCloseTo(GROUND_Y);
-    expect(painted.data.dw).toBeGreaterThan((ART_RIGHT - ART_LEFT) * 1.5);
-    expect(drawn(paint(MUD, atMs(DURATION, 140)), "texture")).toEqual([]);
+    expect(painted(30)).toHaveLength(2);
+    expect(painted(150)).toHaveLength(4);
+    [...painted(30), ...painted(150), ...painted(420)].forEach((instruction) => {
+      expect(instruction.data.image).toBe(drop);
+      expect(artDirection(instruction, 0, -1).y).toBeLessThan(0);
+    });
+    painted(150).forEach((instruction) => expect(artDirection(instruction, 1, 0).y).toBeLessThan(0));
+    painted(420).forEach((instruction) => expect(artDirection(instruction, 1, 0).y).toBeGreaterThan(0));
+    expect(circles(paint(MUD, atMs(DURATION, 150), { mudDrop: drop })).filter(({ color }) => MUD_COLORS.has(color)))
+      .toEqual([]);
   });
 });
 
@@ -231,6 +244,18 @@ describe("Shield blocked", () => {
     expect(mudReach(paint(BLOCKED, atMs(DURATION, 60)))).toBeLessThan(mudReach(paint(BLOCKED, atMs(DURATION, 10))));
     expect(mudReach(paint(BLOCKED, atMs(DURATION, 450)))).toBeGreaterThan(mudReach(paint(BLOCKED, atMs(DURATION, 250))));
     expect(mudReach(paint(BLOCKED, atMs(DURATION, 250)))).toBeGreaterThan(KART_SHIELD_BUBBLE.radiusY * KART.scale);
+  });
+
+  it("flies the painted drop in and back out, highlight up", () => {
+    const drop = dropArt();
+    const painted = (ms) => drawn(paint(BLOCKED, atMs(DURATION, ms), { mudDrop: drop }), "texture");
+
+    expect(painted(50)).toHaveLength(2);
+    expect(painted(300)).toHaveLength(4);
+    [...painted(50), ...painted(300)].forEach((instruction) => {
+      expect(instruction.data.image).toBe(drop);
+      expect(artDirection(instruction, 0, -1).y).toBeLessThan(0);
+    });
   });
 
   it("puts approved impact art's own contact point on the shield's edge, 0.48 kart widths wide", () => {

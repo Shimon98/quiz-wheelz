@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import i18n from "../../../../i18n/i18n";
 import { audioEngine } from "../../../../shared/audio";
+import { STUDENT_RACE_ANIMATION_CONFIG } from "../../config/raceAnimationConfig";
 import { createPixiStudentRaceApp } from "../../pixi/createPixiStudentRaceApp";
 import { applyRaceSnapshot } from "../../runtime/applyRaceSnapshot";
 import { createInitialRaceRuntimeState } from "../../runtime/createInitialRaceRuntimeState";
@@ -102,8 +103,11 @@ const luckMomentsPlayed = ({ played }) => played.mock.calls
   .flatMap(([batch]) => batch.moments.map(({ type }) => type))
   .filter((type) => LUCK_MOMENTS.has(type));
 
+// One frame past the Mud blobs' landing, when the puddle has burst up behind the kart; every Luck burst still plays.
+const FRAME_MS = STUDENT_RACE_ANIMATION_CONFIG.effects.luckMudLandedMs + 16;
+
 function pixiFrame(renderer) {
-  renderer.tick({ deltaMS: 16, elapsedMS: 16 });
+  renderer.tick({ deltaMS: FRAME_MS, elapsedMS: FRAME_MS });
   const { shield: bubble, wind, mud: puddle } = renderer.playerKartLayer.luckMarks;
   return {
     shield: bubble.visible,
@@ -115,6 +119,7 @@ function pixiFrame(renderer) {
 
 const text = (key) => i18n.t(`studentRace:${key}`);
 const shieldLine = (container) => container.querySelector(".student-race-hud > [aria-live='polite']");
+const luckLine = (container) => container.querySelector(".race-luck-notice");
 const NO_MARKS = Object.freeze({ shield: false, wind: false, mud: false });
 
 beforeEach(() => {
@@ -184,7 +189,9 @@ describe("StudentRaceScreen with the server's own Luck snapshots", () => {
     const view = await mount(withSnapshot(snapshot, { receivedAgoMs: 1_500 }));
 
     expect(pixiFrame(view.renderer)).toEqual({ ...NO_MARKS, ...marks, luckEffects: [] });
-    expect(screen.getByText(text(noticeKey ?? "question.instruction"))).toBeInTheDocument();
+    if (noticeKey == null) expect(luckLine(view.container)).toBeNull();
+    else expect(luckLine(view.container)).toHaveTextContent(text(noticeKey));
+    expect(screen.getByText(text("question.instruction"))).toBeInTheDocument();
     expect(luckMomentsPlayed(view)).toEqual([]);
   });
 
@@ -196,6 +203,7 @@ describe("StudentRaceScreen with the server's own Luck snapshots", () => {
     view.rerender(raceScreen(withSnapshot(blocked, { from: joinedRace(2) })));
 
     expect(luckMomentsPlayed(view)).toEqual([STUDENT_RACE_MOMENT.LUCK_ENERGY_ORB]);
+    expect(luckLine(view.container)).toBeNull();
     expect(screen.getByText(text("question.instruction"))).toBeInTheDocument();
   });
 });

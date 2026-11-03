@@ -51,6 +51,7 @@ export class PlayerKartLayer extends StudentRaceVehicleVisual {
     this.auraPeakAlpha = 0;
     this.root.addChildAt(this.aura, this.root.getChildIndex(this.kart));
     this.luckMarks = new KartLuckMarks(this.root, this.kart);
+    this.luckMarks.loadArt(options.loadLuckTexture, options.prepareTexture ?? null);
     this.thrusters = new KartThrusters(this.kart);
     this.pose = new KartPoseArt({
       ...(options.loadPoseTexture ? { loadTexture: options.loadPoseTexture } : {}),
@@ -97,6 +98,7 @@ export class PlayerKartLayer extends StudentRaceVehicleVisual {
   playMoments(batch) {
     batch.moments.forEach(({ type }) => {
       this.thrusters.play(type);
+      this.luckMarks.play(type);
       if (type === STUDENT_RACE_EFFECT.TURBO_SUCCESS) {
         this.poseHold = { mode: RACE_GAMEPLAY_MODES.TURBO_TRIAL, remainingMs: poseHoldMs };
       } else if (type === STUDENT_RACE_EFFECT.FINISH || type === STUDENT_RACE_EFFECT.TURBO_FAILURE) {

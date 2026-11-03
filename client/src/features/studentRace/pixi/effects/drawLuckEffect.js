@@ -48,25 +48,18 @@ const WIND_STEPS = 12;
 // and along the climb.
 const WIND_LEAF = Object.freeze({ size: 0.2, behindHead: 0.08, turn: -1.1, sideTurn: 0.25, climbTurn: 0.4 });
 
-// Two blobs fly in from the upper left and land by the kart's front, then the mud splashes low around its foot and
-// falls back out. Kart-local [x, y] points.
-const MUD_LANDED_MS = 75;
-const MUD_SPLASHED_MS = 200;
-const MUD_FLIGHTS = Object.freeze([
-  Object.freeze({ from: [-46, 6], to: [28, 62], radius: 6 }),
-  Object.freeze({ from: [-30, 26], to: [46, 66], radius: 5 }),
-]);
-const MUD_FOOT = Object.freeze({ x: 50, y: VEHICLE_GROUND_Y + 5, radiusX: 60, radiusY: 8 });
-// [x offset from the foot, height]: the crown of tongues the drawn splash throws up around the kart's foot.
-const MUD_CROWN = Object.freeze([[-52, 17], [-36, 28], [-18, 20], [0, 31], [18, 21], [36, 29], [52, 16]]);
-const MUD_TONGUE_WIDTH = 5;
-// [x offset from the foot, peak height, x offset where it lands, radius]
-const MUD_DROPS = Object.freeze([
-  [-34, 26, -62, 5.5], [-20, 34, -40, 4.5], [-6, 22, -14, 4], [10, 30, 22, 5], [24, 24, 48, 4.5], [36, 32, 66, 5.5],
-]);
-// The painted splash's width: it spreads to about 1.7 kart widths, low around the hover pads, as in the approved
-// review of Astra's concept A.
-const MUD_SPLASH_WIDTH = 182;
+// The mud in V3's beats and kart widths, from the kart's ground point: two blobs fly in from the upper left and land
+// under the kart, where the painted puddle bursts up behind it (KartLuckMarks), and four drops are thrown out from
+// beside the kart in arcs, fading from MUD_SETTLE_FROM_MS as the puddle settles.
+const MUD_LANDED_MS = DURATIONS.luckMudLandedMs;
+const MUD_SETTLE_FROM_MS = 180;
+// [from x, from y, to x, to y, radius]; V3 flies both at one angle.
+const MUD_FLIGHTS = Object.freeze([[-0.93, -0.64, -0.16, 0.035, 0.055], [-1.05, -0.547, 0.06, 0.035, 0.047]]);
+const MUD_FLIGHT_ANGLE = 0.6;
+// [side, peak height, spread, radius]: a drop starts `from` out beside the kart, `below` the ground line, and
+// travels `reach` × its spread further out.
+const MUD_DROPS = Object.freeze([[-1, 0.29, 0.91, 0.045], [-1, 0.18, 1.1, 0.032], [1, 0.34, 0.97, 0.046], [1, 0.21, 1.15, 0.035]]);
+const MUD_THROW = Object.freeze({ from: 0.38, reach: 0.45, below: 0.058 });
 
 // The hit lands on the left of the shield bubble, a little above its middle; the server names no side, so it is
 // always this one. Mud closes in until contactMs; the flash peaks from flashUpMs to flashHoldMs and is gone by
@@ -198,9 +191,17 @@ function drawTailwind(g, { kart, luckArt }, progress) {
   });
 }
 
-// A painted-looking blob of mud: a dark body, a lighter middle and a highlight, stretched along its flight.
-function drawMudBlob(g, { x, y }, radius, alpha, stretch = 1, angle = 0) {
+// A blob of mud heading along `angle`. With the painted drop it is that drop, as thick as the drawn blob and as long as
+// the painting; its head points right and its highlight up, so a drop heading left is mirrored, never turned over.
+// Without it: a dark body, a lighter middle and a highlight, stretched along its flight.
+export function drawMudBlob(g, { x, y }, radius, alpha, stretch = 1, angle = 0, art = null) {
   if (!(alpha > 0) || !(radius > 0)) return;
+  if (art != null) {
+    g.save().scaleTransform(1, Math.cos(angle) < 0 ? -1 : 1);
+    paintArt(g, art, { x, y, width: 2 * radius * art.width / art.height, alpha, rotation: angle });
+    g.restore();
+    return;
+  }
   g.save().rotateTransform(angle).translateTransform(x, y);
   g.ellipse(0, 0, radius * stretch, radius).fill({ color: MUD_DARK, alpha });
   g.ellipse(-radius * 0.2, -radius * 0.2, radius * 0.52, radius * 0.36).fill({ color: MUD, alpha });
@@ -208,50 +209,30 @@ function drawMudBlob(g, { x, y }, radius, alpha, stretch = 1, angle = 0) {
   g.restore();
 }
 
+// The burst's blobs and drops only: the puddle the blobs land in is painted behind the kart by KartLuckMarks.
 function drawMudSplash(g, { kart, luckArt }, progress) {
   const durationMs = DURATIONS.luckMudEffectDurationMs;
   const ms = progress * durationMs;
+  const kartWidth = kart.artWidth * kart.scale;
+  const ground = kartLocalToScreen(kart, VEHICLE_UNIT_WIDTH / 2, VEHICLE_GROUND_Y);
+  const at = (x, y) => ({ x: ground.x + x * kartWidth, y: ground.y + y * kartWidth });
+  const drop = luckArt?.mudDrop;
   const flight = easeIn(beat(ms, 0, MUD_LANDED_MS));
   if (flight < 1) {
-    MUD_FLIGHTS.forEach(({ from, to, radius }) => {
-      const blob = kartLocalToScreen(kart, lerp(from[0], to[0], flight), lerp(from[1], to[1], flight));
-      const heading = Math.atan2(to[1] - from[1], to[0] - from[0]);
-      drawMudBlob(g, blob, radius * kart.scale, 1, 1.5, heading);
+    MUD_FLIGHTS.forEach(([fromX, fromY, toX, toY, radius]) => {
+      drawMudBlob(g, at(lerp(fromX, toX, flight), lerp(fromY, toY, flight)), radius * kartWidth, 1, 1.5,
+        MUD_FLIGHT_ANGLE, drop);
     });
     return;
   }
-  const splash = easeOut(beat(ms, MUD_LANDED_MS, MUD_SPLASHED_MS));
-  const alpha = 1 - beat(ms, MUD_SPLASHED_MS, durationMs);
-  if (alpha <= 0) return;
-  const foot = kartLocalToScreen(kart, MUD_FOOT.x, MUD_FOOT.y);
-  const art = luckArt?.mudSplash;
-  if (art != null) {
-    // The painted splash brings its own crown and drops; its anchor sits on the kart's ground line.
-    const { anchorX, anchorY } = LUCK_EFFECT_ART.mudSplash;
-    const ground = kartLocalToScreen(kart, MUD_FOOT.x, VEHICLE_GROUND_Y);
-    paintArt(g, art, { x: ground.x, y: ground.y, width: MUD_SPLASH_WIDTH * kart.scale * (0.6 + 0.4 * splash), alpha,
-      anchorX, anchorY });
-    return;
-  }
-  const radiusX = MUD_FOOT.radiusX * kart.scale * (0.5 + 0.5 * splash);
-  const radiusY = MUD_FOOT.radiusY * kart.scale;
-  g.ellipse(foot.x, foot.y, radiusX, radiusY).fill({ color: MUD_DARK, alpha: 0.9 * alpha });
-  g.ellipse(foot.x - radiusX * 0.15, foot.y - radiusY * 0.3, radiusX * 0.5, radiusY * 0.35)
-    .fill({ color: MUD_LIGHT, alpha: 0.35 * alpha });
-  // The crown rises with the splash and sinks back as it fades.
-  const rise = splash * (1 - 0.6 * beat(ms, MUD_SPLASHED_MS, durationMs));
-  MUD_CROWN.forEach(([dx, height]) => {
-    const x = foot.x + dx * kart.scale * (0.5 + 0.5 * splash);
-    const top = foot.y - height * kart.scale * rise;
-    g.ellipse(x, (foot.y + top) / 2, MUD_TONGUE_WIDTH * kart.scale, (foot.y - top) / 2)
-      .fill({ color: MUD_DARK, alpha });
-    drawMudBlob(g, { x, y: top - 2 * kart.scale }, 4 * kart.scale * rise, alpha);
-  });
-  // Drops thrown up and out from the splash, falling back as it fades.
   const thrown = beat(ms, MUD_LANDED_MS, durationMs);
-  MUD_DROPS.forEach(([dx, peak, landDx, radius]) => {
-    const drop = kartLocalToScreen(kart, MUD_FOOT.x + lerp(dx, landDx, thrown), MUD_FOOT.y - peak * Math.sin(Math.PI * thrown));
-    drawMudBlob(g, drop, radius * kart.scale, alpha);
+  const alpha = 1 - beat(ms, MUD_SETTLE_FROM_MS, durationMs);
+  MUD_DROPS.forEach(([side, height, spread, radius]) => {
+    const point = at(side * (MUD_THROW.from + spread * MUD_THROW.reach * thrown),
+      MUD_THROW.below - height * Math.sin(Math.PI * thrown));
+    // Each drop heads along its arc: up and out as it leaves, down as it falls back.
+    const heading = Math.atan2(-height * Math.PI * Math.cos(Math.PI * thrown), side * spread * MUD_THROW.reach);
+    drawMudBlob(g, point, radius * kartWidth * (1 - 0.3 * thrown), alpha, 1.2, heading, drop);
   });
 }
 
@@ -281,7 +262,8 @@ function drawShieldBlocked(g, { kart, luckArt }, progress) {
   const closing = easeIn(beat(ms, 0, BLOCK.contactMs));
   if (closing < 1) {
     BLOCK_MUD.blobs.forEach(([along, radius]) => {
-      drawMudBlob(g, away(lerp(BLOCK_MUD.from, BLOCK_MUD.to, closing), along), radius * kartWidth, 1, 1.45, inward);
+      drawMudBlob(g, away(lerp(BLOCK_MUD.from, BLOCK_MUD.to, closing), along), radius * kartWidth, 1, 1.45, inward,
+        luckArt?.mudDrop);
     });
     return;
   }
@@ -324,7 +306,7 @@ function drawShieldBlocked(g, { kart, luckArt }, progress) {
   BLOCK_SPRAY.forEach((spread, i) => {
     const drop = away(0.06 + (0.55 + 0.04 * i) * easeOut(thrown), spread * 0.48 * thrown);
     drawMudBlob(g, drop, (0.043 - 0.004 * i) * kartWidth * (1 - 0.35 * thrown), 1 - thrown, 1.25,
-      Math.atan2(normal.y, normal.x) + spread);
+      Math.atan2(normal.y, normal.x) + spread, luckArt?.mudDrop);
   });
 }
 

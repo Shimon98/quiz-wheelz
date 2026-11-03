@@ -1,13 +1,12 @@
 import { STUDENT_RACE_FEEDBACK_VISUAL } from "../../config/raceFeedbackVisualConfig";
 import { STUDENT_RACE_EFFECT } from "../../runtime/studentRaceRuntimeConstants";
 import { CHALLENGE_RESULT_DRAWERS } from "./drawChallengeResultEffect";
-import { LUCK_EFFECT_DRAWERS } from "./drawLuckEffect";
+import { drawMudBlob, LUCK_EFFECT_DRAWERS } from "./drawLuckEffect";
 
 const GREEN = 0x51cf66;
 const GOLD = 0xfcc419;
 const WHITE = 0xffffff;
 const ORANGE = 0xe8590c;
-const MUD = 0x8d5a2b;
 const CYAN = 0x22b8cf;
 const SKY = 0x74c0fc;
 
@@ -57,14 +56,20 @@ function drawCorrect(g, { x, y, size, feedbackStreak = 0 }, progress) {
   });
 }
 
-function drawWrong(g, { x, size, groundY }, progress) {
+function drawWrong(g, { x, size, groundY, luckArt }, progress) {
   const grow = easeOut(progress);
   g.ellipse(x, groundY, size * (0.3 + 0.35 * grow), size * (0.1 + 0.12 * grow)).stroke({ color: ORANGE, alpha: fade(progress, 0.8), width: size * 0.05 * (1 - progress) + 2 });
   g.ellipse(x, groundY, size * 0.3, size * 0.1).fill({ color: ORANGE, alpha: fade(progress, 0.18) });
+  // Mud thrown out from under the kart, falling back: the painted mud drop once it is loaded, heading where it flies.
+  const splashAt = (angle, t) => {
+    const distance = size * (0.25 + 0.45 * easeOut(t));
+    return { x: x + Math.cos(angle) * distance, y: groundY - Math.sin(angle) * distance * 0.45 + size * 0.3 * t * t };
+  };
   SPLASH_ANGLES.forEach((angle) => {
-    const distance = size * (0.25 + 0.45 * grow);
-    const drop = size * 0.3 * progress * progress;
-    dot(g, x + Math.cos(angle) * distance, groundY - Math.sin(angle) * distance * 0.45 + drop, size * (0.055 - 0.03 * progress), MUD, fade(progress, 0.9));
+    const point = splashAt(angle, progress);
+    const next = splashAt(angle, progress + 0.01);
+    drawMudBlob(g, point, size * (0.055 - 0.03 * progress), fade(progress, 0.9), 1,
+      Math.atan2(next.y - point.y, next.x - point.x), luckArt?.mudDrop);
   });
 }
 

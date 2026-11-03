@@ -57,9 +57,13 @@ describe("StudentRaceRenderer Luck art", () => {
 
     finishOrb();
     await renderer.effectsLayer.artPromise;
+    await renderer.playerKartLayer.luckMarks.artPromise;
+    const puddle = renderer.playerKartLayer.luckMarks.mud.children.at(-1).texture;
 
     expect(orb.source.autoGarbageCollect).toBe(false);
     expect(initSource).toHaveBeenCalledWith(orb.source);
+    expect(puddle.source.autoGarbageCollect).toBe(false);
+    expect(initSource).toHaveBeenCalledWith(puddle.source);
     renderer.destroy();
   });
 });

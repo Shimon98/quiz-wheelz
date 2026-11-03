@@ -1,6 +1,7 @@
 import StudentRaceChallengePanel from "../components/StudentRaceChallengePanel";
 import StudentRaceHud from "../components/StudentRaceHud";
 import StudentRaceHudSafeArea from "../components/StudentRaceHudSafeArea";
+import StudentRaceLuckNotice from "../components/StudentRaceLuckNotice";
 import StudentRaceQuestionPanel from "../components/StudentRaceQuestionPanel";
 import RacePlayerConnectionNotice from "../../../shared/racePlayer/RacePlayerConnectionNotice";
 import {
@@ -53,6 +54,7 @@ export default function StudentRaceOverlay({
           error={connectionError}
           onRetry={onConnectionRetry}
         />
+        <StudentRaceLuckNotice gameplay={runtimeState?.gameplay ?? null} announcedLuckEventId={announcedLuckEventId} />
       </div>
       {showChallenge ? (
         <StudentRaceChallengePanel
@@ -83,8 +85,6 @@ export default function StudentRaceOverlay({
           resultFeedbackKey={getChallengeResultFeedbackKey(
             selectChallengeResultOutcome(runtimeState?.gameplay, question?.gameplayContext),
           )}
-          gameplay={runtimeState?.gameplay ?? null}
-          announcedLuckEventId={announcedLuckEventId}
         />
       )}
     </div>

@@ -27,6 +27,8 @@ export const STUDENT_RACE_ANIMATION_CONFIG = Object.freeze({
     luckTailwindEffectDurationMs: 450,
     luckEnergyOrbEffectDurationMs: 550,
     luckMudEffectDurationMs: 450,
+    // The Mud blobs land this far into their burst, and the painted puddle bursts up behind the kart then.
+    luckMudLandedMs: 75,
     luckShieldBlockedEffectDurationMs: 550,
   }),
   kartPoses: Object.freeze({

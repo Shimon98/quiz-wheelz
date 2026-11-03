@@ -505,7 +505,7 @@ runtime.gameplay.mode / question.gameplayContext
   `75/100` value (tabular digits, `dir="ltr"`). Checked at 320, 390, 430 px
   and 844×390 without overflow.
 
-### Luck and Guard Shield presentation and art slots (C5-04f F1–F2, 2026-10-29 – 2026-11-01)
+### Luck and Guard Shield presentation and art slots (C5-04f F1–F2, 2026-10-29 – 2026-11-02)
 
 Approved direction (Shimon, 2026-10-29, from Astra's V2 concepts in the private
 `docs/vision/c5_04f_astra_v2_2026-10-29/`): shield A (soft glass), wind A (soft
@@ -513,7 +513,8 @@ ribbons), orb A, blocked B (a clear hit on the shield's edge, mud thrown back ou
 a crown splash for the mud. Refined 2026-10-30 (the mud: Shimon's pick, the wide, low
 painted splash of concept A) and 2026-11-01 (Astra's V3, in the private
 `docs/vision/c5_04f_astra_v3_2026-10-31/`, approved for the orb, the wind and the
-blocked hit; the mud and the standing shield stay as they were). Each effect is Pixi
+blocked hit, and on 2026-11-02 for the mud too, after a live race showed the drawn
+puddle; the standing shield stays as it was). Each effect is Pixi
 `Graphics` plus one painted part. V3's review measures its effects in kart widths (the
 108-unit art frame, `kart.artWidth`); the bursts below use its numbers.
 
@@ -531,12 +532,14 @@ shared by the standing shield and the blocked hit. Before this, the orb used the
 | Guard Shield (standing) | `KartLuckMarks` | fades in over 240, leaves at once | glass behind the art; rim, reflection, glints, foot ring in front | none (`shieldGlint` has no owner) |
 | Tailwind burst | `drawLuckEffect` | the right side 24 behind the left; both climb and fade by 450 | two three-band ribbons a side, from the ground beside the kart, bulging out as they climb past the helmet, clear of the art | `windLeaf`: one leaf a side riding the main ribbon |
 | Energy Orb | `drawLuckEffect` | 0–80 ignite, 80–220 full, 220–550 rise and fade; a light pulse 40–270, two motes from 90 | a stand-in orb the same size, the ignition glow, the pulse, the motes (no ring) | `energyOrb`: the whole orb, 0.43 kart widths, 0.075 above the helmet |
-| Mud burst | `drawLuckEffect` | 0–75 two blobs fly in, 75–200 crown splash, fade by 450 | painted-look blobs (body, middle, highlight), crown, drops | `mudSplash`: the splash and its drops; the flying blobs stay drawn |
-| Shield blocked | `drawLuckEffect` | 0–90 mud closes in; flash up by 115, held to 145, gone by 260; lit edge fades 160–390; spray out to 550 | blobs, lit edge (±0.48 rad), two flattened ripples, spray | `shieldImpact`: the flare, its point of contact on the edge, turned inward |
+| Mud burst | `drawLuckEffect` | 0–75 two blobs fly in and land under the kart; 75–450 four drops thrown out from beside it in arcs, fading from 180 | painted-look blobs (body, middle, highlight) | `mudDrop`: every blob and drop, head first along its path; the puddle is `KartLuckMarks`' own |
+| Mud puddle | `KartLuckMarks` | on a Mud moment it bursts up as the blobs land (75, from 70% of its size), is full by 150, settles 180–450 to 56% of its height and keeps that for the server's window, then fades out over 300; a window without a moment (a refresh) or reduced motion shows it settled at once | a drawn puddle until the file loads, or if it fails | `mudSplash`: the whole puddle, behind the kart |
+| Shield blocked | `drawLuckEffect` | 0–90 mud closes in; flash up by 115, held to 145, gone by 260; lit edge fades 160–390; spray out to 550 | blobs, lit edge (±0.48 rad), two flattened ripples, spray | `shieldImpact`: the flare, its point of contact on the edge, turned inward; `mudDrop`: the blobs and the spray |
 
 The hit always lands on the bubble's left edge, a little above its middle: the server
-names no side. The standing mud puddle and wind streaks stay with `KartLuckMarks` for the
-server's window; the bursts never leave a puddle.
+names no side. The mud puddle and the wind streaks stay with `KartLuckMarks` for the
+server's window. The puddle lies behind the kart, so the kart sits in it and nothing
+covers the kart; no dust rises from the kart while a Mud window is open.
 
 The effect manifest (`pixi/assets/studentRaceEffectManifest.js`, `LUCK_EFFECT_ART`)
 holds one slot per planned file; a slot whose file does not exist yet has `url: null`
@@ -544,20 +547,24 @@ holds one slot per planned file; a slot whose file does not exist yet has `url: 
 the build never depends on a missing file. The V3 files are exported whole from Astra's
 1254 px paintings by the private `docs/vision/c5_04f_2026-10-28/v3-source/process_v3_art.py`
 (Pillow, premultiplied resize, WebP q90 with full-quality alpha), so positions measured
-in a painting stay true. The four burst files weigh 69 KB together.
+in a painting stay true. The mud crown fills only a band of its square, so it is cropped
+to its paint first and the script measures V3's ground point in the crop. The five Luck
+files weigh 73 KB together.
 
 | Slot | File (`assets/game/studentRace/effects/`) | Size and fit (export spec) |
 |---|---|---|
 | `energyOrb` | `luck-energy-orb.webp` | **connected 2026-11-01** (V3): 256×256, 21 KB; the painted orb fills `cover` 0.844 of its square (measured); drawn whole, 0.43 kart widths, growing from 45% as it ignites |
 | `windLeaf` | `luck-wind-leaf.webp` | **connected 2026-11-01** (V3): 192×192, 7.4 KB; drawn 0.2 kart widths, turned by −1.1 rad plus 0.25 per side and 0.4 along the climb (the painted leaf leans) |
-| `mudSplash` | `luck-mud-splash.webp` | **connected 2026-10-30** (Shimon's pick): the peak frame of Astra's V2 concept A, cut by the private `docs/vision/c5_04f_2026-10-28/mud-source/process_mud_splash.py` into the shape the approved review showed (squashed into a 1.8 × 0.85 kart-width box, cropped to the paint); 512×116 WebP, 24.6 KB; drawn 182 units wide, its anchor (0.5, 0.884) on the kart's ground line under its middle |
+| `mudSplash` | `luck-mud-splash.webp` | **connected 2026-11-02** (V3, replacing the 2026-10-30 cut of V2 concept A): Astra's mud crown cropped to its paint, 512×183, 24.9 KB; `KartLuckMarks` lays it behind the kart, 183 units across (V3: 1.76 kart widths for the whole square), with V3's ground point (0.5, 0.77 of the square, `anchorX`/`anchorY` 0.492, 0.927 of the file) 8.6 units under the kart's ground line |
+| `mudDrop` | `luck-mud-drop.webp` | **connected 2026-11-03** (Shimon: the mud that flies to the side should be painted too): one glossy teardrop cut alone from Astra's V2 concept B mud sheet by the private `docs/vision/c5_04f_2026-10-28/mud-source/process_mud_drop.py`, turned so its head points right (+x) and its highlight up; 96×60, 3.4 KB. Drawn as thick as the drawn blob it replaces and as long as the painting, turned along its heading; a drop heading left is mirrored, never turned over. Used by the Mud burst, the blocked hit and the wrong answer's splash (`drawWrong`); without it the drawn blobs stay |
 | `shieldImpact` | `luck-shield-impact.webp` | **connected 2026-11-01** (V3): 256×256, 16.2 KB; its white-hot point of contact at `anchorX`/`anchorY` (0.43, 0.52) sits on the shield's edge; drawn 0.48 kart widths, turned to face into the bubble |
 | `shieldGlint` | `luck-shield-glint.webp` | no owner: the standing shield paints its own reflection (V3's reflection painting was not taken, 2026-11-01); give it one (a loader in `KartLuckMarks`) only if a delivered glint beats it |
 
 The kart art is 108 units wide on a 100-unit frame; transparent margins, no text,
 frame or background; one file serves all eight kart colors.
 
-Loading contract (`EffectsLayer`, the `KartThrusters.loadArt` pattern):
+Loading contract (`EffectsLayer` for the bursts, `KartLuckMarks.loadArt` for the puddle; the
+`KartThrusters.loadArt` pattern):
 - A slot without a url asks for nothing and the Graphics drawing stays.
 - A slot with a url loads once, beside the world: the renderer's readiness never
   waits for decorative art. The renderer's own `prepareTexture` pins it in GPU
@@ -568,7 +575,8 @@ Loading contract (`EffectsLayer`, the `KartThrusters.loadArt` pattern):
   behind, so each art draws inside a saved state at its own alpha and each burst hands
   the brush back as it found it. The context's rotate also turns any translate already
   made, so turned art (the leaves) rotates first and moves second.
-- Reduced motion plays no burst, with or without art. The finish still outranks Luck.
+- Reduced motion plays no burst, with or without art; the mud puddle still lies there for
+  its window, settled at once. The finish still outranks Luck.
 - The race screen keeps no Luck art of its own: teardown destroys children, never
   textures, so `Assets` keeps a loaded file for the next race (checked over 20 re-entries
   and a WebGL context loss in DEV on 2026-10-29, and again with the four real files on
@@ -576,7 +584,7 @@ Loading contract (`EffectsLayer`, the `KartThrusters.loadArt` pattern):
   contexts alive at a time).
 
 Adding an approved file: copy it to the path above, give its slot a static import and
-`url`, and adjust `cover` or the splash and flare anchors only from what is measured in
+`url`, and adjust `cover` or the puddle and flare anchors only from what is measured in
 the file. Nothing else changes.
 
 ## Continuous world flow (C1-03M)

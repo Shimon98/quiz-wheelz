@@ -117,7 +117,7 @@ describe("EffectsLayer Luck moments", () => {
     layer.playMoments(batch({ type: STUDENT_RACE_MOMENT.LUCK_ENERGY_ORB, id: "luck-7" }));
     layer.update(frame({ deltaMs: 100 }));
 
-    const filled = ["energyOrb", "windLeaf", "mudSplash", "shieldImpact"]
+    const filled = ["energyOrb", "windLeaf", "mudDrop", "shieldImpact"]
       .map((slot) => LUCK_EFFECT_ART[slot].url).filter((url) => url != null);
     expect(loadTexture.mock.calls.map(([url]) => url)).toEqual(filled);
     const actions = layer.feedbackGraphics.context.instructions.map(({ action }) => action);
@@ -134,5 +134,23 @@ describe("EffectsLayer Luck moments", () => {
 
     expect(layer.activeEffects.size).toBe(0);
     layer.destroy();
+  });
+
+  it("raises no dust from the mud puddle while a Mud window is open", () => {
+    const now = 50_000;
+    const mud = { effectId: 7, type: "SPEED_SLOW", source: "LUCK_EVENT", magnitudeTenths: 1,
+      startsAtEpochMs: now - 1_000, endsAtEpochMs: now + 2_000, serverClockOffsetMs: 0 };
+    const moving = (activeEffects) => ({ ...frame({ deltaMs: 500 }), visualSpeed: 2, clientNowEpochMs: now,
+      runtimeState: { visual: { reducedMotion: false }, gameplay: { activeEffects } } });
+    const inMud = new EffectsLayer(new Container());
+    const dry = new EffectsLayer(new Container());
+
+    inMud.update(moving([mud]));
+    dry.update(moving([]));
+
+    expect(inMud.puffs).toHaveLength(0);
+    expect(dry.puffs.length).toBeGreaterThan(0);
+    inMud.destroy();
+    dry.destroy();
   });
 });

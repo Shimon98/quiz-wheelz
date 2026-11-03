@@ -9,6 +9,16 @@
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
 
+Local checkpoint, 2026-11-02 (C5-04f Luck line): Luck notices have their own line under the HUD
+for the whole race, so a notice shows the moment its event arrives, beside the ✓/✕ feedback and
+while the next question loads, instead of waiting for the question card's status line. The timing,
+the one-time telling and the replay rules are unchanged. Live with Luck and Hidden Recovery ON, every
+notice showed at once on real screens (360/390/768). The Mud now looks like Astra's V3 for its whole
+slowdown: the painted mud bursts up behind the kart when the blobs land and stays as a puddle the kart
+sits in until the window ends (it was a drawn puddle of brown ellipses), and no dust rises from it.
+Every mud drop that flies (the Mud, the blocked hit, the wrong answer's splash) is a painted drop too.
+Sound and a physical phone remain.
+
 Local checkpoint, 2026-11-01 (C5-04f live Luck QA, no code change): with the server's Luck turned
 on only for a disposable MySQL 8.4 and Redis, real student screens showed every Luck event they
 received once, on arrival, and never again after a refresh, a network drop, a WebGL context loss or
