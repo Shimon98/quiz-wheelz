@@ -81,6 +81,11 @@ describe("mapStudentRaceGameplay", () => {
       .luck.recentEvents).toEqual([calibrated(luckEvent(), 75)]);
   });
 
+  it("keeps when the snapshot reached this device, the floor of the Luck line's clock", () => {
+    expect(mapStudentRaceGameplay(gameplay({ luck: { recentEvents: [luckEvent()] } }),
+      { serverClockOffsetMs: 75, receivedAtEpochMs: 12_345 }).luck.receivedAtEpochMs).toBe(12_345);
+  });
+
   it("preserves a Luck type or outcome it cannot present yet", () => {
     const future = luckEvent({ eventId: 40, selectedType: "FUTURE_TYPE", appliedType: "FUTURE_TYPE", outcome: "NO_EFFECT" });
 

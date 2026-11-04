@@ -1450,6 +1450,24 @@ with source `LUCK_EVENT`); the server decides every Luck event and the shield.
     rule moved. The four Luck cues were played through the real audio engine in Chrome and mixed at
     the game's levels with every answer cue, the engine and the music, two Luck cues of one batch
     included: no clipping (loudest peak −3.2 dBFS). Their A/B pick still waits for Shimon's ear.
+    2026-11-04, release closure (live: a prod-profile server on a migrated copy, Luck and Recovery ON):
+    - Bug: a one-shot Luck notice (Energy Orb, shield block) came back for one frame 5–15 s after its event,
+      in the same page. It happened in both the dev client and the production bundle, 8 times in two races.
+    - Cause: every snapshot dates the same event with its own clock offset. A later, slower snapshot moved
+      the news end a few ms past the notice line's resting clock.
+    - Fix: the snapshot's arrival on this device is a floor for that clock
+      (`gameplay.luck.receivedAtEpochMs`, `selectLuckClockFloor`).
+    - Tests: `useStudentRaceLuckNotice.test.jsx` (fails before the fix),
+      `studentRaceGameplayMode.luck.test.js`, `mapStudentRaceGameplay.test.js` and
+      `applyRaceSnapshot.test.js`. 1,955 tests in 204 files pass.
+    - Live check with the fix: a QA-only scripted Luck draw on the server (outside the repo) gave every
+      shielded student a real `BLOCKED_BY_SHIELD`.
+      - The dev client passed 68/68. Each block showed its burst and played `luck-shield-blocked.wav`
+        once. Under reduced motion it played the sound only; with the files blocked it showed the drawn
+        burst without sound. No one-shot notice came back.
+      - The production bundle (`vite preview`) passed 36/36: notice, cue, reloads, a 5 s network drop,
+        a WebGL context loss, a double tap and the teacher stream.
+    - Still open: the physical phone and Shimon's ear.
     1,952 tests in 204 files.
   - **Live Luck QA — DONE (local, 2026-11-01, no code change):** the packaged server of
     `b096e10` with Luck ON through environment variables only (Recovery OFF) on a disposable
@@ -1472,8 +1490,9 @@ with source `LUCK_EVENT`); the server decides every Luck event and the shield.
     `StudentRaceLuckNotice.test.jsx`, `StudentRaceOverlay.luck.test.jsx` (a mutation check fails 15
     tests). Live, Luck and Recovery ON: every notice showed at once (+0 ms after the page learned
     the event), beside ✓/✕, at 360, 390 and 768.
-  - **F2 sound — PLANNED:** four approved WAV cues with provenance rows, mapping in
-    `studentRaceSounds.js`, then the mix check with correct and wrong answers.
+  - **F2 sound — CONNECTED (local, 2026-11-03), waiting for Shimon's approval by ear:** four WAV
+    cues with provenance rows, the mapping in `studentRaceSounds.js` and the mix check with correct
+    and wrong answers (V4 entry above).
 
 ### C5 gameplay UI — after S4-02 onward
 

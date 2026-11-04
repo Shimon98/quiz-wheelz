@@ -117,7 +117,7 @@ jobs:
           set -euo pipefail
           echo "::add-mask::$QUIZWHEELZ_LUCK_MYSQL_TEST_PASSWORD"
           mkdir -p target
-          bash ./mvnw -B "-Dtest=*Luck*,B2*,C1*,*Challenge*,*RaceArbitration*" test 2>&1 | tee target/ci-isolated-luck-mysql.log
+          bash ./mvnw -B "-Dtest=*Luck*,B2*,C1*,*Challenge*,*RaceArbitration*,*Recovery*,NormalQuestionFallback*" test 2>&1 | tee target/ci-isolated-luck-mysql.log
       - name: Redact disposable credential from retained files
         id: redact
         if: always()

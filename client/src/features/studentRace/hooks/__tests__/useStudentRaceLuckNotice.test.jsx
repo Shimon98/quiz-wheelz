@@ -94,6 +94,22 @@ describe("useStudentRaceLuckNotice", () => {
     });
   });
 
+  // 2026-11-04, live in both bundles: each snapshot dates the same event with its own clock offset, so a later, slower
+  // snapshot moved the news end a few ms past the line's resting clock and the told news came back for one frame.
+  it("never tells expired news again when a later snapshot dates the same event with another clock offset", () => {
+    const { result, rerender } = renderHook(({ value }) => useStudentRaceLuckNotice(value, 1),
+      { initialProps: { value: gameplay({ recentEvents: [orb(NOW - 500)] }) } });
+    act(() => vi.advanceTimersByTime(STUDENT_RACE_CONFIG.luckNoticeMs - 500));
+    expect(result.current).toBeNull();
+
+    act(() => vi.advanceTimersByTime(5_000));
+    const later = gameplay({ recentEvents: [{ ...orb(NOW - 500), serverClockOffsetMs: -50 }] });
+    rerender({ value: { ...later, luck: { ...later.luck, receivedAtEpochMs: Date.now() } } });
+
+    expect(result.current).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("tells an announced Energy Orb until its news time is over, then lets the clock rest", () => {
     const { result } = renderHook(() => useStudentRaceLuckNotice(gameplay({ recentEvents: [orb(NOW - 500)] }), 1));
 

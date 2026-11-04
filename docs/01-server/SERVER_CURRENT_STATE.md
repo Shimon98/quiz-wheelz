@@ -356,6 +356,11 @@ recovery never subtracts movement awarded in degraded mode.
   on an accepted correct NORMAL answer, after the normal gain and before the offer check. It
   changes nothing else and is hidden from every API, event and log. Rules, design and the
   production DDL of `race_player_recovery_states`: `SERVER_IMPLEMENTATION_PLAN.md` (S4-05).
+- Release closure, 2026-11-04: Shimon, as project owner, approved the two open rules (a
+  finished leader is out of the field; a STRICT focus forfeit counts as one failure), and Diana
+  reviews them in the PR. The DDL, a staged activation in the prod profile and a lab load were
+  rehearsed on disposable copies of a main database. No production target exists, so nothing ran
+  on a real database (`SERVER_IMPLEMENTATION_PLAN.md`, S4-05, release closure).
 
 ## Partial or missing
 

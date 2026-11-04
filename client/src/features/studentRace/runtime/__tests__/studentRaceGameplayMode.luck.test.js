@@ -169,6 +169,12 @@ describe("selectLuckClockFloor", () => {
     expect(selectLuckClockFloor(afterLuck(early, fromAheadServer))).toBe(9_000);
   });
 
+  it("is never earlier than the arrival of the snapshot that carries the Luck history", () => {
+    const value = afterLuck(luckEvent("ENERGY_ORB", "APPLIED", { occurredAtEpochMs: 9_000 }));
+
+    expect(selectLuckClockFloor({ ...value, luck: { ...value.luck, receivedAtEpochMs: 15_000 } })).toBe(15_000);
+  });
+
   it.each([
     ["without gameplay", null],
     ["without Luck history", gameplay()],

@@ -155,7 +155,8 @@ describe("applyRaceSnapshot gameplay", () => {
     }));
 
     expect(stale.gameplay.powerUps).toEqual(powerUps);
-    expect(stale.gameplay.luck).toEqual({ recentEvents: [{ ...luck.recentEvents[0], serverClockOffsetMs: 0 }] });
+    expect(stale.gameplay.luck).toEqual({ recentEvents: [{ ...luck.recentEvents[0], serverClockOffsetMs: 0 }],
+      receivedAtEpochMs: 10000 });
   });
 
   it("calibrates the challenge offer to the server clock of the snapshot that carried it", () => {

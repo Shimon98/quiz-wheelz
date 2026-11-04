@@ -141,9 +141,12 @@ generated Spring password is created any more. Luck and Recovery stay OFF by def
 independent review (2026-10-26) was answered on the same branch: one-shot Luck news is never
 retold after a refresh, the shield is announced to screen readers, every Luck type is proven on
 snapshots the server wrote, and an unrecognized I/O failure on a started response leaves one
-WARN line. Recovery stays OFF until Diana approves two rules in writing (a finished leader is
-not part of the field; a STRICT focus forfeit counts as a failure), its DDL is applied before
-deployment and a p50/p95 measurement passes (see the S4-05 section of the server plan).
+WARN line. The two Recovery rules (a finished leader is not part of the field; a STRICT focus
+forfeit counts as one failure) were approved by Shimon, as project owner, on 2026-11-04, and
+Diana reviews them in the PR. The lab p50/p95 measurement passed on 2026-11-02, and on 2026-11-04
+the DDL, a staged activation and a lab load were rehearsed on disposable copies in the prod
+profile. Production stays OFF: no deployment target exists yet, and the DDL has not run on any
+real database (see the S4-05 section of the server plan).
 
 Next: review and merge of that branch, the final Luck and Guard Shield art and sound, a
 physical-phone check (before classroom or production use) and client quality package 4. Diana owns the requested Turbo question sequence and question difficulty on

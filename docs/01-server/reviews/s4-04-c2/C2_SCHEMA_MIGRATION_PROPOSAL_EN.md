@@ -149,3 +149,47 @@ CHECKs from information_schema. Original row equality was checked again after st
 **Synthetic baseline rehearsal passed; actual DEV/staging/production compatibility UNKNOWN.**
 No live inventory, backup, DDL, migration framework adoption or release was performed.
 Reproduction and cleanup are in the ignored evidence `REPRODUCE_EN.md` and scripts.
+
+## S4-05 step: race_player_recovery_states (2026-11-04)
+
+S4-05 adds one table and changes no existing column. Its script, the only copy, is the SQL
+block of `SERVER_IMPLEMENTATION_PLAN.md` (S4-05): `SET SESSION lock_wait_timeout = 5` and one
+`CREATE TABLE`. Order on a target: a database at pre-Luck main (`84a4423`) first needs
+`draft-expansion.sql`, then this step; a database at `main@5ed8a39` needs only this step. Nobody
+knows a target's version for certain, so the version-independent proof comes first: restore the
+target's own backup on an isolated server, apply the pending steps there, and start this build
+with `ddl-auto=validate` and both flags OFF.
+
+Procedure for an approved target:
+1. Read-only preflight (`draft-preflight.sql`). STOP if `race_player_recovery_states` exists:
+   a table made by `ddl-auto=update` (a DEV database) has the same columns, types, defaults and
+   CHECK, and differs only in generated names (`UK…`, `FK…`, `…_chk_1`). Reconcile by review;
+   never DROP or rename to force the script. `race_players` must be InnoDB, utf8mb4_0900_ai_ci,
+   with `id bigint NOT NULL` as the primary key.
+2. Backup, plus a restore drill on an isolated server (row counts and `CHECKSUM TABLE` equal).
+3. No race in progress. The foreign key takes a metadata lock on `race_players`; one open
+   transaction that read it is enough to block the statement. With the 5 s limit it fails with
+   1205 and creates nothing. Without the limit MySQL waits up to a year, and every new query on
+   `race_players` queues behind the waiting DDL, so gameplay stops.
+4. Run the script as the operator account (the application account needs no DDL right). It is
+   one atomic statement: a failure leaves no table. Running it again is refused with 1050;
+   never add `IF NOT EXISTS`, which would hide a different table.
+5. Verify the four names (PRIMARY, `uk_…`, `fk_…`, `chk_…`), that the new table is empty and
+   that every old table has the same row count and checksum. Then start this build with validate
+   and both flags OFF, check health, and play a smoke race. Recovery writes nothing while OFF.
+6. Rollback: redeploy the previous jar and leave the table in place (main's jar validates the
+   migrated schema and plays). Restore the backup only as a last resort. No down-DDL.
+
+Rehearsal, on disposable copies of a database built by main's own jar with one real race (MySQL
+8.4, prod profile, an application account with SELECT/INSERT/UPDATE/DELETE only): 27/27. The
+checks were backup and restore equality (14 tables), refusal of this build without the table,
+the preflight, the parent-missing (1824) and metadata-lock (1205) controls with nothing left
+behind, a clean apply, the 1050 refusal of a rerun with the definition unchanged, unchanged old
+data, the four names, the unique, FK and CHECK rejections (1062, 1452, 3819), the
+`ddl-auto=update` drift, a healthy flags-OFF start with a smoke race and no writes, and main's
+jar on the migrated database. Staged activation and the lab load on the same database are in
+`SERVER_IMPLEMENTATION_PLAN.md` (S4-05, release closure). The evidence is private (git-ignored).
+
+Still open, and only the owners can close them: whether a target exists, and which version and
+which MySQL it runs; the `MIGRATION_POLICY` decision; an authorized backup and a restore drill
+of that target; an operator approval for the exact target and script.

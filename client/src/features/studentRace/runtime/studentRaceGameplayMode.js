@@ -95,10 +95,14 @@ function luckNewsOf(gameplay, newsMs, announcedLuckEventId) {
 
 // Every Luck event happened before the snapshot that carries it left the server, so its instant on this device's clock
 // is a floor for a clock that slept through a quiet stretch (the notice line wakes up only for changes).
+// The snapshot's own arrival is a floor too. Each snapshot dates the same event with its own clock offset, so a later,
+// slower one moves the event a few ms later: without this floor the clock resting at the news end fell behind it and the
+// told news came back for one frame (seen live, 2026-11-04).
 export function selectLuckClockFloor(gameplay) {
-  const instants = (gameplay?.luck?.recentEvents ?? [])
-    .map((event) => event.occurredAtEpochMs - event.serverClockOffsetMs)
-    .filter(Number.isFinite);
+  const instants = [
+    ...(gameplay?.luck?.recentEvents ?? []).map((event) => event.occurredAtEpochMs - event.serverClockOffsetMs),
+    gameplay?.luck?.receivedAtEpochMs,
+  ].filter(Number.isFinite);
   return instants.length === 0 ? 0 : Math.max(...instants);
 }
 

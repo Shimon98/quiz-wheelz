@@ -9,6 +9,12 @@
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
 
+Local checkpoint, 2026-11-04 (release closure): a one-shot Luck notice could flash again for one frame seconds after
+its event, when a slower snapshot re-dated the event. The snapshot's arrival now sets a floor for the notice line's clock,
+so a notice that was already shown never comes back. Live against a prod-profile server, a real shield block decided by
+the server showed its burst and played its sound, in the dev client and in the production bundle. Both passed every
+check. Shimon's approval of the sounds by ear and a check on a physical phone remain.
+
 Local checkpoint, 2026-11-03 (C5-04f Astra V4): the effects that were still drawn are painted where
 the painting looks better: the correct answer's rings and sparkles, the wrong answer's dry dirt, the
 dust behind the kart, the Tailwind wisps, the finish's rings, confetti and gate, the Turbo failure's

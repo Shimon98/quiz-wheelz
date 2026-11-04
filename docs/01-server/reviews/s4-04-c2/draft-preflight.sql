@@ -4,10 +4,10 @@ SELECT table_name FROM information_schema.tables
  WHERE table_schema=DATABASE() ORDER BY table_name;
 SELECT table_name,column_name,column_type,is_nullable,column_default
  FROM information_schema.columns WHERE table_schema=DATABASE()
- AND table_name IN ('race_player_gameplay_states','race_luck_fairness_states','race_player_luck_decisions')
+ AND table_name IN ('race_player_gameplay_states','race_luck_fairness_states','race_player_luck_decisions','race_player_recovery_states')
  ORDER BY table_name,ordinal_position;
 SELECT * FROM information_schema.statistics WHERE table_schema=DATABASE()
- AND table_name IN ('race_player_gameplay_states','race_luck_fairness_states','race_player_luck_decisions');
+ AND table_name IN ('race_player_gameplay_states','race_luck_fairness_states','race_player_luck_decisions','race_player_recovery_states');
 SELECT * FROM information_schema.table_constraints WHERE constraint_schema=DATABASE();
 SELECT * FROM information_schema.check_constraints WHERE constraint_schema=DATABASE();
 SELECT COUNT(*) AS invalid_energy FROM race_player_gameplay_states

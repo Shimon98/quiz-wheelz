@@ -52,13 +52,15 @@ function mapLuckEvent(raw, serverClockOffsetMs) {
   };
 }
 
-function mapLuck(raw, serverClockOffsetMs) {
+// receivedAtEpochMs: when the carrying snapshot reached this device, a floor for the Luck line's resting clock.
+function mapLuck(raw, serverClockOffsetMs, receivedAtEpochMs) {
   requireObject(raw, "Gameplay luck");
 
   return {
     recentEvents: requireArray(raw.recentEvents, "Luck events")
       .map((event) => mapOrNull((value) => mapLuckEvent(value, serverClockOffsetMs), event))
       .filter(Boolean),
+    ...(Number.isFinite(receivedAtEpochMs) ? { receivedAtEpochMs } : {}),
   };
 }
 
@@ -87,7 +89,7 @@ function mapActiveEffect(raw, serverClockOffsetMs) {
 
 function mapGameplay(raw, clock) {
   requireObject(raw, "Gameplay");
-  const { serverClockOffsetMs = 0 } = clock;
+  const { serverClockOffsetMs = 0, receivedAtEpochMs } = clock;
 
   return {
     mode: requireNonEmptyString(raw.mode, "Gameplay mode"),
@@ -97,7 +99,7 @@ function mapGameplay(raw, clock) {
       .filter(Boolean),
     challenge: mapStudentRaceChallenge(raw.challenge, clock),
     powerUps: mapOrNull(mapPowerUps, raw.powerUps) ?? NO_POWER_UPS,
-    luck: mapOrNull((luck) => mapLuck(luck, serverClockOffsetMs), raw.luck) ?? NO_LUCK,
+    luck: mapOrNull((luck) => mapLuck(luck, serverClockOffsetMs, receivedAtEpochMs), raw.luck) ?? NO_LUCK,
   };
 }
 

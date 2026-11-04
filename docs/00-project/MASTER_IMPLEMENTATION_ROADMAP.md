@@ -164,12 +164,13 @@ Order:
    Hidden Recovery is committed on `feature/S4-05-C5-04-recovery-luck-shield` (`b096e10`, pushed,
    not merged) behind `QUIZWHEELZ_RECOVERY_ENABLED=false`; nothing is claimed for production
    until the branch is reviewed. Production validates every entity at startup, so its table
-   needs the documented DDL before this build is deployed, flag on or off. Recovery is enabled
-   only after Diana's written approval of two rules (finished leader, STRICT focus forfeit) and a
-   p50/p95 measurement with 2/4/8 students (independent review, 2026-10-26). Since 2026-11-02 it
+   needs the documented DDL before this build is deployed, flag on or off. Since 2026-11-02 it
    is ON in the dev profile (Shimon's decision after live QA, kill switch by environment
-   variable) and the p50/p95 measurement is done; production stays OFF until Diana's approval and
-   the DDL.
+   variable) and the p50/p95 measurement is done. On 2026-11-04 Shimon, as project owner,
+   approved the two rules the 2026-10-26 review left open (finished leader, STRICT focus
+   forfeit) and Luck's 60-second activity window; Diana reviews them in the PR. The DDL is
+   rehearsed, not applied: production stays OFF until a target exists and its deployment gates
+   close (S4-05 section of the server plan).
 5. Earned Power-Ups and fair bounded Luck.
 6. Hidden Recovery policy.
 7. Race Moments / announcements.

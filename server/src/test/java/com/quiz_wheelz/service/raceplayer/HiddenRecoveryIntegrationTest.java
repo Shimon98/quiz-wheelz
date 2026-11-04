@@ -1,6 +1,7 @@
 package com.quiz_wheelz.service.raceplayer;
 
 import com.quiz_wheelz.config.ConfigPropertyKeys;
+import com.quiz_wheelz.dto.raceplayer.RacePlayerFocusEventRequest;
 import com.quiz_wheelz.entitys.*;
 import com.quiz_wheelz.enums.*;
 import com.quiz_wheelz.exception.ApiException;
@@ -14,6 +15,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -24,7 +26,7 @@ import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mockingDetails;
 
 @TestPropertySource(properties = ConfigPropertyKeys.QUIZWHEELZ_RECOVERY_ENABLED + "=true")
-@Import(HiddenRecoveryService.class)
+@Import({HiddenRecoveryService.class, RacePlayerFocusEventService.class})
 class HiddenRecoveryIntegrationTest extends S4ChallengeFlowFixture {
     // Oldest first, newest in bit 0: C, W, W, C, W, C.
     static final int QUALIFYING_WINDOW = 0b100101;
@@ -32,6 +34,7 @@ class HiddenRecoveryIntegrationTest extends S4ChallengeFlowFixture {
     @Autowired RacePlayerRecoveryStateRepository recoveryStates;
     @Autowired HiddenRecoveryService recovery;
     @Autowired StudentRaceStandingService standings;
+    @Autowired RacePlayerFocusEventService focus;
     @MockitoSpyBean StudentRaceStandingProjectionService projections;
 
     @BeforeEach
@@ -224,6 +227,28 @@ class HiddenRecoveryIntegrationTest extends S4ChallengeFlowFixture {
         assertEquals(question.getQuestionId(), state.getLastObservedNormalQuestionId());
     }
 
+    // Product rule approved by Shimon on 2026-11-04 (Diana reviews it in the PR): a STRICT focus forfeit is the penalized
+    // timeout of that NORMAL question, so it enters the window once, as one failure, and later focus events add nothing.
+    @Test
+    void aStrictFocusForfeitCountsAsOneFailureInTheWindow() {
+        transactions.executeWithoutResult(status -> raceRepository.findById(raceId).orElseThrow()
+                .setFocusPolicy(RaceFocusPolicy.STRICT));
+        answerSecond();
+        var question = current();
+
+        for (int index = 0; index < 4; index++) {
+            focus.recordFocusEvent(secondRequest, focusEvent(RacePlayerFocusEventType.TAB_HIDDEN));
+            focus.recordFocusEvent(secondRequest, focusEvent(RacePlayerFocusEventType.TAB_VISIBLE));
+        }
+
+        assertEquals(PlayerQuestionStatus.EXPIRED, transactions.execute(status -> questionRepository
+                .findById(question.getQuestionId()).orElseThrow().getStatus()));
+        var state = recoveryState();
+        assertEquals(0b10, state.getRecentOutcomeBits());
+        assertEquals(2, state.getRecentOutcomeCount());
+        assertEquals(question.getQuestionId(), state.getLastObservedNormalQuestionId());
+    }
+
     @Test
     void aFinishedLeaderIsNotPartOfTheField() {
         transactions.executeWithoutResult(status -> playerRepository.findByRaceOrderByLaneNumberAsc(
@@ -288,6 +313,13 @@ class HiddenRecoveryIntegrationTest extends S4ChallengeFlowFixture {
             rejected.incrementAndGet();
         }
         return null;
+    }
+
+    RacePlayerFocusEventRequest focusEvent(RacePlayerFocusEventType type) {
+        var event = new RacePlayerFocusEventRequest();
+        event.setEventId(UUID.randomUUID());
+        event.setType(type);
+        return event;
     }
 
     Long correctChoiceOf(Long playerQuestionId) {

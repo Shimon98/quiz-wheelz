@@ -853,7 +853,8 @@ and B2 sections supersede its integration/read-strategy status.
 - Detached policies cover third cumulative correct NORMAL answer Shield,
   eligibility, weighted injected RNG, anti-Mud, Orb fallback/capping and cooldown.
   Fairness uses the race's last event sequence as the opportunity boundary.
-  The 60-second activity window remains provisional; pure tests compare 30/60/90.
+  The 60-second activity window is the initial product rule (approved by Shimon on 2026-11-04,
+  to be revisited with real usage data; the constant keeps its name); pure tests compare 30/60/90.
 - FairLuckService requires caller-held PESSIMISTIC_WRITE locks on its managed
   RacePlayer and Race and an owned, managed, ANSWERED NORMAL question with an
   explicit first-accepted manual-answer signal. It is not connected to answers.
@@ -1472,7 +1473,7 @@ answers were unchanged. The release gates above stay open.
 
 ### S4-05 — Hidden Recovery
 
-**Status:** `IMPLEMENTED; ON in the dev profile since 2026-11-02 (kill switch QUIZWHEELZ_RECOVERY_ENABLED=false), code default, test and prod OFF; committed on feature/S4-05-C5-04-recovery-luck-shield (b096e10, pushed), not merged; for Diana's review`
+**Status:** `IMPLEMENTED; ON in the dev profile since 2026-11-02 (kill switch QUIZWHEELZ_RECOVERY_ENABLED=false), code default, test and prod OFF; on feature/S4-05-C5-04-recovery-luck-shield (pushed), not merged; product rules approved by Shimon 2026-11-04, for Diana's review; production DDL rehearsed on disposable copies, not applied to any target`
 
 Eligibility requires both actually being behind and demonstrably struggling.
 Never grant assistance solely because a leading player intentionally answers wrong.
@@ -1534,6 +1535,10 @@ deployment gate). It is the table Hibernate created on MySQL 8.4 in the live run
 constraint names:
 
 ```sql
+-- Operator script, for an approved target only, with no race in progress (never automatic). The foreign key
+-- locks race_players' metadata: an open transaction there fails this statement with 1205 after 5 s instead
+-- of queueing gameplay behind it (MySQL's default wait is a year).
+SET SESSION lock_wait_timeout = 5;
 CREATE TABLE race_player_recovery_states (
   id bigint NOT NULL AUTO_INCREMENT,
   created_at datetime(6) NOT NULL,
@@ -1567,15 +1572,19 @@ any response: `docs/vision/s4_05_c5_04_2026-10-25/evidence/live/`.
 
 Open before Recovery is enabled (independent review, 2026-10-26; the flag stays false until all
 three are closed):
-- Product, Diana's written approval: a FINISHED player is not part of the field, so a finished
-  leader no longer makes a classmate "behind"; and a STRICT focus forfeit counts as a failure,
-  because it goes through the penalized timeout path (`forfeitActiveQuestionAsTimeout`).
+- Product: closed on 2026-11-04 by Shimon, as project owner (Diana reviews the rules in the PR):
+  a FINISHED player is not part of the field, so a finished leader no longer makes a classmate
+  "behind"; and a STRICT focus forfeit counts as one failure, only because it goes through the
+  penalized timeout path (`forfeitActiveQuestionAsTimeout`). Pinned by
+  `aFinishedLeaderIsNotPartOfTheField` and `aStrictFocusForfeitCountsAsOneFailureInTheWindow`.
 - Deployment: the DDL above runs before this build is deployed. Nothing runs DDL against an
-  existing database automatically or without approval.
+  existing database automatically or without approval. Rehearsed on 2026-11-04 (below); still
+  open for a real target.
 - Measurement gate, before any cache is considered: p50 and p95 of answer submission and of
   offer opening with 2, 4 and 8 RACING students, after a warm-up, several repetitions per size,
   with Recovery and Luck each ON and OFF. The 2026-10-25 latency run is a smoke check with few
-  offer rounds, not proof that p95 did not regress.
+  offer rounds, not proof that p95 did not regress. Measured in the lab on 2026-11-02 (below); a
+  full class on target hardware remains a deployment gate.
 
 Update, 2026-11-02 (Shimon's decision, after live QA): Recovery is ON in the dev profile, where the
 team runs and plays the game. `application-dev.properties` sets `QUIZWHEELZ_RECOVERY_ENABLED=true`
@@ -1608,6 +1617,64 @@ sixth outcome after them. A real student screen showed the grant on its own ener
 Energy Orb fill the meter exactly to 100 with no offer, and the next right answer opens one offer.
 A nudge that fills the meter opens the offer, and Luck does not roll on that answer. The same
 answer posted twice grants and rolls once.
+
+Release closure, 2026-11-04. Setup: the packaged jar of the branch in the prod profile
+(`ddl-auto=validate`), a disposable MySQL 8.4 and a password-protected Redis 7.4, and an
+application account limited to SELECT, INSERT, UPDATE and DELETE. Flags were set only through each
+run's environment.
+- Product: Shimon, as project owner, approved the two rules above and Luck's 60-second activity
+  window, and Diana reviews them in the PR. This sign-off authorizes no DDL, deployment, secret
+  access, CI activation, flag activation or merge.
+- Migration, on copies of a database that main@5ed8a39's own jar built and one real race filled:
+  27/27 (`reviews/s4-04-c2/C2_SCHEMA_MIGRATION_PROPOSAL_EN.md`, S4-05 step). Two findings shaped the
+  script and the procedure:
+  - An open transaction on `race_players` blocks the foreign key's metadata lock. While the DDL
+    waits, every new query on `race_players` waits too: a SELECT and an UPDATE each waited 5.3 s
+    behind a 6 s attempt. So the script sets `lock_wait_timeout = 5` and runs with no race in
+    progress.
+  - A DEV table made by `ddl-auto=update` differs from the documented one only in its constraint
+    names.
+
+  Main's jar starts and plays on the migrated database, so an application rollback needs no
+  down-DDL.
+- Staged activation on the migrated copy, in the gates' order:
+  - Flags OFF: healthy, a race, nothing written to the new table and no Luck roll.
+  - Recovery only: 11/11, two grants that match the rules, no Luck.
+  - Luck only: 23/23, and Recovery writes nothing.
+  - Both: 24/24.
+
+  Every run had 0 server errors, deadlocks or lock-wait timeouts. Luck's startup gate refused to
+  serve with undeclared limits, with N*(W+R) > B, with an effective Hikari maximum of 20 against
+  B = 20, and with B + reserved above `max_connections`; it served with 1/20/5. An earlier
+  Recovery-only run reported a leak, but the harness's own label was in the race title; with a
+  neutral title, no response mentioned Recovery.
+- Lab load on one laptop (not target hardware), one instance with writer pool 10 and Luck peer
+  pool 2, both flags ON. A race holds 8 students (`RaceRules.MAX_PLAYERS`), so a class of 32 is
+  four parallel races, and two classes are eight.
+
+  | Run | Students | Answer p50 / p95 / p99 ms | Writer pool waiting, peak |
+  |---|---|---|---|
+  | One class | 32 | 122 / 401 / 1,072 | 40 |
+  | Two classes | 64 | 151 / 406 / 1,249 | 62 |
+  | Two classes, every student and teacher reading the live stream | 64 | 172 / 650 / 2,122 | 77 |
+
+  The 64-student run with streams had 9,864 requests and no 5xx, deadlock, lock-wait timeout or
+  pool timeout. All 64 student streams and all 8 teacher streams delivered messages. Luck's rules
+  held for every student, there was at most one Recovery grant per student, and no response
+  mentioned Recovery. The writer pool is the queue at this size. Its maximum and the instance
+  count are deployment inputs (C2 budget), and a run on target hardware with the owners'
+  thresholds remains a gate.
+- Browser, on the same server and copy: a QA-only scripted Luck draw (outside the repo) made real
+  shield blocks. They reached live screens with their burst and sound, on the dev client (68/68)
+  and on the production bundle (36/36). The run found and fixed a client notice that came back for
+  one frame (client plan, C5-04f).
+- Not done here: a real target (none exists on GitHub: no environment, deployment or workflow), its
+  backup, restore drill and operator approval; hosted CI; Shimon's listening approval and a
+  physical phone. Pre-existing production findings outside this branch, seen live in the prod
+  profile:
+  - `DataInitializer` seeds the dev teacher in every profile.
+  - The health details, `/v3/api-docs` and `/swagger-ui` are public.
+  - The CSRF and `SameSite=None` review is still open.
 
 ### S4-06 — Race Moments / announcements
 
