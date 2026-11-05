@@ -23,6 +23,11 @@ class B1LuckAnswerMySqlTest extends B1LuckAnswerIntegrationTest {
         properties.add("spring.datasource.username", () -> System.getenv("QUIZWHEELZ_LUCK_MYSQL_TEST_USER"));
         properties.add("spring.datasource.password", () -> System.getenv("QUIZWHEELZ_LUCK_MYSQL_TEST_PASSWORD"));
         properties.add("spring.datasource.driver-class-name", () -> "com.mysql.cj.jdbc.Driver");
+        // Every MySQL class keeps its own cached Spring context, and with Hikari's defaults each one held ten idle
+        // connections: 16 cached contexts reached MySQL's stock limit of 151 (2026-11-05). Idle connections now go back
+        // after 10 s; the maximum is unchanged, and a class that sets its own pool still wins.
+        properties.add("spring.datasource.hikari.minimum-idle", () -> "1");
+        properties.add("spring.datasource.hikari.idle-timeout", () -> "10000");
     }
 
     @BeforeEach

@@ -43,7 +43,7 @@ class LuckOrchestrationTest extends LuckPersistenceTest {
     private RacePlayerLuckDecision attempt(long instant) {
         var player = locked();
         return luck.afterAcceptedManualNormalAnswer(player, em.find(PlayerQuestion.class, questionId),
-                false, true, instant).orElse(null);
+                false, true, instant).decision().orElse(null);
     }
 
     @Test
@@ -118,7 +118,7 @@ class LuckOrchestrationTest extends LuckPersistenceTest {
             var player = locked();
             player.setCorrectAnswers(3);
             assertTrue(luck.afterAcceptedManualNormalAnswer(player, em.find(PlayerQuestion.class, questionId),
-                    true, true, 100).isEmpty());
+                    true, true, 100).decision().isEmpty());
         });
         tx.executeWithoutResult(status -> {
             var player = locked();
@@ -126,7 +126,7 @@ class LuckOrchestrationTest extends LuckPersistenceTest {
             assertEquals(1, state.getGuardShieldCharges());
             state.setGuardShieldCharges(0);
             assertTrue(luck.afterAcceptedManualNormalAnswer(player, em.find(PlayerQuestion.class, questionId),
-                    true, true, 200).isEmpty());
+                    true, true, 200).decision().isEmpty());
             assertEquals(0, state.getGuardShieldCharges());
             assertEquals(questionId, state.getGuardShieldAwardQuestionId());
         });
@@ -275,7 +275,7 @@ class LuckOrchestrationTest extends LuckPersistenceTest {
         tx.executeWithoutResult(status -> {
             var player = locked();
             assertTrue(luck.afterAcceptedManualNormalAnswer(player, em.find(PlayerQuestion.class, questionId),
-                    false, false, 100).isEmpty());
+                    false, false, 100).decision().isEmpty());
             em.find(PlayerQuestion.class, questionId).setStatus(PlayerQuestionStatus.EXPIRED);
             assertThrows(IllegalArgumentException.class, () -> luck.afterAcceptedManualNormalAnswer(player,
                     em.find(PlayerQuestion.class, questionId), false, true, 100));

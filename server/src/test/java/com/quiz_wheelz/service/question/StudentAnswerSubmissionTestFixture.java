@@ -57,6 +57,8 @@ final class StudentAnswerSubmissionTestFixture {
             new RaceLiveEventChangeRecorder(liveEventRecorder);
     final com.quiz_wheelz.service.liveevent.RaceLiveMutationGate liveMutationGate =
             mock(com.quiz_wheelz.service.liveevent.RaceLiveMutationGate.class);
+    final com.quiz_wheelz.service.luck.AcceptedAnswerLuckService acceptedAnswerLuck =
+            mock(com.quiz_wheelz.service.luck.AcceptedAnswerLuckService.class);
     final StudentAnswerSubmissionService studentAnswerSubmissionService =
             new StudentAnswerSubmissionService(
                     playerQuestionRepository,
@@ -75,9 +77,12 @@ final class StudentAnswerSubmissionTestFixture {
                     decisionTimeService,
                     Clock.fixed(FIXED_INSTANT, FIXED_ZONE)
             , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeOfferService.class), org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeExecutionService.class),
-                org.mockito.Mockito.mock(com.quiz_wheelz.service.luck.AcceptedAnswerLuckService.class));
+                acceptedAnswerLuck);
 
     {
+        // A normal answer always gets a Luck result back; NONE is what Luck returns when it did nothing.
+        when(acceptedAnswerLuck.afterAcceptedNormalAnswer(any(), any(), org.mockito.ArgumentMatchers.anyBoolean(),
+                org.mockito.ArgumentMatchers.anyLong())).thenReturn(com.quiz_wheelz.service.luck.LuckAnswerResult.NONE);
         when(decisionTimeService.advance(any(), org.mockito.ArgumentMatchers.anyLong()))
                 .thenAnswer(invocation -> invocation.getArgument(1));
         when(liveMutationGate.lockIfActive(any())).thenAnswer(invocation ->

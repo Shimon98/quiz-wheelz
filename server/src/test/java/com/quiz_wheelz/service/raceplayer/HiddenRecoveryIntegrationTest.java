@@ -249,6 +249,18 @@ class HiddenRecoveryIntegrationTest extends S4ChallengeFlowFixture {
         assertEquals(question.getQuestionId(), state.getLastObservedNormalQuestionId());
     }
 
+    // S4-06: the grant is never a public moment, and nothing about Recovery reaches the teacher's event stream.
+    @Test
+    void theGrantIsNeverAPublicMoment() {
+        answerFiveMixedOutcomes();
+
+        answer(true);
+
+        assertEquals(10, recoveryState().getAwardedEnergy());
+        assertEquals(List.of(), answeredMoments().getLast());
+        assertTrue(answeredPayloadJson().stream().noneMatch(json -> json.toLowerCase().contains("recover")));
+    }
+
     @Test
     void aFinishedLeaderIsNotPartOfTheField() {
         transactions.executeWithoutResult(status -> playerRepository.findByRaceOrderByLaneNumberAsc(

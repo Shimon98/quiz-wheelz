@@ -28,6 +28,10 @@ import com.quiz_wheelz.utils.DateTimeUtils;
 import com.quiz_wheelz.service.challenge.ChallengeOfferService;
 import com.quiz_wheelz.service.challenge.ChallengeExecutionService;
 import com.quiz_wheelz.service.luck.AcceptedAnswerLuckService;
+import com.quiz_wheelz.service.luck.LuckAnswerResult;
+import com.quiz_wheelz.service.liveevent.RacePublicMomentPolicy;
+import com.quiz_wheelz.dto.liveevent.RacePublicMoment;
+import com.quiz_wheelz.enums.ChallengeOutcome;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,6 +58,7 @@ public class StudentAnswerSubmissionService {
     private final ChallengeOfferService challengeOffers;
     private final ChallengeExecutionService challengeExecution;
     private final AcceptedAnswerLuckService acceptedAnswerLuck;
+    private final RacePublicMomentPolicy publicMoments = new RacePublicMomentPolicy();
 
     public StudentAnswerSubmissionService(
             PlayerQuestionRepository playerQuestionRepository,
@@ -153,6 +158,9 @@ public class StudentAnswerSubmissionService {
 
         challengeExecution.validate(lockedRacePlayer, question);
         boolean normal = question.getGameplayContext() == com.quiz_wheelz.enums.QuestionGameplayContext.NORMAL;
+        // S4-06: only the answer that ends a challenge tells its result, so remember where the challenge stood before it.
+        ChallengeOutcome challengeOutcomeBefore = question.getChallengeOffer() == null
+                ? null : question.getChallengeOffer().getOutcome();
         AnswerRaceImpact answerRaceImpact = normal ? raceEngineService.applyAnswerResult(
                 lockedRacePlayer,
                 correct,
@@ -166,17 +174,22 @@ public class StudentAnswerSubmissionService {
         // One standings projection per answer, before the offer step: Hidden Recovery may need it there and the response
         // always does. Nothing after this point moves a player at this instant (a Luck effect only starts now).
         StudentRaceStandingResult standing = standingService.calculate(lockedRacePlayer, decisionEpochMs);
+        LuckAnswerResult luck = LuckAnswerResult.NONE;
         if (normal) {
             challengeOffers.afterAnswer(lockedRacePlayer, savedQuestion,
                     answerRaceImpact.getAnsweredDifficulty(), correct, decisionEpochMs, standing);
-            acceptedAnswerLuck.afterAcceptedNormalAnswer(lockedRacePlayer, savedQuestion, correct, decisionEpochMs);
+            luck = acceptedAnswerLuck.afterAcceptedNormalAnswer(lockedRacePlayer, savedQuestion, correct, decisionEpochMs);
         }
 
         if (liveContext.active()) {
+            List<RacePublicMoment> moments = normal
+                    ? publicMoments.forNormalAnswer(savedQuestion.getId(), luck)
+                    : publicMoments.forChallengeAnswer(savedQuestion.getChallengeOffer(), challengeOutcomeBefore);
             liveEventRecorder.recordQuestionAnswered(
                     lockedRacePlayer,
                     savedQuestion.getId(),
-                    correct
+                    correct,
+                    moments
             );
         }
         liveMutationTracker.recordChanges(liveContext, lockedRacePlayer);

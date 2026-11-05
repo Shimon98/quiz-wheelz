@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quiz_wheelz.dto.teacher.TeacherRaceLivePlayerResponse;
 import com.quiz_wheelz.enums.RaceLiveEventType;
+import com.quiz_wheelz.enums.RacePublicMomentKind;
 import com.quiz_wheelz.enums.RaceStatus;
 import org.junit.jupiter.api.Test;
 
@@ -86,6 +87,18 @@ class RaceLiveEventSerializationTest {
         )) {
             assertFalse(json.contains(forbidden));
         }
+    }
+
+    @Test
+    void questionAnsweredMomentsCarryOnlyTheirKindAndSource() {
+        JsonNode payload = payload(new QuestionAnsweredLiveEventPayload(7L, 81L, true,
+                List.of(new RacePublicMoment(RacePublicMomentKind.LUCK_SHIELD_BLOCKED, 31L))));
+
+        assertFields(payload, "racePlayerId", "questionId", "correct", "moments");
+        JsonNode moment = payload.get("moments").get(0);
+        assertFields(moment, "kind", "sourceId");
+        assertEquals("LUCK_SHIELD_BLOCKED", moment.get("kind").textValue());
+        assertEquals(31L, moment.get("sourceId").longValue());
     }
 
     @Test

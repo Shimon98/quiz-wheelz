@@ -5,6 +5,7 @@ import com.quiz_wheelz.dto.liveevent.PlayerJoinedLiveEventPayload;
 import com.quiz_wheelz.dto.liveevent.PlayerProgressUpdatedLiveEventPayload;
 import com.quiz_wheelz.dto.liveevent.QuestionAnsweredLiveEventPayload;
 import com.quiz_wheelz.dto.liveevent.RaceFinishedLiveEventPayload;
+import com.quiz_wheelz.dto.liveevent.RacePublicMoment;
 import com.quiz_wheelz.dto.liveevent.RaceStartedLiveEventPayload;
 import com.quiz_wheelz.dto.teacher.TeacherRaceLivePlayerResponse;
 import com.quiz_wheelz.entitys.Race;
@@ -57,10 +58,12 @@ public class RaceLiveEventRecorder {
         );
     }
 
+    // S4-06: the public moments ride on the answer's own event, written before its progress or finish event.
     public void recordQuestionAnswered(
             RacePlayer racePlayer,
             Long questionId,
-            boolean correct
+            boolean correct,
+            List<RacePublicMoment> moments
     ) {
         eventService.record(
                 requiredRace(racePlayer),
@@ -68,7 +71,8 @@ public class RaceLiveEventRecorder {
                 new QuestionAnsweredLiveEventPayload(
                         racePlayer.getId(),
                         questionId,
-                        correct
+                        correct,
+                        moments
                 )
         );
     }

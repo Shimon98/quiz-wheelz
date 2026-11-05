@@ -7,10 +7,13 @@ import com.quiz_wheelz.dto.liveevent.PlayerProgressUpdatedLiveEventPayload;
 import com.quiz_wheelz.dto.liveevent.QuestionAnsweredLiveEventPayload;
 import com.quiz_wheelz.dto.liveevent.RaceFinishedLiveEventPayload;
 import com.quiz_wheelz.dto.liveevent.RaceLiveEventPayload;
+import com.quiz_wheelz.dto.liveevent.RacePublicMoment;
 import com.quiz_wheelz.dto.liveevent.RaceStartedLiveEventPayload;
 import com.quiz_wheelz.dto.teacher.TeacherRaceLivePlayerResponse;
 import com.quiz_wheelz.enums.RaceLiveEventType;
+import com.quiz_wheelz.enums.RacePublicMomentKind;
 import com.quiz_wheelz.enums.RaceStatus;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -48,6 +51,16 @@ class RaceLiveEventPayloadCodecTest {
         }
     }
 
+    // S4-06: a QUESTION_ANSWERED row written before the moments existed reads back with none; history is not rewritten.
+    @Test
+    void anAnswerEventWrittenBeforePublicMomentsReadsBackWithNone() {
+        var decoded = (QuestionAnsweredLiveEventPayload) codec.deserialize(RaceLiveEventType.QUESTION_ANSWERED,
+                "{\"racePlayerId\":1,\"questionId\":2,\"correct\":true}");
+
+        assertEquals(new QuestionAnsweredLiveEventPayload(1L, 2L, true, List.of()), decoded);
+        assertEquals(List.of(), decoded.moments());
+    }
+
     private static Stream<Arguments> payloads() {
         TeacherRaceLivePlayerResponse player = player();
         return Stream.of(
@@ -66,6 +79,11 @@ class RaceLiveEventPayloadCodecTest {
                 Arguments.of(
                         RaceLiveEventType.QUESTION_ANSWERED,
                         new QuestionAnsweredLiveEventPayload(1L, 2L, true)
+                ),
+                Arguments.of(
+                        RaceLiveEventType.QUESTION_ANSWERED,
+                        new QuestionAnsweredLiveEventPayload(1L, 2L, false,
+                                List.of(new RacePublicMoment(RacePublicMomentKind.LUCK_TAILWIND, 312L)))
                 ),
                 Arguments.of(
                         RaceLiveEventType.PLAYER_PROGRESS_UPDATED,
