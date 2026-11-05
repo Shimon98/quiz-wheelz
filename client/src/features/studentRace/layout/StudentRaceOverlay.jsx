@@ -34,6 +34,7 @@ export default function StudentRaceOverlay({
   challenge = null,
   hudControls = null,
   announcedLuckEventId = null,
+  rankNews = null,
 }) {
   const showChallenge = challenge?.visible === true;
 
@@ -47,6 +48,7 @@ export default function StudentRaceOverlay({
             challengeOffer={showChallenge ? challenge.offer : null}
             answerFeedback={answerFeedback}
             controls={hudControls}
+            rankNews={rankNews}
           />
         </StudentRaceHudSafeArea>
         <RacePlayerConnectionNotice
@@ -54,7 +56,11 @@ export default function StudentRaceOverlay({
           error={connectionError}
           onRetry={onConnectionRetry}
         />
-        <StudentRaceLuckNotice gameplay={runtimeState?.gameplay ?? null} announcedLuckEventId={announcedLuckEventId} />
+        <StudentRaceLuckNotice
+          gameplay={runtimeState?.gameplay ?? null}
+          announcedLuckEventId={announcedLuckEventId}
+          rankNews={rankNews}
+        />
       </div>
       {showChallenge ? (
         <StudentRaceChallengePanel

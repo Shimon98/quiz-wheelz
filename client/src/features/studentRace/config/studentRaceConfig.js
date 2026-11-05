@@ -34,6 +34,11 @@ export const STUDENT_RACE_CONFIG = Object.freeze({
   // next-question pause cover the first ~2 s, which leaves about 2 s of notice (C5-04).
   luckNoticeMs: 4000,
 
+  // C5-05 rank news: told for a short moment, and at most once per gap of server snapshot time, so a close race
+  // that swaps places back and forth does not keep the line busy.
+  rankNoticeMs: 2500,
+  rankMomentMinGapMs: 5000,
+
   // Question countdown DISPLAY (the server's expiresAt is the truth; these
   // only tune presentation). Urgency thresholds switch the timer accent —
   // one owner here, never inline in components.

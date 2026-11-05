@@ -159,8 +159,12 @@ Order:
 4. S4-04 Power-Ups + fair Luck: the code reached `main` at `77cd396` with the Luck flag off by
    default. The 2026-10-24 review reproduced four Luck-ON defects (cross-race deadlock, nightly
    question cleanup, startup budget check, Tailwind at the maximum speed); the S4-04 stability
-   fixes keep every rule unchanged. Luck stays OFF and not playable until its release gates
-   pass (see `../01-server/SERVER_IMPLEMENTATION_PLAN.md`). S4-06 remains PLANNED. S4-05
+   fixes keep every rule unchanged. Since 2026-11-05 Luck and Hidden Recovery are ON in every
+   normal (local) run; production keeps both OFF until its own release gates pass (see
+   `../01-server/SERVER_IMPLEMENTATION_PLAN.md`). S4-06 Race Moments is implemented on the same
+   branch (2026-11-05, working tree): public moments ride on `QUESTION_ANSWERED`, with no new
+   event type and no DDL, and C5-05 tells them on the projector and a climb in place on the
+   student screen. S4-05
    Hidden Recovery is committed on `feature/S4-05-C5-04-recovery-luck-shield` (`b096e10`, pushed,
    not merged) behind `QUIZWHEELZ_RECOVERY_ENABLED=false`; nothing is claimed for production
    until the branch is reviewed. Production validates every entity at startup, so its table

@@ -163,7 +163,12 @@ export default function useTeacherRaceLive(raceId) {
   }, []);
 
   const handleStreamEvent = useCallback((event) => {
-    dispatch({ type: TEACHER_LIVE_ACTIONS.LIVE_EVENT_RECEIVED, event });
+    // The receipt moment lets the reducer age the event on the same clock the elapsed timer uses.
+    dispatch({
+      type: TEACHER_LIVE_ACTIONS.LIVE_EVENT_RECEIVED,
+      event,
+      receivedAtPerformanceNow: performance.now(),
+    });
   }, []);
 
   const handleStreamError = useCallback(

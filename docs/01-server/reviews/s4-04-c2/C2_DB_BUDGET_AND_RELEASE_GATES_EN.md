@@ -20,7 +20,7 @@ the prod security/Redis topology: it proves schema mapping startup only.
 | MySQL @@max_connections | lab 151 only | target value, topology, proxy/replica limits |
 | DB_URL / DB_USERNAME / DB_PASSWORD | prod external; private reader copies primary | authorized target injection, privileges and rotation owner; no secret in artifacts |
 | spring.jpa.hibernate.ddl-auto | prod validate | approved schema inventory + startup gate; OFF is insufficient |
-| QUIZWHEELZ_LUCK_ANSWER_ENABLED | false injection default; no profile enables it | remain false through migration/release; activation requires separate approval |
+| QUIZWHEELZ_LUCK_ANSWER_ENABLED | false injection default; since 2026-11-05 true in application.properties (every normal local run, budget 1/10/2/20/5 in application-dev.properties); test and prod profiles false | prod stays false through migration/release; activation requires separate approval |
 | LuckRules.PROVISIONAL_ACTIVITY_WINDOW_MS | 60000 unchanged | approved 2026-11-04 by Shimon (project owner) as the initial product rule, for Diana's review in the PR; revisit with real usage data; the constant keeps its name |
 | REDIS_HOST/PORT/PASSWORD/SSL_ENABLED | prod requires external Redis | separately authorized readiness; unchanged |
 

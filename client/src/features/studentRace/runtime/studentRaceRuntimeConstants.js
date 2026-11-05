@@ -51,6 +51,9 @@ export const STUDENT_RACE_MOMENT = Object.freeze({
   LUCK_ENERGY_ORB: STUDENT_RACE_EFFECT.LUCK_ENERGY_ORB,
   LUCK_MUD: STUDENT_RACE_EFFECT.LUCK_MUD,
   LUCK_SHIELD_BLOCKED: STUDENT_RACE_EFFECT.LUCK_SHIELD_BLOCKED,
+  // C5-05: a climb in the server's rank. Text on the notice line and a pulse on the place tile only: no burst, no cue.
+  RANK_UP: "rank-up",
+  TOOK_LEAD: "took-lead",
 });
 
 // Phases of one challenge choice request, keyed to its offer (C5-02).

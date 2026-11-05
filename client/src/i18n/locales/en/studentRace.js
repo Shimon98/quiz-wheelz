@@ -132,6 +132,10 @@ export default {
       mud: "Mud puddle! A brief slowdown",
       shieldBlocked: "Your shield blocked the mud!",
     },
+    rank: {
+      up: "Up to place {{rank}}!",
+      lead: "You're in first place! 🏆",
+    },
     choice: {
       title: "Challenge unlocked! Pick one",
       submitting: "Getting your challenge ready...",

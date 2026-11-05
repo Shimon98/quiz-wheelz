@@ -44,3 +44,6 @@ export const RACE_LUCK_OUTCOMES = Object.freeze({
   APPLIED: "APPLIED",
   BLOCKED_BY_SHIELD: "BLOCKED_BY_SHIELD",
 });
+
+// The answer streaks the game celebrates: the student's combo cues and the projector's streak line.
+export const RACE_STREAK_MILESTONES = Object.freeze({ HOT: 5, BLAZING: 10 });

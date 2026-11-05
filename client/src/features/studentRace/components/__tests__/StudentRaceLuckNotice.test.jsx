@@ -3,6 +3,7 @@ import { act, render, screen } from "@testing-library/react";
 
 import i18n from "../../../../i18n/i18n";
 import { STUDENT_RACE_CONFIG } from "../../config/studentRaceConfig";
+import { STUDENT_RACE_MOMENT } from "../../runtime/studentRaceRuntimeConstants";
 import StudentRaceLuckNotice from "../StudentRaceLuckNotice";
 
 const NOW = 1_700_000_000_000;
@@ -120,5 +121,19 @@ describe("StudentRaceLuckNotice", () => {
     })} />);
 
     expect(region(view.container)).toHaveTextContent(text("gameplay.luck.tailwind"));
+  });
+
+  // C5-05: a climb in place is told on this same line, with the place the server gave.
+  it.each([
+    ["a climb", "RANK_UP", 2, "gameplay.rank.up"],
+    ["the lead", "TOOK_LEAD", 1, "gameplay.rank.lead"],
+  ])("tells %s in the same polite line, the only live one", (_, type, rank, key) => {
+    const rankNews = { type: STUDENT_RACE_MOMENT[type], id: "rank-1", rank, identity: "7:1", announcedAtEpochMs: NOW };
+    const { container } = render(<StudentRaceLuckNotice gameplay={gameplay()} rankNews={rankNews} />);
+
+    expect(region(container)).toHaveTextContent(i18n.t(`studentRace:${key}`, { rank }));
+    expect(screen.getByText(i18n.t(`studentRace:${key}`, { rank })).closest(".race-luck-notice"))
+      .toHaveAttribute("data-tone", "good");
+    expect(container.querySelectorAll("[aria-live]")).toHaveLength(1);
   });
 });

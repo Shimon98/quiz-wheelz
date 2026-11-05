@@ -260,4 +260,25 @@ describe("StudentRaceHud", () => {
     );
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
+
+  // C5-05: told rank news pulses the place tile once; the text itself lives on the notice line.
+  it("pulses the place tile once for each told climb and stays calm without one", () => {
+    const placed = buildRuntimeState({ rank: 2, playerCount: 4 });
+    const climb = (id) => ({ type: "rank-up", id, rank: 2, identity: "7:1", announcedAtEpochMs: 1 });
+    const { container, rerender } = render(<StudentRaceHud runtimeState={placed} />);
+    const placeTile = () => screen.getByText("2 / 4").closest(".race-hud-stat");
+
+    expect(placeTile()).toHaveAttribute("data-rank-pulse", "false");
+
+    rerender(<StudentRaceHud runtimeState={placed} rankNews={climb("rank-10")} />);
+    const firstPulse = placeTile();
+    expect(firstPulse).toHaveAttribute("data-rank-pulse", "true");
+
+    rerender(<StudentRaceHud runtimeState={placed} rankNews={climb("rank-10")} />);
+    expect(placeTile()).toBe(firstPulse);
+
+    rerender(<StudentRaceHud runtimeState={placed} rankNews={climb("rank-20")} />);
+    expect(placeTile()).not.toBe(firstPulse);
+    expect(container.querySelectorAll("[data-rank-pulse='true']")).toHaveLength(1);
+  });
 });

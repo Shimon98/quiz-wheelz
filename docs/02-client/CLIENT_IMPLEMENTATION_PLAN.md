@@ -1123,11 +1123,12 @@ carried-forward release QA can proceed meanwhile.
   hover engine and the Pixi bob/dust; movement uses only `movementUnitsPerSecond`.
 - **C5-01 question context — DONE:** the question model keeps `gameplayContext` (missing →
   `NORMAL`, present but blank → contract error); the question panel reads it (C5-03a).
-- **C5-01d refresh signals — WAITS FOR S4-02:** S4-01 added no SSE event type; the existing
-  signals, the answer/arbitration snapshots and the 2 s race-state poll stay the only refreshes.
-- **C5-01e effect timing — DEFERRED:** the 2 s poll bounds the lag after an effect ends and no
-  production code creates effects yet; add one timer inside `useStudentRaceSynchronization`
-  only if S4-02's real slowdowns prove 2 s too slow.
+- **C5-01d refresh signals — DONE (closed 2026-11-05):** S4-01 to S4-06 added no student SSE
+  event type; the existing signals, the answer/arbitration snapshots and the 2 s race-state poll
+  carry offers, runs, Luck and the shield (live QA in C5-02 to C5-05).
+- **C5-01e effect timing — DONE (closed 2026-11-05):** superseded by C5-04b: an effect window is
+  judged on its snapshot's server clock (`isGameplayEffectActiveAt`) and the notice line wakes once
+  at the next change, so no extra timer in `useStudentRaceSynchronization` was needed.
 - **C5-01f vehicle overlays — PARTIAL:** the player-only mode aura (C5-03b), the thruster
   glow with one burst per result (C5-03f) and the monkey poses (C5-03h) exist; painted flames
   and speed lines are integrated locally (C5-03j/k); final live/device acceptance is open.
@@ -1256,7 +1257,7 @@ Built in tracks by server contract: Track A uses only the merged S4-01 vocabular
   Evidence and full before/after source package: `docs/vision/C5_03/codex_clarity_2026-10-18/`.
   Live-race/physical-phone acceptance and C5-03 review/commit remain open.
 
-- **C5-03 final gate — IMPLEMENTED AND TESTED ON THE FEATURE BRANCH (not merged to `main`,
+- **C5-03 final gate — DONE (merged in PR #79, `main@ddfbf3c`; tested on the feature branch
   2026-10-18):** the pose-blend filter compiled its shader on its first draw, a 64–177 ms stall
   at the first Turbo win (DEV measurement); `KartArtCrossfade.prewarm()` now draws one unchanged
   frame through it in the quiet pose-preload moment. Final code, live on the local server:
@@ -1494,13 +1495,55 @@ with source `LUCK_EVENT`); the server decides every Luck event and the shield.
     cues with provenance rows, the mapping in `studentRaceSounds.js` and the mix check with correct
     and wrong answers (V4 entry above).
 
+### C5-05 / C5-06 — Race moments and closure QA
+
+**Status:** `VERIFY LOCALLY` — implemented 2026-11-05 on `feature/S4-05-C5-04-recovery-luck-shield`
+(working tree, not committed). Code complete; Shimon's listening check and physical phone check
+are still pending, so C5 is not marked DONE. Evidence: `docs/vision/s4_c5_finish_2026-11-05/`.
+
+- **C5-05a projector feed:** the C3 pipeline is reused as is (`teacherLiveEventPayloadMappers` →
+  `teacherLiveEventRegistry` → `applyTeacherLiveEvent` → `teacherRaceLiveReducer` →
+  `TeacherLiveEventsPanel`); no new stream, hook or store. `mapQuestionAnsweredPayload` keeps the
+  S4-06 `moments` it knows and drops an unknown or broken one on its own. The derivers tell each
+  moment instead of the plain correct answer (Luck after a wrong answer too) and tell `TOOK_LEAD`,
+  `RANK_UP` and `STREAK` (5 and 10, `RACE_STREAK_MILESTONES`, shared with the combo cues) by
+  comparing two server rosters; the client never ranks anyone itself.
+- **C5-05b feed pace:** the pure `teacherFeedAdmission.admitFeedItems`, whose small memory the
+  reducer keeps per race. One row per student per event (the strongest); finishes (top) and lead,
+  Turbo success, Safe perfect and shield block (high) skip the class window, except that a new
+  leader is told at most once per 10 s for the class (`leadCooldownMs`: two students neck and neck
+  produced 41 lead rows in 150 s live); the rest share at most 2 rows per 5 s for the class and 1
+  per student per 4 s (only quieter rows count, so a student's lead never starves their Luck news),
+  and a plain correct answer may take only one of the two places (live, correct answers came first
+  and starved the Luck, streak and climb rows).
+  Times are the events' server `occurredAtEpochMs`, so a replay decides like the live run; an event
+  older than 10 s on arrival (a late replay) moves the race but adds no row, and a server clock
+  that steps back re-anchors the windows. `maxItems: 5` stays the list cap. Priorities and timings:
+  `teacherLiveFeedConfig.js`. The projector adds no cue: only finishes keep theirs.
+- **C5-05b one row per answer:** an answer's `QUESTION_ANSWERED` rows wait in the reducer for the
+  progress or finish event the same answer writes right after it, and both are judged together:
+  the answer's own moment, then a lead, a streak or a climb, and only then the plain correct
+  answer (the lowest priority). Found in the live QA: a correct answer's row used to start the
+  student's 4 s gap and silently block the streak row of the same answer.
+- **C5-05c student rank notice:** `deriveStudentRaceMoments` tells `RANK_UP` / `TOOK_LEAD` from the
+  server's rank in accepted snapshots: the first sight of a race player is a baseline, at most one
+  per 5 s of snapshot time, a climb muted by that gap is never told later, none at the finish. The
+  existing notice line (`StudentRaceLuckNotice` + `useStudentRaceLuckNotice`, still the only polite
+  live region for news) tells it for 2.5 s whenever no Luck news holds the line, on the same single
+  wake-up clock (the climb's arrival is one more clock floor), and the place tile pulses once
+  (`race-hud-reward-pulse`, off under reduced motion). No new cue, burst or asset.
+- **C5-06 closure QA:** unit tests for the projector (mapper, derivers, admission, reducer,
+  config coverage, cues) and the rank notice (derive, hook, notice, HUD, screen on the server's
+  snapshots), the full client suite, lint and build, and a live 8-player browser run with two
+  projectors (HE dark, EN light) and three student screens. Physical phone and listening: Shimon.
+
 ### C5 gameplay UI — after S4-02 onward
 
-- junction offer
-- highway/dirt-road question modes
+- junction offer — DONE (C5-02, the challenge choice)
+- highway/dirt-road question modes — DONE (C5-03, Turbo Trial is the highway, Safe Run the dirt road)
 - fair luck effects (C5-04)
-- assistance presentation
-- live announcements.
+- assistance presentation — none by design: Hidden Recovery is never shown (S4-05)
+- live announcements — C5-05.
 
 All visual effects consume server events/effects.
 

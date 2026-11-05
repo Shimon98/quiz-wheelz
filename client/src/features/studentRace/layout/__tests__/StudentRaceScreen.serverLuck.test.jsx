@@ -219,3 +219,58 @@ describe("StudentRaceScreen with the server's own Luck snapshots", () => {
     expect(screen.getByText(text("question.instruction"))).toBeInTheDocument();
   });
 });
+// C5-05: a climb in place, on the server's own snapshots, shares the Luck line and never adds a sound.
+describe("StudentRaceScreen rank news on the server's snapshots", () => {
+  const quiet = (snapshot) => ({
+    ...snapshot,
+    gameplay: { ...snapshot.gameplay, activeEffects: [], luck: { recentEvents: [] } },
+  });
+  const placed = (snapshot, rank, { earlierMs = 0 } = {}) => ({
+    ...snapshot,
+    rank,
+    playerCount: 3,
+    snapshotAtEpochMs: snapshot.snapshotAtEpochMs - earlierMs,
+    eventVersion: earlierMs > 0 ? 1 : snapshot.eventVersion,
+  });
+  const climbText = (rank) => i18n.t("studentRace:gameplay.rank.up", { rank });
+  const pulsingTile = (container) => container.querySelector("[data-rank-pulse='true']");
+
+  async function climbTo(after) {
+    const before = withSnapshot(placed(quiet(orb), 3, { earlierMs: 2_000 }));
+    const view = await mount(before);
+    const climbed = withSnapshot(after, { from: before });
+    view.rerender(raceScreen(climbed));
+    return { ...view, climbed };
+  }
+
+  it("tells a climb once on the notice line, pulses the place tile and plays no sound for it", async () => {
+    const view = await climbTo(placed(quiet(orb), 2));
+
+    expect(luckLine(view.container)).toHaveTextContent(climbText(2));
+    expect(pulsingTile(view.container)).not.toBeNull();
+    expect(audioEngine.playSfx).not.toHaveBeenCalled();
+
+    view.rerender(raceScreen({ ...view.climbed }));
+    expect(view.played.mock.calls.flatMap(([batch]) => batch.moments.map(({ type }) => type)))
+      .toEqual([STUDENT_RACE_MOMENT.RANK_UP]);
+  });
+
+  it("lets a Tailwind that came with the climb hold the line", async () => {
+    const view = await climbTo(placed(tailwind, 2));
+
+    expect(luckLine(view.container)).toHaveTextContent(text("gameplay.luck.tailwind"));
+    expect(screen.queryByText(climbText(2))).toBeNull();
+  });
+
+  it("tells nothing about the place when the climb is the finish", async () => {
+    const view = await climbTo({
+      ...placed(quiet(orb), 1),
+      playerFinished: true,
+      playerStatus: "FINISHED",
+      playerFinishedAtEpochMs: orb.snapshotAtEpochMs,
+    });
+
+    expect(luckLine(view.container)).toBeNull();
+    expect(pulsingTile(view.container)).toBeNull();
+  });
+});

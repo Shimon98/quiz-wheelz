@@ -85,10 +85,12 @@ describe("useTeacherRaceLive live synchronization", () => {
     expect(result.current.connectionState).toBe(TEACHER_CONNECTION_STATES.LIVE);
 
     send(source(), { version: 13 });
+    // An answer, then the progress event the same answer writes (C5-05 tells the answer with it), then a duplicate.
     send(source(), { version: 14, type: "QUESTION_ANSWERED", payload: { racePlayerId: 91, questionId: 3, correct: true } });
-    send(source(), { version: 14 });
+    send(source(), { version: 15 });
+    send(source(), { version: 15 });
 
-    expect(result.current.runtime.eventVersion).toBe(14);
+    expect(result.current.runtime.eventVersion).toBe(15);
     expect(result.current.runtime.players[0].position).toBe(140);
     expect(result.current.recentEvents.map((item) => item.kind)).toEqual(["CORRECT_ANSWER"]);
     expect(createTeacherRaceEventSource).toHaveBeenCalledTimes(1);

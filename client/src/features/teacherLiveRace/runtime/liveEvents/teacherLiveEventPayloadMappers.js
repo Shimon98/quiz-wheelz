@@ -5,6 +5,7 @@ import {
   requireSafeInteger,
 } from "../../../../errors/apiContractGuards";
 import { RACE_STATUSES } from "../../../../constants/raceStatusConstants";
+import { RACE_PUBLIC_MOMENT_KINDS } from "../../../../constants/raceLiveEventConstants";
 import {
   mapTeacherRaceLivePlayer,
   mapTeacherRaceLiveRoster,
@@ -12,6 +13,23 @@ import {
 
 const RACE_STARTED_STATUSES = new Set([RACE_STATUSES.IN_PROGRESS]);
 const RACE_FINISHED_STATUSES = new Set([RACE_STATUSES.FINISHED]);
+const PUBLIC_MOMENT_KINDS = new Set(Object.values(RACE_PUBLIC_MOMENT_KINDS));
+
+// S4-06 moments are an extra on the answer: rows written before them have none, and a moment of a kind this client
+// does not know yet (or a broken one) is dropped on its own, so it never costs the answer or the stream.
+function mapPublicMoments(moments) {
+  if (!Array.isArray(moments)) {
+    return [];
+  }
+
+  return moments.flatMap((moment) =>
+    PUBLIC_MOMENT_KINDS.has(moment?.kind) &&
+    Number.isSafeInteger(moment.sourceId) &&
+    moment.sourceId >= 1
+      ? [{ kind: moment.kind, sourceId: moment.sourceId }]
+      : [],
+  );
+}
 
 export function mapPlayerJoinedPayload(payload) {
   requireObject(payload, "PLAYER_JOINED payload");
@@ -54,6 +72,7 @@ export function mapQuestionAnsweredPayload(payload) {
       { min: 1 },
     ),
     correct: requireBoolean(payload.correct, "QUESTION_ANSWERED correct"),
+    moments: mapPublicMoments(payload.moments),
   };
 }
 

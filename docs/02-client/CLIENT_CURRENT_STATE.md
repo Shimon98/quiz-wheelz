@@ -9,6 +9,16 @@
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
 
+Local checkpoint, 2026-11-05 (C5-05 race moments + C5-06 QA, working tree on
+`feature/S4-05-C5-04-recovery-luck-shield`): the teacher projector's live feed tells the S4-06 public moments
+(Turbo success, Safe perfect, a shield earned, Tailwind, Energy Orb, Mud, a shield block) and, from the server's own
+rosters, a new leader, rank climbs and 5/10 streaks. A pure admission step keeps the pace calm: one row per student
+per event, finishes and the big moments never held back, at most two quieter rows per 5 s for the class and one per
+student per 4 s, and a late replay moves the race without old rows. The student screen tells its own climb in place
+for 2.5 s on the existing notice line (Luck first) and pulses the place tile once (no pulse under reduced motion). No new stream, store, cue or asset. A fresh clone's `npm run dev` reaches the local server without a
+`client/.env` (DEV-only fallback in `httpClient`). Details and tests: `CLIENT_IMPLEMENTATION_PLAN.md` (C5-05 /
+C5-06). Shimon's listening and physical-phone checks remain, so C5 stays open.
+
 Local checkpoint, 2026-11-04 (release closure): a one-shot Luck notice could flash again for one frame seconds after
 its event, when a slower snapshot re-dated the event. The snapshot's arrival now sets a floor for the notice line's clock,
 so a notice that was already shown never comes back. Live against a prod-profile server, a real shield block decided by

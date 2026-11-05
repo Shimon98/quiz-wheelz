@@ -285,7 +285,13 @@ after-commit durable write. `PLAYER_PROGRESS_UPDATED`, `PLAYER_FINISHED`,
 `RACE_FINISHED` and `RACE_STARTED` carry a full ordered player snapshot produced by
 the shared `RaceStandingCalculator`; competition ties are preserved and the client
 does not recalculate affected ranks. `QUESTION_ANSWERED` exposes only
-`racePlayerId`, `questionId` and `correct`.
+`racePlayerId`, `questionId`, `correct` and, since S4-06, an optional `moments` list of
+public facts the answer caused (`{ kind, sourceId }`: a won Turbo or perfect Safe run, a
+Guard Shield earned, an applied Luck event or a shield block). The list is omitted when
+empty, so rows written before S4-06 and answers without moments look the same; clients
+drop a kind they do not know. Failures and Hidden Recovery are never moments. Leads, rank
+changes and streaks stay client-derived from the server's rosters (C5-05). Contract owner:
+`SERVER_IMPLEMENTATION_PLAN.md` (S4-06).
 
 The repository reads bounded committed events after a version in ascending order.
 `GET /api/teacher/races/{raceId}/events/stream` requires TEACHER role, Race ownership

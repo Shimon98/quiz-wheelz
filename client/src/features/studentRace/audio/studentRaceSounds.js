@@ -1,5 +1,6 @@
 import { audioEngine } from "../../../shared/audio";
 import { GAME_AUDIO } from "../../../shared/gameAudio/gameAudioCatalog";
+import { RACE_STREAK_MILESTONES } from "../../../constants/raceGameplayConstants";
 import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig";
 import { presentedMoments } from "../runtime/deriveStudentRaceMoments";
 import { STUDENT_RACE_MOMENT } from "../runtime/studentRaceRuntimeConstants";
@@ -30,8 +31,8 @@ export const STUDENT_RACE_SOUND = Object.freeze({
 });
 
 const COMBO_TIERS = Object.freeze([
-  { minStreak: 10, key: GAME_AUDIO.COMBO_TIER_3 },
-  { minStreak: 5, key: GAME_AUDIO.COMBO_TIER_2 },
+  { minStreak: RACE_STREAK_MILESTONES.BLAZING, key: GAME_AUDIO.COMBO_TIER_3 },
+  { minStreak: RACE_STREAK_MILESTONES.HOT, key: GAME_AUDIO.COMBO_TIER_2 },
   { minStreak: STUDENT_RACE_CONFIG.comboMinStreak, key: GAME_AUDIO.COMBO_TIER_1 },
 ]);
 

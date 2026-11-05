@@ -1,4 +1,4 @@
-import { BatteryCharging, Droplets, ShieldCheck, Wind, Zap } from "lucide-react";
+import { BatteryCharging, Crown, Droplets, ShieldCheck, TrendingUp, Wind, Zap } from "lucide-react";
 
 import {
   RACE_CHALLENGE_OUTCOMES,
@@ -52,8 +52,8 @@ export function getChallengeResultFeedbackKey(outcome) {
   return Object.hasOwn(CHALLENGE_RESULT_FEEDBACK_KEYS, outcome) ? CHALLENGE_RESULT_FEEDBACK_KEYS[outcome] : null;
 }
 
-// Luck news for the question panel's notice line; Mud is the one setback among them.
-const LUCK_NOTICES = Object.freeze({
+// News for the race's notice line: Luck (Mud is the one setback among them) and, since C5-05, a climb in place.
+const RACE_NOTICES = Object.freeze({
   [STUDENT_RACE_MOMENT.LUCK_TAILWIND]: Object.freeze({
     icon: Wind, messageKey: "gameplay.luck.tailwind", tone: "good",
   }),
@@ -64,8 +64,10 @@ const LUCK_NOTICES = Object.freeze({
   [STUDENT_RACE_MOMENT.LUCK_SHIELD_BLOCKED]: Object.freeze({
     icon: ShieldCheck, messageKey: "gameplay.luck.shieldBlocked", tone: "good",
   }),
+  [STUDENT_RACE_MOMENT.RANK_UP]: Object.freeze({ icon: TrendingUp, messageKey: "gameplay.rank.up", tone: "good" }),
+  [STUDENT_RACE_MOMENT.TOOK_LEAD]: Object.freeze({ icon: Crown, messageKey: "gameplay.rank.lead", tone: "good" }),
 });
 
-export function getLuckNoticePresentation(notice) {
-  return Object.hasOwn(LUCK_NOTICES, notice) ? LUCK_NOTICES[notice] : null;
+export function getRaceNoticePresentation(notice) {
+  return Object.hasOwn(RACE_NOTICES, notice) ? RACE_NOTICES[notice] : null;
 }

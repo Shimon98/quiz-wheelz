@@ -120,4 +120,69 @@ describe("useStudentRaceLuckNotice", () => {
     expect(result.current).toBeNull();
     expect(vi.getTimerCount()).toBe(0);
   });
+
+  // C5-05: a climb in place shares this one line; Luck news holds it first.
+  describe("with rank news", () => {
+    const { rankNoticeMs } = STUDENT_RACE_CONFIG;
+    const climb = (announcedAtEpochMs = NOW) =>
+      ({ type: STUDENT_RACE_MOMENT.RANK_UP, id: "rank-1", rank: 2, identity: "7:1", announcedAtEpochMs });
+
+    it("tells rank news for its short time with one wake-up, then rests", () => {
+      const { result } = renderHook(() => useStudentRaceLuckNotice(gameplay(), null, climb()));
+
+      expect(result.current).toBe(STUDENT_RACE_MOMENT.RANK_UP);
+      expect(vi.getTimerCount()).toBe(1);
+
+      act(() => vi.advanceTimersByTime(rankNoticeMs - 1));
+      expect(result.current).toBe(STUDENT_RACE_MOMENT.RANK_UP);
+      act(() => vi.advanceTimersByTime(1));
+      expect(result.current).toBeNull();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("lets a Luck window hold the line and tells the rank only in what is left of its own time", () => {
+      const shortWindow = { ...tailwind, endsAtEpochMs: NOW + 1_000 };
+      const { result } = renderHook(() =>
+        useStudentRaceLuckNotice(gameplay({ activeEffects: [shortWindow] }), null, climb()));
+
+      expect(result.current).toBe(STUDENT_RACE_MOMENT.LUCK_TAILWIND);
+      act(() => vi.advanceTimersByTime(1_000));
+      expect(result.current).toBe(STUDENT_RACE_MOMENT.RANK_UP);
+      act(() => vi.advanceTimersByTime(rankNoticeMs - 1_000));
+      expect(result.current).toBeNull();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("never brings back rank news that ran out under one-shot Luck news", () => {
+      const { result } = renderHook(() =>
+        useStudentRaceLuckNotice(gameplay({ recentEvents: [orb(NOW - 500)] }), 1, climb()));
+
+      expect(result.current).toBe(STUDENT_RACE_MOMENT.LUCK_ENERGY_ORB);
+      act(() => vi.advanceTimersByTime(rankNoticeMs));
+      expect(result.current).toBe(STUDENT_RACE_MOMENT.LUCK_ENERGY_ORB);
+      act(() => vi.advanceTimersByTime(STUDENT_RACE_CONFIG.luckNoticeMs - 500 - rankNoticeMs));
+      expect(result.current).toBeNull();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("tells rank news that comes after 90 s of quiet on its first render and ends it on time", () => {
+      const { result, rerender } = renderHook(({ rank }) => useStudentRaceLuckNotice(gameplay(), null, rank),
+        { initialProps: { rank: null } });
+      act(() => vi.advanceTimersByTime(90_000));
+      expect(vi.getTimerCount()).toBe(0);
+
+      rerender({ rank: climb(NOW + 90_000) });
+      expect(result.current).toBe(STUDENT_RACE_MOMENT.RANK_UP);
+      act(() => vi.advanceTimersByTime(rankNoticeMs));
+      expect(result.current).toBeNull();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("does not tell rank news whose time was over before the line saw it", () => {
+      const { result } = renderHook(() => useStudentRaceLuckNotice(gameplay(), null, climb(NOW - rankNoticeMs)));
+
+      expect(result.current).toBeNull();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+  });
 });

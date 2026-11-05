@@ -28,7 +28,7 @@ describe("teacher live event payload mappers", () => {
 
     expect(
       mapQuestionAnsweredPayload({ racePlayerId: 91, questionId: 4, correct: false }),
-    ).toEqual({ racePlayerId: 91, questionId: 4, correct: false });
+    ).toEqual({ racePlayerId: 91, questionId: 4, correct: false, moments: [] });
 
     expect(mapPlayerProgressUpdatedPayload({ players: roster }).players).toHaveLength(2);
 
@@ -78,5 +78,31 @@ describe("teacher live event payload mappers", () => {
     ["null payload", () => mapQuestionAnsweredPayload(null)],
   ])("rejects %s", (_label, call) => {
     expect(call).toThrow(ApiContractError);
+  });
+});
+
+// S4-06: the public moments of an answer. One bad moment never costs the answer itself or the rest of the stream.
+describe("QUESTION_ANSWERED public moments", () => {
+  const answered = (moments) => mapQuestionAnsweredPayload({ racePlayerId: 91, questionId: 4, correct: true, moments });
+
+  it("keeps every moment the client knows, in the server's order", () => {
+    expect(answered([{ kind: "LUCK_SHIELD_BLOCKED", sourceId: 31 }, { kind: "SHIELD_EARNED", sourceId: 4 }]).moments)
+      .toEqual([{ kind: "LUCK_SHIELD_BLOCKED", sourceId: 31 }, { kind: "SHIELD_EARNED", sourceId: 4 }]);
+  });
+
+  it("reads an event written before the moments existed as having none", () => {
+    expect(answered(undefined).moments).toEqual([]);
+    expect(answered(null).moments).toEqual([]);
+  });
+
+  it("drops a moment of a newer kind, or a broken one, and keeps the answer", () => {
+    expect(answered([
+      { kind: "COMET", sourceId: 1 },
+      { kind: "LUCK_TAILWIND", sourceId: "7" },
+      { kind: "LUCK_MUD" },
+      null,
+      { kind: "TURBO_SUCCESS", sourceId: 12 },
+    ])).toEqual({ racePlayerId: 91, questionId: 4, correct: true, moments: [{ kind: "TURBO_SUCCESS", sourceId: 12 }] });
+    expect(answered("LUCK_TAILWIND").moments).toEqual([]);
   });
 });

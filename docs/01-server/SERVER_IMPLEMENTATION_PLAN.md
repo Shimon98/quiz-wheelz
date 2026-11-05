@@ -612,7 +612,7 @@ S4-03 is implemented locally / under review as recorded below.
 
 ### S4-03 — Turbo Trial + Safe Run
 
-**Status:** `MERGED (PR #77, main@6808d16); template-safety bug fix below, not merged yet`
+**Status:** `MERGED (PR #77, main@6808d16); template-safety bug fix below merged in PR #81 (main@5ed8a39)`
 
 Local baseline: S4-02 commit `75bcc5e288217fb898ceb70fe9492c22aa46271a` on
 `feature/s4-02-03-challenge-flow`. The combined Challenge flow is implemented locally;
@@ -665,7 +665,8 @@ never create an offer automatically. The next qualifying NORMAL correct answer
 may create an offer if all existing gates pass. Effects remain unchanged and the
 SPEED_EFFECT_OVERLAP defensive invariant remains; no stacking or cooldown was added.
 Energy 100 does not guarantee an offer; offer existence remains server-authoritative.
-Production migrations remain Phase 6; S4-04 / S4-05 / S4-06 remain PLANNED.
+Production migrations remain Phase 6. S4-04 is merged (PR #80); S4-05 and S4-06 are implemented on
+`feature/S4-05-C5-04-recovery-luck-shield` (see their sections below).
 
 #### Challenge question selection - 2026-10-24
 
@@ -1473,7 +1474,7 @@ answers were unchanged. The release gates above stay open.
 
 ### S4-05 — Hidden Recovery
 
-**Status:** `IMPLEMENTED; ON in the dev profile since 2026-11-02 (kill switch QUIZWHEELZ_RECOVERY_ENABLED=false), code default, test and prod OFF; on feature/S4-05-C5-04-recovery-luck-shield (pushed), not merged; product rules approved by Shimon 2026-11-04, for Diana's review; production DDL rehearsed on disposable copies, not applied to any target`
+**Status:** `IMPLEMENTED; ON in every normal run since 2026-11-05 (application.properties; dev profile alone from 2026-11-02; kill switch QUIZWHEELZ_RECOVERY_ENABLED=false), code default false, test and prod profiles OFF; on feature/S4-05-C5-04-recovery-luck-shield (pushed), not merged; product rules approved by Shimon 2026-11-04, for Diana's review; production DDL rehearsed on disposable copies, not applied to any target`
 
 Eligibility requires both actually being behind and demonstrably struggling.
 Never grant assistance solely because a leading player intentionally answers wrong.
@@ -1678,10 +1679,42 @@ run's environment.
 
 ### S4-06 — Race Moments / announcements
 
-**Status:** `PLANNED`
+**Status:** `VERIFY LOCALLY` — implemented 2026-11-05 on `feature/S4-05-C5-04-recovery-luck-shield`
+(working tree, not committed yet). Evidence: `docs/vision/s4_c5_finish_2026-11-05/`.
 
 Server-owned bounded race notices use the existing RaceLiveEvent infrastructure.
 Add visible event vocabulary only when the corresponding gameplay exists.
+
+The public moments ride on the existing `QUESTION_ANSWERED` event as an optional `moments` list. There is no new
+`RaceLiveEventType` (`race_live_events.type` is a native MySQL ENUM, so a new value would need DDL) and no new table:
+the payload column is TEXT. Teacher SSE envelopes and the live-event replay carry it; the student stream stays
+signal-only.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `moments` | array, omitted when empty | Public facts this accepted answer caused, in server order |
+| `moments[].kind` | `RacePublicMomentKind` | `TURBO_SUCCESS`, `SAFE_PERFECT`, `SHIELD_EARNED`, `LUCK_TAILWIND`, `LUCK_ENERGY_ORB`, `LUCK_MUD`, `LUCK_SHIELD_BLOCKED` |
+| `moments[].sourceId` | long | The row that proves it: the challenge offer (Turbo/Safe), the answered question (shield earned) or the Luck decision |
+
+- Owner: `RacePublicMomentPolicy`, pure and held as a field by `StudentAnswerSubmissionService`. It maps facts the
+  answer transaction already holds: the Luck decision and the Guard Shield award, which
+  `FairLuckService.afterAcceptedManualNormalAnswer` now returns together as `LuckAnswerResult` (no extra query), and
+  the challenge outcome before and after the answer (only the answer that ended a won challenge tells it).
+- Luck is named by what the server applied (a Tailwind at top speed is an Energy Orb); a Mud Splash the shield
+  blocked is `LUCK_SHIELD_BLOCKED`. Luck on a WRONG normal answer is still a public moment.
+- Never public: a lost Turbo, an incomplete Safe run, wrong answers, timeouts, `NO_EVENT` / `NO_EFFECT` Luck and
+  Hidden Recovery (no kind exists for it).
+- Written in the same transaction and event as the answer, before its progress or finish event, so a replay
+  (Last-Event-ID or the live-events catch-up) carries exactly what the live stream carried. A retried answer records
+  no second `QUESTION_ANSWERED`.
+- Backward compatible: rows written before S4-06 have no `moments` key and read back as none, and an answer with no
+  moments is still written byte for byte as before (`@JsonInclude(NON_EMPTY)`); history is never rewritten. A
+  client must drop a `kind` it does not know.
+- Leads, rank changes and streaks are not moments: clients tell them from the server's own rosters (C5-05).
+
+Tests: `RacePublicMomentPolicyTest`, `RacePublicMomentsLuckIntegrationTest`, `RacePublicMomentsChallengeIntegrationTest`
+and their `*MySqlTest` twins, `RaceLiveEventPayloadCodecTest`, `RaceLiveEventSerializationTest` and
+`HiddenRecoveryIntegrationTest.theGrantIsNeverAPublicMoment`.
 
 ## S5 — Full auth and 2FA
 

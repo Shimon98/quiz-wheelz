@@ -8,7 +8,7 @@ import { STUDENT_RACE_VISUAL_CONFIG } from "../config/raceVisualConfig";
 import useStudentRaceMoments from "../hooks/useStudentRaceMoments";
 import useStudentRaceSound from "../hooks/useStudentRaceSound";
 import PixiStudentRaceCanvas from "../pixi/PixiStudentRaceCanvas";
-import { newestLuckEventId } from "../runtime/deriveStudentRaceMoments";
+import { newestLuckEventId, newestRankMoment, raceIdentityOf } from "../runtime/deriveStudentRaceMoments";
 import { applyFeedbackEffectToRuntime } from "../runtime/resolveStudentRaceFeedbackEffect";
 import { isQuestionTimeUp } from "../utils/isQuestionTimeUp";
 import StudentRaceOverlay from "./StudentRaceOverlay";
@@ -30,6 +30,7 @@ export default function StudentRaceScreen({
   );
   const canvasRef = useRef(null);
   const [announcedLuckEventId, setAnnouncedLuckEventId] = useState(null);
+  const [announcedRank, setAnnouncedRank] = useState(null);
   const momentConsumers = useMemo(
     () => [
       (batch) => canvasRef.current?.playMoments(batch),
@@ -39,10 +40,19 @@ export default function StudentRaceScreen({
         const eventId = newestLuckEventId(batch);
         if (eventId != null) setAnnouncedLuckEventId(eventId);
       },
+      // C5-05: a told climb is stamped once, when it arrives here, never again on a later render.
+      (batch) => {
+        const rankMoment = newestRankMoment(batch);
+        if (rankMoment != null) setAnnouncedRank({ ...rankMoment, announcedAtEpochMs: Date.now() });
+      },
     ],
     [],
   );
   useStudentRaceMoments(presentationRuntimeState, momentConsumers);
+  // Rank news belongs to the race player it was told for and never plays over the finish.
+  const rankNews = announcedRank?.identity === raceIdentityOf(runtimeState) && runtimeState?.playerFinished !== true
+    ? announcedRank
+    : null;
   useStudentRaceSound({
     engineActive: interactionEnabled === true && runtimeState?.playerFinished !== true,
     speed: runtimeState?.visual?.targetSpeed,
@@ -67,6 +77,7 @@ export default function StudentRaceScreen({
         <StudentRaceOverlay
           runtimeState={runtimeState}
           announcedLuckEventId={announcedLuckEventId}
+          rankNews={rankNews}
           hudControls={<AudioSettingsButton size="md" className="pointer-events-auto" />}
           {...overlayProps}
         />

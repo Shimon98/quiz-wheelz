@@ -137,7 +137,10 @@ C5-04 part 1 (PR #81, `main@5ed8a39`) are merged. On `feature/S4-05-C5-04-recove
 API), and C5-04 part 2 on the client (the Guard Shield, Tailwind, Energy Orb, Mud and a shield
 block shown with temporary Pixi `Graphics` and text notices, no new art or sound). Server
 maintenance in the same branch: unexpected 500s are logged with their stack trace and no
-generated Spring password is created any more. Luck and Recovery stay OFF by default. An
+generated Spring password is created any more. Since 2026-11-05 Luck (with the Guard Shield) and
+Hidden Recovery are ON in every normal run of the project (`application.properties`; Luck's local
+connection budget in `application-dev.properties`), with no switch to set; the test and prod
+profiles keep both OFF, and an environment variable switches each off on its own. An
 independent review (2026-10-26) was answered on the same branch: one-shot Luck news is never
 retold after a refresh, the shield is announced to screen readers, every Luck type is proven on
 snapshots the server wrote, and an unrecognized I/O failure on a started response leaves one
@@ -148,8 +151,18 @@ the DDL, a staged activation and a lab load were rehearsed on disposable copies 
 profile. Production stays OFF: no deployment target exists yet, and the DDL has not run on any
 real database (see the S4-05 section of the server plan).
 
-Next: review and merge of that branch, the final Luck and Guard Shield art and sound, a
-physical-phone check (before classroom or production use) and client quality package 4. Diana owns the requested Turbo question sequence and question difficulty on
+Checkpoint, 2026-11-05 (same branch, working tree, not committed yet): S4-06 Race Moments on the
+server — an accepted answer's `QUESTION_ANSWERED` event carries the public moments it caused (a won
+Turbo, a perfect Safe run, a Guard Shield earned, the applied Luck type or a shield block), with no
+new event type and no DDL; failures and Hidden Recovery are never public. C5-05 on the client — the
+teacher projector tells those moments plus new leaders, rank climbs and 5/10 streaks at a calm pace
+(one row per student per event, finishes and the big moments never held back, at most two quieter
+rows per 5 s for the class), and the student screen tells its own climb in place on the existing
+notice line with a pulse on the place tile. The same round makes a clean clone run with Luck and
+Recovery ON and documents it in the root `README.md`.
+
+Next: review and merge of that branch (Diana), Shimon's listening check and physical-phone check
+(C5 is code complete and stays manual-QA pending until then) and client quality package 4. Diana owns the requested Turbo question sequence and question difficulty on
 the server; the client does not simulate these. Browser fixtures and unit tests are local
 evidence, not release acceptance. C5-03 review bundle:
 `docs/vision/C5_03/codex_clarity_2026-10-18/` (local, ignored).
@@ -200,9 +213,10 @@ next stage is Phase 4 (server S4 game events, then the C5 gameplay UI).
 | Teacher SSE | DONE | DONE durable sync, authoritative recovery/fallback (C3-02) | DONE |
 | Teacher live projector UI | N/A | DONE jungle-art projector with eight side-view vehicles, animated server-ordered leaderboard with the shared placement art, responsive workspace navigation (C3-03 … C3-08) | DONE |
 | Results | DONE final read model (S3-01) | DONE teacher Result Screen + student progressive results (C4) | DONE |
-| Junction/highway/dirt road | PLANNED | PLANNED | REQUIRED |
-| Fair luck/power-ups | foundation ideas only | PLANNED | REQUIRED |
-| Catch-up assistance | foundation ideas only | PLANNED | REQUIRED |
+| Junction/highway/dirt road | DONE as the challenge choice: Turbo Trial is the highway, Safe Run the dirt road (S4-02/S4-03) | DONE (C5-02/C5-03) | DONE |
+| Fair luck/power-ups | DONE Luck + Guard Shield (S4-04); ON in every normal run since 2026-11-05 | DONE presentation, art and cues (C5-04) on the feature branch | VERIFY LOCALLY |
+| Catch-up assistance | DONE Hidden Recovery (S4-05), ON in every normal run since 2026-11-05 | none by design: never shown | VERIFY LOCALLY |
+| Race moments / live announcements | DONE public moments on `QUESTION_ANSWERED` (S4-06) | DONE projector feed + student rank notice (C5-05) | VERIFY LOCALLY (phone and listening pending) |
 | Local MySQL + automatic Redis dev setup | DONE | N/A | DONE |
 | Production migrations/deployment | PLANNED | build exists | PLANNED |
 

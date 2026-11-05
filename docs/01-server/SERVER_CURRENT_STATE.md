@@ -330,8 +330,11 @@ recovery never subtracts movement awarded in degraded mode.
 
 ### Luck and Guard Shield (S4-04, checkpoint 2026-10-24)
 
-- On `main` since PR #79; the accepted-answer integration stays OFF by default
-  (`QUIZWHEELZ_LUCK_ANSWER_ENABLED=false`), and OFF also skips the Guard Shield award.
+- On `main` since PR #79. Since 2026-11-05 `QUIZWHEELZ_LUCK_ANSWER_ENABLED=true` in
+  `application.properties`: ON in every normal run, with the local connection budget (1 instance,
+  writer 10, Luck pool 2, budget 20, reserve 5) in `application-dev.properties`. The test and prod
+  profiles set it `false`, an environment variable `false` switches it off, and OFF also skips the
+  Guard Shield award.
   Design, evidence and release gates: `SERVER_IMPLEMENTATION_PLAN.md` (S4-04) and
   `reviews/s4-04-c2/`.
 - Every writer of a player's challenge offers and speed effects holds that
@@ -348,9 +351,10 @@ recovery never subtracts movement awarded in degraded mode.
 ### Hidden Recovery (S4-05, local checkpoint 2026-10-25)
 
 - Implemented on `feature/S4-05-C5-04-recovery-luck-shield` (not merged) behind
-  `QUIZWHEELZ_RECOVERY_ENABLED`, default `false` and independent of the Luck flag. Since
-  2026-11-02 the dev profile sets it to `true` (an environment variable `false` switches it off);
-  the test and prod profiles keep the default. Live QA with Luck ON and OFF: see
+  `QUIZWHEELZ_RECOVERY_ENABLED`, code default `false` and independent of the Luck flag. Since
+  2026-11-05 `application.properties` sets it to `true` for every normal run (it was the dev
+  profile alone from 2026-11-02); the test and prod profiles set `false`, and an environment
+  variable `false` switches it off. Live QA with Luck ON and OFF: see
   `SERVER_IMPLEMENTATION_PLAN.md` (S4-05, update 2026-11-02).
 - A player who is both behind and struggling gets +10 Challenge Energy once per race player,
   on an accepted correct NORMAL answer, after the normal gain and before the offer check. It
@@ -362,6 +366,16 @@ recovery never subtracts movement awarded in degraded mode.
   rehearsed on disposable copies of a main database. No production target exists, so nothing ran
   on a real database (`SERVER_IMPLEMENTATION_PLAN.md`, S4-05, release closure).
 
+### Race Moments (S4-06, local 2026-11-05)
+
+- Implemented on `feature/S4-05-C5-04-recovery-luck-shield` (working tree, not committed). An accepted answer's
+  `QUESTION_ANSWERED` event carries an optional `moments` list of public facts the answer caused: `TURBO_SUCCESS`,
+  `SAFE_PERFECT`, `SHIELD_EARNED`, `LUCK_TAILWIND`, `LUCK_ENERGY_ORB`, `LUCK_MUD`, `LUCK_SHIELD_BLOCKED`, each with
+  the id of the row that proves it. `RacePublicMomentPolicy` owns the mapping; the Luck decision and the shield award
+  come back from `FairLuckService` with no extra query.
+- No new event type, table or DDL; old rows read as having no moments, and an answer without moments is written as
+  before. Failures and Hidden Recovery are never public. Contract: `SERVER_IMPLEMENTATION_PLAN.md` (S4-06).
+
 ## Partial or missing
 
 - Teacher live race client and results remain client work (C3/C4). The C2 server
@@ -369,12 +383,10 @@ recovery never subtracts movement awarded in degraded mode.
   arbitration (decision-instant standings, signal-only student SSE, proof-gated
   arbitration); the teacher live-state/durable-event/SSE foundation for C3 already
   exists, so further server work is driven only by actual C3/results requirements.
-- Junction (highway/dirt-road) decision events and Race Moments/announcements (S4-06);
-  Luck activation with its production migration, budget and retention decisions; Hidden
-  Recovery activation (S4-05 is implemented behind its flag; production validates every
-  entity, so its table needs the documented DDL before this build is deployed; migrations are
-  Phase 6).
-- Catch-up-assistance policy.
+- Production activation of Luck (migration, budget and retention decisions) and of Hidden
+  Recovery (production validates every entity, so its table needs the documented DDL before
+  this build is deployed; migrations are Phase 6). The road choice (highway/dirt road) is
+  served by Turbo Trial and Safe Run (S4-02/S4-03), and catch-up help by Hidden Recovery (S4-05).
 - Registration, email verification, reset and 2FA.
 - Database migrations and production deployment.
 
