@@ -33,3 +33,6 @@ export const API_ENDPOINTS = {
     RACE_EVENTS_STREAM: (raceId) => `/teacher/races/${raceId}/events/stream`,
   },
 };
+
+// The local server of a fresh clone, used only by `npm run dev` when client/.env does not set VITE_API_BASE_URL.
+export const LOCAL_DEV_API_BASE_URL = "http://localhost:8080/api";
