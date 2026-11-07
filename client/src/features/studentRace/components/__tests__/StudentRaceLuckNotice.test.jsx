@@ -128,7 +128,8 @@ describe("StudentRaceLuckNotice", () => {
     ["a climb", "RANK_UP", 2, "gameplay.rank.up"],
     ["the lead", "TOOK_LEAD", 1, "gameplay.rank.lead"],
   ])("tells %s in the same polite line, the only live one", (_, type, rank, key) => {
-    const rankNews = { type: STUDENT_RACE_MOMENT[type], id: "rank-1", rank, identity: "7:1", announcedAtEpochMs: NOW };
+    const rankNews = { type: STUDENT_RACE_MOMENT[type], id: "rank-1", rank, identity: "7:1", announcedAtEpochMs: NOW,
+      showFromEpochMs: NOW };
     const { container } = render(<StudentRaceLuckNotice gameplay={gameplay()} rankNews={rankNews} />);
 
     expect(region(container)).toHaveTextContent(i18n.t(`studentRace:${key}`, { rank }));

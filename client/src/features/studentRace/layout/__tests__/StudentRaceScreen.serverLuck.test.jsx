@@ -6,6 +6,7 @@ import i18n from "../../../../i18n/i18n";
 import { audioEngine } from "../../../../shared/audio";
 import { GAME_AUDIO } from "../../../../shared/gameAudio/gameAudioCatalog";
 import { STUDENT_RACE_ANIMATION_CONFIG } from "../../config/raceAnimationConfig";
+import { STUDENT_RACE_CONFIG } from "../../config/studentRaceConfig";
 import { createPixiStudentRaceApp } from "../../pixi/createPixiStudentRaceApp";
 import { applyRaceSnapshot } from "../../runtime/applyRaceSnapshot";
 import { createInitialRaceRuntimeState } from "../../runtime/createInitialRaceRuntimeState";
@@ -69,14 +70,15 @@ function withSnapshot(snapshot, { from = joinedRace(), receivedAgoMs = 0 } = {})
   return applyRaceSnapshot(from, snapshot, Date.now() - receivedAgoMs);
 }
 
-function raceScreen(runtimeState, answerFeedback = null) {
+function raceScreen(runtimeState, answerFeedback = null,
+  feedbackState = answerFeedback ? STUDENT_RACE_FEEDBACK.CORRECT : STUDENT_RACE_FEEDBACK.IDLE) {
   return (
     <MantineProvider env="test">
       <StudentRaceScreen
         runtimeState={runtimeState}
         question={question}
         answerFeedback={answerFeedback}
-        feedbackState={answerFeedback ? STUDENT_RACE_FEEDBACK.CORRECT : STUDENT_RACE_FEEDBACK.IDLE}
+        feedbackState={feedbackState}
         interactionEnabled
       />
     </MantineProvider>
@@ -234,6 +236,7 @@ describe("StudentRaceScreen rank news on the server's snapshots", () => {
   });
   const climbText = (rank) => i18n.t("studentRace:gameplay.rank.up", { rank });
   const pulsingTile = (container) => container.querySelector("[data-rank-pulse='true']");
+  const later = (snapshot, ms) => ({ ...snapshot, snapshotAtEpochMs: snapshot.snapshotAtEpochMs + ms, eventVersion: snapshot.eventVersion + 1 });
 
   async function climbTo(after) {
     const before = withSnapshot(placed(quiet(orb), 3, { earlierMs: 2_000 }));
@@ -253,6 +256,129 @@ describe("StudentRaceScreen rank news on the server's snapshots", () => {
     view.rerender(raceScreen({ ...view.climbed }));
     expect(view.played.mock.calls.flatMap(([batch]) => batch.moments.map(({ type }) => type)))
       .toEqual([STUDENT_RACE_MOMENT.RANK_UP]);
+  });
+
+  // Option B (2026-11-05): the reward card covers the notice line while it shows, still and whole under reduced motion.
+  it.each([["", false], [" under reduced motion", true]])(
+    "starts a climb that came with a correct answer once its reward card is gone, for its full time%s",
+    async (_, reducedMotion) => {
+      const { feedbackDelayMs, rankNoticeMs } = STUDENT_RACE_CONFIG;
+      const matchMedia = window.matchMedia.bind(window);
+      vi.spyOn(window, "matchMedia").mockImplementation((query) => (query === "(prefers-reduced-motion: reduce)"
+        ? { ...matchMedia(query), matches: reducedMotion } : matchMedia(query)));
+      const before = withSnapshot(placed(quiet(orb), 3, { earlierMs: 2_000 }));
+      const view = await mount(before);
+      vi.useFakeTimers({ now: Date.now(), toFake: ["setTimeout", "clearTimeout", "Date"] });
+      try {
+        const climbed = withSnapshot(placed(quiet(orb), 2), { from: before });
+        view.rerender(raceScreen(climbed, ACCEPTED_ANSWER));
+        expect(view.container.querySelector(".race-hud-reward")).not.toBeNull();
+        expect(screen.queryByText(climbText(2))).toBeNull();
+
+        // The answer's dwell ends with the card.
+        act(() => vi.advanceTimersByTime(feedbackDelayMs));
+        view.rerender(raceScreen(climbed));
+        expect(view.container.querySelector(".race-hud-reward")).toBeNull();
+        expect(luckLine(view.container)).toHaveTextContent(climbText(2));
+
+        act(() => vi.advanceTimersByTime(rankNoticeMs - 1));
+        expect(luckLine(view.container)).toHaveTextContent(climbText(2));
+        act(() => vi.advanceTimersByTime(1));
+        view.rerender(raceScreen({ ...climbed }));
+        expect(screen.queryByText(climbText(2))).toBeNull();
+      } finally {
+        vi.useRealTimers();
+      }
+    },
+  );
+
+  it("starts a climb that comes in a later update while the card shows once the card is gone, for its full time", async () => {
+    const { feedbackDelayMs, rankNoticeMs } = STUDENT_RACE_CONFIG;
+    const before = withSnapshot(placed(quiet(orb), 3, { earlierMs: 2_000 }));
+    const view = await mount(before);
+    vi.useFakeTimers({ now: Date.now(), toFake: ["setTimeout", "clearTimeout", "Date"] });
+    try {
+      const answered = withSnapshot(placed(quiet(orb), 3), { from: before });
+      view.rerender(raceScreen(answered, ACCEPTED_ANSWER));
+      act(() => vi.advanceTimersByTime(300));
+      // A poll brings the climb 300 ms into the card.
+      const climbed = withSnapshot(later(placed(quiet(orb), 2), 300), { from: answered });
+      view.rerender(raceScreen(climbed, ACCEPTED_ANSWER));
+      expect(screen.queryByText(climbText(2))).toBeNull();
+
+      act(() => vi.advanceTimersByTime(feedbackDelayMs - 300 - 1));
+      expect(screen.queryByText(climbText(2))).toBeNull();
+      act(() => vi.advanceTimersByTime(1));
+      view.rerender(raceScreen(climbed));
+      expect(luckLine(view.container)).toHaveTextContent(climbText(2));
+      act(() => vi.advanceTimersByTime(rankNoticeMs - 1));
+      expect(luckLine(view.container)).toHaveTextContent(climbText(2));
+      act(() => vi.advanceTimersByTime(1));
+      view.rerender(raceScreen({ ...climbed }));
+      expect(screen.queryByText(climbText(2))).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("tells a climb that comes with a wrong answer at once: a wrong answer shows no reward card", async () => {
+    const before = withSnapshot(placed(quiet(orb), 3, { earlierMs: 2_000 }));
+    const view = await mount(before);
+    const climbed = withSnapshot(placed(quiet(orb), 2), { from: before });
+    view.rerender(raceScreen(climbed, { ...ACCEPTED_ANSWER, correct: false, scoreDelta: 0, streak: 0 },
+      STUDENT_RACE_FEEDBACK.WRONG));
+
+    expect(view.container.querySelector(".race-hud-reward")).toBeNull();
+    expect(luckLine(view.container)).toHaveTextContent(climbText(2));
+  });
+
+  // A close race may take the place back before or while the line tells it; the place tile never pulses again for it.
+  describe("once the player has dropped below the told place", () => {
+    async function climbWithCard() {
+      const before = withSnapshot(placed(quiet(orb), 3, { earlierMs: 2_000 }));
+      const view = await mount(before);
+      vi.useFakeTimers({ now: Date.now(), toFake: ["setTimeout", "clearTimeout", "Date"] });
+      const climbed = withSnapshot(placed(quiet(orb), 2), { from: before });
+      view.rerender(raceScreen(climbed, ACCEPTED_ANSWER));
+      return { ...view, climbed };
+    }
+
+    afterEach(() => vi.useRealTimers());
+
+    it("never tells a climb that was lost while the reward card showed", async () => {
+      const view = await climbWithCard();
+      expect(pulsingTile(view.container)).not.toBeNull();
+      const droppedBack = withSnapshot(later(placed(quiet(orb), 3), 400), { from: view.climbed });
+      view.rerender(raceScreen(droppedBack, ACCEPTED_ANSWER));
+      expect(pulsingTile(view.container)).toBeNull();
+
+      act(() => vi.advanceTimersByTime(STUDENT_RACE_CONFIG.feedbackDelayMs));
+      view.rerender(raceScreen(droppedBack));
+      expect(screen.queryByText(climbText(2))).toBeNull();
+    });
+
+    it("stops telling a climb once it is no longer true", async () => {
+      const view = await climbWithCard();
+      act(() => vi.advanceTimersByTime(STUDENT_RACE_CONFIG.feedbackDelayMs));
+      view.rerender(raceScreen(view.climbed));
+      expect(luckLine(view.container)).toHaveTextContent(climbText(2));
+
+      view.rerender(raceScreen(withSnapshot(later(placed(quiet(orb), 3), 1_400), { from: view.climbed })));
+      expect(screen.queryByText(climbText(2))).toBeNull();
+    });
+
+    // The moments pipeline mutes a climb back inside the 5 s gap; the old notice must not tell it either.
+    it("never brings a lost climb back on the line, even when the place is won back inside its time", async () => {
+      const view = await climbWithCard();
+      act(() => vi.advanceTimersByTime(STUDENT_RACE_CONFIG.feedbackDelayMs));
+      view.rerender(raceScreen(view.climbed));
+      const droppedBack = withSnapshot(later(placed(quiet(orb), 3), 1_400), { from: view.climbed });
+      view.rerender(raceScreen(droppedBack));
+      view.rerender(raceScreen(withSnapshot(later(placed(quiet(orb), 2), 1_800), { from: droppedBack })));
+
+      expect(screen.queryByText(climbText(2))).toBeNull();
+      expect(pulsingTile(view.container)).toBeNull();
+    });
   });
 
   it("lets a Tailwind that came with the climb hold the line", async () => {

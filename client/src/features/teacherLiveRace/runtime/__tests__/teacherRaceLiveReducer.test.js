@@ -207,4 +207,68 @@ describe("one row per answer", () => {
 
     expect(received(reloaded, progressEvent(14)).recentEvents).toEqual([]);
   });
+
+  it("judges a waiting answer on its own progress event when the stream replays it after a reconnect", () => {
+    const afterAnswer = received(loaded(INITIAL_TEACHER_LIVE_STATE), answerEvent(13), 600);
+
+    // The stream dropped before the progress event; the browser reconnected and got it replayed past the limit.
+    expect(received(afterAnswer, progressEvent(14), 500 + 1_000 + replayTtlMs + 1).recentEvents).toEqual([]);
+  });
+});
+
+// The server writes an answer's progress event only when the player's state changed (its B2LuckEventDeliveryTest
+// BLOCKED case writes QUESTION_ANSWERED alone). A correct answer always adds points; a wrong one may change nothing
+// (no distance moved since the player's last update, no speed or streak to lose), and then nothing follows it.
+describe("an answer no progress event follows", () => {
+  const MUD = [{ kind: "LUCK_MUD", sourceId: 4 }];
+
+  function wrongAnswerEvent(version, { racePlayerId = 91, at = EVENT_EPOCH_MS, moments } = {}) {
+    const event = answerEvent(version, racePlayerId, at, moments);
+    return { ...event, payload: { ...event.payload, correct: false } };
+  }
+
+  it("tells a wrong answer's Luck at once", () => {
+    expect(feedIds(received(loaded(INITIAL_TEACHER_LIVE_STATE), wrongAnswerEvent(13, { moments: MUD }))))
+      .toEqual(["13:LUCK_MUD:91"]);
+  });
+
+  it("judges a wrong answer's Luck on its own time, never on a later event's", () => {
+    // The event happened 1 s after the loaded server time; it reaches the screen past the limit.
+    const late = received(loaded(INITIAL_TEACHER_LIVE_STATE), wrongAnswerEvent(13, { moments: MUD }),
+      500 + 1_000 + replayTtlMs + 1);
+
+    expect(feedIds(answered(late, 14, { racePlayerId: 92, at: EVENT_EPOCH_MS + replayTtlMs + 2_000 })))
+      .toEqual(["14:CORRECT_ANSWER:92"]);
+  });
+
+  it("keeps the next student's answer apart from it", () => {
+    const afterMud = received(loaded(INITIAL_TEACHER_LIVE_STATE), wrongAnswerEvent(13, { moments: MUD }));
+    const danAnswered = received(afterMud, answerEvent(14, 92, EVENT_EPOCH_MS + 1_000));
+
+    expect(feedIds(danAnswered)).toEqual(["13:LUCK_MUD:91"]);
+    expect(feedIds(received(danAnswered, progressEvent(15, EVENT_EPOCH_MS + 1_000))))
+      .toEqual(["14:CORRECT_ANSWER:92", "13:LUCK_MUD:91"]);
+  });
+
+  it("tells a wrong answer's Luck once when a progress event does follow it", () => {
+    const afterMud = received(loaded(INITIAL_TEACHER_LIVE_STATE), wrongAnswerEvent(13, { moments: MUD }));
+
+    expect(feedIds(received(afterMud, progressEvent(14)))).toEqual(["13:LUCK_MUD:91"]);
+  });
+
+  // The price of not waiting: a lead the driving brought at that moment is not merged into the answer's row.
+  it("tells a lead the progress event after a wrong answer brings as its own row", () => {
+    const danLeads = [teacherLivePlayer({ ...ROSTER[1], rank: 1, position: 300 }), teacherLivePlayer({ rank: 2 })];
+    const afterMud = received(loaded(INITIAL_TEACHER_LIVE_STATE), wrongAnswerEvent(13, { racePlayerId: 92, moments: MUD }));
+
+    expect(feedIds(received(afterMud, progressEvent(14, EVENT_EPOCH_MS, danLeads))))
+      .toEqual(["14:TOOK_LEAD:92", "13:LUCK_MUD:92"]);
+  });
+
+  it("holds nothing for a wrong challenge answer that changed nothing", () => {
+    const afterSafe = received(loaded(INITIAL_TEACHER_LIVE_STATE), wrongAnswerEvent(13));
+
+    expect(afterSafe.recentEvents).toEqual([]);
+    expect(afterSafe.heldAnswerRows).toEqual([]);
+  });
 });

@@ -8,14 +8,19 @@ import { selectLuckClockFloor, selectLuckNotice, selectLuckNoticeChangeAt } from
 // wakes this line up.
 // C5-05: rank news (a climb the moments pipeline told, stamped once when it arrived) shares the line. Luck holds it
 // first; the rank is told only inside its own short time, so it never comes back after Luck once that time is over.
+// That time starts at showFromEpochMs: its arrival, or the end of the reward card that came with it (option B).
 export default function useStudentRaceLuckNotice(gameplay, announcedLuckEventId = null, rankNews = null) {
   const [now, setNow] = useState(() => Date.now());
   const { luckNoticeMs, rankNoticeMs } = STUDENT_RACE_CONFIG;
-  const rankUntilEpochMs = rankNews == null ? null : rankNews.announcedAtEpochMs + rankNoticeMs;
+  const rankFromEpochMs = rankNews?.showFromEpochMs ?? null;
+  const rankUntilEpochMs = rankFromEpochMs == null ? null : rankFromEpochMs + rankNoticeMs;
   // Rank news arrived on this device's clock, so its arrival is a floor too for a clock that rested through quiet.
   const clock = Math.max(now, selectLuckClockFloor(gameplay), rankNews?.announcedAtEpochMs ?? 0);
-  const changes = [selectLuckNoticeChangeAt(gameplay, clock, luckNoticeMs, announcedLuckEventId), rankUntilEpochMs]
-    .filter((changeAtEpochMs) => changeAtEpochMs != null && changeAtEpochMs > clock);
+  const changes = [
+    selectLuckNoticeChangeAt(gameplay, clock, luckNoticeMs, announcedLuckEventId),
+    rankFromEpochMs,
+    rankUntilEpochMs,
+  ].filter((changeAtEpochMs) => changeAtEpochMs != null && changeAtEpochMs > clock);
   const changeAtEpochMs = changes.length === 0 ? null : Math.min(...changes);
 
   useEffect(() => {
@@ -30,5 +35,5 @@ export default function useStudentRaceLuckNotice(gameplay, announcedLuckEventId 
 
   const luckNotice = selectLuckNotice(gameplay, clock, luckNoticeMs, announcedLuckEventId);
   if (luckNotice != null) return luckNotice;
-  return rankUntilEpochMs != null && clock < rankUntilEpochMs ? rankNews.type : null;
+  return rankFromEpochMs != null && clock >= rankFromEpochMs && clock < rankUntilEpochMs ? rankNews.type : null;
 }

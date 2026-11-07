@@ -123,9 +123,9 @@ describe("useStudentRaceLuckNotice", () => {
 
   // C5-05: a climb in place shares this one line; Luck news holds it first.
   describe("with rank news", () => {
-    const { rankNoticeMs } = STUDENT_RACE_CONFIG;
-    const climb = (announcedAtEpochMs = NOW) =>
-      ({ type: STUDENT_RACE_MOMENT.RANK_UP, id: "rank-1", rank: 2, identity: "7:1", announcedAtEpochMs });
+    const { rankNoticeMs, feedbackDelayMs } = STUDENT_RACE_CONFIG;
+    const climb = (announcedAtEpochMs = NOW, showFromEpochMs = announcedAtEpochMs) =>
+      ({ type: STUDENT_RACE_MOMENT.RANK_UP, id: "rank-1", rank: 2, identity: "7:1", announcedAtEpochMs, showFromEpochMs });
 
     it("tells rank news for its short time with one wake-up, then rests", () => {
       const { result } = renderHook(() => useStudentRaceLuckNotice(gameplay(), null, climb()));
@@ -174,6 +174,43 @@ describe("useStudentRaceLuckNotice", () => {
       rerender({ rank: climb(NOW + 90_000) });
       expect(result.current).toBe(STUDENT_RACE_MOMENT.RANK_UP);
       act(() => vi.advanceTimersByTime(rankNoticeMs));
+      expect(result.current).toBeNull();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    // Option B (2026-11-05): a climb that came with a correct answer waits for the reward card over the line.
+    it("starts rank news that waits for the reward card at its own start, for its full time, one wake-up at a time", () => {
+      const { result } = renderHook(() =>
+        useStudentRaceLuckNotice(gameplay(), null, climb(NOW, NOW + feedbackDelayMs)));
+
+      expect(result.current).toBeNull();
+      expect(vi.getTimerCount()).toBe(1);
+      act(() => vi.advanceTimersByTime(feedbackDelayMs - 1));
+      expect(result.current).toBeNull();
+      act(() => vi.advanceTimersByTime(1));
+      expect(result.current).toBe(STUDENT_RACE_MOMENT.RANK_UP);
+      expect(vi.getTimerCount()).toBe(1);
+      act(() => vi.advanceTimersByTime(rankNoticeMs - 1));
+      expect(result.current).toBe(STUDENT_RACE_MOMENT.RANK_UP);
+      act(() => vi.advanceTimersByTime(1));
+      expect(result.current).toBeNull();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("lets Luck hold the line over rank news that waited for the reward card", () => {
+      const luckWindow = { ...tailwind, endsAtEpochMs: NOW + 2_000 };
+      const { result } = renderHook(() =>
+        useStudentRaceLuckNotice(gameplay({ activeEffects: [luckWindow] }), null, climb(NOW, NOW + feedbackDelayMs)));
+
+      expect(result.current).toBe(STUDENT_RACE_MOMENT.LUCK_TAILWIND);
+      act(() => vi.advanceTimersByTime(feedbackDelayMs));
+      expect(result.current).toBe(STUDENT_RACE_MOMENT.LUCK_TAILWIND);
+      act(() => vi.advanceTimersByTime(2_000 - feedbackDelayMs));
+      expect(result.current).toBe(STUDENT_RACE_MOMENT.RANK_UP);
+      // Past where it would have ended had it started on arrival: its time counts from the card's end.
+      act(() => vi.advanceTimersByTime(rankNoticeMs - 2_000 + 1));
+      expect(result.current).toBe(STUDENT_RACE_MOMENT.RANK_UP);
+      act(() => vi.advanceTimersByTime(feedbackDelayMs - 1));
       expect(result.current).toBeNull();
       expect(vi.getTimerCount()).toBe(0);
     });

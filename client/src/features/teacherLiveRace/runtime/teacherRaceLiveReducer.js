@@ -49,10 +49,15 @@ function receiveLiveEvent(state, { event, receivedAtPerformanceNow }) {
     return requestRecovery(state, result.recoveryReason);
   }
 
-  // An answer's QUESTION_ANSWERED event is followed, in the same transaction, by the progress or finish event with
-  // the server's new ranks and streaks. Its rows wait for that event, so the feed tells one row per answer, the
+  // A correct answer's QUESTION_ANSWERED event is followed, in the same transaction, by the progress or finish event
+  // with the server's new ranks and streaks. Its rows wait for that event, so the feed tells one row per answer, the
   // strongest: the answer's own moment, then a lead, a streak or a climb, and only then a plain correct answer.
-  if (event.type === RACE_LIVE_EVENT_TYPES.QUESTION_ANSWERED) {
+  // The server writes that event only when the player's state changed: a correct answer always adds points, but a
+  // wrong one may change nothing (no distance moved since the player's last update, no speed or streak to lose), and
+  // then nothing follows it. So a wrong answer's rows (Luck may follow a wrong answer) are judged at once, on its own
+  // time. Its own result is never a streak or a climb; a lead or climb its progress event may still bring comes from
+  // the driving settled at that moment and is told as its own row (the feed cannot know whether that event will come).
+  if (event.type === RACE_LIVE_EVENT_TYPES.QUESTION_ANSWERED && result.payload.correct) {
     return {
       ...state,
       runtime: result.runtime,
