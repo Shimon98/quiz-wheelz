@@ -85,7 +85,9 @@ export const TEACHER_FEED_PRIORITY_OF_KIND = Object.freeze({
 });
 
 export const TEACHER_LIVE_FEED_CONFIG = Object.freeze({
-  maxItems: 5,
+  // The rows the projector keeps and shows (the reducer and the panel both cut here). More history, not more rows per
+  // second: admission below still decides what gets in.
+  maxItems: 7,
   // Times are the events' own server occurredAtEpochMs, so a replay decides exactly like the live run.
   admission: Object.freeze({
     // An event older than this when it reaches the screen (a replay after a reconnect) updates the race silently.

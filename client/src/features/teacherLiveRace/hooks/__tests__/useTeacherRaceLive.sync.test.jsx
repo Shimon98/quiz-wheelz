@@ -97,6 +97,26 @@ describe("useTeacherRaceLive live synchronization", () => {
     expect(getTeacherRaceLiveState).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps the seven newest feed rows of a busy race, the eighth pushing out the oldest", async () => {
+    const { result } = await mountLive();
+    open(source());
+
+    for (let n = 0; n < 8; n += 1) {
+      // One admission window apart, so the feed tells every answer.
+      const occurredAtEpochMs = 1_755_600_001_000 + n * 5_000;
+      send(source(), {
+        version: 13 + n * 2,
+        type: "QUESTION_ANSWERED",
+        occurredAtEpochMs,
+        payload: { racePlayerId: 91, questionId: n + 1, correct: true },
+      });
+      send(source(), { version: 14 + n * 2, occurredAtEpochMs });
+    }
+
+    expect(result.current.recentEvents.map(({ id }) => id))
+      .toEqual([27, 25, 23, 21, 19, 17, 15].map((version) => `${version}:CORRECT_ANSWER:91`));
+  });
+
   it("opens no stream for a race that is already finished and reports ENDED", async () => {
     const { result } = await mountLive(teacherLiveStateResponse({ status: "FINISHED" }));
 

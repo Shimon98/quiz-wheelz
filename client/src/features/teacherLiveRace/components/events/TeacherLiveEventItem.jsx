@@ -17,7 +17,7 @@ export default function TeacherLiveEventItem({ item, relativeLabel }) {
           <KindIcon size={16} aria-hidden="true" />
         </ThemeIcon>
       ) : null}
-      <div>
+      <div className={S.eventBody}>
         <div className={S.eventText}>{t(item.messageKey, item.values)}</div>
         {relativeLabel ? <div className={S.eventTime}>{relativeLabel}</div> : null}
       </div>
