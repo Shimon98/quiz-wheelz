@@ -1497,9 +1497,9 @@ with source `LUCK_EVENT`); the server decides every Luck event and the shield.
 
 ### C5-05 / C5-06 — Race moments and closure QA
 
-**Status:** `VERIFY LOCALLY` — implemented 2026-11-05 on `feature/S4-05-C5-04-recovery-luck-shield`
-(working tree, not committed). Code complete; Shimon's listening check and physical phone check
-are still pending, so C5 is not marked DONE. Evidence: `docs/vision/s4_c5_finish_2026-11-05/`.
+**Status:** `VERIFY LOCALLY` — implemented 2026-11-05 to 2026-11-07 on
+`feature/S4-05-C5-04-recovery-luck-shield` (on the branch, not pushed yet). Code complete; Shimon's listening check
+and physical phone check are still pending, so C5 is not marked DONE. Evidence: `docs/vision/s4_c5_finish_2026-11-05/`.
 
 - **C5-05a projector feed:** the C3 pipeline is reused as is (`teacherLiveEventPayloadMappers` →
   `teacherLiveEventRegistry` → `applyTeacherLiveEvent` → `teacherRaceLiveReducer` →
@@ -1563,7 +1563,26 @@ are still pending, so C5 is not marked DONE. Evidence: `docs/vision/s4_c5_finish
   the finished race, Hebrew light and English dark, 270/270 layout checks (seven rows everywhere;
   inner scroll only at fullscreen 1366×657; the feed never makes the projector taller). Evidence:
   `docs/vision/s4_c5_finish_2026-11-05/feed_layout_2026-11-06/`. Ready for the Astra V5 icons:
-  rows are 54/78/102 px for one to three lines, so a 32px icon fits without growing them.
+  rows are 54/78/102 px for one to three lines, so a 32px icon would fit without growing them; C5-05e
+  keeps the measured 28 px slot instead, so the text column keeps its width.
+- **C5-05e moment icons (Astra V5, 2026-11-07, approved by Shimon):** every feed row and every
+  notice-line news shows a painted icon in the slot the drawn icon had. One new art owner,
+  `shared/raceMoments/raceMomentArt.js` (`RACE_MOMENT_ART`), holds the eight new paintings
+  (`assets/game/raceMoments/`, the 1254² masters cropped to their paint, 128 px on the longest side,
+  WebP q90 with lossless alpha, 6.7–12 KB each); the other five moments reuse art the game already
+  has, read from its existing owners: the results' gold medal (a new leader), their streak flame,
+  the Turbo and Safe emblems (`raceChallengeArt.js`) and the leaderboard trophy (the race's end).
+  `TEACHER_FEED_PRESENTATION` and `RACE_NOTICES` gained an `art` field beside their `icon`, so each
+  screen keeps one presentation table. `shared/raceMoments/MomentArtIcon` draws the painting as
+  decoration (`alt=""`, `aria-hidden`; the words say what happened) and, if a file does not load,
+  brings back the drawn icon (the projector's tinted circle, the line's 16 px icon). Sizes, measured
+  live: the projector's 28×28 slot (the old ThemeIcon `md`, 7 px from the row's top, 8 px from the
+  text), so rows, text width and the seven-row fit are unchanged at every size from 1920×1080 to
+  360×800, fullscreen included; the phone line's icon is 20 px, so the line stays 32 px tall. The
+  waiting room's projector preload also fetches the feed's paintings. Checked on one live race
+  (Hebrew light and English dark projectors at 7 sizes, a Hebrew 390 and an English 360 phone with
+  reduced motion): every row and every notice showed its painting, loaded, with no fallback; no page
+  error. Evidence: `docs/vision/s4_c5_finish_2026-11-05/moment_icons_wiring_2026-11-07/`.
 - **C5-06 closure QA:** unit tests for the projector (mapper, derivers, admission, reducer,
   config coverage, cues) and the rank notice (derive, hook, notice, HUD, screen on the server's
   snapshots), the full client suite, lint and build, and a live 8-player browser run with two

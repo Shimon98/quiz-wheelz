@@ -18,7 +18,9 @@ student per 4 s, and a late replay moves the race without old rows. Since 2026-1
 wider column (18/60/22 beside the track, 44/56 under it) that scrolls inside only beside the track on a short screen
 (C5-05d). The student screen tells its own climb in place
 for 2.5 s on the existing notice line (Luck first; a climb that came with a correct answer starts once that answer's
-reward card is gone; a climb lost again is dropped) and pulses the place tile once (no pulse under reduced motion). No new stream, store, cue or asset. A fresh clone's `npm run dev` reaches the local server without a
+reward card is gone; a climb lost again is dropped) and pulses the place tile once (no pulse under reduced motion). No new stream, store or cue. Since 2026-11-07 every feed row and every
+notice shows a painted moment icon (Astra V5, C5-05e) in the slot the drawn icon had, 28 px on the projector and
+20 px on the phone, and the drawn icon comes back if a painting does not load. A fresh clone's `npm run dev` reaches the local server without a
 `client/.env` (DEV-only fallback in `httpClient`). Details and tests: `CLIENT_IMPLEMENTATION_PLAN.md` (C5-05 /
 C5-06). Shimon's listening and physical-phone checks remain, so C5 stays open.
 
@@ -656,7 +658,7 @@ teacher/SSE/results/auth work does not belong to that single-player gate.
   them
 - `useFreshFeedItem` is the "something new happened" seam (lightning pulse today,
   future sound cues); the connection footer shows the Wi-Fi art only while LIVE
-- the waiting room preloads the projector and vehicle art once and never blocks Start
+- the waiting room preloads the projector, vehicle and feed moment art once and never blocks Start
 - the workspace shell collapses its navbar at `lg` on the live route (`sm` elsewhere)
   from one breakpoint key; the preferred-device notice sits below the header.
 

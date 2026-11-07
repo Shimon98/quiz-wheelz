@@ -504,9 +504,24 @@ runtime.gameplay.mode / question.gameplayContext
 - Three WebPs in `client/src/assets/game/challenge/`: `turbo-emblem.webp`,
   `safe-emblem.webp` (choice cards) and `challenge-energy.webp` (HUD meter).
   One manifest owns them: `features/studentRace/config/raceChallengeArt.js`
-  (`RACE_CHALLENGE_ART`); the presentation table and the HUD read it, no
-  component imports the files directly. Masters and the recolor script stay
-  in the private `docs/vision/` folder.
+  (`RACE_CHALLENGE_ART`); the presentation table and the HUD read it (since
+  C5-05e also the projector feed's presentation, for Turbo success and Safe
+  perfect), no component imports the files directly. Masters and the recolor
+  script stay in the private `docs/vision/` folder.
+
+### Race moment icons (C5-05e, 2026-11-07)
+
+- Eight WebPs in `client/src/assets/game/raceMoments/` (Astra V5): a correct
+  answer, a climb, a shield earned, Tailwind, Energy Orb, Mud, a blocked Mud
+  and a player's finish. One manifest owns them:
+  `shared/raceMoments/raceMomentArt.js` (`RACE_MOMENT_ART`), read by the
+  student's `RACE_NOTICES` and the projector's `TEACHER_FEED_PRESENTATION`.
+- Export: the 1254² master cropped to its paint (+1% margin), 128 px on the
+  longest side, WebP q90 with lossless alpha. Masters stay in the private
+  `docs/vision/` folder.
+- The notice line shows the painting at 20 px (the line stays 32 px tall); the
+  lead keeps the results' gold medal. If a painting does not load, the drawn
+  16 px icon comes back (`shared/raceMoments/MomentArtIcon`).
 - Card art is `clamp(56px, 22vw, 112px)`, 48 px when the viewport is at most
   620 px tall (phone landscape); title and description stay text (i18n).
 - The energy meter sits in the HUD progress column under the track bar:

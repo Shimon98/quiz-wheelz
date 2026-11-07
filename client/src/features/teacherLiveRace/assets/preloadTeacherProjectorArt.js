@@ -1,5 +1,6 @@
 import { TEACHER_RACE_PROJECTOR_ART } from "./teacherRaceProjectorArt";
 import { RACE_VEHICLE_SIDE_ART } from "../../../shared/raceVehicles/raceVehicleSideArt";
+import { TEACHER_FEED_PRESENTATION } from "../config/teacherLiveFeedConfig";
 
 const requestedUrls = new Set();
 
@@ -13,6 +14,8 @@ export function collectTeacherProjectorArtUrls() {
       ...Object.values(signs),
       ...Object.values(uiAccents),
       ...Object.values(RACE_VEHICLE_SIDE_ART),
+      // The live feed's moment paintings, so a row never waits for its icon.
+      ...Object.values(TEACHER_FEED_PRESENTATION).map(({ art }) => art),
     ]),
   ];
 }

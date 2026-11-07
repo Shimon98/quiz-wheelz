@@ -16,6 +16,10 @@ import {
 
 import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
 import { RACE_PUBLIC_MOMENT_KINDS } from "../../../constants/raceLiveEventConstants";
+import { RACE_MOMENT_ART } from "../../../shared/raceMoments/raceMomentArt";
+import { RACE_RESULTS_ART } from "../../../shared/raceResults/raceResultsArt";
+import { RACE_CHALLENGE_ART } from "../../studentRace/config/raceChallengeArt";
+import { TEACHER_RACE_PROJECTOR_ART } from "../assets/teacherRaceProjectorArt";
 
 // The public moments of S4-06 keep their server names as feed kinds; the rest are told from the server's rosters.
 export const TEACHER_FEED_KINDS = Object.freeze({
@@ -45,20 +49,29 @@ export const TEACHER_FEED_MESSAGE_KEYS = Object.freeze({
 });
 
 // The same icons the student's own screen uses for Turbo, Luck and the shield.
+// Each row shows its painting (Astra V5, 2026-11-07): the student's own art for Turbo, Safe, Luck and a climb, the
+// results' gold medal for a new leader, their streak flame for a streak and the leaderboard trophy for the race's end.
+// The drawn icon in its tinted circle comes back if a painting does not load.
 export const TEACHER_FEED_PRESENTATION = Object.freeze({
-  [TEACHER_FEED_KINDS.CORRECT_ANSWER]: { icon: CheckCircle2, tone: UI_TONES.SUCCESS },
-  [TEACHER_FEED_KINDS.RANK_UP]: { icon: TrendingUp, tone: UI_TONES.INFO },
-  [TEACHER_FEED_KINDS.TOOK_LEAD]: { icon: Crown, tone: UI_TONES.WARNING },
-  [TEACHER_FEED_KINDS.STREAK]: { icon: Flame, tone: UI_TONES.SUCCESS },
-  [TEACHER_FEED_KINDS.TURBO_SUCCESS]: { icon: Zap, tone: UI_TONES.SUCCESS },
-  [TEACHER_FEED_KINDS.SAFE_PERFECT]: { icon: BadgeCheck, tone: UI_TONES.SUCCESS },
-  [TEACHER_FEED_KINDS.SHIELD_EARNED]: { icon: ShieldPlus, tone: UI_TONES.INFO },
-  [TEACHER_FEED_KINDS.LUCK_TAILWIND]: { icon: Wind, tone: UI_TONES.INFO },
-  [TEACHER_FEED_KINDS.LUCK_ENERGY_ORB]: { icon: BatteryCharging, tone: UI_TONES.INFO },
-  [TEACHER_FEED_KINDS.LUCK_MUD]: { icon: Droplets, tone: UI_TONES.NEUTRAL },
-  [TEACHER_FEED_KINDS.LUCK_SHIELD_BLOCKED]: { icon: ShieldCheck, tone: UI_TONES.INFO },
-  [TEACHER_FEED_KINDS.PLAYER_FINISHED]: { icon: Flag, tone: UI_TONES.WARNING },
-  [TEACHER_FEED_KINDS.RACE_FINISHED]: { icon: Trophy, tone: UI_TONES.WARNING },
+  [TEACHER_FEED_KINDS.CORRECT_ANSWER]: { art: RACE_MOMENT_ART.correctAnswer, icon: CheckCircle2, tone: UI_TONES.SUCCESS },
+  [TEACHER_FEED_KINDS.RANK_UP]: { art: RACE_MOMENT_ART.rankUp, icon: TrendingUp, tone: UI_TONES.INFO },
+  [TEACHER_FEED_KINDS.TOOK_LEAD]: { art: RACE_RESULTS_ART.placement.gold, icon: Crown, tone: UI_TONES.WARNING },
+  [TEACHER_FEED_KINDS.STREAK]: { art: RACE_RESULTS_ART.stats.streak, icon: Flame, tone: UI_TONES.SUCCESS },
+  [TEACHER_FEED_KINDS.TURBO_SUCCESS]: { art: RACE_CHALLENGE_ART.turboEmblem, icon: Zap, tone: UI_TONES.SUCCESS },
+  [TEACHER_FEED_KINDS.SAFE_PERFECT]: { art: RACE_CHALLENGE_ART.safeEmblem, icon: BadgeCheck, tone: UI_TONES.SUCCESS },
+  [TEACHER_FEED_KINDS.SHIELD_EARNED]: { art: RACE_MOMENT_ART.shieldEarned, icon: ShieldPlus, tone: UI_TONES.INFO },
+  [TEACHER_FEED_KINDS.LUCK_TAILWIND]: { art: RACE_MOMENT_ART.luckTailwind, icon: Wind, tone: UI_TONES.INFO },
+  [TEACHER_FEED_KINDS.LUCK_ENERGY_ORB]: {
+    art: RACE_MOMENT_ART.luckEnergyOrb, icon: BatteryCharging, tone: UI_TONES.INFO,
+  },
+  [TEACHER_FEED_KINDS.LUCK_MUD]: { art: RACE_MOMENT_ART.luckMud, icon: Droplets, tone: UI_TONES.NEUTRAL },
+  [TEACHER_FEED_KINDS.LUCK_SHIELD_BLOCKED]: {
+    art: RACE_MOMENT_ART.luckShieldBlocked, icon: ShieldCheck, tone: UI_TONES.INFO,
+  },
+  [TEACHER_FEED_KINDS.PLAYER_FINISHED]: { art: RACE_MOMENT_ART.playerFinished, icon: Flag, tone: UI_TONES.WARNING },
+  [TEACHER_FEED_KINDS.RACE_FINISHED]: {
+    art: TEACHER_RACE_PROJECTOR_ART.uiAccents.leaderboardTrophy, icon: Trophy, tone: UI_TONES.WARNING,
+  },
 });
 
 // LOWEST is the plain correct answer: any other row of the same answer says more and takes its place.

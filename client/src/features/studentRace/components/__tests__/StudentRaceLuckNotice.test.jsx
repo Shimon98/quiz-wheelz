@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import i18n from "../../../../i18n/i18n";
+import { RACE_MOMENT_ART } from "../../../../shared/raceMoments/raceMomentArt";
+import { RACE_RESULTS_ART } from "../../../../shared/raceResults/raceResultsArt";
 import { STUDENT_RACE_CONFIG } from "../../config/studentRaceConfig";
 import { STUDENT_RACE_MOMENT } from "../../runtime/studentRaceRuntimeConstants";
 import StudentRaceLuckNotice from "../StudentRaceLuckNotice";
@@ -136,5 +138,42 @@ describe("StudentRaceLuckNotice", () => {
     expect(screen.getByText(i18n.t(`studentRace:${key}`, { rank })).closest(".race-luck-notice"))
       .toHaveAttribute("data-tone", "good");
     expect(container.querySelectorAll("[aria-live]")).toHaveLength(1);
+  });
+
+  // Astra V5: the line's painting at 20 px; the lead keeps the gold medal the results already give first place.
+  const rankNews = (type, rank) => ({ type: STUDENT_RACE_MOMENT[type], id: "rank-1", rank, identity: "7:1",
+    announcedAtEpochMs: NOW, showFromEpochMs: NOW });
+  it.each([
+    ["a Tailwind", { gameplay: gameplay({ activeEffects: [luckWindow("SPEED_BOOST", NOW + 3000)] }) },
+      RACE_MOMENT_ART.luckTailwind],
+    ["an Energy Orb", { gameplay: gameplay({ recentEvents: [luckEvent("ENERGY_ORB", "APPLIED")] }) },
+      RACE_MOMENT_ART.luckEnergyOrb],
+    ["a Mud window", { gameplay: gameplay({ activeEffects: [luckWindow("SPEED_SLOW", NOW + 2000)] }) },
+      RACE_MOMENT_ART.luckMud],
+    ["a blocked Mud Splash", { gameplay: gameplay({ recentEvents: [luckEvent("MUD_SPLASH", "BLOCKED_BY_SHIELD")] }) },
+      RACE_MOMENT_ART.luckShieldBlocked],
+    ["a climb", { gameplay: gameplay(), rankNews: rankNews("RANK_UP", 2) }, RACE_MOMENT_ART.rankUp],
+    ["the lead", { gameplay: gameplay(), rankNews: rankNews("TOOK_LEAD", 1) }, RACE_RESULTS_ART.placement.gold],
+  ])("paints %s beside its words at 20 px", (_, props, art) => {
+    const { container } = render(<StudentRaceLuckNotice announcedLuckEventId={9} {...props} />);
+    const image = region(container).querySelector("img");
+
+    expect(art).toBeTruthy();
+    expect(image).toHaveAttribute("src", art);
+    expect(image).toHaveAttribute("alt", "");
+    expect(image).toHaveAttribute("aria-hidden", "true");
+    expect(image).toHaveClass("size-5");
+    expect(region(container).querySelector("svg")).toBeNull();
+  });
+
+  it("falls back to today's line icon when the painting does not load", () => {
+    const { container } = render(<StudentRaceLuckNotice announcedLuckEventId={9}
+      gameplay={gameplay({ activeEffects: [luckWindow("SPEED_SLOW", NOW + 2000)] })} />);
+
+    fireEvent.error(region(container).querySelector("img"));
+
+    expect(region(container).querySelector("img")).toBeNull();
+    expect(region(container).querySelector("svg.race-luck-notice-icon.lucide-droplets")).not.toBeNull();
+    expect(region(container)).toHaveTextContent(text("gameplay.luck.mud"));
   });
 });

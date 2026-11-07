@@ -148,6 +148,8 @@ export const TEACHER_PROJECTOR_STYLES = Object.freeze({
   eventsList: `m-0 flex list-none flex-col gap-1.5 p-0 ${FEED_LIST_HEIGHT}`,
   eventItem:
     "grid grid-cols-[auto_1fr] items-start gap-2 rounded-[var(--qw-radius-md)] border border-[var(--qw-projector-glass-border)] bg-[var(--qw-surface-alt)] px-2 py-1.5 shadow-[var(--qw-shadow-sm)]",
+  // A row's painting takes the 28 px slot the tinted ThemeIcon (md) had, so no row moves (measured 2026-11-07).
+  eventArt: "pointer-events-none size-7 shrink-0 select-none object-contain",
   // A long name wraps inside its row instead of pushing the row wider than the panel.
   eventBody: "min-w-0",
   eventText: "text-sm font-semibold [overflow-wrap:anywhere] @6xl:text-base",

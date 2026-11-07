@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TEACHER_RACE_PROJECTOR_ART } from "../teacherRaceProjectorArt";
 import { RACE_VEHICLE_SIDE_ART } from "../../../../shared/raceVehicles/raceVehicleSideArt";
+import { TEACHER_FEED_PRESENTATION } from "../../config/teacherLiveFeedConfig";
 
 async function loadPreloader() {
   vi.resetModules();
@@ -21,7 +22,8 @@ afterEach(() => {
 });
 
 describe("preloadTeacherProjectorArt", () => {
-  it("collects every projector and vehicle URL from the existing art owners, once each", async () => {
+  // The live feed's moment paintings come too, so a row never waits for its icon (the trophy is already an accent).
+  it("collects every projector, vehicle and live-feed URL from the existing art owners, once each", async () => {
     const { collectTeacherProjectorArtUrls } = await loadPreloader();
     const { backdrop, verge, signs, uiAccents } = TEACHER_RACE_PROJECTOR_ART;
     const expected = new Set([
@@ -30,13 +32,14 @@ describe("preloadTeacherProjectorArt", () => {
       ...Object.values(signs),
       ...Object.values(uiAccents),
       ...Object.values(RACE_VEHICLE_SIDE_ART),
+      ...Object.values(TEACHER_FEED_PRESENTATION).map(({ art }) => art),
     ]);
 
     const urls = collectTeacherProjectorArtUrls();
 
     expect(new Set(urls)).toEqual(expected);
     expect(urls).toHaveLength(expected.size);
-    expect(urls).toHaveLength(16);
+    expect(urls).toHaveLength(28);
   });
 
   it("requests each image once per session even when the waiting room asks again", async () => {

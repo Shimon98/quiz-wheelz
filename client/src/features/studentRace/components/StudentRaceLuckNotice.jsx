@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
+import MomentArtIcon from "../../../shared/raceMoments/MomentArtIcon";
 import { getRaceNoticePresentation } from "../config/raceGameplayPresentationConfig";
 import useStudentRaceLuckNotice from "../hooks/useStudentRaceLuckNotice";
 import { STUDENT_RACE_PANEL_STYLES } from "../styles/studentRacePanelStyles";
@@ -19,7 +20,12 @@ export default function StudentRaceLuckNotice({ gameplay = null, announcedLuckEv
       {notice != null ? (
         <p data-tone={notice.tone}
           className={`race-luck-notice ${STUDENT_RACE_PANEL_STYLES.statusLine} text-[var(--qw-text)]`}>
-          <NoticeIcon aria-hidden="true" className="race-luck-notice-icon size-4 shrink-0" />
+          {/* 20 px keeps the line its 32 px height (measured 2026-11-07); the drawn fallback stays 16 px. */}
+          <MomentArtIcon
+            art={notice.art}
+            className="size-5 shrink-0 object-contain"
+            fallback={<NoticeIcon aria-hidden="true" className="race-luck-notice-icon size-4 shrink-0" />}
+          />
           <span>{t(notice.messageKey, { rank: rankNews?.rank })}</span>
         </p>
       ) : null}
