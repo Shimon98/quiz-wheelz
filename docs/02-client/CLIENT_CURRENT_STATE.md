@@ -14,8 +14,11 @@ Local checkpoint, 2026-11-05 (C5-05 race moments + C5-06 QA, working tree on
 (Turbo success, Safe perfect, a shield earned, Tailwind, Energy Orb, Mud, a shield block) and, from the server's own
 rosters, a new leader, rank climbs and 5/10 streaks. A pure admission step keeps the pace calm: one row per student
 per event, finishes and the big moments never held back, at most two quieter rows per 5 s for the class and one per
-student per 4 s, and a late replay moves the race without old rows. The student screen tells its own climb in place
-for 2.5 s on the existing notice line (Luck first) and pulses the place tile once (no pulse under reduced motion). No new stream, store, cue or asset. A fresh clone's `npm run dev` reaches the local server without a
+student per 4 s, and a late replay moves the race without old rows. Since 2026-11-06 the feed keeps seven rows in a
+wider column (18/60/22 beside the track, 44/56 under it) that scrolls inside only beside the track on a short screen
+(C5-05d). The student screen tells its own climb in place
+for 2.5 s on the existing notice line (Luck first; a climb that came with a correct answer starts once that answer's
+reward card is gone; a climb lost again is dropped) and pulses the place tile once (no pulse under reduced motion). No new stream, store, cue or asset. A fresh clone's `npm run dev` reaches the local server without a
 `client/.env` (DEV-only fallback in `httpClient`). Details and tests: `CLIENT_IMPLEMENTATION_PLAN.md` (C5-05 /
 C5-06). Shimon's listening and physical-phone checks remain, so C5 stays open.
 

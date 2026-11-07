@@ -1518,20 +1518,52 @@ are still pending, so C5 is not marked DONE. Evidence: `docs/vision/s4_c5_finish
   and starved the Luck, streak and climb rows).
   Times are the events' server `occurredAtEpochMs`, so a replay decides like the live run; an event
   older than 10 s on arrival (a late replay) moves the race but adds no row, and a server clock
-  that steps back re-anchors the windows. `maxItems: 5` stays the list cap. Priorities and timings:
+  that steps back re-anchors the windows. `maxItems` is the list cap (7 since C5-05d). Priorities and timings:
   `teacherLiveFeedConfig.js`. The projector adds no cue: only finishes keep theirs.
-- **C5-05b one row per answer:** an answer's `QUESTION_ANSWERED` rows wait in the reducer for the
-  progress or finish event the same answer writes right after it, and both are judged together:
-  the answer's own moment, then a lead, a streak or a climb, and only then the plain correct
-  answer (the lowest priority). Found in the live QA: a correct answer's row used to start the
-  student's 4 s gap and silently block the streak row of the same answer.
+- **C5-05b one row per answer:** a correct answer's `QUESTION_ANSWERED` rows wait in the reducer for
+  the progress or finish event the same answer writes right after it (a correct answer always adds
+  points, so that event always follows), and both are judged together: the answer's own moment,
+  then a lead, a streak or a climb, and only then the plain correct answer (the lowest priority).
+  Found in the live QA: a correct answer's row used to start the student's 4 s gap and silently
+  block the streak row of the same answer. A wrong answer's rows (Luck may follow one) are judged at
+  once, on their own time: when a wrong answer changes nothing at all (no distance moved since the
+  player's last update, no speed or streak to lose) the server writes no progress event after it
+  (the contract's Blocked Mud case above: `QUESTION_ANSWERED` alone), and the feed cannot know
+  whether one will come. Review 2026-11-05: holding those too left such a row waiting for an
+  unrelated later event and judged on that event's time. The price: a wrong answer's own result is
+  never a streak or a climb, but a lead or climb its progress event may still bring (from the
+  driving settled at that moment) is told as its own row, next to the answer's Luck row.
 - **C5-05c student rank notice:** `deriveStudentRaceMoments` tells `RANK_UP` / `TOOK_LEAD` from the
   server's rank in accepted snapshots: the first sight of a race player is a baseline, at most one
   per 5 s of snapshot time, a climb muted by that gap is never told later, none at the finish. The
   existing notice line (`StudentRaceLuckNotice` + `useStudentRaceLuckNotice`, still the only polite
   live region for news) tells it for 2.5 s whenever no Luck news holds the line, on the same single
   wake-up clock (the climb's arrival is one more clock floor), and the place tile pulses once
-  (`race-hud-reward-pulse`, off under reduced motion). No new cue, burst or asset.
+  (`race-hud-reward-pulse`, off under reduced motion). No new cue, burst or asset. A correct
+  answer's reward card sits over the notice line for the answer's dwell (`feedbackDelayMs`), so a
+  climb told while it shows starts on the line once the card is gone and then has its full 2.5 s
+  (Shimon's option B, 2026-11-05); that start is one more wake-up of the same clock. Luck news
+  keeps its own timing and still holds the line first. A climb the player loses again is dropped
+  at once (found live: a close race took the place back during that wait and the line said "first
+  place" under a tile showing 2/8), so the line never tells a place the player no longer holds,
+  and winning it back inside the 5 s gap tells nothing again (the moments pipeline mutes that
+  climb). The place tile stops its pulse with it and never pulses again for it.
+- **C5-05d projector feed layout (2026-11-06, Shimon's request):** the feed keeps and shows the seven
+  newest rows (`TEACHER_LIVE_FEED_CONFIG.maxItems` 5 → 7, the one cap the reducer and the panel
+  already share; admission unchanged: more history, not more rows per second). Beside the track
+  (projector container ≥ 72rem) the columns go 18/64/18 → 18/60/22: the feed gains about 22% of
+  width, the track gives up about 6%, the leaderboard keeps its width. Under the track (≥ 48rem)
+  the leaderboard and the feed share 44/56 instead of 50/50. Beside the track the feed list is
+  capped by the screen height (`FEED_CHROME_HEIGHT`, measured: 20.5rem in the workspace, 19rem in
+  fullscreen, floor 16rem) and scrolls inside under its fixed title; stacked layouts let the page
+  scroll, so there is never a second scroll. A long name wraps inside its row (`min-w-0`,
+  `overflow-wrap:anywhere`); before, a name without spaces ran out of its row, and in fullscreen
+  that overflow cost the projector a scrollbar's height. Checked on one live race with the BEFORE
+  and AFTER bundles at the same moment: 9 sizes from 1920×1080 to 390×844, 3 fullscreen sizes and
+  the finished race, Hebrew light and English dark, 270/270 layout checks (seven rows everywhere;
+  inner scroll only at fullscreen 1366×657; the feed never makes the projector taller). Evidence:
+  `docs/vision/s4_c5_finish_2026-11-05/feed_layout_2026-11-06/`. Ready for the Astra V5 icons:
+  rows are 54/78/102 px for one to three lines, so a 32px icon fits without growing them.
 - **C5-06 closure QA:** unit tests for the projector (mapper, derivers, admission, reducer,
   config coverage, cues) and the rank notice (derive, hook, notice, HUD, screen on the server's
   snapshots), the full client suite, lint and build, and a live 8-player browser run with two
