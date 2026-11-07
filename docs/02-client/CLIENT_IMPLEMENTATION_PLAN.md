@@ -1404,7 +1404,8 @@ with source `LUCK_EVENT`); the server decides every Luck event and the shield.
   pipeline, the screen and the real Pixi layers: each type plays once with its answer, a refresh
   keeps only open windows, a reconnect and a student switch replay nothing.
 - **C5-04f final art and sound — IN PROGRESS:** replaces the placeholders; product approval and a
-  physical-phone check remain release gates, with Luck still OFF on the server by default.
+  physical-phone check remain release gates. Luck was OFF on the server by default until 2026-11-05; since then it is ON in
+  every normal run (production keeps it OFF).
   - **F1 foundation — DONE (local, 2026-10-29):** five Luck art slots in the effect manifest
     (`LUCK_EFFECT_ART`, every url null, no import of a missing file); `EffectsLayer` loads a slot
     that has a file once, beside the world, pinned by the renderer's own `prepareTexture`, and

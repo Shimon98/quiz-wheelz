@@ -366,9 +366,9 @@ recovery never subtracts movement awarded in degraded mode.
   rehearsed on disposable copies of a main database. No production target exists, so nothing ran
   on a real database (`SERVER_IMPLEMENTATION_PLAN.md`, S4-05, release closure).
 
-### Race Moments (S4-06, local 2026-11-05)
+### Race Moments (S4-06, 2026-11-05, not merged yet)
 
-- Implemented on `feature/S4-05-C5-04-recovery-luck-shield` (working tree, not committed). An accepted answer's
+- Implemented on `feature/S4-05-C5-04-recovery-luck-shield` (committed, not merged yet). An accepted answer's
   `QUESTION_ANSWERED` event carries an optional `moments` list of public facts the answer caused: `TURBO_SUCCESS`,
   `SAFE_PERFECT`, `SHIELD_EARNED`, `LUCK_TAILWIND`, `LUCK_ENERGY_ORB`, `LUCK_MUD`, `LUCK_SHIELD_BLOCKED`, each with
   the id of the row that proves it. `RacePublicMomentPolicy` owns the mapping; the Luck decision and the shield award

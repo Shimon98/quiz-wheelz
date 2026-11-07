@@ -162,11 +162,11 @@ Order:
    fixes keep every rule unchanged. Since 2026-11-05 Luck and Hidden Recovery are ON in every
    normal (local) run; production keeps both OFF until its own release gates pass (see
    `../01-server/SERVER_IMPLEMENTATION_PLAN.md`). S4-06 Race Moments is implemented on the same
-   branch (2026-11-05, working tree): public moments ride on `QUESTION_ANSWERED`, with no new
+   branch (2026-11-05, committed, not merged yet): public moments ride on `QUESTION_ANSWERED`, with no new
    event type and no DDL, and C5-05 tells them on the projector and a climb in place on the
    student screen. S4-05
    Hidden Recovery is committed on `feature/S4-05-C5-04-recovery-luck-shield` (`b096e10`, pushed,
-   not merged) behind `QUIZWHEELZ_RECOVERY_ENABLED=false`; nothing is claimed for production
+   not merged), first behind `QUIZWHEELZ_RECOVERY_ENABLED=false`; nothing is claimed for production
    until the branch is reviewed. Production validates every entity at startup, so its table
    needs the documented DDL before this build is deployed, flag on or off. Since 2026-11-02 it
    is ON in the dev profile (Shimon's decision after live QA, kill switch by environment

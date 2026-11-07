@@ -9,8 +9,8 @@
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
 
-Local checkpoint, 2026-11-05 (C5-05 race moments + C5-06 QA, working tree on
-`feature/S4-05-C5-04-recovery-luck-shield`): the teacher projector's live feed tells the S4-06 public moments
+Local checkpoint, 2026-11-05 (C5-05 race moments + C5-06 QA, committed on
+`feature/S4-05-C5-04-recovery-luck-shield`, not merged yet): the teacher projector's live feed tells the S4-06 public moments
 (Turbo success, Safe perfect, a shield earned, Tailwind, Energy Orb, Mud, a shield block) and, from the server's own
 rosters, a new leader, rank climbs and 5/10 streaks. A pure admission step keeps the pace calm: one row per student
 per event, finishes and the big moments never held back, at most two quieter rows per 5 s for the class and one per

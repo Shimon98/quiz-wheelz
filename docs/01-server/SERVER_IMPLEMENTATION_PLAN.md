@@ -1680,7 +1680,7 @@ run's environment.
 ### S4-06 — Race Moments / announcements
 
 **Status:** `VERIFY LOCALLY` — implemented 2026-11-05 on `feature/S4-05-C5-04-recovery-luck-shield`
-(working tree, not committed yet). Evidence: `docs/vision/s4_c5_finish_2026-11-05/`.
+(committed on the branch, not merged yet). Evidence: `docs/vision/s4_c5_finish_2026-11-05/`.
 
 Server-owned bounded race notices use the existing RaceLiveEvent infrastructure.
 Add visible event vocabulary only when the corresponding gameplay exists.

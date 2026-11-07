@@ -151,7 +151,7 @@ the DDL, a staged activation and a lab load were rehearsed on disposable copies 
 profile. Production stays OFF: no deployment target exists yet, and the DDL has not run on any
 real database (see the S4-05 section of the server plan).
 
-Checkpoint, 2026-11-05 (same branch, working tree, not committed yet): S4-06 Race Moments on the
+Checkpoint, 2026-11-05 (same branch, committed, not merged yet): S4-06 Race Moments on the
 server — an accepted answer's `QUESTION_ANSWERED` event carries the public moments it caused (a won
 Turbo, a perfect Safe run, a Guard Shield earned, the applied Luck type or a shield block), with no
 new event type and no DDL; failures and Hidden Recovery are never public. C5-05 on the client — the
