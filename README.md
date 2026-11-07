@@ -25,8 +25,9 @@ math questions. The server (Spring Boot) owns every rule; the client (React + Pi
    Wait for `Started QuizWheelzApplication`. Without any profile the server runs its local profile (`dev`).
 3. **Client**, from `client/`: `npm ci`, then `npm run dev`, and open http://localhost:5173.
    `client/.env` is optional: without it the client talks to http://localhost:8080/api.
-4. **Play**: register a teacher, or use the local development account `GojoSatoru` / `123456`. Create a race and join
-   it from another browser or a phone with the room code (a race starts with at least two students).
+4. **Play**: sign in as a teacher with the local development account `GojoSatoru` / `123456` (the server has no
+   teacher registration yet; it comes with S5). Create a race and join it from another browser or a phone with the
+   room code (a race starts with at least two students).
 
 > The development account and its password are public. They are for a local computer only; never expose this server
 > to a public network as it is.

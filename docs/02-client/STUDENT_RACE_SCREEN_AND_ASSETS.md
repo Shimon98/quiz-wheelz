@@ -508,6 +508,12 @@ runtime.gameplay.mode / question.gameplayContext
   C5-05e also the projector feed's presentation, for Turbo success and Safe
   perfect), no component imports the files directly. Masters and the recolor
   script stay in the private `docs/vision/` folder.
+- Card art is `clamp(56px, 22vw, 112px)`, 48 px when the viewport is at most
+  620 px tall (phone landscape); title and description stay text (i18n).
+- The energy meter sits in the HUD progress column under the track bar:
+  crystal art, a violet bar clamped to the server threshold, and a visible
+  `75/100` value (tabular digits, `dir="ltr"`). Checked at 320, 390, 430 px
+  and 844×390 without overflow.
 
 ### Race moment icons (C5-05e, 2026-11-07)
 
@@ -522,12 +528,6 @@ runtime.gameplay.mode / question.gameplayContext
 - The notice line shows the painting at 20 px (the line stays 32 px tall); the
   lead keeps the results' gold medal. If a painting does not load, the drawn
   16 px icon comes back (`shared/raceMoments/MomentArtIcon`).
-- Card art is `clamp(56px, 22vw, 112px)`, 48 px when the viewport is at most
-  620 px tall (phone landscape); title and description stay text (i18n).
-- The energy meter sits in the HUD progress column under the track bar:
-  crystal art, a violet bar clamped to the server threshold, and a visible
-  `75/100` value (tabular digits, `dir="ltr"`). Checked at 320, 390, 430 px
-  and 844×390 without overflow.
 
 ### Luck and Guard Shield presentation and art slots (C5-04f F1–F2, 2026-10-29 – 2026-11-02)
 
