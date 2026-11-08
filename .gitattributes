@@ -1,0 +1,24 @@
+# Text files are stored with LF in the repository; a checkout follows each machine's own setting (core.autocrlf).
+# Added after two commits were written from a machine without core.autocrlf and stored 34 files with CRLF.
+* text=auto
+
+# Scripts keep the line endings their shell needs on every machine.
+*.sh   text eol=lf
+mvnw   text eol=lf
+*.cmd  text eol=crlf
+*.bat  text eol=crlf
+
+# Binary assets: never converted, never diffed as text.
+*.webp  binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.wav   binary
+*.m4a   binary
+*.mp3   binary
+*.ogg   binary
+*.woff  binary
+*.woff2 binary
+*.jar   binary
