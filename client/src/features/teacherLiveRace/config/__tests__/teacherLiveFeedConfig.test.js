@@ -46,6 +46,29 @@ it.each([
   expect(TEACHER_FEED_PRESENTATION[kind].art).toBe(art);
 });
 
+// The derivers send `name` for a player's row, plus `rank` for a climb and `count` for a streak; the race's end has none.
+it.each([
+  [TEACHER_FEED_KINDS.CORRECT_ANSWER, ["name"]],
+  [TEACHER_FEED_KINDS.RANK_UP, ["name", "rank"]],
+  [TEACHER_FEED_KINDS.TOOK_LEAD, ["name"]],
+  [TEACHER_FEED_KINDS.STREAK, ["count", "name"]],
+  [TEACHER_FEED_KINDS.TURBO_SUCCESS, ["name"]],
+  [TEACHER_FEED_KINDS.SAFE_PERFECT, ["name"]],
+  [TEACHER_FEED_KINDS.SHIELD_EARNED, ["name"]],
+  [TEACHER_FEED_KINDS.LUCK_TAILWIND, ["name"]],
+  [TEACHER_FEED_KINDS.LUCK_ENERGY_ORB, ["name"]],
+  [TEACHER_FEED_KINDS.LUCK_MUD, ["name"]],
+  [TEACHER_FEED_KINDS.LUCK_SHIELD_BLOCKED, ["name"]],
+  [TEACHER_FEED_KINDS.PLAYER_FINISHED, ["name"]],
+  [TEACHER_FEED_KINDS.RACE_FINISHED, []],
+])("words the %s row with exactly the values the feed sends, in Hebrew and in English", (kind, values) => {
+  const placeholders = (text) => [...text.matchAll(/{{\s*(\w+)\s*}}/g)].map(([, name]) => name).sort();
+  const key = TEACHER_FEED_MESSAGE_KEYS[kind];
+
+  expect(placeholders(messageAt(he, key))).toEqual(values);
+  expect(placeholders(messageAt(en, key))).toEqual(values);
+});
+
 it("paints every feed kind", () => {
   expect(Object.values(TEACHER_FEED_KINDS).filter((kind) => !TEACHER_FEED_PRESENTATION[kind]?.art)).toEqual([]);
 });
