@@ -8,6 +8,7 @@ import com.quiz_wheelz.entitys.RacePlayerGameplayState;
 import com.quiz_wheelz.entitys.RacePlayerRecoveryState;
 import com.quiz_wheelz.enums.QuestionGameplayContext;
 import com.quiz_wheelz.enums.RacePlayerStatus;
+import com.quiz_wheelz.enums.RaceStatus;
 import com.quiz_wheelz.repository.RacePlayerRecoveryStateRepository;
 import com.quiz_wheelz.service.challenge.ChallengeEnergyService;
 import com.quiz_wheelz.service.raceplayer.StudentRaceStandingResult;
@@ -38,9 +39,13 @@ public class HiddenRecoveryService {
         this.energy = Objects.requireNonNull(energy);
     }
 
+    // Review M2: the callers own the transaction, the student's row lock and the lifecycle check (a RACING student in an
+    // IN_PROGRESS race): ChallengeOfferService.afterAnswer and QuestionTimeoutService. Nothing here takes a lock.
+    // The returned window is the row nudgeAfterNormalGain takes, so a correct answer reads it once (review M3).
     @Transactional(propagation = Propagation.MANDATORY)
-    public void observeAcceptedAnswer(RacePlayer player, PlayerQuestion question, boolean correct) {
-        observe(player, question, correct);
+    public Optional<RacePlayerRecoveryState> observeAcceptedAnswer(RacePlayer player, PlayerQuestion question,
+                                                                   boolean correct) {
+        return observe(player, question, correct);
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
@@ -51,13 +56,17 @@ public class HiddenRecoveryService {
     // The standings are the ones the answer projected at its decision instant for its own response; no standings
     // means no grant, and the right is kept.
     @Transactional(propagation = Propagation.MANDATORY)
-    public boolean nudgeAfterNormalGain(RacePlayer player, PlayerQuestion question, RacePlayerGameplayState gameplay,
-                                        long decisionEpochMs, StudentRaceStandingResult standings) {
-        if (!enabled || question.getGameplayContext() != QuestionGameplayContext.NORMAL) {
+    public boolean nudgeAfterNormalGain(RacePlayer player, PlayerQuestion question, RacePlayerRecoveryState state,
+                                        RacePlayerGameplayState gameplay, long decisionEpochMs,
+                                        StudentRaceStandingResult standings) {
+        // Review M2: like ChallengeEnergyService.earn, the grant checks the lifecycle itself. The answer that crosses the
+        // line never gets here: it marks the student FINISHED first, and the offer step stops there.
+        if (!enabled || question.getGameplayContext() != QuestionGameplayContext.NORMAL
+                || player.getStatus() != RacePlayerStatus.RACING
+                || player.getRace().getStatus() != RaceStatus.IN_PROGRESS) {
             return false;
         }
-        var state = states.findByRacePlayerId(player.getId()).orElse(null);
-        if (state == null || state.getAwardedQuestionId() != null
+        if (state.getAwardedQuestionId() != null
                 || !Objects.equals(state.getLastObservedNormalQuestionId(), question.getId())
                 || !policy.struggling(state.getRecentOutcomeBits(), state.getRecentOutcomeCount())
                 || !policy.hasRoomForNudge(gameplay.getChallengeEnergy())) {
@@ -74,11 +83,16 @@ public class HiddenRecoveryService {
         return true;
     }
 
-    private void observe(RacePlayer player, PlayerQuestion question, boolean correct) {
+    private Optional<RacePlayerRecoveryState> observe(RacePlayer player, PlayerQuestion question, boolean correct) {
         if (!enabled || question.getGameplayContext() != QuestionGameplayContext.NORMAL) {
-            return;
+            return Optional.empty();
         }
         var state = states.findByRacePlayerId(player.getId()).orElseGet(() -> states.save(newState(player)));
+        append(state, player, question, correct);
+        return Optional.of(state);
+    }
+
+    private void append(RacePlayerRecoveryState state, RacePlayer player, PlayerQuestion question, boolean correct) {
         // After the one grant the window has no use left, so later answers write nothing.
         if (state.getAwardedQuestionId() != null) {
             return;

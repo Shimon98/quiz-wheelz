@@ -344,7 +344,7 @@ recovery never subtracts movement awarded in degraded mode.
   connection budget and MySQL `max_connections` before readiness; a missing or
   insufficient budget stops startup instead of failing student answers.
 - The nightly question cleanup keeps questions referenced by Luck decisions or focus
-  events; their retention policy is open.
+  events; their retention policy is open (a follow-up, not an S4 defect).
 - `LuckDrawPolicy` compares speed in tenths, like movement, so a Tailwind at the shown
   maximum becomes an Energy Orb.
 
@@ -362,6 +362,10 @@ recovery never subtracts movement awarded in degraded mode.
   `WARN` log line for a question it already observed (`HiddenRecoveryService`), never sent to a
   participant. Rules, design and the
   production DDL of `race_player_recovery_states`: `SERVER_IMPLEMENTATION_PLAN.md` (S4-05).
+- Final maintenance, 2026-11-08 (review M2 and M3): the callers own the transaction, the player row
+  lock and the lifecycle check (`ChallengeOfferService.afterAnswer`, `QuestionTimeoutService`); the
+  grant also checks RACING and IN_PROGRESS itself, like normal energy, so no caller can grant once the
+  student or the race is done; and every NORMAL outcome reads the student's Recovery row once.
 - Release closure, 2026-11-04: Shimon, as project owner, approved the two open rules (a
   finished leader is out of the field; a STRICT focus forfeit counts as one failure), and Diana
   reviews them in the PR. The DDL, a staged activation in the prod profile and a lab load were
@@ -377,6 +381,8 @@ recovery never subtracts movement awarded in degraded mode.
   come back from `FairLuckService` with no extra query.
 - No new event type, table or DDL; old rows read as having no moments, and an answer without moments is written as
   before. Failures and Hidden Recovery are never public. Contract: `SERVER_IMPLEMENTATION_PLAN.md` (S4-06).
+- A `SHIELD_EARNED` moment names the question that earned the shield, which the nightly cleanup may delete in an old
+  race. No foreign key points there and nothing reads it back, so it waits for the retention policy (a follow-up).
 
 ## Partial or missing
 
@@ -387,7 +393,8 @@ recovery never subtracts movement awarded in degraded mode.
   exists, so further server work is driven only by actual C3/results requirements.
 - Production activation of Luck (migration, budget and retention decisions) and of Hidden
   Recovery (production validates every entity, so its table needs the documented DDL before
-  this build is deployed; migrations are Phase 6). The road choice (highway/dirt road) is
+  this build is deployed; migrations are Phase 6). They are the S4 deployment gates listed under S6 in
+  `SERVER_IMPLEMENTATION_PLAN.md`, with the connection budget and the security review. The road choice (highway/dirt road) is
   served by Turbo Trial and Safe Run (S4-02/S4-03), and catch-up help by Hidden Recovery (S4-05).
 - Registration, email verification, reset and 2FA.
 - Database migrations and production deployment.

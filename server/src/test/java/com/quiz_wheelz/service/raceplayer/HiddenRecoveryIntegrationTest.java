@@ -9,6 +9,8 @@ import com.quiz_wheelz.repository.RacePlayerRecoveryStateRepository;
 import com.quiz_wheelz.service.recovery.HiddenRecoveryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
@@ -20,6 +22,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.clearInvocations;
@@ -31,7 +34,7 @@ class HiddenRecoveryIntegrationTest extends S4ChallengeFlowFixture {
     // Oldest first, newest in bit 0: C, W, W, C, W, C.
     static final int QUALIFYING_WINDOW = 0b100101;
 
-    @Autowired RacePlayerRecoveryStateRepository recoveryStates;
+    @MockitoSpyBean RacePlayerRecoveryStateRepository recoveryStates;
     @Autowired HiddenRecoveryService recovery;
     @Autowired StudentRaceStandingService standings;
     @Autowired RacePlayerFocusEventService focus;
@@ -149,7 +152,7 @@ class HiddenRecoveryIntegrationTest extends S4ChallengeFlowFixture {
             var player = locked();
             var gameplay = stateService.obtainForLockedPlayer(player);
             assertTrue(recovery.nudgeAfterNormalGain(player, questionRepository.findById(questionId).orElseThrow(),
-                    gameplay, T, standings.calculate(player, T)));
+                    recoveryState(), gameplay, T, standings.calculate(player, T)));
             assertEquals(60, gameplay.getChallengeEnergy());
             status.setRollbackOnly();
         });
@@ -160,7 +163,7 @@ class HiddenRecoveryIntegrationTest extends S4ChallengeFlowFixture {
         transactions.executeWithoutResult(status -> {
             var player = locked();
             recovery.nudgeAfterNormalGain(player, questionRepository.findById(questionId).orElseThrow(),
-                    stateService.obtainForLockedPlayer(player), T, standings.calculate(player, T));
+                    recoveryState(), stateService.obtainForLockedPlayer(player), T, standings.calculate(player, T));
         });
         assertEquals(60, energy());
         assertEquals(before, learningAndMovement());
@@ -174,8 +177,32 @@ class HiddenRecoveryIntegrationTest extends S4ChallengeFlowFixture {
         transactions.executeWithoutResult(status -> {
             var player = locked();
             assertFalse(recovery.nudgeAfterNormalGain(player, questionRepository.findById(questionId).orElseThrow(),
-                    stateService.obtainForLockedPlayer(player), T, null));
+                    recoveryState(), stateService.obtainForLockedPlayer(player), T, null));
         });
+
+        assertEquals(50, energy());
+        assertNull(recoveryState().getAwardedQuestionId());
+    }
+
+    // Review M2: like ChallengeEnergyService.earn, the grant checks the lifecycle itself, so no caller can grant once the
+    // student or the race is done.
+    @Test
+    void theGrantItselfRefusesAStudentOrARaceThatIsDone() {
+        seedQualifyingWindow();
+        energy(50);
+        List<Consumer<RacePlayer>> endings = List.of(player -> player.setStatus(RacePlayerStatus.FINISHED),
+                player -> player.getRace().setStatus(RaceStatus.FINISHED),
+                player -> player.getRace().setStatus(RaceStatus.CANCELLED));
+
+        for (var ending : endings) {
+            transactions.executeWithoutResult(status -> {
+                var player = locked();
+                ending.accept(player);
+                assertFalse(recovery.nudgeAfterNormalGain(player, questionRepository.findById(questionId).orElseThrow(),
+                        recoveryState(), stateService.obtainForLockedPlayer(player), T, standings.calculate(player, T)));
+                status.setRollbackOnly();
+            });
+        }
 
         assertEquals(50, energy());
         assertNull(recoveryState().getAwardedQuestionId());
@@ -195,6 +222,26 @@ class HiddenRecoveryIntegrationTest extends S4ChallengeFlowFixture {
         assertEquals(ordinary, qualifying);
     }
 
+    // Review M3 (2026-11-08): each NORMAL outcome reads the student's Recovery row once, the granting answer included.
+    @Test
+    void eachNormalOutcomeReadsTheRecoveryRowOnce() {
+        answerSecond();
+        assertEquals(1, recoveryReadsDuring(() -> answer(false)));
+        current();
+        expireActiveQuestion();
+        assertEquals(1, recoveryReadsDuring(() -> {
+            snapshot();
+            current();
+        }));
+        assertEquals(1, recoveryReadsDuring(() -> answer(true)));
+        answer(false);
+
+        assertEquals(1, recoveryReadsDuring(() -> answer(true)));
+
+        assertEquals(70, energy());
+        assertEquals(10, recoveryState().getAwardedEnergy());
+    }
+
     @Test
     void aChallengeAnswerNeverEntersTheWindow() {
         select(ChallengeChoice.TURBO_TRIAL);
@@ -212,13 +259,9 @@ class HiddenRecoveryIntegrationTest extends S4ChallengeFlowFixture {
     void anOverdueAnswerKeepsItsPenalizedTimeoutInTheWindowAlthoughItEndsWithQuestionExpired() {
         answerSecond();
         var question = current();
-        Long correctChoice = correctChoiceOf(question.getQuestionId());
         expireActiveQuestion();
-        var request = new com.quiz_wheelz.dto.answer.SubmitAnswerRequest();
-        request.setQuestionId(question.getQuestionId());
-        request.setChoiceId(correctChoice);
 
-        var rejection = assertThrows(ApiException.class, () -> answerService.submitAnswer(second(), request));
+        var rejection = assertThrows(ApiException.class, () -> answerCorrectly(question.getQuestionId()));
 
         assertEquals(com.quiz_wheelz.exception.ErrorCode.QUESTION_EXPIRED, rejection.getErrorCode());
         var state = recoveryState();
@@ -309,6 +352,41 @@ class HiddenRecoveryIntegrationTest extends S4ChallengeFlowFixture {
         assertEquals(awarded.getLastObservedNormalQuestionId(), later.getLastObservedNormalQuestionId());
     }
 
+    // Review M2 (2026-11-08): a student who has finished cannot answer, so Recovery is never reached.
+    @Test
+    void aStudentWhoHasFinishedNeverReachesRecovery() {
+        answerFiveMixedOutcomes();
+        var question = current();
+        transactions.executeWithoutResult(status -> locked().setStatus(RacePlayerStatus.FINISHED));
+
+        var rejection = assertThrows(ApiException.class, () -> answerCorrectly(question.getQuestionId()));
+
+        assertEquals(com.quiz_wheelz.exception.ErrorCode.RACE_PLAYER_NOT_RACING, rejection.getErrorCode());
+        assertEquals(40, energy());
+        assertEquals(5, recoveryState().getRecentOutcomeCount());
+        assertNull(recoveryState().getAwardedQuestionId());
+    }
+
+    // Review M2: the offer step owns the lifecycle guard. Even a student row still RACING in a race that has ended (no
+    // service makes one today: a race finishes once every student is terminal, and nothing cancels a race yet) stays out.
+    @ParameterizedTest
+    @EnumSource(value = RaceStatus.class, names = {"FINISHED", "CANCELLED"})
+    void theOfferStepLeavesRecoveryAloneOnceTheRaceHasEnded(RaceStatus ended) {
+        answerFiveMixedOutcomes();
+        var question = current();
+
+        transactions.executeWithoutResult(status -> {
+            var player = locked();
+            player.getRace().setStatus(ended);
+            offers.afterAnswer(player, questionRepository.findById(question.getQuestionId()).orElseThrow(),
+                    Difficulty.EASY, true, T, standings.calculate(player, T));
+        });
+
+        assertEquals(40, energy());
+        assertEquals(5, recoveryState().getRecentOutcomeCount());
+        assertNull(recoveryState().getAwardedQuestionId());
+    }
+
     @Test
     void twoParallelSubmissionsOfTheQualifyingAnswerGrantOnce() throws Exception {
         answerFiveMixedOutcomes();
@@ -350,6 +428,13 @@ class HiddenRecoveryIntegrationTest extends S4ChallengeFlowFixture {
         return event;
     }
 
+    void answerCorrectly(Long playerQuestionId) {
+        var request = new com.quiz_wheelz.dto.answer.SubmitAnswerRequest();
+        request.setQuestionId(playerQuestionId);
+        request.setChoiceId(correctChoiceOf(playerQuestionId));
+        answerService.submitAnswer(second(), request);
+    }
+
     Long correctChoiceOf(Long playerQuestionId) {
         return transactions.execute(status -> questionRepository.findById(playerQuestionId)
                 .orElseThrow().getChoices().stream().filter(PlayerQuestionChoice::isCorrect)
@@ -357,10 +442,18 @@ class HiddenRecoveryIntegrationTest extends S4ChallengeFlowFixture {
     }
 
     long projectionsDuring(Runnable action) {
-        clearInvocations(projections);
+        return callsDuring(projections, "projectAt", action);
+    }
+
+    long recoveryReadsDuring(Runnable action) {
+        return callsDuring(recoveryStates, "findByRacePlayerId", action);
+    }
+
+    static long callsDuring(Object spy, String method, Runnable action) {
+        clearInvocations(spy);
         action.run();
-        return mockingDetails(projections).getInvocations().stream()
-                .filter(invocation -> invocation.getMethod().getName().equals("projectAt")).count();
+        return mockingDetails(spy).getInvocations().stream()
+                .filter(invocation -> invocation.getMethod().getName().equals(method)).count();
     }
 
     // C, W, W, C, W: never three correct answers in a row, so the student stays at EASY (+20 energy each).

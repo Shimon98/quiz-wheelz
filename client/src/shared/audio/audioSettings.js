@@ -1,5 +1,6 @@
 export const AUDIO_SETTINGS_DEFAULTS = Object.freeze({
-  musicEnabled: false,
+  // On for a new browser since 2026-11-08 (Shimon). It still waits for the first tap, and a saved choice wins.
+  musicEnabled: true,
   sfxEnabled: true,
   musicVolume: 0.6,
   sfxVolume: 0.75,

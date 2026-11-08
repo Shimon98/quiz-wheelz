@@ -45,14 +45,17 @@ public class ChallengeOfferService {
             return;
         }
         // S4-05: a wrong NORMAL answer earns nothing but still counts as evidence for Hidden Recovery.
-        recovery.ifAvailable(service -> service.observeAcceptedAnswer(player, question, correct));
+        HiddenRecoveryService hiddenRecovery = recovery.getIfAvailable();
+        Optional<RacePlayerRecoveryState> window = hiddenRecovery == null
+                ? Optional.empty() : hiddenRecovery.observeAcceptedAnswer(player, question, correct);
         if (!correct) {
             return;
         }
         var state = stateService.obtainForLockedPlayer(player);
         energyService.earn(state, answeredDifficulty, question.getGameplayContext(), correct);
         // The nudge lands before the offer check, so a meter it fills opens the offer with this same answer.
-        recovery.ifAvailable(service -> service.nudgeAfterNormalGain(player, question, state, decisionEpochMs, standing));
+        window.ifPresent(observed -> hiddenRecovery.nudgeAfterNormalGain(player, question, observed, state,
+                decisionEpochMs, standing));
         if (!eligibilityService.eligible(state, unresolved(player).isPresent()) || !availability.available(player)
                 || speedEffects.findActiveAt(player, decisionEpochMs).stream()
                 .anyMatch(effect -> effect.getType() == EffectType.SPEED_SLOW || effect.getType() == EffectType.SPEED_BOOST)) {

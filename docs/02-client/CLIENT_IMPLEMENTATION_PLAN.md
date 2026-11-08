@@ -1050,8 +1050,8 @@ merged (PR #81, `main@5ed8a39`). Everything after it is implemented and verified
 `feature/S4-05-C5-04-recovery-luck-shield` (pushed, not merged): C5-04 part 2 and C5-04f (the Luck
 and shield presentation, Astra's art and the four Luck cues), C5-05 (race moments on the projector,
 the rank notice, the seven-row feed, the moment icons and the playful copy of 2026-11-08) and C5-06.
-Before C5 is `DONE`: Shimon's listening and physical phone and projector checks, then the PR and the
-merge. The gameplay UI renders server-owned game events and effects, so each further
+Before C5 is `DONE`: Shimon's physical phone and projector checks (listening decided on 2026-11-08: the
+Luck sounds as shipped, music ON by default), then the PR and the merge. The gameplay UI renders server-owned game events and effects, so each further
 part starts from an audit of that real server code; never from a text handoff alone. The
 carried-forward release QA can proceed meanwhile.
 
@@ -1065,7 +1065,7 @@ carried-forward release QA can proceed meanwhile.
   interrupted, or rejects `resume()`, waits for the next user gesture. The temporary
   `/dev/audio` lab, its synthetic fixtures and its scripts are removed.
 - **C5-A2 settings store — DONE:** `stores/audioSettingsStore.js` (`qw-audio`): Music OFF and
-  Sound effects ON by default; the volumes stay in the store for a later UI; invalid stored
+  Sound effects ON by default (Music ON for a new browser since 2026-11-08, see C5-05 / C5-06); the volumes stay in the store for a later UI; invalid stored
   fields fall back one by one; blocked storage keeps working in memory.
 - **C5-A3 registry — DONE:** validated `sfx`/`loop`/`music` descriptors; unknown fields,
   duplicate keys and conflicts throw; an identical re-register is a no-op.
@@ -1495,15 +1495,16 @@ with source `LUCK_EVENT`); the server decides every Luck event and the shield.
     `StudentRaceLuckNotice.test.jsx`, `StudentRaceOverlay.luck.test.jsx` (a mutation check fails 15
     tests). Live, Luck and Recovery ON: every notice showed at once (+0 ms after the page learned
     the event), beside ✓/✕, at 360, 390 and 768.
-  - **F2 sound — CONNECTED (local, 2026-11-03), waiting for Shimon's approval by ear:** four WAV
+  - **F2 sound — CONNECTED (local, 2026-11-03); kept as shipped on 2026-11-08 (Shimon: Tailwind A,
+    Energy Orb B, Mud A, a shield block A; he may still swap one later):** four WAV
     cues with provenance rows, the mapping in `studentRaceSounds.js` and the mix check with correct
     and wrong answers (V4 entry above).
 
 ### C5-05 / C5-06 — Race moments and closure QA
 
 **Status:** `VERIFY LOCALLY` — implemented 2026-11-05 to 2026-11-07 on
-`feature/S4-05-C5-04-recovery-luck-shield` (on the branch, not pushed yet). Code complete; Shimon's listening check
-and physical phone check are still pending, so C5 is not marked DONE. Evidence: `docs/vision/s4_c5_finish_2026-11-05/`.
+`feature/S4-05-C5-04-recovery-luck-shield` (pushed, not merged). Code complete; Shimon's physical phone and
+projector checks are still pending (the listening decision came on 2026-11-08), so C5 is not marked DONE. Evidence: `docs/vision/s4_c5_finish_2026-11-05/`.
 
 - **C5-05a projector feed:** the C3 pipeline is reused as is (`teacherLiveEventPayloadMappers` →
   `teacherLiveEventRegistry` → `applyTeacherLiveEvent` → `teacherRaceLiveReducer` →
@@ -1612,6 +1613,15 @@ and physical phone check are still pending, so C5 is not marked DONE. Evidence: 
   config coverage, cues) and the rank notice (derive, hook, notice, HUD, screen on the server's
   snapshots), the full client suite, lint and build, and a live 8-player browser run with two
   projectors (HE dark, EN light) and three student screens. Physical phone and listening: Shimon.
+- **Final maintenance (2026-11-08, Shimon's decisions):** the four Luck sounds stay as shipped (Tailwind A,
+  Energy Orb B, Mud A, a shield block A). Background music is ON for a new browser: `AUDIO_SETTINGS_DEFAULTS`
+  is the one owner of the default (engine start, store fallback, reset), so only `musicEnabled` changed. Music
+  still starts only at the first tap or click, a saved `qw-audio` choice wins over the default, and blocked
+  storage runs on the defaults in memory. Tests: a new browser starts with music on; a saved choice of no music
+  stays; a claimed scene stays silent until the first unlock and then plays once, also after a second tap (failed
+  with the old default); three engine tests that took music off for granted now switch it off themselves, and
+  the settings and provider tests start from music on. Classroom note: every
+  phone that joins plays music too; a projector-only default was proposed, not built.
 
 ### C5 gameplay UI — after S4-02 onward
 

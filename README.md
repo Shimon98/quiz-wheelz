@@ -43,6 +43,11 @@ Every normal run has the whole game, with no switch to set:
 To switch one off while investigating a problem, set its environment variable before starting the server:
 `QUIZWHEELZ_LUCK_ANSWER_ENABLED=false` or `QUIZWHEELZ_RECOVERY_ENABLED=false`.
 
+Sound is on for a new browser: the effects, and background music from the first tap or click (browsers allow sound
+only after one). The speaker button turns music and effects on or off, and the browser remembers it (`qw-audio`).
+A browser that already saved its sound settings keeps them: any change in the speaker menu saves all of them, so a
+browser where someone changed sound before the music default was on keeps music off until it is switched on there.
+
 ## Testing on a phone (same Wi-Fi)
 
 A phone cannot reach your computer's `localhost`. Find the computer's address on the local network (for example

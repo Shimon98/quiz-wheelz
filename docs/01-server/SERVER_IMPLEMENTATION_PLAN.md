@@ -702,6 +702,14 @@ server errors.
 
 **Status:** `FIXED (prevention + recovery + NORMAL fallback); MERGED (PR #81, main@5ed8a39); for Diana's review`
 
+Maintenance check, 2026-11-08: still fixed in the current code. `NormalQuestionFallbackTest` and its MySQL
+twin pass, and no production code selects a template by its fields any more. The four deprecated methods
+(`QuestionGenerationService.generate(QuestionPlan)` and the three `QuestionTemplateSelectionService.selectTemplate`
+overloads) stay on purpose: `QuestionTemplateSelectionServiceTest` (15 tests) and `QuestionGenerationServiceTest`
+(4 tests) enter through them, and 10 of those 19 check live code (`validateTemplateConfig` with its pattern rules,
+and the plan `generateFrom` builds). They go together with their repository query once those tests call the live
+methods directly (comment at the methods). Merged by Shimon in PR #81; a review by Diana is not recorded in this repository.
+
 This is a bug fix inside S4-03, not S4-05 Hidden Recovery. Rules, rewards, timings, the API,
 the schema and the offer state machine are unchanged.
 
@@ -838,6 +846,14 @@ them. `generateFromTemplate` and `validateTemplateConfig` are in use and unchang
 
 The checkpoint statuses below record each review gate as it stood at the time; every
 checkpoint reached main with PR #79, and the post-merge stability fixes with PR #80.
+
+Maintenance check, 2026-11-08: none of these statuses is an open defect in the current code. The
+"B1 PARTIAL - BLOCKED" deadlock was resolved the same day by the second unblock validation (no schema
+or policy change) and has not come back: the MySQL suites since then and the live races of 2026-11-01
+(eight students) and 2026-11-04 (up to 64 students with streams) had no deadlock or lock-wait timeout.
+The "pending Diana review" gates of B1, B2 and C1 ended when Shimon merged PR #79 (`ddfbf3c`,
+2026-10-24); a review by Diana is not recorded in this repository. C2's deployment gates stay open as
+the S4 deployment gates (S6).
 
 Local checkpoint, 2026-10-18, `feature/s4-04-fair-luck`, based on
 `origin/main@84a44230b77f6acb469c6f969070e4c0cf409325`. Approved V5 parameters
@@ -1483,14 +1499,35 @@ Diana has not reviewed this code. Checked by Claude: an independent code review 
 `5ed8a39..2d60286` (no Critical or Important finding; finding M1 fixed below; M2–M6 recorded as
 follow-ups), the full H2 suite (1,468 tests, 0 failures, 116 MySQL-only skipped) and the full MySQL
 8.4 suite on a disposable container (229 tests in 18 classes, 0 failures), and a live 8-player race
-on an isolated MySQL and Redis. Follow-ups from the review, not blocking: Recovery could enforce its
-own lock/lifecycle guard as Luck does (M2); a correct answer reads the Recovery row twice under the
-race lock (M3). M6 is closed on 2026-11-08 by `RacePublicMomentsLiveStreamIntegrationTest` (the real
+on an isolated MySQL and Redis. The review's follow-ups M2 (Recovery's own lock/lifecycle guard) and M3
+(a correct answer read the Recovery row twice) are closed in the final maintenance round below. M6 is closed on 2026-11-08 by `RacePublicMomentsLiveStreamIntegrationTest` (the real
 replay, cursor and dispatchers, only the connection registry stubbed): a projector reconnecting with
 `Last-Event-ID` before the answer gets the answer's QUESTION_ANSWERED once with its Tailwind or Mud
 moment, and after it nothing it already has; an open connection never sends an event twice; the
 projector's JSON carries only `racePlayerId`, `questionId`, `correct` and `moments`; the student stream
 gets the signal alone. Breaking the moments policy or the cursor advance fails four of its five tests.
+
+Final maintenance round, 2026-11-08 (Shimon's approval of the round; no rule, API or schema change):
+- M2, lock and lifecycle: the callers own the transaction, the RacePlayer row lock and the lifecycle check. On an
+  answer, `StudentAnswerSubmissionService` locks the player (in a live race, the race row too, through the
+  decision-time floor) and `ChallengeOfferService.afterAnswer` lets only a NORMAL answer of a RACING student in an
+  IN_PROGRESS race reach Recovery; on a timeout, `QuestionTimeoutService` checks `isActivelyRacing` on its locked
+  player. No lock or `findLocked...` was added: Luck's `LuckTransactionGuard` also demands the race lock, which the
+  timeout path does not hold, and Recovery runs under the same lock as the answer's score and movement. One gap was
+  closed in code: normal energy (`ChallengeEnergyService.earn`) checks RACING and IN_PROGRESS itself and the grant did
+  not, so without the offer step's guard a race that had ended still got +10. `nudgeAfterNormalGain` now checks the
+  same lifecycle. The answer that crosses the line is unchanged: it marks the student FINISHED first, and the offer
+  step stops before Recovery. Pinned by `theGrantItselfRefusesAStudentOrARaceThatIsDone` (failed before: +10 for a
+  finished student), `theOfferStepLeavesRecoveryAloneOnceTheRaceHasEnded` (FINISHED and CANCELLED) and
+  `aStudentWhoHasFinishedNeverReachesRecovery`; removing either half of the new check, or the offer step's
+  IN_PROGRESS check, fails them. A race finishes only once every student is terminal and no service cancels a race
+  yet, so these states are guarded rather than reachable today.
+- M3, two reads: `observeAcceptedAnswer` returns the row it loaded and the offer step hands it to
+  `nudgeAfterNormalGain`, so every NORMAL outcome reads the student's Recovery row once (a correct answer read it
+  twice). Same order (window, normal energy, Recovery, offer), same transaction and lock, no new service or cache.
+  Pinned by `eachNormalOutcomeReadsTheRecoveryRowOnce`: a wrong answer, a penalized timeout, a correct answer and
+  the granting answer each read it once (failed before: 2).
+- `HiddenRecoveryIntegrationTest` now has 22 tests, run on H2 and on MySQL 8.4 (`HiddenRecoveryIntegrationMySqlTest`).
 
 Eligibility requires both actually being behind and demonstrably struggling.
 Never grant assistance solely because a leading player intentionally answers wrong.
@@ -1516,7 +1553,8 @@ Design:
 - One bean, `HiddenRecoveryService`: `observeAcceptedAnswer` (from
   `ChallengeOfferService.afterAnswer`, NORMAL, RACING, IN_PROGRESS), `observePenalizedTimeout`
   (from `QuestionTimeoutService.applyTimeoutConsequence`, right after the NORMAL penalty) and
-  `nudgeAfterNormalGain` (after `ChallengeEnergyService.earn`). All are
+  `nudgeAfterNormalGain` (after `ChallengeEnergyService.earn`, with the row `observeAcceptedAnswer` returned; since
+  2026-11-08 it checks RACING and IN_PROGRESS itself, like `earn`). All are
   `Propagation.MANDATORY`: they run only inside the answer or timeout transaction that
   already holds the RacePlayer PESSIMISTIC_WRITE lock, so a rollback undoes the energy and the
   award together.
@@ -1752,3 +1790,17 @@ Follow `AUTH_REGISTRATION_AND_2FA.md`.
 - CI
 - deployment
 - load and observability.
+
+S4 deployment gates (recorded 2026-11-08). None blocks merging S4 into `main` for development; each
+blocks a public deployment, and the `prod` profile keeps Luck and Hidden Recovery OFF until they close:
+- Schema: `prod` validates the schema (`ddl-auto=validate`) and runs no DDL, so the Luck tables and
+  columns (S4-04, `reviews/s4-04-c2/`) and `race_player_recovery_states` (S4-05) need a reviewed
+  migration first. Both were rehearsed on disposable copies only.
+- Connection budget: Luck's startup check needs the target's real numbers (instances, writer pool, Luck
+  pool, budget, reserve and MySQL `max_connections`). `prod` declares none on purpose, so Luck ON there
+  refuses to start.
+- Security (audit 2026-10): `DataInitializer` seeds the development teacher in every profile, and CSRF is
+  off while the auth cookie's SameSite is configurable (a cross-site deployment needs `SameSite=None`).
+  Both belong to the cookie/CORS/CSRF review above.
+- CI and load: the S4-04 C2 CI proposal is unapplied (`reviews/s4-04-c2/C2_CI_PROPOSAL_EN.md`), and the
+  load runs so far were lab runs.

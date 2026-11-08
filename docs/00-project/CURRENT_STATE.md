@@ -187,7 +187,10 @@ teacher Result Screen and student progressive results are complete on the client
 are merged, and S4-05/S4-06 with C5-04/C5-05 wait on `feature/S4-05-C5-04-recovery-luck-shield`
 (pushed, not merged) for acceptance and the merge. Closure round 2026-11-08: implemented and
 verified (full client, H2 and MySQL suites, an independent server review, a live 8-player race),
-approved by Shimon as project owner (Diana has not reviewed it), not production-ready.
+approved by Shimon as project owner (Diana has not reviewed it), not production-ready. Final maintenance on
+the same day: background music is ON for a new browser (after the first tap; a saved sound choice wins), Hidden
+Recovery reads its row once per answer and its grant checks the race and the student itself (review M2/M3), and the
+production prerequisites are listed as the S4 deployment gates (`SERVER_IMPLEMENTATION_PLAN.md`, S6).
 
 ## Product status board
 

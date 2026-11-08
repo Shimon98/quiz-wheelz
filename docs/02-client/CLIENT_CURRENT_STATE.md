@@ -9,6 +9,14 @@
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
 
+Local checkpoint, 2026-11-08 (final maintenance before the S4/C5 PR): background music is ON for a new browser
+(Shimon's call). The one owner of the default, `AUDIO_SETTINGS_DEFAULTS` (`shared/audio/audioSettings.js`), changed;
+the music still starts only after the first tap or click, and a browser that already saved its sound settings
+(`qw-audio`) keeps them. The four Luck sounds stay as shipped (Tailwind A, Energy Orb B, Mud A, a shield block A).
+Classroom note: every phone that joins now plays the waiting-room and race music, as the projector does; each player
+can mute it with the speaker button. A projector-only music default was proposed and not built. The physical phone
+and projector checks remain, so C5 stays open.
+
 Local checkpoint, 2026-11-05 (C5-05 race moments + C5-06 QA, committed on
 `feature/S4-05-C5-04-recovery-luck-shield`, not merged yet): the teacher projector's live feed tells the S4-06 public moments
 (Turbo success, Safe perfect, a shield earned, Tailwind, Energy Orb, Mud, a shield block) and, from the server's own
@@ -717,8 +725,8 @@ teacher/SSE/results/auth work does not belong to that single-player gate.
 - `shared/gameAudio/gameAudioCatalog.js`: every physical sound once (key, kind, fingerprinted
   URL, gain, cooldown, voices); `AudioProvider` registers it at import; files under
   `client/src/assets/audio/`, provenance in `AUDIO_ASSET_PROVENANCE.md`
-- `stores/audioSettingsStore.js` (`qw-audio`): Music OFF and Sound effects ON by default,
-  volumes stored for later, per-field fallback for invalid stored values
+- `stores/audioSettingsStore.js` (`qw-audio`): Music and Sound effects ON for a new browser (Music since
+  2026-11-08; a saved choice wins), volumes stored for later, per-field fallback for invalid stored values
 - `app/providers/AudioProvider.jsx` (once, in `AppProviders`): settings → engine,
   activation gestures → unlock (kept after unlock for Safari), hidden/visible →
   suspend/resume through `useBrowserLifecycleEvents`; never disposes the engine
@@ -941,7 +949,7 @@ Current audio matrix:
 C5-A … C5-03 merged (PR #75 … #79); S4-01 … S4-04 merged; C5-04 part 1 merged (PR #81)
 → on feature/S4-05-C5-04-recovery-luck-shield (pushed, not merged): S4-05/S4-06, C5-04 part 2,
   C5-04f art and sound, C5-05 race moments and icons, the 2026-11-08 playful copy
-→ Shimon: listening (Luck A/B, music default), physical phone and projector
+→ Shimon: physical phone and projector (2026-11-08: Luck sounds kept as shipped, music ON by default)
 → PR, review, merge
 → client quality package 4 (waiting-room sound preload, audio loader budget, dashboard at 320 px)
 → C6 (S5: teacher registration, 2FA) and S6 production

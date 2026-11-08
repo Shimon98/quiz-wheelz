@@ -28,6 +28,8 @@ public class QuestionTemplateSelectionService {
     // The three selectTemplate overloads have no production caller since S4-03 (only the deprecated
     // QuestionGenerationService.generate(QuestionPlan)): picking by fields can return a look-alike of the template
     // whose turn it is. validateTemplateConfig below is still in use.
+    // Kept on purpose (review 2026-11-08): QuestionTemplateSelectionServiceTest reaches validateTemplateConfig through
+    // these overloads. Point those tests at it first, then delete this chain and its repository query together.
     @Deprecated
     @Transactional(readOnly = true)
     public QuestionTemplate selectTemplate(QuestionPlan questionPlan) {
