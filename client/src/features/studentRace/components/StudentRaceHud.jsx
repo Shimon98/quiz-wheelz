@@ -8,9 +8,10 @@ import StudentRaceSpeedometer from "./StudentRaceSpeedometer";
 import StudentRaceReward from "./StudentRaceReward";
 import "../styles/studentRaceHud.css";
 
-function HudStatChip({ art, label, value, accessibleLabel, sharedRank = false }) {
+function HudStatChip({ art, label, value, accessibleLabel, sharedRank = false, rankPulse }) {
   return (
-    <div className="race-hud-stat" aria-label={accessibleLabel} data-shared-rank={sharedRank}>
+    <div className="race-hud-stat" aria-label={accessibleLabel} data-shared-rank={sharedRank}
+      data-rank-pulse={rankPulse}>
       <div className="race-hud-stat-label">
         <img className="race-hud-stat-art" src={art} alt="" aria-hidden="true" draggable={false} />
         <span>{label}</span>
@@ -32,6 +33,7 @@ export default function StudentRaceHud({
   challengeOffer = null,
   answerFeedback = null,
   controls = null,
+  rankNews = null,
 }) {
   const { t, i18n } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
   const hud = getStudentRaceHudModel(runtimeState, i18n.resolvedLanguage, answerFeedback);
@@ -49,7 +51,10 @@ export default function StudentRaceHud({
         />
         <HudCountdown question={question} challengeOffer={challengeOffer} />
         {hud.rankText != null ? (
+          // C5-05: each told climb remounts the place tile once, which replays its pulse; the text is on the notice line.
           <HudStatChip
+            key={rankNews?.id ?? "place"}
+            rankPulse={rankNews != null}
             art={hud.rankArt}
             label={t(hud.rankLabelKey)}
             value={hud.rankText}
@@ -119,6 +124,9 @@ export default function StudentRaceHud({
         <StudentRaceSpeedometer speed={hud.speed} slowing={hud.slowing} />
         {controls}
       </div>
+      {/* The shield bubble lives only in Pixi. One live line that stays mounted is announced when the shield comes
+          up and never again while the race moves; the panel already tells when the shield blocks mud. */}
+      <span className="sr-only" aria-live="polite">{hud.shieldUp ? t("hud.shieldReady") : null}</span>
       <StudentRaceReward key={hud.rewardKey} reward={hud.reward} />
     </div>
   );

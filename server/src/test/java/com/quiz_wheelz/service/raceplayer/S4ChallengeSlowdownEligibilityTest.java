@@ -108,7 +108,7 @@ class S4ChallengeSlowdownEligibilityTest extends S4ExecutionIntegrationFixture {
         energy(100);
         slowdown(EffectSource.CHALLENGE_TIMEOUT, T - 4000, active ? T + 1 : T);
         transactions.executeWithoutResult(status -> offers.afterAnswer(locked(),
-                questionRepository.findById(questionId).orElseThrow(), Difficulty.EASY, true, T));
+                questionRepository.findById(questionId).orElseThrow(), Difficulty.EASY, true, T, null));
         assertEquals(100, energy());
         assertEquals(1, offerCount());
         assertEquals(id, snapshot().getGameplay().challenge().offer().offerId());

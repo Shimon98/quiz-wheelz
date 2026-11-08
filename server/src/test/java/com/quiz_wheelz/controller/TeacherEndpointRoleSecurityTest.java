@@ -18,14 +18,20 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -41,6 +47,7 @@ class TeacherEndpointRoleSecurityTest {
     @Autowired TokenConfig tokenConfig;
     @Autowired UserRepository users;
     @Autowired RaceLiveStreamRegistry registry;
+    @Autowired ApplicationContext context;
     @MockitoBean RedisPresenceService presence;
 
     @ParameterizedTest
@@ -77,6 +84,32 @@ class TeacherEndpointRoleSecurityTest {
     void teacherStillReachesTheEndpoint() throws Exception {
         mvc.perform(get(ApiPaths.TEACHER_DASHBOARD).cookie(authCookie(user(UserRole.TEACHER))))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void springBootCreatesNoGeneratedUserBesideTheJwtLogin() {
+        assertTrue(context.getBeansOfType(UserDetailsService.class).isEmpty());
+    }
+
+    @Test
+    void httpBasicCredentialsNeverAuthenticate() throws Exception {
+        String basic = Base64.getEncoder().encodeToString("user:any-password".getBytes(StandardCharsets.UTF_8));
+
+        mvc.perform(get(ApiPaths.TEACHER_DASHBOARD).header(HttpHeaders.AUTHORIZATION, "Basic " + basic))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value(ErrorCode.UNAUTHORIZED.name()));
+    }
+
+    @Test
+    void wrongHttpMethodAnswersMethodNotAllowedInsteadOfInternalError() throws Exception {
+        mvc.perform(get(ApiPaths.TEACHER_RACES).cookie(authCookie(user(UserRole.TEACHER))))
+                .andExpect(status().isMethodNotAllowed());
+    }
+
+    @Test
+    void unknownPathAnswersNotFoundInsteadOfInternalError() throws Exception {
+        mvc.perform(get(ApiPaths.TEACHER_DASHBOARD + "/no-such-page").cookie(authCookie(user(UserRole.TEACHER))))
+                .andExpect(status().isNotFound());
     }
 
     @Test

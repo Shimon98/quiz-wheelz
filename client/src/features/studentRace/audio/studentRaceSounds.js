@@ -1,5 +1,6 @@
 import { audioEngine } from "../../../shared/audio";
 import { GAME_AUDIO } from "../../../shared/gameAudio/gameAudioCatalog";
+import { RACE_STREAK_MILESTONES } from "../../../constants/raceGameplayConstants";
 import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig";
 import { presentedMoments } from "../runtime/deriveStudentRaceMoments";
 import { STUDENT_RACE_MOMENT } from "../runtime/studentRaceRuntimeConstants";
@@ -22,12 +23,16 @@ export const STUDENT_RACE_SOUND = Object.freeze({
     GAME_AUDIO.TURBO_LAUNCH,
     GAME_AUDIO.TURBO_FIZZLE,
     GAME_AUDIO.SAFE_PERFECT,
+    GAME_AUDIO.LUCK_TAILWIND,
+    GAME_AUDIO.LUCK_ENERGY_ORB,
+    GAME_AUDIO.LUCK_MUD,
+    GAME_AUDIO.LUCK_SHIELD_BLOCKED,
   ]),
 });
 
 const COMBO_TIERS = Object.freeze([
-  { minStreak: 10, key: GAME_AUDIO.COMBO_TIER_3 },
-  { minStreak: 5, key: GAME_AUDIO.COMBO_TIER_2 },
+  { minStreak: RACE_STREAK_MILESTONES.BLAZING, key: GAME_AUDIO.COMBO_TIER_3 },
+  { minStreak: RACE_STREAK_MILESTONES.HOT, key: GAME_AUDIO.COMBO_TIER_2 },
   { minStreak: STUDENT_RACE_CONFIG.comboMinStreak, key: GAME_AUDIO.COMBO_TIER_1 },
 ]);
 
@@ -39,6 +44,14 @@ const CHALLENGE_RESULT_SOUNDS = Object.freeze({
   [STUDENT_RACE_MOMENT.SAFE_PERFECT]: GAME_AUDIO.SAFE_PERFECT,
 });
 
+// A Luck event arrives with the answer that rolled it; its cue plays beside the answer cue.
+const LUCK_SOUNDS = Object.freeze({
+  [STUDENT_RACE_MOMENT.LUCK_TAILWIND]: GAME_AUDIO.LUCK_TAILWIND,
+  [STUDENT_RACE_MOMENT.LUCK_ENERGY_ORB]: GAME_AUDIO.LUCK_ENERGY_ORB,
+  [STUDENT_RACE_MOMENT.LUCK_MUD]: GAME_AUDIO.LUCK_MUD,
+  [STUDENT_RACE_MOMENT.LUCK_SHIELD_BLOCKED]: GAME_AUDIO.LUCK_SHIELD_BLOCKED,
+});
+
 const MOMENT_SOUNDS = Object.freeze({
   [STUDENT_RACE_MOMENT.WRONG]: GAME_AUDIO.ANSWER_WRONG,
   [STUDENT_RACE_MOMENT.TIME_UP]: GAME_AUDIO.QUESTION_TIME_UP,
@@ -46,6 +59,7 @@ const MOMENT_SOUNDS = Object.freeze({
   [STUDENT_RACE_MOMENT.CHALLENGE_OFFER]: GAME_AUDIO.CHALLENGE_OFFER,
   [STUDENT_RACE_MOMENT.TURBO_ARMED]: GAME_AUDIO.TURBO_ARM,
   ...CHALLENGE_RESULT_SOUNDS,
+  ...LUCK_SOUNDS,
 });
 
 export function soundForMoment({ type, streak = 0 }) {

@@ -27,15 +27,17 @@ public class AcceptedAnswerLuckService {
         this.questions = questions;
     }
 
+    // Returns what Luck did with this answer, so the answer's live event can tell it (S4-06); NONE while Luck is off.
     @Transactional(propagation = Propagation.MANDATORY)
-    public void afterAcceptedNormalAnswer(RacePlayer player, PlayerQuestion question, boolean correct, long instant) {
+    public LuckAnswerResult afterAcceptedNormalAnswer(RacePlayer player, PlayerQuestion question, boolean correct,
+                                                      long instant) {
         if (!enabled || player.getStatus() != RacePlayerStatus.RACING
                 || player.getRace().getStatus() != RaceStatus.IN_PROGRESS) {
-            return;
+            return LuckAnswerResult.NONE;
         }
         try {
             questions.flush();
-            luck.getObject().afterAcceptedManualNormalAnswer(player, question, correct, true, instant);
+            return luck.getObject().afterAcceptedManualNormalAnswer(player, question, correct, true, instant);
         } catch (ApiException exception) {
             throw new IllegalStateException(exception);
         }

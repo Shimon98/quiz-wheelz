@@ -285,7 +285,13 @@ after-commit durable write. `PLAYER_PROGRESS_UPDATED`, `PLAYER_FINISHED`,
 `RACE_FINISHED` and `RACE_STARTED` carry a full ordered player snapshot produced by
 the shared `RaceStandingCalculator`; competition ties are preserved and the client
 does not recalculate affected ranks. `QUESTION_ANSWERED` exposes only
-`racePlayerId`, `questionId` and `correct`.
+`racePlayerId`, `questionId`, `correct` and, since S4-06, an optional `moments` list of
+public facts the answer caused (`{ kind, sourceId }`: a won Turbo or perfect Safe run, a
+Guard Shield earned, an applied Luck event or a shield block). The list is omitted when
+empty, so rows written before S4-06 and answers without moments look the same; clients
+drop a kind they do not know. Failures and Hidden Recovery are never moments. Leads, rank
+changes and streaks stay client-derived from the server's rosters (C5-05). Contract owner:
+`SERVER_IMPLEMENTATION_PLAN.md` (S4-06).
 
 The repository reads bounded committed events after a version in ascending order.
 `GET /api/teacher/races/{raceId}/events/stream` requires TEACHER role, Race ownership
@@ -683,6 +689,13 @@ C5 work still required before feature activation:
 - The current client has no effect-expiry refresh timer and no new moments/HUD
   mapping implemented by B2. Browser rendering, deduplication, audio/Pixi and C5 QA
   remain unproved. No client file is changed in this checkpoint.
+
+Status 2026-11-08: C5-04 implemented this handoff on `feature/S4-05-C5-04-recovery-luck-shield`
+(not merged yet): the mapper keeps `powerUps`/`luck`; the shield renders from its charges with a
+one-time award moment; Luck moments are deduplicated by `eventId` after a first-observation
+baseline. No expiry refresh timer was needed: each effect is judged on its snapshot's server clock
+and the notice line wakes once at the next change (C5-01e in `CLIENT_IMPLEMENTATION_PLAN.md`).
+Luck answer generation is ON in every normal run since 2026-11-05; production keeps it OFF.
 
 Server fixtures: B2TimedMovementTest, B2RuntimeMovementIntegrationTest and its
 MySQL subclass, B2LuckSnapshotIntegrationTest and its MySQL subclass, and

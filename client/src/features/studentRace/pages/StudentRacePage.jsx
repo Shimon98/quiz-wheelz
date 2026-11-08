@@ -6,6 +6,7 @@ import useRaceBootstrap from "../hooks/useRaceBootstrap";
 import useStudentRaceQuestion from "../hooks/useStudentRaceQuestion";
 import useStudentRaceAnswer from "../hooks/useStudentRaceAnswer";
 import useStudentRaceChallenge from "../hooks/useStudentRaceChallenge";
+import useStudentRaceModeCatchUp from "../hooks/useStudentRaceModeCatchUp";
 import useStudentRaceRecoverySync from "../hooks/useStudentRaceRecoverySync";
 import useStudentRaceFinishExperience from "../hooks/useStudentRaceFinishExperience.js";
 import useStudentResultsProof from "../hooks/useStudentResultsProof.js";
@@ -71,6 +72,8 @@ function ResolvedStudentRacePage({ runtimeSession }) {
     isExpired: questionExpired,
     refreshQuestion,
   } = useStudentRaceQuestion({ enabled: questionEnabled });
+
+  useStudentRaceModeCatchUp({ enabled: gameplayActive, question, runtimeState, readAuthoritativeRaceState });
 
   const {
     submitChoice,

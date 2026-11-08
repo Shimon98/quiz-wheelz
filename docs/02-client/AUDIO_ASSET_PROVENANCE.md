@@ -47,11 +47,27 @@ limiter does not flatten the first event, trimmed back to a 3 ms lead.
 | `sfx-turbo-launch` | `sfx/turbo-launch.wav` | Student: Turbo success, with the flame burst | Rocket: a rev, a soft thump, a big opening whoosh and a short high zing, no bells (0.72 s) | WAV PCM16, 48 kHz, mono |
 | `sfx-turbo-fizzle` | `sfx/turbo-fizzle.wav` | Student: Turbo failure | Four engine coughs, each lower and softer, then a small puff (0.71 s) | WAV PCM16, 48 kHz, mono |
 | `sfx-safe-perfect` | `sfx/safe-perfect.wav` | Student: a Safe run with every answer correct | An unhurried C major marimba walk into a soft Cmaj9 chime over a short warm pad (0.96 s) | WAV PCM16, 48 kHz, mono |
+| `sfx-luck-tailwind` | `sfx/luck-tailwind.wav` | Student: a Luck Tailwind arrives with its answer; plays beside the answer cue | Astra V4 candidate A: an airy upward whoosh (filtered noise sweeping from 780 Hz to 3.2 kHz) with a small rising sparkle (0.45 s) | WAV PCM16, 48 kHz, mono |
+| `sfx-luck-energy-orb` | `sfx/luck-energy-orb.wav` | Student: a Luck Energy Orb arrives with its answer; plays beside the answer cue | Astra V4 candidate B: a short pop of light, then a glide up an octave with a twinkle and a breath of air (0.38 s) | WAV PCM16, 48 kHz, mono |
+| `sfx-luck-mud` | `sfx/luck-mud-splash.wav` | Student: a Luck Mud arrives with its answer; plays beside the answer cue | Astra V4 candidate A: a quick wet plop falling 565 to 175 Hz and three small droplets (0.30 s) | WAV PCM16, 48 kHz, mono |
+| `sfx-luck-shield-blocked` | `sfx/luck-shield-blocked.wav` | Student: the Guard Shield blocks a Mud; plays beside the answer cue | Astra V4 candidate A: a soft tap, a shimmering protective ring and an outward flick of air (0.49 s) | WAV PCM16, 48 kHz, mono |
 | `loop-hover-engine` | `loops/hover-engine.wav` | Student: own kart engine while racing | Sawtooth and square voices with a sub, vibrato and filtered air noise; one 2.000 s period cut from the steady state so every voice closes a whole cycle | WAV PCM16, 48 kHz, mono, seamless loop |
 | `sfx-projector-player-joined` | `sfx/projector-player-joined.wav` | Teacher waiting room: a roster refresh brought new players | Two soft rising bubble pops | WAV PCM16, 48 kHz, mono |
 | `sfx-projector-race-start` | `sfx/projector-race-start.wav` | Teacher: race started (on a successful Start) | Soft G major pad with three bell notes | WAV PCM16, 48 kHz, mono |
 | `sfx-projector-player-finished` | `sfx/projector-player-finished.wav` | Teacher projector: one player finished | "Wood and bell": two woodblock taps and a soft bell | WAV PCM16, 48 kHz, mono |
 | `sfx-projector-race-finished` | `sfx/projector-race-finished.wav` | Teacher projector: race finished | "Jungle drums": accelerating conga roll into a marimba chord, kick, clap and cymbal | WAV PCM16, 48 kHz, mono |
+
+The four Luck cues (`sfx-luck-*`) were made for QuizWheelz by Astra on 2026-11-03 (V4 round):
+seeded deterministic synthesis in Python (tones with frequency and level envelopes, filtered
+noise, documented seeds 6213–6244), no samples, trimmed to a short click-free tail and
+peak-normalized to -1 dBFS. Recipe and measurements live in the private, untracked
+`docs/vision/astra_v4_2026-11-03/` (`sources/make_sounds.py`, `audio-manifest.json` with each
+file's SHA-256). They are project-owned like the in-house sounds. Of each A/B pair the client
+took the one that measured best against the answer cues it plays with (Shimon left the pick to
+the client; not yet approved by ear): Tailwind A sits above the answer bells, Energy Orb B glides
+through them instead of holding a note on them, Mud A's droplets match the painted drops, Shield
+Blocked A is shorter and rings with the correct answer's top note. Swapping in the other candidate
+is a file copy.
 
 ## Reviewed and not shipped
 

@@ -49,23 +49,24 @@ export class StudentRaceRenderer {
     this.perspective = this.buildPerspective();
     this.raceObjectGeometry = resolveRaceObjectGeometry(this.layout, this.perspective);
 
+    // Pixi's GPU collector frees textures left undrawn for a minute, so a late Turbo, Safe, Luck, answer burst or
+    // finish would upload its pose, flame or art again at that very moment. Only these stay; Pixi frees them with this
+    // renderer.
+    const prepareTexture = (texture) => {
+      const gpuTextures = this.app.renderer?.texture;
+      if (gpuTextures?.initSource == null) return;
+      texture.source.autoGarbageCollect = false;
+      gpuTextures.initSource(texture.source);
+    };
     this.jungleLayer = new JungleLayer(this.backgroundContainer);
     this.midBaseLayer = new MidBaseLayer(this.worldContainer);
     this.roadLayer = new RoadLayer(this.worldContainer, { road, viewDepthZones });
-    this.finishLineLayer = new FinishLineLayer(this.worldContainer);
+    this.finishLineLayer = new FinishLineLayer(this.worldContainer, { prepareTexture });
     this.sceneryLayer = new SceneryLayer(this.worldContainer);
     this.opponentLayer = new OpponentLayer(this.worldContainer);
-    this.playerKartLayer = new PlayerKartLayer(this.worldContainer, {
-      // Pixi's GPU collector frees textures left undrawn for a minute, so a late Turbo or Safe would upload
-      // its pose and flame again at that very moment. Only these stay; Pixi frees them with this renderer.
-      prepareTexture: (texture) => {
-        const gpuTextures = this.app.renderer?.texture;
-        if (gpuTextures?.initSource == null) return;
-        texture.source.autoGarbageCollect = false;
-        gpuTextures.initSource(texture.source);
-      },
-    });
-    this.effectsLayer = new EffectsLayer(this.effectsContainer);
+    this.playerKartLayer = new PlayerKartLayer(this.worldContainer, { prepareTexture });
+    // The dust and the ground parts of the bursts lie in the world, just behind the player's kart.
+    this.effectsLayer = new EffectsLayer(this.effectsContainer, { prepareTexture, groundContainer: this.worldContainer });
     this.layers = [
       this.jungleLayer,
       this.midBaseLayer,
@@ -138,6 +139,8 @@ export class StudentRaceRenderer {
       raceObjectCameraPosition: position - this.raceObjectGeometry.playerReferenceDistance,
       deltaMs: ticker.deltaMS,
       elapsedMs: ticker.elapsedMS ?? ticker.deltaMS,
+      // One device clock reading per frame; server-clock windows (Luck) add their own snapshot offset to it.
+      clientNowEpochMs: Date.now(),
       width: this.width,
       height: this.height,
       visualPosition: position,

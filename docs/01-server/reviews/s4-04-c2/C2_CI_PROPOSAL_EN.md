@@ -30,9 +30,14 @@ The lab digest is pinned; multi-architecture/runner availability remains a hoste
 | Job | Command in server/ | Database and gate |
 |---|---|---|
 | Ordinary server | bash ./mvnw -B verify | H2/test profile, MySQL env absent; explicitly report gated skips |
-| Luck/B1/B2/C1 | bash ./mvnw -B "-Dtest=*Luck*,B2*,C1*,*Challenge*,*RaceArbitration*" test | quizwheelz_s4_luck_test; QUIZWHEELZ_LUCK_MYSQL_TEST_URL/USER/PASSWORD |
+| Luck/B1/B2/C1 | bash ./mvnw -B "-Dtest=*Luck*,B2*,C1*,*Challenge*,*RaceArbitration*,*Recovery*,NormalQuestionFallback*" test | quizwheelz_s4_luck_test; QUIZWHEELZ_LUCK_MYSQL_TEST_URL/USER/PASSWORD |
 | Independent legacy arbitration | bash ./mvnw -B -Dtest=RaceArbitrationMySqlTest test | quizwheelz_c2_test; QUIZWHEELZ_C2_MYSQL_TEST_URL/USER/PASSWORD |
 | Optional migration smoke (not activated) | build exact main baseline -> synthetic seed -> guarded draft expansion -> current validate -> negative/partial controls | distinct synthetic schemas; only after migration policy and baseline identity are approved |
+
+2026-11-04: the Luck job's pattern also selects `*Recovery*` and `NormalQuestionFallback*`. Before,
+it silently left out two of the sixteen MySQL classes that read QUIZWHEELZ_LUCK_MYSQL_TEST_URL:
+`HiddenRecoveryIntegrationMySqlTest` (S4-05) and `NormalQuestionFallbackMySqlTest` (S4-03 fix).
+GitHub still shows no workflow, check run or status for main or the S4-05 branch.
 
 The legacy arbitration C2 test name predates and is unrelated to S4-04 Checkpoint C2.
 Its two cases are counted separately. Test profiles disable Compose and Redis; no

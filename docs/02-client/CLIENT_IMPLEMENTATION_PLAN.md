@@ -1043,11 +1043,15 @@ merged (PR #78). The server Challenge contract (S4-02 energy/offer/choice + S4-0
 execution) is merged (PR #77). C5-02 (Track B), the rest of C5-03 (Track C) and client quality
 packages 1–3 are merged to `main` with the C5 client PR from
 `feature/C5-02-challenge-choice-energy`; live QA passed on the local server. The S4-04 server
-work (Guard Shield and fair Luck) is on `main` with the Luck flag off by default and its review
-pending; C5-04 presents it after that review. C5-04 part 1 (data and moments only: the
+work (Guard Shield and fair Luck) is on `main`; since 2026-11-05 Luck is ON in every normal run
+(production keeps it OFF). C5-04 part 1 (data and moments only: the
 `powerUps`/`luck` mapping and once-only Luck moments per race player, no effect, cue or HUD) is
-implemented on `feature/C5-04-luck-shield-foundation`, not yet merged; the presentation part
-follows in the same C5-04. The gameplay UI renders server-owned game events and effects, so each further
+merged (PR #81, `main@5ed8a39`). Everything after it is implemented and verified on
+`feature/S4-05-C5-04-recovery-luck-shield` (pushed, not merged): C5-04 part 2 and C5-04f (the Luck
+and shield presentation, Astra's art and the four Luck cues), C5-05 (race moments on the projector,
+the rank notice, the seven-row feed, the moment icons and the playful copy of 2026-11-08) and C5-06.
+Before C5 is `DONE`: Shimon's physical phone and projector checks (listening decided on 2026-11-08: the
+Luck sounds as shipped, music ON by default), then the PR and the merge. The gameplay UI renders server-owned game events and effects, so each further
 part starts from an audit of that real server code; never from a text handoff alone. The
 carried-forward release QA can proceed meanwhile.
 
@@ -1061,7 +1065,7 @@ carried-forward release QA can proceed meanwhile.
   interrupted, or rejects `resume()`, waits for the next user gesture. The temporary
   `/dev/audio` lab, its synthetic fixtures and its scripts are removed.
 - **C5-A2 settings store — DONE:** `stores/audioSettingsStore.js` (`qw-audio`): Music OFF and
-  Sound effects ON by default; the volumes stay in the store for a later UI; invalid stored
+  Sound effects ON by default (Music ON for a new browser since 2026-11-08, see C5-05 / C5-06); the volumes stay in the store for a later UI; invalid stored
   fields fall back one by one; blocked storage keeps working in memory.
 - **C5-A3 registry — DONE:** validated `sfx`/`loop`/`music` descriptors; unknown fields,
   duplicate keys and conflicts throw; an identical re-register is a no-op.
@@ -1122,14 +1126,15 @@ carried-forward release QA can proceed meanwhile.
   hover engine and the Pixi bob/dust; movement uses only `movementUnitsPerSecond`.
 - **C5-01 question context — DONE:** the question model keeps `gameplayContext` (missing →
   `NORMAL`, present but blank → contract error); the question panel reads it (C5-03a).
-- **C5-01d refresh signals — WAITS FOR S4-02:** S4-01 added no SSE event type; the existing
-  signals, the answer/arbitration snapshots and the 2 s race-state poll stay the only refreshes.
-- **C5-01e effect timing — DEFERRED:** the 2 s poll bounds the lag after an effect ends and no
-  production code creates effects yet; add one timer inside `useStudentRaceSynchronization`
-  only if S4-02's real slowdowns prove 2 s too slow.
+- **C5-01d refresh signals — DONE (closed 2026-11-05):** S4-01 to S4-06 added no student SSE
+  event type; the existing signals, the answer/arbitration snapshots and the 2 s race-state poll
+  carry offers, runs, Luck and the shield (live QA in C5-02 to C5-05).
+- **C5-01e effect timing — DONE (closed 2026-11-05):** superseded by C5-04b: an effect window is
+  judged on its snapshot's server clock (`isGameplayEffectActiveAt`) and the notice line wakes once
+  at the next change, so no extra timer in `useStudentRaceSynchronization` was needed.
 - **C5-01f vehicle overlays — PARTIAL:** the player-only mode aura (C5-03b), the thruster
   glow with one burst per result (C5-03f) and the monkey poses (C5-03h) exist; painted flames
-  and speed lines are integrated locally (C5-03j/k); final live/device acceptance is open.
+  and speed lines are merged (C5-03j/k, PR #79); final live/device acceptance is open.
 - **C5-01g DEV scenarios — DONE:** `/dev/race?motionScenario=slowdown|future-effect|future-mode`
   (Turbo/Safe added in C5-03c).
 - **C5-01h first persistent effect presentation — DONE in C5-02g:** the missed-challenge
@@ -1255,7 +1260,7 @@ Built in tracks by server contract: Track A uses only the merged S4-01 vocabular
   Evidence and full before/after source package: `docs/vision/C5_03/codex_clarity_2026-10-18/`.
   Live-race/physical-phone acceptance and C5-03 review/commit remain open.
 
-- **C5-03 final gate — IMPLEMENTED AND TESTED ON THE FEATURE BRANCH (not merged to `main`,
+- **C5-03 final gate — DONE (merged in PR #79, `main@ddfbf3c`; tested on the feature branch
   2026-10-18):** the pose-blend filter compiled its shader on its first draw, a 64–177 ms stall
   at the first Turbo win (DEV measurement); `KartArtCrossfade.prewarm()` now draws one unchanged
   frame through it in the quiet pose-preload moment. Final code, live on the local server:
@@ -1360,13 +1365,271 @@ Built in tracks by server contract: Track A uses only the merged S4-01 vocabular
   `docs/vision/hover_scene_integration_2026-10-20/`, `docs/vision/entry-hero-source/` and
   `docs/vision/p3_cache_privacy_2026-10-19/art_recheck_2026-10-20/` (local).
 
+### C5-04 — Luck and Guard Shield presentation
+
+Built on the merged S4-04 contract (`gameplay.powerUps`, `gameplay.luck`, Luck speed effects
+with source `LUCK_EVENT`); the server decides every Luck event and the shield.
+
+- **C5-04a data and once-only moments — DONE (PR #81):** one mapper, defaults for older
+  snapshots, one moment per server `eventId`, named by the applied type and the outcome.
+- **C5-04b clocks and selectors — DONE (branch `b096e10`, 2026-10-25):** effects and Luck events carry the
+  clock offset of their snapshot; `isGameplayEffectActiveAt`, `selectActiveLuckEffect`,
+  `selectLuckNotice` and `hasGuardShield` in `studentRaceGameplayMode.js`; `presentedMoments`
+  keeps a Luck moment next to a challenge result.
+- **C5-04c temporary Pixi marks and bursts — DONE (branch `b096e10`, 2026-10-25):** `KartLuckMarks`
+  (shield bubble and Tailwind wind inside the bobbing kart, Mud puddle on the ground, Mud also
+  dims the thrusters) and four short bursts in `drawLuckEffect.js` (450/550 ms; the finish wins,
+  reduced motion plays none). Plain `Graphics`, no new assets.
+- **C5-04d text notices — DONE (branch `b096e10`, 2026-10-25; review fixes 2026-10-26):** the question
+  panel's notice line; priority: challenge slowdown notice, then the Turbo/Safe badge, then Luck,
+  then the plain instruction. A Tailwind or Mud notice lasts as long as its server window, also
+  after a refresh. One-shot news (an Energy Orb, a shield block) is told only for the Luck event
+  the moments pipeline announced on this screen (`newestLuckEventId` → `announcedLuckEventId`),
+  so a refresh, a reconnect or another student never retells it. The line wakes up once, when the
+  told notice can change (`selectLuckNoticeChangeAt`), and keeps no timer otherwise. Its resting
+  clock is floored by the latest Luck instant the server sent (`selectLuckClockFloor`), so Luck
+  that arrives after minutes without Luck is told on the very render it arrives. Since 2026-11-02
+  Luck has its own line (C5-04f, Luck line); the panel's line keeps the slowdown notice, the badge
+  and the instruction.
+- **C5-04 shield for screen readers — DONE (branch `b096e10`, 2026-10-26):** the HUD keeps one
+  visually hidden `aria-live="polite"` line that says the shield is ready while
+  `guardShieldCharges > 0` (HE/EN), announced when the shield comes up and never again while the
+  race moves; the panel's notice already tells when the shield blocks mud.
+- **C5-04e dev preview — DONE (branch `b096e10`, 2026-10-25):** `/dev/race?motionScenario=luck` cycles the
+  shield, a Tailwind, an Energy Orb, a blocked Mud Splash and a Mud Splash that lands. It is a
+  visual showcase, not one legal race (four events every 26 s, while the server allows two per
+  race player, 45 s apart), and proves no gameplay balance or server contract.
+- **C5-04 server-made snapshots — DONE (branch `b096e10`, 2026-10-26):** `runtime/serverLuckTestFixtures.js`
+  holds, value for value, the snapshots `B2LuckSnapshotMySqlTest` writes on a disposable MySQL
+  (Tailwind, Energy Orb, Mud, blocked Mud, shield, two events, closed windows), in the same
+  `*TestFixtures.js` style as the other test data.
+  `StudentRaceScreen.serverLuck.test.jsx` runs them through the production mapper, the moments
+  pipeline, the screen and the real Pixi layers: each type plays once with its answer, a refresh
+  keeps only open windows, a reconnect and a student switch replay nothing.
+- **C5-04f final art and sound — IN PROGRESS:** replaces the placeholders; product approval and a
+  physical-phone check remain release gates. Luck was OFF on the server by default until 2026-11-05; since then it is ON in
+  every normal run (production keeps it OFF).
+  - **F1 foundation — DONE (2026-10-29; on the branch, not merged yet):** five Luck art slots in the effect manifest
+    (`LUCK_EFFECT_ART`, every url null, no import of a missing file); `EffectsLayer` loads a slot
+    that has a file once, beside the world, pinned by the renderer's own `prepareTexture`, and
+    drops a failed or late load; the orb drawer draws approved art in the drawn orb's place with
+    the same fade (`Graphics.texture`, alpha set and reset around it). Without files nothing
+    changes: no request, the Graphics drawing, the four Luck cues still silent. Contract:
+    `STUDENT_RACE_SCREEN_AND_ASSETS.md` (Luck and Guard Shield art slots).
+  - **F2 visual — DONE (2026-10-29; on the branch, not merged yet):** the approved mix (shield A, wind A, orb A, blocked B,
+    mud B) drawn in beats on kart-local geometry: `playerKartFrame` + `kartLocalToScreen`, the
+    measured helmet top (`headTop`) and one shared `KART_SHIELD_BUBBLE`. This fixes the orb
+    starting on the helmet on tablets and short phones. The standing shield is glass behind the art
+    with its rim in front and eases in; `EffectsLayer` loads the four burst slots (orb core, leaves,
+    splash, impact flash); `shieldGlint` has no owner. Tests: 1,912 in 201 files; DEV screenshots
+    at 360/390/768 and 20 re-entries plus a WebGL context loss without a leaked context.
+    2026-10-30: the painted mud splash is connected (Shimon's pick, the peak frame of Astra's
+    concept A, cut to the approved review's shape); it brings its own drops. 1,913 tests.
+    2026-11-01: Astra's V3 is connected for the orb, the wind leaf and the blocked flare (Shimon's
+    approval), with V3's motion: the orb drawn whole with a light pulse and two motes instead of a
+    ring, three-band wind ribbons, painted-look mud blobs, a shorter flash pinned at the flare's own
+    point of contact. The mud and the standing shield stay as they were; `shieldGlint` still has
+    no owner. Four burst files, 69 KB; 20 re-entries and a WebGL context loss with the real files.
+    2026-11-02: the mud is Astra's V3 too (Shimon, after the live race showed the drawn puddle
+    under the kart for the whole slowdown). `KartLuckMarks` lays the painted crown behind the kart:
+    it bursts up as the blobs land and settles into the puddle that stays for the Mud window, then
+    fades out; a refresh or reduced motion shows it settled at once. The burst keeps the blobs and
+    V3's four drops, and no dust rises while the kart is in the mud. 1,923 tests in 203 files.
+    2026-11-03: every flying mud blob and drop is painted (`mudDrop`, a glossy teardrop cut from
+    Astra's V2 concept B, head first along its path, mirrored rather than turned over when it heads
+    left): the Mud, the blocked hit and the wrong answer's splash. The answer effects, the dust, the
+    wind streaks and the finish gate are still drawn; their paintings are briefed for Astra (private
+    `docs/vision/c5_04f_2026-10-28/astra_v4_brief_2026-11-03/`). 1,926 tests in 203 files.
+    2026-11-03, later: Astra's V4 round is connected where it beats the drawing (Shimon left the
+    pick to the client): the correct answer's rings and sparkles, the wrong answer's dry dirt, three
+    dust puffs, the Tailwind window's wisps, the finish's rings, paper confetti and gate, the Turbo
+    failure's smoke and the Safe ripple; 13 files, 162 KB. The Turbo speed lines stay drawn. The
+    dust, the dirt and the smoke lie in the world just behind the player's kart, so they never cover
+    it. The four Luck cues are connected too (C5-04f sound): Astra's Tailwind A, Energy Orb B, Mud A
+    and Shield Blocked A, chosen by measurement, each beside the answer cue it arrives with, under
+    it in level. 1,946 tests in 204 files.
+    2026-11-03, closure round: on short frames the horizon fell under the HUD, so the finish gate's
+    banner never showed at 360×640, 375×667 or in a 1366×768 laptop's window. The horizon now stays
+    below the HUD there (`camera.minHorizonY` 160, at most `maxHorizonYRatio` 0.45 of the visible
+    world for a landscape phone); frames 753 px tall and up are unchanged, and no distance or finish
+    rule moved. The four Luck cues were played through the real audio engine in Chrome and mixed at
+    the game's levels with every answer cue, the engine and the music, two Luck cues of one batch
+    included: no clipping (loudest peak −3.2 dBFS). Their A/B pick still waits for Shimon's ear.
+    2026-11-04, release closure (live: a prod-profile server on a migrated copy, Luck and Recovery ON):
+    - Bug: a one-shot Luck notice (Energy Orb, shield block) came back for one frame 5–15 s after its event,
+      in the same page. It happened in both the dev client and the production bundle, 8 times in two races.
+    - Cause: every snapshot dates the same event with its own clock offset. A later, slower snapshot moved
+      the news end a few ms past the notice line's resting clock.
+    - Fix: the snapshot's arrival on this device is a floor for that clock
+      (`gameplay.luck.receivedAtEpochMs`, `selectLuckClockFloor`).
+    - Tests: `useStudentRaceLuckNotice.test.jsx` (fails before the fix),
+      `studentRaceGameplayMode.luck.test.js`, `mapStudentRaceGameplay.test.js` and
+      `applyRaceSnapshot.test.js`. 1,955 tests in 204 files pass.
+    - Live check with the fix: a QA-only scripted Luck draw on the server (outside the repo) gave every
+      shielded student a real `BLOCKED_BY_SHIELD`.
+      - The dev client passed 68/68. Each block showed its burst and played `luck-shield-blocked.wav`
+        once. Under reduced motion it played the sound only; with the files blocked it showed the drawn
+        burst without sound. No one-shot notice came back.
+      - The production bundle (`vite preview`) passed 36/36: notice, cue, reloads, a 5 s network drop,
+        a WebGL context loss, a double tap and the teacher stream.
+    - Still open: the physical phone and Shimon's ear.
+    1,952 tests in 204 files.
+  - **Live Luck QA — DONE (local, 2026-11-01, no code change):** the packaged server of
+    `b096e10` with Luck ON through environment variables only (Recovery OFF) on a disposable
+    MySQL 8.4 and Redis 7.4. Luck OFF changed nothing. With Luck ON, every roll of an
+    eight-student race matched MySQL, and ten real student screens (two races, real clicks) showed
+    each event they got once, on arrival: Tailwind, Energy Orb, a Tailwind applied as an Orb at
+    top speed, and the shield block. Nothing replayed after a refresh, a 5 s network drop, a
+    WebGL context loss or a student switch in the same tab, and 20 re-entries reused the same
+    textures. Not seen on a screen: a plain Mud (the shield comes on the third right answer and
+    blocks it, so a plain Mud is practically a first-roll event) and a Tailwind window that
+    outlives a page reload. (The plain Mud was seen later, in the 2026-11-02 live race; see above.) Found for a product decision: the Luck notice shares the line with the
+    answer feedback and "loading the next question", so it shows for about 1–2 s of its 4 s.
+  - **Luck line — DONE (2026-11-02; on the branch, not merged yet):** Luck notices left the question card's status line for
+    their own line under the HUD, mounted for the whole race (`StudentRaceLuckNotice` in
+    `StudentRaceOverlay`). A notice now shows on the render its event arrives, beside the ✓/✕
+    feedback, while the next question loads, with no question and beside the challenge cards. It
+    keeps the existing timing (the server window for Tailwind and Mud; `luckNoticeMs` for an Orb or
+    a block, only when the moments pipeline announced it) through the same hook. There is no new
+    timer, and the card keeps its height. One polite live region tells each notice once. Tests:
+    `StudentRaceLuckNotice.test.jsx`, `StudentRaceOverlay.luck.test.jsx` (a mutation check fails 15
+    tests). Live, Luck and Recovery ON: every notice showed at once (+0 ms after the page learned
+    the event), beside ✓/✕, at 360, 390 and 768.
+  - **F2 sound — CONNECTED (local, 2026-11-03); kept as shipped on 2026-11-08 (Shimon: Tailwind A,
+    Energy Orb B, Mud A, a shield block A; he may still swap one later):** four WAV
+    cues with provenance rows, the mapping in `studentRaceSounds.js` and the mix check with correct
+    and wrong answers (V4 entry above).
+
+### C5-05 / C5-06 — Race moments and closure QA
+
+**Status:** `VERIFY LOCALLY` — implemented 2026-11-05 to 2026-11-07 on
+`feature/S4-05-C5-04-recovery-luck-shield` (pushed, not merged). Code complete; Shimon's physical phone and
+projector checks are still pending (the listening decision came on 2026-11-08), so C5 is not marked DONE. Evidence: `docs/vision/s4_c5_finish_2026-11-05/`.
+
+- **C5-05a projector feed:** the C3 pipeline is reused as is (`teacherLiveEventPayloadMappers` →
+  `teacherLiveEventRegistry` → `applyTeacherLiveEvent` → `teacherRaceLiveReducer` →
+  `TeacherLiveEventsPanel`); no new stream, hook or store. `mapQuestionAnsweredPayload` keeps the
+  S4-06 `moments` it knows and drops an unknown or broken one on its own. The derivers tell each
+  moment instead of the plain correct answer (Luck after a wrong answer too) and tell `TOOK_LEAD`,
+  `RANK_UP` and `STREAK` (5 and 10, `RACE_STREAK_MILESTONES`, shared with the combo cues) by
+  comparing two server rosters; the client never ranks anyone itself.
+- **C5-05b feed pace:** the pure `teacherFeedAdmission.admitFeedItems`, whose small memory the
+  reducer keeps per race. One row per student per event (the strongest); finishes (top) and lead,
+  Turbo success, Safe perfect and shield block (high) skip the class window, except that a new
+  leader is told at most once per 10 s for the class (`leadCooldownMs`: two students neck and neck
+  produced 41 lead rows in 150 s live); the rest share at most 2 rows per 5 s for the class and 1
+  per student per 4 s (only quieter rows count, so a student's lead never starves their Luck news),
+  and a plain correct answer may take only one of the two places (live, correct answers came first
+  and starved the Luck, streak and climb rows).
+  Times are the events' server `occurredAtEpochMs`, so a replay decides like the live run; an event
+  older than 10 s on arrival (a late replay) moves the race but adds no row, and a server clock
+  that steps back re-anchors the windows. `maxItems` is the list cap (7 since C5-05d). Priorities and timings:
+  `teacherLiveFeedConfig.js`. The projector adds no cue: only finishes keep theirs.
+- **C5-05b one row per answer:** a correct answer's `QUESTION_ANSWERED` rows wait in the reducer for
+  the progress or finish event the same answer writes right after it (a correct answer always adds
+  points, so that event always follows), and both are judged together: the answer's own moment,
+  then a lead, a streak or a climb, and only then the plain correct answer (the lowest priority).
+  Found in the live QA: a correct answer's row used to start the student's 4 s gap and silently
+  block the streak row of the same answer. A wrong answer's rows (Luck may follow one) are judged at
+  once, on their own time: when a wrong answer changes nothing at all (no distance moved since the
+  player's last update, no speed or streak to lose) the server writes no progress event after it
+  (the contract's Blocked Mud case above: `QUESTION_ANSWERED` alone), and the feed cannot know
+  whether one will come. Review 2026-11-05: holding those too left such a row waiting for an
+  unrelated later event and judged on that event's time. The price: a wrong answer's own result is
+  never a streak or a climb, but a lead or climb its progress event may still bring (from the
+  driving settled at that moment) is told as its own row, next to the answer's Luck row.
+- **C5-05c student rank notice:** `deriveStudentRaceMoments` tells `RANK_UP` / `TOOK_LEAD` from the
+  server's rank in accepted snapshots: the first sight of a race player is a baseline, at most one
+  per 5 s of snapshot time, a climb muted by that gap is never told later, none at the finish. The
+  existing notice line (`StudentRaceLuckNotice` + `useStudentRaceLuckNotice`, still the only polite
+  live region for news) tells it for 2.5 s whenever no Luck news holds the line, on the same single
+  wake-up clock (the climb's arrival is one more clock floor), and the place tile pulses once
+  (`race-hud-reward-pulse`, off under reduced motion). No new cue, burst or asset. A correct
+  answer's reward card sits over the notice line for the answer's dwell (`feedbackDelayMs`), so a
+  climb told while it shows starts on the line once the card is gone and then has its full 2.5 s
+  (Shimon's option B, 2026-11-05); that start is one more wake-up of the same clock. Luck news
+  keeps its own timing and still holds the line first. A climb the player loses again is dropped
+  at once (found live: a close race took the place back during that wait and the line said "first
+  place" under a tile showing 2/8), so the line never tells a place the player no longer holds,
+  and winning it back inside the 5 s gap tells nothing again (the moments pipeline mutes that
+  climb). The place tile stops its pulse with it and never pulses again for it.
+- **C5-05d projector feed layout (2026-11-06, Shimon's request):** the feed keeps and shows the seven
+  newest rows (`TEACHER_LIVE_FEED_CONFIG.maxItems` 5 → 7, the one cap the reducer and the panel
+  already share; admission unchanged: more history, not more rows per second). Beside the track
+  (projector container ≥ 72rem) the columns go 18/64/18 → 18/60/22: the feed gains about 22% of
+  width, the track gives up about 6%, the leaderboard keeps its width. Under the track (≥ 48rem)
+  the leaderboard and the feed share 44/56 instead of 50/50. Beside the track the feed list is
+  capped by the screen height (`FEED_CHROME_HEIGHT`, measured: 20.5rem in the workspace, 19rem in
+  fullscreen, floor 16rem) and scrolls inside under its fixed title; stacked layouts let the page
+  scroll, so there is never a second scroll. A long name wraps inside its row (`min-w-0`,
+  `overflow-wrap:anywhere`); before, a name without spaces ran out of its row, and in fullscreen
+  that overflow cost the projector a scrollbar's height. Checked on one live race with the BEFORE
+  and AFTER bundles at the same moment: 9 sizes from 1920×1080 to 390×844, 3 fullscreen sizes and
+  the finished race, Hebrew light and English dark, 270/270 layout checks (seven rows everywhere;
+  inner scroll only at fullscreen 1366×657; the feed never makes the projector taller). Evidence:
+  `docs/vision/s4_c5_finish_2026-11-05/feed_layout_2026-11-06/`. Ready for the Astra V5 icons:
+  rows are 54/78/102 px for one to three lines, so a 32px icon would fit without growing them; C5-05e
+  keeps the measured 28 px slot instead, so the text column keeps its width.
+- **C5-05e moment icons (Astra V5, 2026-11-07, approved by Shimon):** every feed row and every
+  notice-line news shows a painted icon in the slot the drawn icon had. One new art owner,
+  `shared/raceMoments/raceMomentArt.js` (`RACE_MOMENT_ART`), holds the eight new paintings
+  (`assets/game/raceMoments/`, the 1254² masters cropped to their paint, 128 px on the longest side,
+  WebP q90 with lossless alpha, 6.7–12 KB each); the other five moments reuse art the game already
+  has, read from its existing owners: the results' gold medal (a new leader), their streak flame,
+  the Turbo and Safe emblems (`raceChallengeArt.js`) and the leaderboard trophy (the race's end).
+  `TEACHER_FEED_PRESENTATION` and `RACE_NOTICES` gained an `art` field beside their `icon`, so each
+  screen keeps one presentation table. `shared/raceMoments/MomentArtIcon` draws the painting as
+  decoration (`alt=""`, `aria-hidden`; the words say what happened) and, if a file does not load,
+  brings back the drawn icon (the projector's tinted circle, the line's 16 px icon). Sizes, measured
+  live: the projector's 28×28 slot (the old ThemeIcon `md`, 7 px from the row's top, 8 px from the
+  text), so rows, text width and the seven-row fit are unchanged at every size from 1920×1080 to
+  360×800, fullscreen included; the phone line's icon is 20 px, so the line stays 32 px tall. The
+  waiting room's projector preload also fetches the feed's paintings. Checked on one live race
+  (Hebrew light and English dark projectors at 7 sizes, a Hebrew 390 and an English 360 phone with
+  reduced motion): every row and every notice showed its painting, loaded, with no fallback; no page
+  error. Evidence: `docs/vision/s4_c5_finish_2026-11-05/moment_icons_wiring_2026-11-07/`.
+- **C5-05f playful copy (2026-11-08, Shimon's product decision):** the projector's 13 feed lines and
+  the student's lines (the four Luck notices, the climb and the lead, the answer and challenge lines
+  in the question card, the combo title and the finish headline) speak like a race announcer for
+  children, one fixed line per moment, in Hebrew and English. i18n only: no key, kind, priority,
+  timing or rule changed. The lead line lost its 🏆 (the painted gold medal shows it). The plan's
+  `ישש! {{count}} ברצף!` became the combo title (`ישש! קומבו!`) because the streak line is shared with
+  a plain correct answer and would read `ישש! 1 ברצף!`. No student line for a new shield: the student
+  has no one-shot shield moment, and none is built for one sentence. Tests: every feed line uses
+  exactly the values the feed sends; the Hebrew and English race screens have the same keys and the
+  same values; the lead line has no trophy. Live on one 8-player race (two projectors, Hebrew light
+  and English dark; a 390 Hebrew and a 360 English phone): ten of the 13 feed kinds showed their new
+  line (Tailwind, Mud and the race's end did not come up in that race), every notice and answer line
+  fit on one line, Hebrew lines with English names read in the right order, and no `{{…}}` was left.
+  Evidence: `docs/vision/s4_c5_closure_2026-11-08/evidence/`.
+  Pre-PR round (2026-11-08): the three kinds that race did not draw are proved through the real
+  pipeline (server envelopes, mapper, reducer with admission, panel): a Tailwind, a Mud and the race's
+  end each show their own line and painting in Hebrew and English (`TeacherLiveFeedRareMoments.test.jsx`).
+  The projector's fullscreen toggle now catches a browser refusal: Mantine's toggle rejects (seen on a
+  headless projector as `TypeError: not granted`) while its fullscreen events keep the real state, so
+  the button stays as it is and nothing is left unhandled (`TeacherFullscreenToggle.test.jsx`; the
+  results page uses the same toggle).
+- **C5-06 closure QA:** unit tests for the projector (mapper, derivers, admission, reducer,
+  config coverage, cues) and the rank notice (derive, hook, notice, HUD, screen on the server's
+  snapshots), the full client suite, lint and build, and a live 8-player browser run with two
+  projectors (HE dark, EN light) and three student screens. Physical phone and listening: Shimon.
+- **Final maintenance (2026-11-08, Shimon's decisions):** the four Luck sounds stay as shipped (Tailwind A,
+  Energy Orb B, Mud A, a shield block A). Background music is ON for a new browser: `AUDIO_SETTINGS_DEFAULTS`
+  is the one owner of the default (engine start, store fallback, reset), so only `musicEnabled` changed. Music
+  still starts only at the first tap or click, a saved `qw-audio` choice wins over the default, and blocked
+  storage runs on the defaults in memory. Tests: a new browser starts with music on; a saved choice of no music
+  stays; a claimed scene stays silent until the first unlock and then plays once, also after a second tap (failed
+  with the old default); three engine tests that took music off for granted now switch it off themselves, and
+  the settings and provider tests start from music on. Classroom note: every
+  phone that joins plays music too; a projector-only default was proposed, not built.
+
 ### C5 gameplay UI — after S4-02 onward
 
-- junction offer
-- highway/dirt-road question modes
-- fair luck effects
-- assistance presentation
-- live announcements.
+- junction offer — DONE (C5-02, the challenge choice)
+- highway/dirt-road question modes — DONE (C5-03, Turbo Trial is the highway, Safe Run the dirt road)
+- fair luck effects (C5-04)
+- assistance presentation — none by design: Hidden Recovery is never shown (S4-05)
+- live announcements — C5-05.
 
 All visual effects consume server events/effects.
 

@@ -29,17 +29,17 @@ rendered as a race.
 | Four mobile answer choices | Production Math generation and student UI use four unique choices | DONE |
 | Difficulty adaptation | Basic difficulty progression exists; richer skill policy later | PARTIAL |
 | Fair scoring/progress | Continuous server movement; correct adds progress, wrong/timeout do not | DONE foundation |
-| Teacher projected live dashboard | Initial state + SSE + visual race required | PLANNED |
-| SSE for live updates | Preferred first live mechanism | PLANNED |
-| Live overtake/streak/bonus alerts | Derived from server events, never pixels | PLANNED |
-| Probabilistic decision event | Junction offer after server policy threshold/probability | REQUIRED LATER |
-| Highway option | Hard question, high reward/high risk | REQUIRED LATER |
-| Dirt-road option | Short sequence of easier questions, safer lower reward | REQUIRED LATER |
-| Fair luck events | Controlled probability, cooldowns and anti-frustration limits | REQUIRED LATER |
-| Help weaker players | Secret eligibility based on being genuinely behind and struggling | REQUIRED LATER |
+| Teacher projected live dashboard | Initial state + SSE + visual race required | DONE (C3) |
+| SSE for live updates | Preferred first live mechanism | DONE (teacher and student streams) |
+| Live overtake/streak/bonus alerts | Derived from server events, never pixels | VERIFY LOCALLY — S4-06 public moments + C5-05 projector feed and student rank notice (2026-11-05) |
+| Probabilistic decision event | Junction offer after server policy threshold/probability | DONE — the challenge offer at full Challenge Energy (S4-02/C5-02) |
+| Highway option | Hard question, high reward/high risk | DONE — Turbo Trial (S4-03/C5-03) |
+| Dirt-road option | Short sequence of easier questions, safer lower reward | DONE — Safe Run (S4-03/C5-03) |
+| Fair luck events | Controlled probability, cooldowns and anti-frustration limits | VERIFY LOCALLY — S4-04 merged; ON in every normal run and presented (C5-04) on the feature branch |
+| Help weaker players | Secret eligibility based on being genuinely behind and struggling | VERIFY LOCALLY — Hidden Recovery (S4-05) on the feature branch, never shown |
 | Full teacher registration/auth | Email, verification, reset, secure sessions | REQUIRED LATER |
 | Two-factor authentication | TOTP/authenticator-style second factor | REQUIRED LATER |
-| Results/winner | Server-owned finish and final results screen | PLANNED |
+| Results/winner | Server-owned finish and final results screen | DONE (S3-01/C4) |
 
 ## Current release priority
 

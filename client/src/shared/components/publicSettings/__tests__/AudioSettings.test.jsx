@@ -29,11 +29,11 @@ describe("shared audio settings", () => {
     renderWithMantine(<PublicSettingsDialog open onClose={() => {}} />);
 
     const music = screen.getByRole("switch", { name: label("music") });
-    expect(music).not.toBeChecked();
+    expect(music).toBeChecked();
     expect(screen.getByRole("switch", { name: label("effects") })).toBeChecked();
     fireEvent.click(music);
 
-    expect(useAudioSettingsStore.getState()).toMatchObject({ musicEnabled: true, sfxEnabled: true });
+    expect(useAudioSettingsStore.getState()).toMatchObject({ musicEnabled: false, sfxEnabled: true });
   });
 
   it("opens the same controls from the compact button, and every copy shares one state", () => {
@@ -68,7 +68,7 @@ describe("shared audio settings", () => {
 
     const music = screen.getAllByRole("switch", { name: label("music") });
     expect(music).toHaveLength(2);
-    music.forEach((toggle) => expect(toggle).toBeChecked());
+    music.forEach((toggle) => expect(toggle).not.toBeChecked());
   });
 
   it("can keep its dropdown inside its own container, as an element in fullscreen requires", () => {

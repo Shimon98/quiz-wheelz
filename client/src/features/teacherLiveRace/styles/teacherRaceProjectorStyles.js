@@ -23,9 +23,21 @@ const GLASS =
 const WORLD_VERGE =
   "absolute bottom-0 hidden w-[clamp(16rem,34cqw,38rem)] max-w-[48%] translate-y-[16%] @3xl:block";
 
+// C5-05 (2026-11-06): beside the track on a wide projector the live feed keeps its rows within the height the screen
+// leaves between the header and the footer; past that its list scrolls inside, under its fixed title, so it never
+// pushes the footer off a short screen. FEED_CHROME_HEIGHT is everything else on that height, measured on the projector
+// (2026-11-06): header 110px, footer 54, two gaps 24, the panel's title and padding 62, and the padding around the
+// surface, 37px above and below inside the workspace (324px) or 24 in fullscreen (298px), each rounded up a little so
+// the footer never moves. The 16rem floor keeps about three rows. Narrower layouts stack the panels under the track and
+// the page itself scrolls (no second scroll).
+const FEED_CHROME_HEIGHT =
+  "[--qw-projector-feed-chrome-h:20.5rem] [&:fullscreen]:[--qw-projector-feed-chrome-h:19rem]";
+const FEED_LIST_HEIGHT =
+  "@6xl:-mx-1 @6xl:max-h-[max(16rem,calc(100dvh-var(--qw-projector-feed-chrome-h)))] @6xl:overflow-y-auto @6xl:overscroll-contain @6xl:px-1 @6xl:py-0.5 @6xl:[scrollbar-width:thin]";
+
 export const TEACHER_PROJECTOR_STYLES = Object.freeze({
   surface:
-    "@container relative isolate flex min-h-[calc(100dvh-var(--app-shell-header-offset,0rem)-var(--app-shell-footer-offset,0rem)-2*var(--app-shell-padding,0rem))] flex-col gap-3 overflow-hidden rounded-[var(--qw-radius-2xl)] border border-[var(--qw-border)] bg-[linear-gradient(180deg,var(--qw-projector-sky)_0%,var(--qw-projector-horizon)_46%,var(--qw-projector-ground)_100%)] p-3 text-[var(--qw-text)] shadow-[var(--qw-shadow-card)] sm:p-4 [&:fullscreen]:min-h-dvh [&:fullscreen]:overflow-auto [&:fullscreen]:rounded-none [&:fullscreen]:border-0 [&:fullscreen]:p-6",
+    `@container relative isolate flex min-h-[calc(100dvh-var(--app-shell-header-offset,0rem)-var(--app-shell-footer-offset,0rem)-2*var(--app-shell-padding,0rem))] flex-col gap-3 overflow-hidden rounded-[var(--qw-radius-2xl)] border border-[var(--qw-border)] bg-[linear-gradient(180deg,var(--qw-projector-sky)_0%,var(--qw-projector-horizon)_46%,var(--qw-projector-ground)_100%)] p-3 text-[var(--qw-text)] shadow-[var(--qw-shadow-card)] sm:p-4 [&:fullscreen]:min-h-dvh [&:fullscreen]:overflow-auto [&:fullscreen]:rounded-none [&:fullscreen]:border-0 [&:fullscreen]:p-6 ${FEED_CHROME_HEIGHT}`,
 
   decorLayer: "pointer-events-none absolute inset-0 z-0 overflow-hidden",
   worldBackdrop:
@@ -50,8 +62,10 @@ export const TEACHER_PROJECTOR_STYLES = Object.freeze({
   headerStats:
     "flex flex-wrap items-center justify-center gap-2 @3xl:justify-end @6xl:col-start-3 @6xl:min-w-max @6xl:flex-nowrap",
 
+  // C5-05 (2026-11-06): the live feed holds seven rows, so it takes a little of the track's width (18/60/22 beside the
+  // track; 44/56 under it, next to the leaderboard). The leaderboard keeps its width for eight names.
   main:
-    "relative z-10 grid flex-1 grid-cols-1 items-start gap-3 @3xl:grid-cols-2 @6xl:grid-cols-[18fr_64fr_18fr]",
+    "relative z-10 grid flex-1 grid-cols-1 items-start gap-3 @3xl:grid-cols-[44fr_56fr] @6xl:grid-cols-[18fr_60fr_22fr]",
   leaderboardPanel: "@container order-2 min-w-0 @6xl:order-1",
   trackPanel: "order-1 min-w-0 @3xl:col-span-2 @6xl:order-2 @6xl:col-span-1",
   eventsPanel: "order-3 min-w-0",
@@ -131,10 +145,14 @@ export const TEACHER_PROJECTOR_STYLES = Object.freeze({
   leaderboardBarFill:
     "block h-full rounded-full bg-[color:var(--qw-lane-accent)] transition-[width] ease-linear motion-reduce:transition-none",
 
-  eventsList: "m-0 flex list-none flex-col gap-1.5 p-0",
+  eventsList: `m-0 flex list-none flex-col gap-1.5 p-0 ${FEED_LIST_HEIGHT}`,
   eventItem:
     "grid grid-cols-[auto_1fr] items-start gap-2 rounded-[var(--qw-radius-md)] border border-[var(--qw-projector-glass-border)] bg-[var(--qw-surface-alt)] px-2 py-1.5 shadow-[var(--qw-shadow-sm)]",
-  eventText: "text-sm font-semibold @6xl:text-base",
+  // A row's painting takes the 28 px slot the tinted ThemeIcon (md) had, so no row moves (measured 2026-11-07).
+  eventArt: "pointer-events-none size-7 shrink-0 select-none object-contain",
+  // A long name wraps inside its row instead of pushing the row wider than the panel.
+  eventBody: "min-w-0",
+  eventText: "text-sm font-semibold [overflow-wrap:anywhere] @6xl:text-base",
   eventTime: "text-xs text-[var(--qw-text-muted)]",
   eventsEmpty: "text-sm text-[var(--qw-text-muted)]",
 

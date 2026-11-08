@@ -9,8 +9,111 @@
 > for the agreed direction and work order. When they disagree, verify the code first,
 > then update this document in the same pull request.
 
-Local checkpoint, 2026-10-24 (C5-04 part 1, `feature/C5-04-luck-shield-foundation`, not yet
-merged): **the client reads `gameplay.powerUps` and `gameplay.luck`** through the one gameplay
+Local checkpoint, 2026-11-08 (final maintenance before the S4/C5 PR): background music is ON for a new browser
+(Shimon's call). The one owner of the default, `AUDIO_SETTINGS_DEFAULTS` (`shared/audio/audioSettings.js`), changed;
+the music still starts only after the first tap or click, and a browser that already saved its sound settings
+(`qw-audio`) keeps them. The four Luck sounds stay as shipped (Tailwind A, Energy Orb B, Mud A, a shield block A).
+Classroom note: every phone that joins now plays the waiting-room and race music, as the projector does; each player
+can mute it with the speaker button. A projector-only music default was proposed and not built. The physical phone
+and projector checks remain, so C5 stays open.
+
+Local checkpoint, 2026-11-05 (C5-05 race moments + C5-06 QA, committed on
+`feature/S4-05-C5-04-recovery-luck-shield`, not merged yet): the teacher projector's live feed tells the S4-06 public moments
+(Turbo success, Safe perfect, a shield earned, Tailwind, Energy Orb, Mud, a shield block) and, from the server's own
+rosters, a new leader, rank climbs and 5/10 streaks. A pure admission step keeps the pace calm: one row per student
+per event, finishes and the big moments never held back, at most two quieter rows per 5 s for the class and one per
+student per 4 s, and a late replay moves the race without old rows. Since 2026-11-06 the feed keeps seven rows in a
+wider column (18/60/22 beside the track, 44/56 under it) that scrolls inside only beside the track on a short screen
+(C5-05d). The student screen tells its own climb in place
+for 2.5 s on the existing notice line (Luck first; a climb that came with a correct answer starts once that answer's
+reward card is gone; a climb lost again is dropped) and pulses the place tile once (no pulse under reduced motion). No new stream, store or cue. Since 2026-11-07 every feed row and every
+notice shows a painted moment icon (Astra V5, C5-05e) in the slot the drawn icon had, 28 px on the projector and
+20 px on the phone, and the drawn icon comes back if a painting does not load. Since 2026-11-08 the
+projector and student lines speak like a playful race announcer (C5-05f, i18n only). A fresh clone's `npm run dev` reaches the local server without a
+`client/.env` (DEV-only fallback in `httpClient`). Details and tests: `CLIENT_IMPLEMENTATION_PLAN.md` (C5-05 /
+C5-06). Shimon's listening and physical-phone checks remain, so C5 stays open.
+
+Local checkpoint, 2026-11-04 (release closure): a one-shot Luck notice could flash again for one frame seconds after
+its event, when a slower snapshot re-dated the event. The snapshot's arrival now sets a floor for the notice line's clock,
+so a notice that was already shown never comes back. Live against a prod-profile server, a real shield block decided by
+the server showed its burst and played its sound, in the dev client and in the production bundle. Both passed every
+check. Shimon's approval of the sounds by ear and a check on a physical phone remain.
+
+Local checkpoint, 2026-11-03 (C5-04f Astra V4): the effects that were still drawn are painted where
+the painting looks better: the correct answer's rings and sparkles, the wrong answer's dry dirt, the
+dust behind the kart, the Tailwind wisps, the finish's rings, confetti and gate, the Turbo failure's
+smoke and the Safe ripple; the drawing stays as the fallback. The dust, the dirt and the smoke now
+lie behind the kart instead of over it. The four Luck events have their own sounds, beside the
+answer sound. The Turbo speed lines stay drawn. On short screens (small phones, a 1366×768 laptop)
+the horizon now stays below the HUD, so the finish gate shows for most of its approach. The Luck
+sounds still wait for Shimon's approval by ear. A physical phone remains.
+
+Local checkpoint, 2026-11-02 (C5-04f Luck line): Luck notices have their own line under the HUD
+for the whole race, so a notice shows the moment its event arrives, beside the ✓/✕ feedback and
+while the next question loads, instead of waiting for the question card's status line. The timing,
+the one-time telling and the replay rules are unchanged. Live with Luck and Hidden Recovery ON, every
+notice showed at once on real screens (360/390/768). The Mud now looks like Astra's V3 for its whole
+slowdown: the painted mud bursts up behind the kart when the blobs land and stays as a puddle the kart
+sits in until the window ends (it was a drawn puddle of brown ellipses), and no dust rises from it.
+Every mud drop that flies (the Mud, the blocked hit, the wrong answer's splash) is a painted drop too.
+Sound and a physical phone remain.
+
+Local checkpoint, 2026-11-01 (C5-04f live Luck QA, no code change): with the server's Luck turned
+on only for a disposable MySQL 8.4 and Redis, real student screens showed every Luck event they
+received once, on arrival, and never again after a refresh, a network drop, a WebGL context loss or
+a student switch; 20 re-entries of a live race reused the same Luck textures. The Luck notice line
+waits for the answer feedback and the next question, so it is visible for only about 1–2 s of its
+4 s (settled on 2026-11-02: Luck got its own line, see that checkpoint). Sound and a physical phone
+remain before C5-04f closes.
+
+Local checkpoint, 2026-10-29 (C5-04f F2 visual, same branch, later committed in `de4cbc4`): the Luck effects now
+follow the approved mix (shield A, wind A, orb A, blocked B, mud B) and are laid out on the kart
+as drawn (`playerKartFrame`, the measured helmet top, one shared shield bubble), so the Energy Orb
+no longer starts on the helmet on tablets and short phones and the blocked hit lands on the
+shield's own edge. The standing shield is glass behind the art with its rim in front. The four
+burst art slots hold painted files and load once beside the world (69 KB together): the mud
+splash (2026-10-30, a wide, low splash cut from Astra's concept A) and, since 2026-11-01, Astra's
+V3 orb, wind leaf and blocked flare with V3's motion. Luck cues are still silent. 1,913 tests in
+201 files; lint and build pass.
+
+Local checkpoint, 2026-10-29 (C5-04f F1, on top of `b096e10` of the same branch, which is pushed
+and not merged): the Luck art slots exist before any art does. The effect manifest reserves five
+slots (`LUCK_EFFECT_ART`, every url null), and `EffectsLayer` loads a slot with a file once beside
+the world, pinned in GPU memory by the renderer's own `prepareTexture`; a failed or late load is
+dropped and the Graphics drawing stays. The orb drawer draws approved art in the drawn orb's place
+with the same fade. With no files nothing changes: no request, no new sound.
+
+Local checkpoint, 2026-10-26 (independent review fixes on the same branch, not yet merged): an
+Energy Orb or a shield block is told in the notice line only for the Luck event the moments
+pipeline announced on this screen, so a refresh, a reconnect or a student switch no longer
+retells it (Tailwind and Mud notices still last as long as their window). The line keeps no
+timer between notices: it wakes up once when the told notice can change. The HUD gives screen
+readers one live line while a shield is up (HE/EN). Each Luck type is now proven on snapshots
+the server itself wrote on a disposable MySQL (`serverLuckTestFixtures.js`), through the mapper,
+the screen and the real Pixi layers; the dev Luck preview is documented as a visual showcase,
+not a legal race. Luck that arrives after a long quiet stretch is told on the render it arrives
+(the line's resting clock is floored by the latest Luck instant). 1,874 tests in 197 files; lint
+and build pass.
+
+Local checkpoint, 2026-10-25 (C5-04 part 2, `feature/S4-05-C5-04-recovery-luck-shield`, not yet
+merged): **Luck and the Guard Shield are presented with temporary Pixi `Graphics`** (no new art
+or sound; the final assets come later in C5-04). The kart shows a shield bubble while the server
+reports a charge, wind streaks during a Tailwind window and a mud puddle with dimmed thrusters
+during a Mud window; each new Luck event plays one short burst (the finish still wins, reduced
+motion plays none). Effects and Luck events now carry the clock offset of the snapshot that
+delivered them, like offers, so a window ends on time between snapshots. The question panel's
+notice line tells the news (Tailwind and Mud while their window lasts, an Energy Orb or a shield
+block for a short while; the challenge slowdown notice and the Turbo/Safe badge keep priority),
+so reduced-motion and screen-reader players get it too. A Luck event that arrives with a
+challenge result is no longer dropped from presentation. The 409
+`QUESTION_TEMPLATE_NOT_AVAILABLE_FOR_PLAYER` now tells the student to ask the teacher, and a
+question newer than the race state triggers one race-state read instead of a skeleton until the
+next poll. Dev preview: `/dev/race?motionScenario=luck`. A live race against the real server
+(Luck and Recovery ON) showed two real Tailwinds and a real Guard Shield end to end. 1,830 tests
+in 195 files; lint and build pass.
+
+Checkpoint, 2026-10-24 (C5-04 part 1, merged with PR #81, `main@5ed8a39`): **the client reads
+`gameplay.powerUps` and `gameplay.luck`** through the one gameplay
 mapper. Guard Shield charges are the only shield state (the award question is history, never a
 charge); an older snapshot gets no shield and no Luck history, and a malformed part or event is
 dropped on its own without resetting the rest of the gameplay. The existing moment owner
@@ -565,7 +668,9 @@ teacher/SSE/results/auth work does not belong to that single-player gate.
   them
 - `useFreshFeedItem` is the "something new happened" seam (lightning pulse today,
   future sound cues); the connection footer shows the Wi-Fi art only while LIVE
-- the waiting room preloads the projector and vehicle art once and never blocks Start
+- the waiting room preloads the projector, vehicle and feed moment art once and never blocks Start
+- the fullscreen toggle (live projector and results) leaves a browser refusal handled: the button keeps
+  the real state and no error escapes
 - the workspace shell collapses its navbar at `lg` on the live route (`sm` elsewhere)
   from one breakpoint key; the preferred-device notice sits below the header.
 
@@ -620,8 +725,8 @@ teacher/SSE/results/auth work does not belong to that single-player gate.
 - `shared/gameAudio/gameAudioCatalog.js`: every physical sound once (key, kind, fingerprinted
   URL, gain, cooldown, voices); `AudioProvider` registers it at import; files under
   `client/src/assets/audio/`, provenance in `AUDIO_ASSET_PROVENANCE.md`
-- `stores/audioSettingsStore.js` (`qw-audio`): Music OFF and Sound effects ON by default,
-  volumes stored for later, per-field fallback for invalid stored values
+- `stores/audioSettingsStore.js` (`qw-audio`): Music and Sound effects ON for a new browser (Music since
+  2026-11-08; a saved choice wins), volumes stored for later, per-field fallback for invalid stored values
 - `app/providers/AudioProvider.jsx` (once, in `AppProviders`): settings → engine,
   activation gestures → unlock (kept after unlock for Safari), hidden/visible →
   suspend/resume through `useBrowserLifecycleEvents`; never disposes the engine
@@ -648,7 +753,7 @@ Current audio matrix:
 | Public Settings dialog | Music / Sound effects switches only | none | none |
 | Student join | game music (`music-game-main`, soft on phones) | none | none |
 | Student waiting room | game music, same track without a restart | race start, only on an observed WAITING to PLAYING change | none |
-| Student race | race music (`music-race-main`, soft on phones) | correct; combo in three tiers from the server streak (2+, 5+, 10+) instead of correct; wrong; time up; finish; challenge offer instead of the correct cue it arrives with; Turbo armed once the server holds the run; Turbo launch, Turbo fizzle, Safe complete (combo tier 1) and Safe perfect instead of the answer cue of their batch | hover engine while gameplay is ready and the player races; rate from the server speed |
+| Student race | race music (`music-race-main`, soft on phones) | correct; combo in three tiers from the server streak (2+, 5+, 10+) instead of correct; wrong; time up; finish; challenge offer instead of the correct cue it arrives with; Turbo armed once the server holds the run; Turbo launch, Turbo fizzle, Safe complete (combo tier 1) and Safe perfect instead of the answer cue of their batch; the four Luck cues (Tailwind, Energy Orb, Mud, shield block) beside the answer cue | hover engine while gameplay is ready and the player races; rate from the server speed |
 | Student finish ceremony | race music continues | finish (once) | engine stops at the finish |
 | Student results | game music (`music-game-main`, scene gain 0.4, below the waiting room) after the race music fades out | none | none |
 | Teacher waiting room | game music (projector level) | one soft pop per roster refresh that brings new players; race start on a successful Start | none |
@@ -700,11 +805,11 @@ Current audio matrix:
   draws one ground aura between the shadow and the kart: drawn once, recolored by tint,
   additive blending so it reads as a glow on any road color; hidden for NORMAL,
   CHALLENGE_CHOICE and unknown modes; Turbo and Safe stay steady (Turbo alpha 0.12 after C5-03j)
-- later local work: painted exhaust and restrained speed lines (C5-03j); the monkey poses,
+- later work (merged in PR #79): painted exhaust and restrained speed lines (C5-03j); the monkey poses,
   the thruster glow, the result moments and Safe progress are C5-03 (see below). The Challenge
   choice itself is C5-02 (next section).
 
-## Challenge choice and energy (C5-02, committed locally as `f6b9878`)
+## Challenge choice and energy (C5-02, `f6b9878`, merged in PR #79)
 
 - `runtime/mapStudentRaceChallenge.js` maps `gameplay.challenge` once (energy, threshold,
   offer, run, last result); a broken part drops only that part (`mapOrNull`), the offer
@@ -841,14 +946,11 @@ Current audio matrix:
 ## Immediate client priority
 
 ```text
-C5-A audio merged (PR #75); S4-01 contract merged (PR #74); C5-01 merged (PR #76);
-S4-02 + S4-03 Challenge contract merged (PR #77)
-→ C5-03 presentation groundwork + C5-01h slowdown explanation merged (PR #78)
-→ C5-02 Challenge Choice committed locally (f6b9878)
-→ C5-03 results, Safe progress and thrusters implemented locally, live QA passed (review, then
-  the commit); 2026-10-18 closeout and Turbo polish on top, live QA race 172 (23/23)
-→ C5-03k/l success-only launch, normal catch-up, clean Turbo/Safe blending and restrained Safe results:
-  local QA; final live/device QA open
-→ S4-04 handoff to the server
-→ meanwhile: the pre-release device/recovery QA
+C5-A … C5-03 merged (PR #75 … #79); S4-01 … S4-04 merged; C5-04 part 1 merged (PR #81)
+→ on feature/S4-05-C5-04-recovery-luck-shield (pushed, not merged): S4-05/S4-06, C5-04 part 2,
+  C5-04f art and sound, C5-05 race moments and icons, the 2026-11-08 playful copy
+→ Shimon: physical phone and projector (2026-11-08: Luck sounds kept as shipped, music ON by default)
+→ PR, review, merge
+→ client quality package 4 (waiting-room sound preload, audio loader budget, dashboard at 320 px)
+→ C6 (S5: teacher registration, 2FA) and S6 production
 ```

@@ -4,6 +4,7 @@ import { Snail } from "lucide-react";
 
 import { I18N_NAMESPACES } from "../../../i18n/i18nConstants";
 import { UI_TONES } from "../../../app/theme/quizWheelzTheme";
+import { isQuestionUnavailableError } from "../../../errors/errorChecks";
 import { getRaceGameplayPresentation } from "../config/raceGameplayPresentationConfig";
 import { STUDENT_RACE_FEEDBACK } from "../runtime/studentRaceRuntimeConstants";
 import { STUDENT_RACE_PANEL_STYLES } from "../styles/studentRacePanelStyles";
@@ -48,6 +49,7 @@ function SafeProgress({ progress }) {
   );
 }
 
+// Luck is told on its own line (StudentRaceLuckNotice), never here: this line gives way to the answer feedback.
 function IdleLine({ gameplayContext, slowdownNoticeKey, safeProgress }) {
   const { t } = useTranslation(I18N_NAMESPACES.STUDENT_RACE);
 
@@ -74,6 +76,11 @@ function IdleLine({ gameplayContext, slowdownNoticeKey, safeProgress }) {
       {t("question.instruction")}
     </p>
   );
+}
+
+// No usable question is a classroom problem the teacher can fix, so it is named; any other failure keeps the title.
+function awaitingErrorKey(error) {
+  return isQuestionUnavailableError(error) ? `${I18N_NAMESPACES.ERRORS}:${error.messageKey}` : "question.errorTitle";
 }
 
 export default function StudentRaceQuestionPanel({
@@ -143,7 +150,7 @@ export default function StudentRaceQuestionPanel({
       {isAwaitingNextQuestion ? (
         <p role="status" className={`${STUDENT_RACE_PANEL_STYLES.statusLine} text-[var(--qw-text-muted)]`}>
           <span>
-            {t(error ? "question.errorTitle" : "question.loadingNext")}
+            {t(error ? awaitingErrorKey(error) : "question.loadingNext")}
           </span>
           {error ? <StudentRaceInlineRetryButton onRetry={onRetry} /> : null}
         </p>

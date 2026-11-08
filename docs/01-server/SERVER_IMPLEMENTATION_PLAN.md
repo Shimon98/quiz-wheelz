@@ -560,7 +560,8 @@ observed. Production migrations remain Phase 6 work.
 **Status:** `MERGED with S4-03 (PR #77, main@6808d16)`
 
 Integration branch: `feature/s4-02-03-challenge-flow`. S4-02 must not be merged to
-main alone; S4-03 must first implement the selected Turbo Trial / Safe Run flow.
+main alone; S4-03 must first implement the selected Turbo Trial / Safe Run flow. (Done: both merged together in
+PR #77.)
 
 - correct NORMAL EASY/MEDIUM/HARD answers earn 20/25/30 Challenge Energy, bounded
   to 0..100 in application validation and the DB check; wrong answers, timeouts,
@@ -607,16 +608,16 @@ with an enforced 0..100 CHECK. The offer table remains InnoDB with its expected
 lifecycle CHECK and player/status index unchanged. Application startup passed
 without schema errors, and overall/application, MySQL and Redis health were UP.
 H2 persistence, constraints, rollback and concurrent answer/choice/expiry tests passed.
-Production migrations remain Phase 6 work. S4-02 is still held from main until S4-03;
-S4-03 is implemented locally / under review as recorded below.
+Production migrations remain Phase 6 work. S4-02 was held from main until S4-03; both merged
+together in PR #77.
 
 ### S4-03 — Turbo Trial + Safe Run
 
-**Status:** `MERGED (PR #77, main@6808d16); template-safety bug fix below, not merged yet`
+**Status:** `MERGED (PR #77, main@6808d16); template-safety bug fix below merged in PR #81 (main@5ed8a39)`
 
 Local baseline: S4-02 commit `75bcc5e288217fb898ceb70fe9492c22aa46271a` on
-`feature/s4-02-03-challenge-flow`. The combined Challenge flow is implemented locally;
-DEV startup/schema/health verification passed; Diana review remains a gate before PR/main integration.
+`feature/s4-02-03-challenge-flow`. The combined Challenge flow was implemented on that branch;
+DEV startup/schema/health verification passed; it merged in PR #77.
 
 - both ACTIVE EASY and HARD templates for the race subject are required before an
   offer consumes Energy; absence preserves Energy 100 and exposes neither choice
@@ -665,7 +666,8 @@ never create an offer automatically. The next qualifying NORMAL correct answer
 may create an offer if all existing gates pass. Effects remain unchanged and the
 SPEED_EFFECT_OVERLAP defensive invariant remains; no stacking or cooldown was added.
 Energy 100 does not guarantee an offer; offer existence remains server-authoritative.
-Production migrations remain Phase 6; S4-04 / S4-05 / S4-06 remain PLANNED.
+Production migrations remain Phase 6. S4-04 is merged (PR #80); S4-05 and S4-06 are implemented on
+`feature/S4-05-C5-04-recovery-luck-shield` (see their sections below).
 
 #### Challenge question selection - 2026-10-24
 
@@ -698,7 +700,15 @@ server errors.
 
 #### Challenge template safety - 2026-10-24/25 (S4-03 bug fix)
 
-**Status:** `FIXED (prevention + recovery + NORMAL fallback) on feature/C5-04-luck-shield-foundation; PR to main, not merged; for Diana's review`
+**Status:** `FIXED (prevention + recovery + NORMAL fallback); MERGED (PR #81, main@5ed8a39); for Diana's review`
+
+Maintenance check, 2026-11-08: still fixed in the current code. `NormalQuestionFallbackTest` and its MySQL
+twin pass, and no production code selects a template by its fields any more. The four deprecated methods
+(`QuestionGenerationService.generate(QuestionPlan)` and the three `QuestionTemplateSelectionService.selectTemplate`
+overloads) stay on purpose: `QuestionTemplateSelectionServiceTest` (15 tests) and `QuestionGenerationServiceTest`
+(4 tests) enter through them, and 10 of those 19 check live code (`validateTemplateConfig` with its pattern rules,
+and the plan `generateFrom` builds). They go together with their repository query once those tests call the live
+methods directly (comment at the methods). Merged by Shimon in PR #81; a review by Diana is not recorded in this repository.
 
 This is a bug fix inside S4-03, not S4-05 Hidden Recovery. Rules, rewards, timings, the API,
 the schema and the offer state machine are unchanged.
@@ -824,13 +834,26 @@ Follow-up for Diana (not part of this fix): QuestionGenerationService.generate(Q
 and the three QuestionTemplateSelectionService.selectTemplate overloads no longer have a
 production caller (only their own unit tests). They are left unchanged; remove them or keep
 them as you prefer.
+2026-10-25 (S4-05 package): the four methods are now marked `@Deprecated` with a one-line
+reason (choosing by fields can return a look-alike of the template whose turn it is), so new
+code does not pick them up. Plain `@Deprecated`, not `forRemoval`: removal stays your call, and
+a removal warning would also fire inside the deprecated `generate` and in every test that calls
+them. `generateFromTemplate` and `validateTemplateConfig` are in use and unchanged.
 
 ### S4-04 - Power-Ups + fair Luck
 
-**Status:** `A/B1/B2/C1/C2 on main (PR #79); 2026-10-24 stability fixes on main (PR #80, main@9a41ce7); rollout OFF`
+**Status:** `A/B1/B2/C1/C2 on main (PR #79); 2026-10-24 stability fixes on main (PR #80, main@9a41ce7); Luck ON in every normal run since 2026-11-05 (production OFF)`
 
 The checkpoint statuses below record each review gate as it stood at the time; every
 checkpoint reached main with PR #79, and the post-merge stability fixes with PR #80.
+
+Maintenance check, 2026-11-08: none of these statuses is an open defect in the current code. The
+"B1 PARTIAL - BLOCKED" deadlock was resolved the same day by the second unblock validation (no schema
+or policy change) and has not come back: the MySQL suites since then and the live races of 2026-11-01
+(eight students) and 2026-11-04 (up to 64 students with streams) had no deadlock or lock-wait timeout.
+The "pending Diana review" gates of B1, B2 and C1 ended when Shimon merged PR #79 (`ddfbf3c`,
+2026-10-24); a review by Diana is not recorded in this repository. C2's deployment gates stay open as
+the S4 deployment gates (S6).
 
 Local checkpoint, 2026-10-18, `feature/s4-04-fair-luck`, based on
 `origin/main@84a44230b77f6acb469c6f969070e4c0cf409325`. Approved V5 parameters
@@ -848,7 +871,8 @@ and B2 sections supersede its integration/read-strategy status.
 - Detached policies cover third cumulative correct NORMAL answer Shield,
   eligibility, weighted injected RNG, anti-Mud, Orb fallback/capping and cooldown.
   Fairness uses the race's last event sequence as the opportunity boundary.
-  The 60-second activity window remains provisional; pure tests compare 30/60/90.
+  The 60-second activity window is the initial product rule (approved by Shimon on 2026-11-04,
+  to be revisited with real usage data; the constant keeps its name); pure tests compare 30/60/90.
 - FairLuckService requires caller-held PESSIMISTIC_WRITE locks on its managed
   RacePlayer and Race and an owned, managed, ANSWERED NORMAL question with an
   explicit first-accepted manual-answer signal. It is not connected to answers.
@@ -1439,23 +1463,320 @@ Rules, probabilities, fairness, Shield, cooldown, cap and effect lifecycle are u
    at the shown 2.0 becomes an Energy Orb instead of a no-op event.
 
 Unexpected 500 responses are not logged by the global catch-all handler. That gap is
-older than S4-04 and is proposed as a separate change. Open release gates are
+older than S4-04 and is proposed as a separate change. (Closed 2026-10-25 in the S4-05
+package: `GlobalExceptionHandler` logs the method, the path and the stack trace at ERROR, and a
+real 500 still gets the same generic body. The live run showed that the catch-all also turned
+Spring's own request errors into 500 (`GET /api/teacher/races` is POST-only: 405) and that
+every SSE stream a student closed would have been logged as a failure. Spring MVC now answers
+those request errors with their real status (405/404/400) and Spring Boot's standard error
+JSON instead of the app's error body (the client already classifies them by status), and a
+stream the student closed ends with no answer and no log line; see
+`GlobalExceptionHandlerFallbackTest`. Independent review, 2026-10-26: an IOException on a
+started response is not proof of a disconnect. Known disconnects (Spring's helper, or the
+Windows words for Winsock 10053/10054 on an IOException) stay silent; any other IOException
+after the response started leaves one WARN line and still no body.) Open release gates are
 unchanged: migration policy, target budget numbers, hosted CI, product approval of the
 provisional 60000 ms window and the client presentation (C5-04).
+Live QA, 2026-11-01 (C5-04f; packaged jar of `b096e10`; Luck ON through environment variables
+only, Recovery OFF; disposable MySQL 8.4.11 with `max_connections` 151 and Redis 7.4.9): the
+startup check refused a missing budget, budget 11 (one instance × writer 10 + peer 2 = 12) and
+budget 150 + reserved 10 above 151, and accepted budgets 12 and 20 with reserved 5. In a
+five-minute race of eight students, all 23 rolls matched MySQL: types, effect windows, Orb energy
+up to the cap, the shield on the third right NORMAL answer, the 45 s cooldown (shortest gap
+45,077 ms), at most two events, no roll during another speed effect or an open challenge, and no
+roll after a finish. There were no 5xx, no deadlock and no lock-wait timeout, with a peak of 11
+app connections. With eight students answering their first question at the same moment, the
+answer p95 was 996 ms with Luck ON (every first answer rolls) against 632 ms with Luck OFF; later
+answers were unchanged. The release gates above stay open.
 
 ### S4-05 — Hidden Recovery
 
-**Status:** `PLANNED`
+**Status:** `IMPLEMENTED; ON in every normal run since 2026-11-05 (application.properties; dev profile alone from 2026-11-02; kill switch QUIZWHEELZ_RECOVERY_ENABLED=false), code default false, test and prod profiles OFF; on feature/S4-05-C5-04-recovery-luck-shield (pushed), not merged; product rules approved by Shimon 2026-11-04, for Diana's review; production DDL rehearsed on disposable copies, not applied to any target`
+
+Closure 2026-11-08: implemented and verified, not merged, not production-ready. Shimon, as project
+owner, approved S4-05 (with its three 2026-11-04 rules) and S4-06 without waiting for Diana's review;
+Diana has not reviewed this code. Checked by Claude: an independent code review of the server diff
+`5ed8a39..2d60286` (no Critical or Important finding; finding M1 fixed below; M2–M6 recorded as
+follow-ups), the full H2 suite (1,468 tests, 0 failures, 116 MySQL-only skipped) and the full MySQL
+8.4 suite on a disposable container (229 tests in 18 classes, 0 failures), and a live 8-player race
+on an isolated MySQL and Redis. The review's follow-ups M2 (Recovery's own lock/lifecycle guard) and M3
+(a correct answer read the Recovery row twice) are closed in the final maintenance round below. M6 is closed on 2026-11-08 by `RacePublicMomentsLiveStreamIntegrationTest` (the real
+replay, cursor and dispatchers, only the connection registry stubbed): a projector reconnecting with
+`Last-Event-ID` before the answer gets the answer's QUESTION_ANSWERED once with its Tailwind or Mud
+moment, and after it nothing it already has; an open connection never sends an event twice; the
+projector's JSON carries only `racePlayerId`, `questionId`, `correct` and `moments`; the student stream
+gets the signal alone. Breaking the moments policy or the cursor advance fails four of its five tests.
+
+Final maintenance round, 2026-11-08 (Shimon's approval of the round; no rule, API or schema change):
+- M2, lock and lifecycle: the callers own the transaction, the RacePlayer row lock and the lifecycle check. On an
+  answer, `StudentAnswerSubmissionService` locks the player (in a live race, the race row too, through the
+  decision-time floor) and `ChallengeOfferService.afterAnswer` lets only a NORMAL answer of a RACING student in an
+  IN_PROGRESS race reach Recovery; on a timeout, `QuestionTimeoutService` checks `isActivelyRacing` on its locked
+  player. No lock or `findLocked...` was added: Luck's `LuckTransactionGuard` also demands the race lock, which the
+  timeout path does not hold, and Recovery runs under the same lock as the answer's score and movement. One gap was
+  closed in code: normal energy (`ChallengeEnergyService.earn`) checks RACING and IN_PROGRESS itself and the grant did
+  not, so without the offer step's guard a race that had ended still got +10. `nudgeAfterNormalGain` now checks the
+  same lifecycle. The answer that crosses the line is unchanged: it marks the student FINISHED first, and the offer
+  step stops before Recovery. Pinned by `theGrantItselfRefusesAStudentOrARaceThatIsDone` (failed before: +10 for a
+  finished student), `theOfferStepLeavesRecoveryAloneOnceTheRaceHasEnded` (FINISHED and CANCELLED) and
+  `aStudentWhoHasFinishedNeverReachesRecovery`; removing either half of the new check, or the offer step's
+  IN_PROGRESS check, fails them. A race finishes only once every student is terminal and no service cancels a race
+  yet, so these states are guarded rather than reachable today.
+- M3, two reads: `observeAcceptedAnswer` returns the row it loaded and the offer step hands it to
+  `nudgeAfterNormalGain`, so every NORMAL outcome reads the student's Recovery row once (a correct answer read it
+  twice). Same order (window, normal energy, Recovery, offer), same transaction and lock, no new service or cache.
+  Pinned by `eachNormalOutcomeReadsTheRecoveryRowOnce`: a wrong answer, a penalized timeout, a correct answer and
+  the granting answer each read it once (failed before: 2).
+- `HiddenRecoveryIntegrationTest` now has 22 tests, run on H2 and on MySQL 8.4 (`HiddenRecoveryIntegrationMySqlTest`).
 
 Eligibility requires both actually being behind and demonstrably struggling.
 Never grant assistance solely because a leading player intentionally answers wrong.
 
+Rules (approved by Shimon on 2026-10-25, Diana's principle above), constants in
+`common/RecoveryRules`:
+- Evidence: the 6 most recent NORMAL outcomes, the current correct answer included, with
+  at least 3 failures. A failure is a wrong accepted NORMAL answer or a NORMAL timeout whose
+  penalty was applied. An expiry without consequence (a finished or disconnected player, a
+  race not in progress) and every Challenge question never count.
+- Behind: at least 12% of the track length behind the leader, at least 6% behind the median
+  of the RACING players (self included), own progress at most 65%, and at least 2 RACING
+  players. Ratios are compared as `BigDecimal`, like `ChallengeRules.FINISH_GATE_RATIO`.
+- Grant: exactly +10 Challenge Energy, once per race player, on the first accepted correct
+  NORMAL answer that meets both. It lands after the normal gain and before the offer check,
+  so a meter it fills opens the offer with the same answer. When the energy after the normal
+  gain is above 90 the right is kept for a later answer.
+- Nothing else changes: score, position, speed, difficulty, Luck, the API (no field, no
+  event) and the logs (nothing about the student, except one `WARN` line for a question it already observed,
+  never sent to a participant). The flag is independent of the Luck flag.
+
+Design:
+- One bean, `HiddenRecoveryService`: `observeAcceptedAnswer` (from
+  `ChallengeOfferService.afterAnswer`, NORMAL, RACING, IN_PROGRESS), `observePenalizedTimeout`
+  (from `QuestionTimeoutService.applyTimeoutConsequence`, right after the NORMAL penalty) and
+  `nudgeAfterNormalGain` (after `ChallengeEnergyService.earn`, with the row `observeAcceptedAnswer` returned; since
+  2026-11-08 it checks RACING and IN_PROGRESS itself, like `earn`). All are
+  `Propagation.MANDATORY`: they run only inside the answer or timeout transaction that
+  already holds the RacePlayer PESSIMISTIC_WRITE lock, so a rollback undoes the energy and the
+  award together.
+- The callers take `ObjectProvider<HiddenRecoveryService>`, the `AcceptedAnswerLuckService`
+  pattern: the sliced test contexts that build `ChallengeOfferService` or
+  `QuestionTimeoutService` need no Recovery bean, and in production the bean is always
+  present.
+- One standings projection per answer: `StudentAnswerSubmissionService` calculates the
+  standing once, after the answer is applied and before the offer step, and passes it to
+  `ChallengeOfferService.afterAnswer`; Recovery reads its field from it and the response reuses
+  it. Answers in a race already wait for each other on the race row, so a second projection of
+  every classmate there (two Redis reads each) would have slowed the whole race. Nothing after
+  that point moves a player at the decision instant (a Luck effect only starts then).
+- Pure, unit-tested rules in `RecoveryPolicy`, a plain policy object the service holds as a
+  field, like `GuardShieldService` holds `GuardShieldPolicy`: a 6-bit window (newest outcome in
+  bit 0, 1 = correct), failures, room for the nudge, the gaps, and the standing it returns as the
+  plain `RecoveryStanding` record (leader, an exact median and the count over the RACING
+  classmates, projected to the decision instant, and the student; a finished player is not part
+  of the field).
+- After the one grant, later answers write nothing to the Recovery row.
+- An old or repeated question id is ignored (one WARN for an older one), never thrown:
+  Recovery must never turn a student's answer into an error. The energy goes through
+  `ChallengeEnergyService.addRecoveryNudge`, which has one purpose and takes its amount from
+  `RecoveryRules`; its guard cannot fire because the policy checks the room first.
+- State: `race_player_recovery_states`, one row per race player (the window, the last
+  observed NORMAL question and the award). Question ids are plain columns, not foreign
+  keys, because the nightly cleanup deletes old questions. Nothing in the server deletes race
+  players or races, so the race player foreign key never blocks a deletion.
+
+Schema: dev (`ddl-auto=update`) and the tests create the table. Production uses `validate`,
+which checks every mapped entity at startup, so this DDL must run before this build is
+deployed, whether the flag is on or off (production migrations remain Phase 6; see the S4-04
+deployment gate). It is the table Hibernate created on MySQL 8.4 in the live run, with readable
+constraint names:
+
+```sql
+-- Operator script, for an approved target only, with no race in progress (never automatic). The foreign key
+-- locks race_players' metadata: an open transaction there fails this statement with 1205 after 5 s instead
+-- of queueing gameplay behind it (MySQL's default wait is a year).
+SET SESSION lock_wait_timeout = 5;
+CREATE TABLE race_player_recovery_states (
+  id bigint NOT NULL AUTO_INCREMENT,
+  created_at datetime(6) NOT NULL,
+  updated_at datetime(6) DEFAULT NULL,
+  awarded_at_epoch_ms bigint DEFAULT NULL,
+  awarded_energy int NOT NULL DEFAULT '0',
+  awarded_question_id bigint DEFAULT NULL,
+  last_observed_normal_question_id bigint DEFAULT NULL,
+  recent_outcome_bits int NOT NULL DEFAULT '0',
+  recent_outcome_count int NOT NULL DEFAULT '0',
+  race_player_id bigint NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_race_player_recovery_states_player (race_player_id),
+  CONSTRAINT fk_race_player_recovery_states_player FOREIGN KEY (race_player_id)
+    REFERENCES race_players (id),
+  CONSTRAINT chk_race_player_recovery_states CHECK (recent_outcome_bits BETWEEN 0 AND 63
+    AND recent_outcome_count BETWEEN 0 AND 6 AND awarded_energy IN (0, 10))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+Evidence (2026-10-25): `RecoveryPolicyTest` 25 and `RecoveryStandingTest` 4;
+`HiddenRecoveryIntegrationTest` 14 on H2 and the same 14 on MySQL 8.4
+(`HiddenRecoveryIntegrationMySqlTest`), including a qualifying answer that projects the
+standings no more often than an ordinary one, a Challenge answer that never enters the window,
+an overdue answer whose penalized timeout commits with `QUESTION_EXPIRED`, a finished leader left
+out of the field, and two parallel submissions that grant once; `HiddenRecoveryOffIntegrationTest`
+1. The full H2 suite passes (1,409 tests) and so does the full MySQL 8.4 suite on a disposable
+container (212 tests in 15 classes). The live API run on a disposable MySQL and Redis
+passed with the four Recovery × Luck combinations, with 0 server errors and no Recovery text in
+any response: `docs/vision/s4_05_c5_04_2026-10-25/evidence/live/`.
+
+Open before Recovery is enabled (independent review, 2026-10-26; the flag stays false until all
+three are closed):
+- Product: closed on 2026-11-04 by Shimon, as project owner (Diana reviews the rules in the PR):
+  a FINISHED player is not part of the field, so a finished leader no longer makes a classmate
+  "behind"; and a STRICT focus forfeit counts as one failure, only because it goes through the
+  penalized timeout path (`forfeitActiveQuestionAsTimeout`). Pinned by
+  `aFinishedLeaderIsNotPartOfTheField` and `aStrictFocusForfeitCountsAsOneFailureInTheWindow`.
+  Review fix 2026-11-08 (finding M1 of the independent server review): a classmate already over the
+  line but still RACING until the finish sweep or arbitration settles it (its projected position is
+  the full distance) is out of the field too; an unknown position still stops the decision. Pinned by
+  `aLeaderOverTheLineIsNotPartOfTheFieldBeforeItIsMarkedFinished` (failed before the fix: +10 granted).
+- Deployment: the DDL above runs before this build is deployed. Nothing runs DDL against an
+  existing database automatically or without approval. Rehearsed on 2026-11-04 (below); still
+  open for a real target.
+- Measurement gate, before any cache is considered: p50 and p95 of answer submission and of
+  offer opening with 2, 4 and 8 RACING students, after a warm-up, several repetitions per size,
+  with Recovery and Luck each ON and OFF. The 2026-10-25 latency run is a smoke check with few
+  offer rounds, not proof that p95 did not regress. Measured in the lab on 2026-11-02 (below); a
+  full class on target hardware remains a deployment gate.
+
+Update, 2026-11-02 (Shimon's decision, after live QA): Recovery is ON in the dev profile, where the
+team runs and plays the game. `application-dev.properties` sets `QUIZWHEELZ_RECOVERY_ENABLED=true`
+explicitly, and an environment variable `QUIZWHEELZ_RECOVERY_ENABLED=false` switches it off (kill
+switch, proven on a jar of that profile). The code default, the test profile and the prod profile
+stay OFF. The first two gates above still hold for production. The measurement gate is measured:
+on a disposable MySQL 8.4 and Redis on one laptop, after a warm-up, three repetitions per size, with
+2/4/8 students answering at the same moment (p50/p95 ms):
+
+| Luck / Recovery | 2 students | 4 students | 8 students | Offer opening, 8 students |
+|---|---|---|---|---|
+| OFF / OFF | 180 / 393 | 264 / 728 | 529 / 1,162 | 469 / 1,373 |
+| OFF / ON | 224 / 466 | 310 / 706 | 615 / 1,266 | 668 / 1,266 |
+| ON / OFF | 216 / 432 | 301 / 721 | 570 / 1,208 | 437 / 916 |
+| ON / ON | 211 / 673 | 384 / 805 | 631 / 1,488 | 644 / 1,609 |
+
+There were no 5xx and no lock-wait timeouts. Hidden Recovery adds about 90 ms p50 at eight
+simultaneous answers on this machine. The run-to-run spread is of the same order, so a load test
+with a full class on target hardware remains a deployment gate.
+
+Live QA, 2026-11-02 (packaged jar, flags only from the environment): the four Luck × Recovery
+combinations, a natural eight-student race each, no database edits. A replay of the Recovery rules
+on the API's own numbers judged more than 160 right answers per race. It matched MySQL on every
+grant and every refusal: the grant came on the first qualifying answer, struggling but not far
+enough behind was refused, a meter without room for all 10 kept the right for later, and a student
+who struggled near the front got nothing. The window started at the first answer seen with the
+flag ON (no history from an OFF period). It survived two server restarts, and the +10 landed on the
+sixth outcome after them. A real student screen showed the grant on its own energy meter (50 → 80).
+`HiddenRecoveryWithLuckIntegrationTest` (H2 and MySQL) pins the same-answer order. A nudge then an
+Energy Orb fill the meter exactly to 100 with no offer, and the next right answer opens one offer.
+A nudge that fills the meter opens the offer, and Luck does not roll on that answer. The same
+answer posted twice grants and rolls once.
+
+Release closure, 2026-11-04. Setup: the packaged jar of the branch in the prod profile
+(`ddl-auto=validate`), a disposable MySQL 8.4 and a password-protected Redis 7.4, and an
+application account limited to SELECT, INSERT, UPDATE and DELETE. Flags were set only through each
+run's environment.
+- Product: Shimon, as project owner, approved the two rules above and Luck's 60-second activity
+  window, and Diana reviews them in the PR. This sign-off authorizes no DDL, deployment, secret
+  access, CI activation, flag activation or merge.
+- Migration, on copies of a database that main@5ed8a39's own jar built and one real race filled:
+  27/27 (`reviews/s4-04-c2/C2_SCHEMA_MIGRATION_PROPOSAL_EN.md`, S4-05 step). Two findings shaped the
+  script and the procedure:
+  - An open transaction on `race_players` blocks the foreign key's metadata lock. While the DDL
+    waits, every new query on `race_players` waits too: a SELECT and an UPDATE each waited 5.3 s
+    behind a 6 s attempt. So the script sets `lock_wait_timeout = 5` and runs with no race in
+    progress.
+  - A DEV table made by `ddl-auto=update` differs from the documented one only in its constraint
+    names.
+
+  Main's jar starts and plays on the migrated database, so an application rollback needs no
+  down-DDL.
+- Staged activation on the migrated copy, in the gates' order:
+  - Flags OFF: healthy, a race, nothing written to the new table and no Luck roll.
+  - Recovery only: 11/11, two grants that match the rules, no Luck.
+  - Luck only: 23/23, and Recovery writes nothing.
+  - Both: 24/24.
+
+  Every run had 0 server errors, deadlocks or lock-wait timeouts. Luck's startup gate refused to
+  serve with undeclared limits, with N*(W+R) > B, with an effective Hikari maximum of 20 against
+  B = 20, and with B + reserved above `max_connections`; it served with 1/20/5. An earlier
+  Recovery-only run reported a leak, but the harness's own label was in the race title; with a
+  neutral title, no response mentioned Recovery.
+- Lab load on one laptop (not target hardware), one instance with writer pool 10 and Luck peer
+  pool 2, both flags ON. A race holds 8 students (`RaceRules.MAX_PLAYERS`), so a class of 32 is
+  four parallel races, and two classes are eight.
+
+  | Run | Students | Answer p50 / p95 / p99 ms | Writer pool waiting, peak |
+  |---|---|---|---|
+  | One class | 32 | 122 / 401 / 1,072 | 40 |
+  | Two classes | 64 | 151 / 406 / 1,249 | 62 |
+  | Two classes, every student and teacher reading the live stream | 64 | 172 / 650 / 2,122 | 77 |
+
+  The 64-student run with streams had 9,864 requests and no 5xx, deadlock, lock-wait timeout or
+  pool timeout. All 64 student streams and all 8 teacher streams delivered messages. Luck's rules
+  held for every student, there was at most one Recovery grant per student, and no response
+  mentioned Recovery. The writer pool is the queue at this size. Its maximum and the instance
+  count are deployment inputs (C2 budget), and a run on target hardware with the owners'
+  thresholds remains a gate.
+- Browser, on the same server and copy: a QA-only scripted Luck draw (outside the repo) made real
+  shield blocks. They reached live screens with their burst and sound, on the dev client (68/68)
+  and on the production bundle (36/36). The run found and fixed a client notice that came back for
+  one frame (client plan, C5-04f).
+- Not done here: a real target (none exists on GitHub: no environment, deployment or workflow), its
+  backup, restore drill and operator approval; hosted CI; Shimon's listening approval and a
+  physical phone. Pre-existing production findings outside this branch, seen live in the prod
+  profile:
+  - `DataInitializer` seeds the dev teacher in every profile.
+  - The health details, `/v3/api-docs` and `/swagger-ui` are public.
+  - The CSRF and `SameSite=None` review is still open.
+
 ### S4-06 — Race Moments / announcements
 
-**Status:** `PLANNED`
+**Status:** `VERIFY LOCALLY` — implemented 2026-11-05 on `feature/S4-05-C5-04-recovery-luck-shield`
+(committed on the branch, not merged yet). Evidence: `docs/vision/s4_c5_finish_2026-11-05/`.
+Closure 2026-11-08: implemented and verified, not merged, not production-ready; approved by Shimon as
+project owner, not reviewed by Diana; checked as recorded in the S4-05 closure note (independent
+review, full H2 and MySQL suites, live race).
 
 Server-owned bounded race notices use the existing RaceLiveEvent infrastructure.
 Add visible event vocabulary only when the corresponding gameplay exists.
+
+The public moments ride on the existing `QUESTION_ANSWERED` event as an optional `moments` list. There is no new
+`RaceLiveEventType` (`race_live_events.type` is a native MySQL ENUM, so a new value would need DDL) and no new table:
+the payload column is TEXT. Teacher SSE envelopes and the live-event replay carry it; the student stream stays
+signal-only.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `moments` | array, omitted when empty | Public facts this accepted answer caused, in server order |
+| `moments[].kind` | `RacePublicMomentKind` | `TURBO_SUCCESS`, `SAFE_PERFECT`, `SHIELD_EARNED`, `LUCK_TAILWIND`, `LUCK_ENERGY_ORB`, `LUCK_MUD`, `LUCK_SHIELD_BLOCKED` |
+| `moments[].sourceId` | long | The row that proves it: the challenge offer (Turbo/Safe), the answered question (shield earned) or the Luck decision |
+
+- Owner: `RacePublicMomentPolicy`, pure and held as a field by `StudentAnswerSubmissionService`. It maps facts the
+  answer transaction already holds: the Luck decision and the Guard Shield award, which
+  `FairLuckService.afterAcceptedManualNormalAnswer` now returns together as `LuckAnswerResult` (no extra query), and
+  the challenge outcome before and after the answer (only the answer that ended a won challenge tells it).
+- Luck is named by what the server applied (a Tailwind at top speed is an Energy Orb); a Mud Splash the shield
+  blocked is `LUCK_SHIELD_BLOCKED`. Luck on a WRONG normal answer is still a public moment.
+- Never public: a lost Turbo, an incomplete Safe run, wrong answers, timeouts, `NO_EVENT` / `NO_EFFECT` Luck and
+  Hidden Recovery (no kind exists for it).
+- Written in the same transaction and event as the answer, before its progress or finish event, so a replay
+  (Last-Event-ID or the live-events catch-up) carries exactly what the live stream carried. A retried answer records
+  no second `QUESTION_ANSWERED`.
+- Backward compatible: rows written before S4-06 have no `moments` key and read back as none, and an answer with no
+  moments is still written byte for byte as before (`@JsonInclude(NON_EMPTY)`); history is never rewritten. A
+  client must drop a `kind` it does not know.
+- Leads, rank changes and streaks are not moments: clients tell them from the server's own rosters (C5-05).
+
+Tests: `RacePublicMomentPolicyTest`, `RacePublicMomentsLuckIntegrationTest`, `RacePublicMomentsChallengeIntegrationTest`
+and their `*MySqlTest` twins, `RaceLiveEventPayloadCodecTest`, `RaceLiveEventSerializationTest` and
+`HiddenRecoveryIntegrationTest.theGrantIsNeverAPublicMoment`.
 
 ## S5 — Full auth and 2FA
 
@@ -1469,3 +1790,17 @@ Follow `AUTH_REGISTRATION_AND_2FA.md`.
 - CI
 - deployment
 - load and observability.
+
+S4 deployment gates (recorded 2026-11-08). None blocks merging S4 into `main` for development; each
+blocks a public deployment, and the `prod` profile keeps Luck and Hidden Recovery OFF until they close:
+- Schema: `prod` validates the schema (`ddl-auto=validate`) and runs no DDL, so the Luck tables and
+  columns (S4-04, `reviews/s4-04-c2/`) and `race_player_recovery_states` (S4-05) need a reviewed
+  migration first. Both were rehearsed on disposable copies only.
+- Connection budget: Luck's startup check needs the target's real numbers (instances, writer pool, Luck
+  pool, budget, reserve and MySQL `max_connections`). `prod` declares none on purpose, so Luck ON there
+  refuses to start.
+- Security (audit 2026-10): `DataInitializer` seeds the development teacher in every profile, and CSRF is
+  off while the auth cookie's SameSite is configurable (a cross-site deployment needs `SameSite=None`).
+  Both belong to the cookie/CORS/CSRF review above.
+- CI and load: the S4-04 C2 CI proposal is unapplied (`reviews/s4-04-c2/C2_CI_PROPOSAL_EN.md`), and the
+  load runs so far were lab runs.

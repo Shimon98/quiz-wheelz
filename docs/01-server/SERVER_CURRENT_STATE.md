@@ -36,6 +36,18 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
 - `@PreAuthorize` expressions
 - current-user service
 - consistent 401/403/error handling.
+- no generated in-memory user (2026-10-25): teachers sign in only through `AuthService` and
+  the JWT cookie, so `UserDetailsServiceAutoConfiguration` is excluded and the server no longer
+  logs a "generated security password" at startup.
+- the catch-all `GlobalExceptionHandler` logs every unexpected exception at ERROR with the
+  method, the path and the stack trace (2026-10-25); the client still gets only the generic body.
+  Spring's own request errors (a wrong method, an unknown path, a missing parameter) go back to
+  Spring MVC and answer 405/404/400 with Spring Boot's standard error JSON instead of 500, and
+  a client that went away (a closed tab ends its SSE stream) is neither answered nor logged as
+  a failure. A disconnect is recognized by Spring's `DisconnectedClientHelper` or by the
+  Windows words for the same thing (Winsock 10053/10054, IOException only); an IOException
+  nobody recognizes on a response that already started cannot be answered either, but it
+  leaves one WARN line (method, path, exception) instead of disappearing (2026-10-26).
 
 ### Teacher flow
 
@@ -240,8 +252,7 @@ strategy is REST + SSE. WebSocket cleanup is deferred and is not part of S0-03.
   templates and Safe draws EASY addition or subtraction, rotating by offer id and
   question number; the question is generated from exactly the selected template
   (`SERVER_IMPLEMENTATION_PLAN.md`, S4-03).
-- challenge template safety (local, 2026-10-25, `feature/C5-04-luck-shield-foundation`,
-  not merged): only templates that pass `validateTemplateConfig` and that the generator can
+- challenge template safety (on `main` since PR #81, `main@5ed8a39`): only templates that pass `validateTemplateConfig` and that the generator can
   turn into a question make or serve a challenge; a run that no valid template can serve ends
   as a neutral technical abort
   (no result, reward or penalty), its Energy is restored once, and the same request serves
@@ -319,8 +330,11 @@ recovery never subtracts movement awarded in degraded mode.
 
 ### Luck and Guard Shield (S4-04, checkpoint 2026-10-24)
 
-- On `main` since PR #79; the accepted-answer integration stays OFF by default
-  (`QUIZWHEELZ_LUCK_ANSWER_ENABLED=false`), and OFF also skips the Guard Shield award.
+- On `main` since PR #79. Since 2026-11-05 `QUIZWHEELZ_LUCK_ANSWER_ENABLED=true` in
+  `application.properties`: ON in every normal run, with the local connection budget (1 instance,
+  writer 10, Luck pool 2, budget 20, reserve 5) in `application-dev.properties`. The test and prod
+  profiles set it `false`, an environment variable `false` switches it off, and OFF also skips the
+  Guard Shield award.
   Design, evidence and release gates: `SERVER_IMPLEMENTATION_PLAN.md` (S4-04) and
   `reviews/s4-04-c2/`.
 - Every writer of a player's challenge offers and speed effects holds that
@@ -330,21 +344,58 @@ recovery never subtracts movement awarded in degraded mode.
   connection budget and MySQL `max_connections` before readiness; a missing or
   insufficient budget stops startup instead of failing student answers.
 - The nightly question cleanup keeps questions referenced by Luck decisions or focus
-  events; their retention policy is open.
+  events; their retention policy is open (a follow-up, not an S4 defect).
 - `LuckDrawPolicy` compares speed in tenths, like movement, so a Tailwind at the shown
   maximum becomes an Energy Orb.
 
+### Hidden Recovery (S4-05, local checkpoint 2026-10-25)
+
+- Implemented on `feature/S4-05-C5-04-recovery-luck-shield` (not merged) behind
+  `QUIZWHEELZ_RECOVERY_ENABLED`, code default `false` and independent of the Luck flag. Since
+  2026-11-05 `application.properties` sets it to `true` for every normal run (it was the dev
+  profile alone from 2026-11-02); the test and prod profiles set `false`, and an environment
+  variable `false` switches it off. Live QA with Luck ON and OFF: see
+  `SERVER_IMPLEMENTATION_PLAN.md` (S4-05, update 2026-11-02).
+- A player who is both behind and struggling gets +10 Challenge Energy once per race player,
+  on an accepted correct NORMAL answer, after the normal gain and before the offer check. It
+  changes nothing else and is hidden from every API and event; its only trace is one server
+  `WARN` log line for a question it already observed (`HiddenRecoveryService`), never sent to a
+  participant. Rules, design and the
+  production DDL of `race_player_recovery_states`: `SERVER_IMPLEMENTATION_PLAN.md` (S4-05).
+- Final maintenance, 2026-11-08 (review M2 and M3): the callers own the transaction, the player row
+  lock and the lifecycle check (`ChallengeOfferService.afterAnswer`, `QuestionTimeoutService`); the
+  grant also checks RACING and IN_PROGRESS itself, like normal energy, so no caller can grant once the
+  student or the race is done; and every NORMAL outcome reads the student's Recovery row once.
+- Release closure, 2026-11-04: Shimon, as project owner, approved the two open rules (a
+  finished leader is out of the field; a STRICT focus forfeit counts as one failure), and Diana
+  reviews them in the PR. The DDL, a staged activation in the prod profile and a lab load were
+  rehearsed on disposable copies of a main database. No production target exists, so nothing ran
+  on a real database (`SERVER_IMPLEMENTATION_PLAN.md`, S4-05, release closure).
+
+### Race Moments (S4-06, 2026-11-05, not merged yet)
+
+- Implemented on `feature/S4-05-C5-04-recovery-luck-shield` (committed, not merged yet). An accepted answer's
+  `QUESTION_ANSWERED` event carries an optional `moments` list of public facts the answer caused: `TURBO_SUCCESS`,
+  `SAFE_PERFECT`, `SHIELD_EARNED`, `LUCK_TAILWIND`, `LUCK_ENERGY_ORB`, `LUCK_MUD`, `LUCK_SHIELD_BLOCKED`, each with
+  the id of the row that proves it. `RacePublicMomentPolicy` owns the mapping; the Luck decision and the shield award
+  come back from `FairLuckService` with no extra query.
+- No new event type, table or DDL; old rows read as having no moments, and an answer without moments is written as
+  before. Failures and Hidden Recovery are never public. Contract: `SERVER_IMPLEMENTATION_PLAN.md` (S4-06).
+- A `SHIELD_EARNED` moment names the question that earned the shield, which the nightly cleanup may delete in an old
+  race. No foreign key points there and nothing reads it back, so it waits for the retention policy (a follow-up).
+
 ## Partial or missing
 
-- Teacher live race client and results remain client work (C3/C4). The C2 server
+- Teacher live race client and results (C3/C4) are complete on the client. The C2 server
   contract is complete for student competition truth, synchronization and finish
   arbitration (decision-instant standings, signal-only student SSE, proof-gated
   arbitration); the teacher live-state/durable-event/SSE foundation for C3 already
   exists, so further server work is driven only by actual C3/results requirements.
-- Junction (highway/dirt-road) decision events, Hidden Recovery (S4-05) and Race
-  Moments/announcements (S4-06); Luck activation with its production migration, budget
-  and retention decisions.
-- Catch-up-assistance policy.
+- Production activation of Luck (migration, budget and retention decisions) and of Hidden
+  Recovery (production validates every entity, so its table needs the documented DDL before
+  this build is deployed; migrations are Phase 6). They are the S4 deployment gates listed under S6 in
+  `SERVER_IMPLEMENTATION_PLAN.md`, with the connection budget and the security review. The road choice (highway/dirt road) is
+  served by Turbo Trial and Safe Run (S4-02/S4-03), and catch-up help by Hidden Recovery (S4-05).
 - Registration, email verification, reset and 2FA.
 - Database migrations and production deployment.
 

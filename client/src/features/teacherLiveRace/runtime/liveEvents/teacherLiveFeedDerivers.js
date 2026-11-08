@@ -1,9 +1,13 @@
+import { RACE_STREAK_MILESTONES } from "../../../../constants/raceGameplayConstants";
 import {
   TEACHER_FEED_KINDS,
   TEACHER_FEED_MESSAGE_KEYS,
 } from "../../config/teacherLiveFeedConfig";
 
 const RACE_SCOPED_ITEM_SUFFIX = "race";
+const LEAD_RANK = 1;
+// Highest first, so a streak that jumps past both milestones at once is told once, at the higher one.
+const STREAK_MILESTONES = Object.values(RACE_STREAK_MILESTONES).sort((left, right) => right - left);
 
 function findPlayer(runtime, racePlayerId) {
   return (
@@ -23,7 +27,35 @@ function buildFeedItem(kind, event, { racePlayerId = null, values = {} } = {}) {
   };
 }
 
-function deriveRankUpItems(
+function buildPlayerItem(kind, event, player, values = {}) {
+  return buildFeedItem(kind, event, {
+    racePlayerId: player.racePlayerId,
+    values: { name: player.displayName, ...values },
+  });
+}
+
+function deriveRankItems(previousPlayer, player, event) {
+  if (player.rank >= previousPlayer.rank) {
+    return [];
+  }
+
+  return player.rank === LEAD_RANK
+    ? [buildPlayerItem(TEACHER_FEED_KINDS.TOOK_LEAD, event, player)]
+    : [buildPlayerItem(TEACHER_FEED_KINDS.RANK_UP, event, player, { rank: player.rank })];
+}
+
+function deriveStreakItems(previousPlayer, player, event) {
+  const milestone = STREAK_MILESTONES.find(
+    (count) => previousPlayer.streak < count && player.streak >= count,
+  );
+
+  return milestone == null
+    ? []
+    : [buildPlayerItem(TEACHER_FEED_KINDS.STREAK, event, player, { count: milestone })];
+}
+
+// Ranks and streaks are the server's own; the feed only compares the roster before and after this event.
+function deriveRosterItems(
   previousRuntime,
   event,
   nextRuntime,
@@ -36,15 +68,13 @@ function deriveRankUpItems(
 
     const previousPlayer = findPlayer(previousRuntime, player.racePlayerId);
 
-    if (previousPlayer == null || player.rank >= previousPlayer.rank) {
+    if (previousPlayer == null) {
       return [];
     }
 
     return [
-      buildFeedItem(TEACHER_FEED_KINDS.RANK_UP, event, {
-        racePlayerId: player.racePlayerId,
-        values: { name: player.displayName, rank: player.rank },
-      }),
+      ...deriveRankItems(previousPlayer, player, event),
+      ...deriveStreakItems(previousPlayer, player, event),
     ];
   });
 }
@@ -58,26 +88,24 @@ export function deriveQuestionAnsweredFeedItems(
   event,
   nextRuntime,
 ) {
-  if (!event.payload.correct) {
-    return [];
-  }
-
   const player = findPlayer(nextRuntime, event.payload.racePlayerId);
 
   if (player == null) {
     return [];
   }
 
-  return [
-    buildFeedItem(TEACHER_FEED_KINDS.CORRECT_ANSWER, event, {
-      racePlayerId: player.racePlayerId,
-      values: { name: player.displayName },
-    }),
-  ];
+  // S4-06: what the answer caused is told instead of a plain "correct answer"; Luck may follow a wrong answer too.
+  if (event.payload.moments.length > 0) {
+    return event.payload.moments.map(({ kind }) => buildPlayerItem(kind, event, player));
+  }
+
+  return event.payload.correct
+    ? [buildPlayerItem(TEACHER_FEED_KINDS.CORRECT_ANSWER, event, player)]
+    : [];
 }
 
 export function deriveProgressFeedItems(previousRuntime, event, nextRuntime) {
-  return deriveRankUpItems(previousRuntime, event, nextRuntime);
+  return deriveRosterItems(previousRuntime, event, nextRuntime);
 }
 
 export function derivePlayerFinishedFeedItems(
@@ -88,11 +116,8 @@ export function derivePlayerFinishedFeedItems(
   const finisher = event.payload.player;
 
   return [
-    buildFeedItem(TEACHER_FEED_KINDS.PLAYER_FINISHED, event, {
-      racePlayerId: finisher.racePlayerId,
-      values: { name: finisher.displayName },
-    }),
-    ...deriveRankUpItems(
+    buildPlayerItem(TEACHER_FEED_KINDS.PLAYER_FINISHED, event, finisher),
+    ...deriveRosterItems(
       previousRuntime,
       event,
       nextRuntime,

@@ -130,10 +130,39 @@ operations, parentheses, a short multiplication chain) and Safe draws addition a
 up to 10, each generated from exactly the selected template; the 15-second limit and rewards are
 unchanged.
 
-Next: the S4-04 stability PR (Luck fixes and challenge questions), then C5-04 (Luck and Guard
-Shield presentation) planned from the
-reviewed server code, a physical-phone check (before classroom or production use) and client
-quality package 4. Diana owns the requested Turbo question sequence and question difficulty on
+Checkpoint, 2026-10-25: the S4-04 stability fixes (PR #80) and the S4-03 template safety with
+C5-04 part 1 (PR #81, `main@5ed8a39`) are merged. On `feature/S4-05-C5-04-recovery-luck-shield`
+(committed as `b096e10` and pushed, not merged): S4-05 Hidden Recovery on the server, behind its own flag and OFF by default
+(a player who is both behind and struggling gets +10 Challenge Energy once, hidden from every
+API), and C5-04 part 2 on the client (the Guard Shield, Tailwind, Energy Orb, Mud and a shield
+block shown with temporary Pixi `Graphics` and text notices, no new art or sound). Server
+maintenance in the same branch: unexpected 500s are logged with their stack trace and no
+generated Spring password is created any more. Since 2026-11-05 Luck (with the Guard Shield) and
+Hidden Recovery are ON in every normal run of the project (`application.properties`; Luck's local
+connection budget in `application-dev.properties`), with no switch to set; the test and prod
+profiles keep both OFF, and an environment variable switches each off on its own. An
+independent review (2026-10-26) was answered on the same branch: one-shot Luck news is never
+retold after a refresh, the shield is announced to screen readers, every Luck type is proven on
+snapshots the server wrote, and an unrecognized I/O failure on a started response leaves one
+WARN line. The two Recovery rules (a finished leader is not part of the field; a STRICT focus
+forfeit counts as one failure) were approved by Shimon, as project owner, on 2026-11-04, and
+Diana reviews them in the PR. The lab p50/p95 measurement passed on 2026-11-02, and on 2026-11-04
+the DDL, a staged activation and a lab load were rehearsed on disposable copies in the prod
+profile. Production stays OFF: no deployment target exists yet, and the DDL has not run on any
+real database (see the S4-05 section of the server plan).
+
+Checkpoint, 2026-11-05 (same branch, committed, not merged yet): S4-06 Race Moments on the
+server — an accepted answer's `QUESTION_ANSWERED` event carries the public moments it caused (a won
+Turbo, a perfect Safe run, a Guard Shield earned, the applied Luck type or a shield block), with no
+new event type and no DDL; failures and Hidden Recovery are never public. C5-05 on the client — the
+teacher projector tells those moments plus new leaders, rank climbs and 5/10 streaks at a calm pace
+(one row per student per event, finishes and the big moments never held back, at most two quieter
+rows per 5 s for the class), and the student screen tells its own climb in place on the existing
+notice line with a pulse on the place tile. The same round makes a clean clone run with Luck and
+Recovery ON and documents it in the root `README.md`.
+
+Next: review and merge of that branch (Diana), Shimon's listening check and physical-phone check
+(C5 is code complete and stays manual-QA pending until then) and client quality package 4. Diana owns the requested Turbo question sequence and question difficulty on
 the server; the client does not simulate these. Browser fixtures and unit tests are local
 evidence, not release acceptance. C5-03 review bundle:
 `docs/vision/C5_03/codex_clarity_2026-10-18/` (local, ignored).
@@ -153,8 +182,15 @@ question deadlines; reconnect never awards offline catch-up, and absent
 players do not keep the class race open. C2 multiplayer competition and C3 Teacher
 Live are implemented: C3-01/C3-02 merged in PR #69 and C3-03 … C3-08 are complete on
 the client. The server final-results read model is implemented by S3-01 and the C4
-teacher Result Screen and student progressive results are complete on the client; the
-next stage is Phase 4 (server S4 game events, then the C5 gameplay UI).
+teacher Result Screen and student progressive results are complete on the client. Phase 4
+(server S4 game events and the C5 gameplay UI) is implemented: S4-01 … S4-04 and C5-01 … C5-03
+are merged, and S4-05/S4-06 with C5-04/C5-05 wait on `feature/S4-05-C5-04-recovery-luck-shield`
+(pushed, not merged) for acceptance and the merge. Closure round 2026-11-08: implemented and
+verified (full client, H2 and MySQL suites, an independent server review, a live 8-player race),
+approved by Shimon as project owner (Diana has not reviewed it), not production-ready. Final maintenance on
+the same day: background music is ON for a new browser (after the first tap; a saved sound choice wins), Hidden
+Recovery reads its row once per answer and its grant checks the race and the student itself (review M2/M3), and the
+production prerequisites are listed as the S4 deployment gates (`SERVER_IMPLEMENTATION_PLAN.md`, S6).
 
 ## Product status board
 
@@ -184,9 +220,10 @@ next stage is Phase 4 (server S4 game events, then the C5 gameplay UI).
 | Teacher SSE | DONE | DONE durable sync, authoritative recovery/fallback (C3-02) | DONE |
 | Teacher live projector UI | N/A | DONE jungle-art projector with eight side-view vehicles, animated server-ordered leaderboard with the shared placement art, responsive workspace navigation (C3-03 … C3-08) | DONE |
 | Results | DONE final read model (S3-01) | DONE teacher Result Screen + student progressive results (C4) | DONE |
-| Junction/highway/dirt road | PLANNED | PLANNED | REQUIRED |
-| Fair luck/power-ups | foundation ideas only | PLANNED | REQUIRED |
-| Catch-up assistance | foundation ideas only | PLANNED | REQUIRED |
+| Junction/highway/dirt road | DONE as the challenge choice: Turbo Trial is the highway, Safe Run the dirt road (S4-02/S4-03) | DONE (C5-02/C5-03) | DONE |
+| Fair luck/power-ups | DONE Luck + Guard Shield (S4-04); ON in every normal run since 2026-11-05 | presentation, art and cues (C5-04) implemented and verified on the feature branch, not merged | VERIFY LOCALLY |
+| Catch-up assistance | Hidden Recovery (S4-05) implemented and verified on the feature branch, not merged; ON in every normal run since 2026-11-05 | none by design: never shown | VERIFY LOCALLY |
+| Race moments / live announcements | public moments on `QUESTION_ANSWERED` (S4-06) implemented and verified on the feature branch, not merged | projector feed, student rank notice, moment icons and playful copy (C5-05) implemented and verified on the feature branch, not merged | VERIFY LOCALLY (phone and listening pending) |
 | Local MySQL + automatic Redis dev setup | DONE | N/A | DONE |
 | Production migrations/deployment | PLANNED | build exists | PLANNED |
 
@@ -326,9 +363,10 @@ Server S4-01 defines the shared game effect/event contract
 
 C2, C3 Teacher Live and C4 Results are implemented on the client: C3-01/C3-02 merged in
 PR #69, C3-03 … C3-08 are COMPLETE, and C4-A … C4-C (teacher Result Screen, student
-progressive results, results art) are COMPLETE on `feature/C4-results`. The S4-01 server
+progressive results, results art) are COMPLETE and merged. The S4-01 server
 contract (PR #74) and C5-A audio (PR #75, which also delivered the C2-A race sound) are
 merged; C5-01 (PR #76), the S4-02/S4-03 Challenge contract (PR #77) and the C5 Track A
-presentation (PR #78) are merged; C5-02 (Challenge choice) is committed locally and C5-03
-(results, Safe progress, poses, painted Turbo exhaust and slowdown cues) is implemented and
-tested on the same feature branch, not merged to `main`. The required physical-device/recovery QA remains visible pre-release polish.
+presentation (PR #78) are merged; C5-02 (Challenge choice) and C5-03 (results, Safe progress,
+poses, painted Turbo exhaust and slowdown cues) are merged (PR #79), and C5-04 part 1 too (PR #81).
+The rest of Phase 4 (S4-05, S4-06, C5-04 part 2, C5-04f, C5-05) is on
+`feature/S4-05-C5-04-recovery-luck-shield`, pushed, not merged. The required physical-device/recovery QA remains visible pre-release polish.

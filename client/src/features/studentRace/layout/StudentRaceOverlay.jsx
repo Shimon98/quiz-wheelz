@@ -1,6 +1,7 @@
 import StudentRaceChallengePanel from "../components/StudentRaceChallengePanel";
 import StudentRaceHud from "../components/StudentRaceHud";
 import StudentRaceHudSafeArea from "../components/StudentRaceHudSafeArea";
+import StudentRaceLuckNotice from "../components/StudentRaceLuckNotice";
 import StudentRaceQuestionPanel from "../components/StudentRaceQuestionPanel";
 import RacePlayerConnectionNotice from "../../../shared/racePlayer/RacePlayerConnectionNotice";
 import {
@@ -32,6 +33,8 @@ export default function StudentRaceOverlay({
   isAwaitingNextQuestion = false,
   challenge = null,
   hudControls = null,
+  announcedLuckEventId = null,
+  rankNews = null,
 }) {
   const showChallenge = challenge?.visible === true;
 
@@ -45,12 +48,18 @@ export default function StudentRaceOverlay({
             challengeOffer={showChallenge ? challenge.offer : null}
             answerFeedback={answerFeedback}
             controls={hudControls}
+            rankNews={rankNews}
           />
         </StudentRaceHudSafeArea>
         <RacePlayerConnectionNotice
           connectionState={connectionState}
           error={connectionError}
           onRetry={onConnectionRetry}
+        />
+        <StudentRaceLuckNotice
+          gameplay={runtimeState?.gameplay ?? null}
+          announcedLuckEventId={announcedLuckEventId}
+          rankNews={rankNews}
         />
       </div>
       {showChallenge ? (

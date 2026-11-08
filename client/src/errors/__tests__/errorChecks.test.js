@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import enErrors from "../../i18n/locales/en/errors";
+import heErrors from "../../i18n/locales/he/errors";
 import {
   isNotFoundError,
+  isQuestionUnavailableError,
   isRacePlayerReconnectRequiredError,
   isRaceResultsNotAvailableError,
   isReconnectWindowExpiredError,
@@ -45,6 +48,24 @@ describe("RacePlayer reconnect error checks", () => {
     expect(isRacePlayerReconnectRequiredError(reconnectWindowExpired)).toBe(false);
     expect(isReconnectWindowExpiredError(reconnectWindowExpired)).toBe(true);
     expect(isReconnectWindowExpiredError(reconnectRequired)).toBe(false);
+  });
+});
+
+describe("question unavailable check", () => {
+  it("names a player with no usable question by its server name, with a message that says what to do", () => {
+    const unavailable = normalizeApiError({
+      response: { status: 409, data: { error: "QUESTION_TEMPLATE_NOT_AVAILABLE_FOR_PLAYER", code: 3018 } },
+    });
+
+    expect(unavailable).toMatchObject({ category: "CONFLICT", messageKey: "question.unavailable" });
+    expect(isQuestionUnavailableError(unavailable)).toBe(true);
+    expect(isQuestionUnavailableError(normalizeApiError({ response: { status: 409, data: {} } }))).toBe(false);
+    expect(isQuestionUnavailableError(null)).toBe(false);
+  });
+
+  it("has that message in both languages", () => {
+    expect(heErrors.question.unavailable).toEqual(expect.any(String));
+    expect(enErrors.question.unavailable).toEqual(expect.any(String));
   });
 });
 

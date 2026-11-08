@@ -1,10 +1,13 @@
-import { ShieldCheck, Zap } from "lucide-react";
+import { BatteryCharging, Crown, Droplets, ShieldCheck, TrendingUp, Wind, Zap } from "lucide-react";
 
 import {
   RACE_CHALLENGE_OUTCOMES,
   RACE_GAMEPLAY_EFFECT_SOURCES,
   RACE_GAMEPLAY_MODES,
 } from "../../../constants/raceGameplayConstants";
+import { RACE_MOMENT_ART } from "../../../shared/raceMoments/raceMomentArt";
+import { RACE_RESULTS_ART } from "../../../shared/raceResults/raceResultsArt";
+import { STUDENT_RACE_MOMENT } from "../runtime/studentRaceRuntimeConstants";
 import { KART_THRUSTER_PALETTES } from "./kartThrusterConfig";
 import { RACE_CHALLENGE_ART } from "./raceChallengeArt";
 
@@ -49,4 +52,32 @@ const CHALLENGE_RESULT_FEEDBACK_KEYS = Object.freeze({
 
 export function getChallengeResultFeedbackKey(outcome) {
   return Object.hasOwn(CHALLENGE_RESULT_FEEDBACK_KEYS, outcome) ? CHALLENGE_RESULT_FEEDBACK_KEYS[outcome] : null;
+}
+
+// News for the race's notice line: Luck (Mud is the one setback among them) and, since C5-05, a climb in place.
+// Each shows its painting (Astra V5, the same the projector's feed shows; the lead keeps the results' gold medal); the
+// drawn icon comes back if a painting does not load.
+const RACE_NOTICES = Object.freeze({
+  [STUDENT_RACE_MOMENT.LUCK_TAILWIND]: Object.freeze({
+    art: RACE_MOMENT_ART.luckTailwind, icon: Wind, messageKey: "gameplay.luck.tailwind", tone: "good",
+  }),
+  [STUDENT_RACE_MOMENT.LUCK_ENERGY_ORB]: Object.freeze({
+    art: RACE_MOMENT_ART.luckEnergyOrb, icon: BatteryCharging, messageKey: "gameplay.luck.energyOrb", tone: "good",
+  }),
+  [STUDENT_RACE_MOMENT.LUCK_MUD]: Object.freeze({
+    art: RACE_MOMENT_ART.luckMud, icon: Droplets, messageKey: "gameplay.luck.mud", tone: "setback",
+  }),
+  [STUDENT_RACE_MOMENT.LUCK_SHIELD_BLOCKED]: Object.freeze({
+    art: RACE_MOMENT_ART.luckShieldBlocked, icon: ShieldCheck, messageKey: "gameplay.luck.shieldBlocked", tone: "good",
+  }),
+  [STUDENT_RACE_MOMENT.RANK_UP]: Object.freeze({
+    art: RACE_MOMENT_ART.rankUp, icon: TrendingUp, messageKey: "gameplay.rank.up", tone: "good",
+  }),
+  [STUDENT_RACE_MOMENT.TOOK_LEAD]: Object.freeze({
+    art: RACE_RESULTS_ART.placement.gold, icon: Crown, messageKey: "gameplay.rank.lead", tone: "good",
+  }),
+});
+
+export function getRaceNoticePresentation(notice) {
+  return Object.hasOwn(RACE_NOTICES, notice) ? RACE_NOTICES[notice] : null;
 }

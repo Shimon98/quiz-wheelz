@@ -115,6 +115,8 @@ export function mapCurrentQuestionToModel(
     text: response.questionText.trim(),
     timeLimitSeconds: response.timeLimitSeconds,
     expiresAtEpochMs: response.expiresAtEpochMs,
+    // Kept so the screen can tell a question newer than its race state from a stale one (mode catch-up).
+    serverTimeEpochMs: response.serverTimeEpochMs,
     serverClockOffsetMs: response.serverTimeEpochMs - clientReceivedAtEpochMs,
     choices,
   };

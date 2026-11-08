@@ -214,6 +214,25 @@ describe("TeacherRaceProjector", () => {
     expect(within(items[1]).getByText(new Intl.RelativeTimeFormat("he", { numeric: "auto" }).format(0, "second"))).toBeInTheDocument();
   });
 
+  it("shows the seven newest feed rows in the one live log and never an eighth", () => {
+    const rows = Array.from({ length: 8 }, (_, n) => ({
+      id: `${20 - n}:CORRECT_ANSWER:1`,
+      kind: "CORRECT_ANSWER",
+      messageKey: "feed.correctAnswer",
+      values: { name: `Player ${n + 1}` },
+      racePlayerId: 1,
+      occurredAtEpochMs: 1_755_600_099_000 - n * 1_000,
+    }));
+    renderProjector({ recentEvents: rows });
+
+    expect(screen.getAllByRole("log")).toHaveLength(1);
+    const items = within(screen.getByRole("log")).getAllByRole("listitem");
+    expect(items).toHaveLength(7);
+    expect(within(items[0]).getByText(text("feed.correctAnswer", { name: "Player 1" }))).toBeInTheDocument();
+    expect(within(items[6]).getByText(text("feed.correctAnswer", { name: "Player 7" }))).toBeInTheDocument();
+    expect(screen.queryByText(text("feed.correctAnswer", { name: "Player 8" }))).toBeNull();
+  });
+
   it("paints each lane and leaderboard row with the player's accent and mirrors the progress target on the lane fill", () => {
     renderProjector();
 

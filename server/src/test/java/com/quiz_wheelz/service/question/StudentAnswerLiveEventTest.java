@@ -63,7 +63,8 @@ class StudentAnswerLiveEventTest {
         order.verify(fixture.liveEventRecorder).recordQuestionAnswered(
                 player,
                 StudentAnswerSubmissionTestFixture.QUESTION_ID,
-                true
+                true,
+                List.of()
         );
         order.verify(fixture.liveEventRecorder).recordPlayerProgressUpdated(player.getRace());
         verifyNoMoreInteractions(fixture.liveEventRecorder);
@@ -88,7 +89,8 @@ class StudentAnswerLiveEventTest {
         order.verify(fixture.liveEventRecorder).recordQuestionAnswered(
                 player,
                 StudentAnswerSubmissionTestFixture.QUESTION_ID,
-                true
+                true,
+                List.of()
         );
         order.verify(fixture.liveEventRecorder).recordPlayerFinished(player);
         verifyNoMoreInteractions(fixture.liveEventRecorder);
@@ -115,7 +117,8 @@ class StudentAnswerLiveEventTest {
         order.verify(fixture.liveEventRecorder).recordQuestionAnswered(
                 player,
                 StudentAnswerSubmissionTestFixture.QUESTION_ID,
-                true
+                true,
+                List.of()
         );
         order.verify(fixture.liveEventRecorder).recordPlayerFinished(player);
         order.verify(fixture.liveEventRecorder).recordRaceFinished(player.getRace());
@@ -135,7 +138,7 @@ class StudentAnswerLiveEventTest {
                 StudentAnswerSubmissionTestFixture.FIXED_INSTANT.toEpochMilli()
         );
         doAnswer(invocation -> bumpVersion(player)).when(fixture.liveEventRecorder)
-                .recordQuestionAnswered(player, StudentAnswerSubmissionTestFixture.QUESTION_ID, true);
+                .recordQuestionAnswered(player, StudentAnswerSubmissionTestFixture.QUESTION_ID, true, List.of());
         doAnswer(invocation -> bumpVersion(player)).when(fixture.liveEventRecorder)
                 .recordPlayerProgressUpdated(player.getRace());
 

@@ -158,3 +158,10 @@ A developer must have the local MySQL service available at `localhost:3306` with
 credentials supplied through `DB_USERNAME` and `DB_PASSWORD` when they differ from
 the DEV defaults. Spring Boot automates Redis only; it does not provision MySQL on a
 clean clone.
+
+Since 2026-11-05 every normal run has Luck and Hidden Recovery ON (`application.properties`).
+Luck opens its own small pool and refuses to start unless the DEV budget in
+`application-dev.properties` fits: 1 x (writer 10 + Luck pool 2) <= 20, and 20 + 5 reserved
+<= the server's real `@@max_connections` (a stock MySQL 8 allows 151, so at least 25 is needed).
+`QUIZWHEELZ_LUCK_ANSWER_ENABLED=false` or `QUIZWHEELZ_RECOVERY_ENABLED=false` in the environment
+switches one off. The root `README.md` holds the clean-clone steps.

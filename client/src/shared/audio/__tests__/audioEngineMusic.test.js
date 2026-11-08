@@ -14,8 +14,22 @@ afterEach(() => {
 });
 
 describe("audio engine music", () => {
+  // Music is on by default since 2026-11-08: the scene a new page claims stays silent until the first tap.
+  it("with the default settings, starts the claimed scene only at the first unlock, and only once", async () => {
+    const { engine, media } = setupAudioEngine();
+    engine.claimMusic("race");
+    expect(media).toHaveLength(0);
+
+    await engine.unlock();
+    await engine.unlock();
+
+    expect(media).toHaveLength(1);
+    expect(media[0].paused).toBe(false);
+  });
+
   it("neither creates nor downloads music while Music is off", async () => {
     const { engine, media, fetchImpl } = setupAudioEngine();
+    engine.configure({ musicEnabled: false });
     await engine.unlock();
 
     engine.claimMusic("race");
@@ -26,8 +40,10 @@ describe("audio engine music", () => {
 
   it("starts when Music is switched on and pauses when it is switched off", async () => {
     const { engine, media } = setupAudioEngine();
+    engine.configure({ musicEnabled: false });
     await engine.unlock();
     engine.claimMusic("race");
+    expect(media).toHaveLength(0);
 
     engine.configure({ musicEnabled: true });
     engine.configure({ musicEnabled: false });
@@ -146,6 +162,7 @@ describe("music ownership", () => {
 
   it("remembers the desired scene while Music is off and starts it when Music comes back", async () => {
     const { engine, media } = setupAudioEngine();
+    engine.configure({ musicEnabled: false });
     await engine.unlock();
     engine.claimMusic("race");
     expect(media).toHaveLength(0);

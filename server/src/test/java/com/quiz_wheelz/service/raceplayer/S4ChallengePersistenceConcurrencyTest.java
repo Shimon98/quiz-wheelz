@@ -102,7 +102,7 @@ class S4ChallengePersistenceConcurrencyTest extends S4ChallengeIntegrationFixtur
     @Test
     void mutationServicesRequireCallerTransaction() {
         assertThrows(org.springframework.transaction.IllegalTransactionStateException.class,
-                () -> offers.afterAnswer(second(), question(), Difficulty.EASY, true, T));
+                () -> offers.afterAnswer(second(), question(), Difficulty.EASY, true, T, null));
     }
 
     private int answerAfter(CountDownLatch start) throws InterruptedException {

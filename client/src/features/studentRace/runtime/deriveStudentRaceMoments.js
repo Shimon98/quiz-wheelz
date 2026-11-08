@@ -4,9 +4,12 @@ import {
   RACE_LUCK_EVENT_TYPES,
   RACE_LUCK_OUTCOMES,
 } from "../../../constants/raceGameplayConstants";
+import { STUDENT_RACE_CONFIG } from "../config/studentRaceConfig";
 import { STUDENT_RACE_MOMENT } from "./studentRaceRuntimeConstants";
 
 const ANSWER_MOMENTS = new Set([STUDENT_RACE_MOMENT.CORRECT, STUDENT_RACE_MOMENT.WRONG]);
+const RANK_MOMENTS = new Set([STUDENT_RACE_MOMENT.RANK_UP, STUDENT_RACE_MOMENT.TOOK_LEAD]);
+const LEAD_RANK = 1;
 const CHALLENGE_RESULT_MOMENTS = Object.freeze({
   [RACE_CHALLENGE_OUTCOMES.TURBO_SUCCESS]: STUDENT_RACE_MOMENT.TURBO_SUCCESS,
   [RACE_CHALLENGE_OUTCOMES.TURBO_FAILURE]: STUDENT_RACE_MOMENT.TURBO_FAILURE,
@@ -20,6 +23,7 @@ const LUCK_APPLIED_MOMENTS = Object.freeze({
   [RACE_LUCK_EVENT_TYPES.ENERGY_ORB]: STUDENT_RACE_MOMENT.LUCK_ENERGY_ORB,
   [RACE_LUCK_EVENT_TYPES.MUD_SPLASH]: STUDENT_RACE_MOMENT.LUCK_MUD,
 });
+const LUCK_MOMENTS = new Set([...Object.values(LUCK_APPLIED_MOMENTS), STUDENT_RACE_MOMENT.LUCK_SHIELD_BLOCKED]);
 // Only recent IDs can come back in a stale sample, so a short memory is enough.
 const SEEN_ID_LIMIT = 64;
 
@@ -52,7 +56,7 @@ function luckEventsOf(runtimeState) {
 }
 
 // Only the server's outcome reveals a shield block: a shield count that drops proves nothing.
-function luckMomentTypeOf({ appliedType, outcome }) {
+export function luckMomentTypeOf({ appliedType, outcome }) {
   if (outcome === RACE_LUCK_OUTCOMES.BLOCKED_BY_SHIELD) {
     return appliedType === RACE_LUCK_EVENT_TYPES.MUD_SPLASH ? STUDENT_RACE_MOMENT.LUCK_SHIELD_BLOCKED : null;
   }
@@ -68,13 +72,25 @@ function seenResultId(previous, identity, resultId) {
   return Math.max(previous.seenChallengeResultId ?? 0, resultId ?? 0) || null;
 }
 
+// One race player: every memory below, and any news told for it, belongs to exactly this identity.
+export function raceIdentityOf(runtimeState) {
+  return `${runtimeState?.race?.id ?? ""}:${runtimeState?.player?.racePlayerId ?? ""}`;
+}
+
+function rankOf(runtimeState) {
+  const rank = runtimeState.player?.rank;
+  return Number.isSafeInteger(rank) && rank >= LEAD_RANK ? rank : null;
+}
+
 function observeRuntime(runtimeState, previous) {
-  const identity = `${runtimeState.race?.id ?? ""}:${runtimeState.player?.racePlayerId ?? ""}`;
+  const identity = raceIdentityOf(runtimeState);
   // Every memory belongs to one race player, so nothing seen for another one can silence or replay a moment.
   const sameIdentity = previous?.identity === identity;
   const resultId = resultIdOf(runtimeState);
   return {
     identity,
+    rank: rankOf(runtimeState),
+    lastRankMomentAtEpochMs: sameIdentity ? previous.lastRankMomentAtEpochMs ?? null : null,
     activeEffect: runtimeState.visual?.activeEffect ?? null,
     feedbackEventId: runtimeState.visual?.feedbackEventId ?? null,
     feedbackStreak: runtimeState.visual?.feedbackStreak ?? 0,
@@ -101,10 +117,41 @@ function freshResultMoment(previous, observed, runtimeState) {
   return type == null ? null : { type, id: `challenge-${resultId}`, challengeId: resultId };
 }
 
+// A climb in the server's own rank, read from an accepted snapshot (never from the drawn race). Only a climb is news,
+// at most one per gap of server snapshot time; a climb heard inside the gap is not told, then or later. The id is the
+// snapshot's server time: places change with continuous movement between live events, so the event version alone
+// can repeat, while two told climbs are always a gap apart.
+function freshRankMoment(previous, observed, runtimeState) {
+  const atEpochMs = runtimeState.lastSnapshotAtEpochMs;
+  if (observed.rank == null || previous.rank == null || observed.rank >= previous.rank || !Number.isFinite(atEpochMs)) {
+    return null;
+  }
+  const lastAtEpochMs = previous.lastRankMomentAtEpochMs;
+  if (lastAtEpochMs != null && atEpochMs - lastAtEpochMs < STUDENT_RACE_CONFIG.rankMomentMinGapMs) return null;
+  return {
+    type: observed.rank === LEAD_RANK ? STUDENT_RACE_MOMENT.TOOK_LEAD : STUDENT_RACE_MOMENT.RANK_UP,
+    id: `rank-${atEpochMs}`,
+    rank: observed.rank,
+    identity: observed.identity,
+  };
+}
+
+// The newest rank news a batch told, for the notice line and the place tile.
+export function newestRankMoment({ moments }) {
+  return moments.filter(({ type }) => RANK_MOMENTS.has(type)).at(-1) ?? null;
+}
+
+// The newest Luck event a batch announced. Presenters that tell only news read it instead of the server history,
+// which a refresh or a reconnect hands back whole.
+export function newestLuckEventId({ moments }) {
+  return moments.filter(({ type }) => LUCK_MOMENTS.has(type)).at(-1)?.luckEventId ?? null;
+}
+
 // A challenge result arrives with the answer that caused it and stands in for it, in sound and on screen.
+// Luck is a server event of its own and is already marked seen, so it is presented next to the result, never lost.
 export function presentedMoments({ moments }) {
   const results = moments.filter(({ type }) => RESULT_MOMENTS.has(type));
-  return results.length > 0 ? results : moments;
+  return results.length > 0 ? [...results, ...moments.filter(({ type }) => LUCK_MOMENTS.has(type))] : moments;
 }
 
 export function deriveStudentRaceMoments(previous, runtimeState) {
@@ -158,5 +205,10 @@ export function deriveStudentRaceMoments(previous, runtimeState) {
   }
   if (resultMoment != null) moments.push(resultMoment);
   moments.push(...luckMoments);
+  const rankMoment = freshRankMoment(previous, observed, runtimeState);
+  if (rankMoment != null) {
+    moments.push(rankMoment);
+    observed.lastRankMomentAtEpochMs = runtimeState.lastSnapshotAtEpochMs;
+  }
   return { observed, moments };
 }

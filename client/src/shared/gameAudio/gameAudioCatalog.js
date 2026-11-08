@@ -14,6 +14,10 @@ import turboArmUrl from "../../assets/audio/sfx/turbo-arm.wav";
 import turboLaunchUrl from "../../assets/audio/sfx/turbo-launch.wav";
 import turboFizzleUrl from "../../assets/audio/sfx/turbo-fizzle.wav";
 import safePerfectUrl from "../../assets/audio/sfx/safe-perfect.wav";
+import luckTailwindUrl from "../../assets/audio/sfx/luck-tailwind.wav";
+import luckEnergyOrbUrl from "../../assets/audio/sfx/luck-energy-orb.wav";
+import luckMudUrl from "../../assets/audio/sfx/luck-mud-splash.wav";
+import luckShieldBlockedUrl from "../../assets/audio/sfx/luck-shield-blocked.wav";
 import projectorPlayerJoinedUrl from "../../assets/audio/sfx/projector-player-joined.wav";
 import projectorRaceStartUrl from "../../assets/audio/sfx/projector-race-start.wav";
 import projectorPlayerFinishedUrl from "../../assets/audio/sfx/projector-player-finished.wav";
@@ -36,6 +40,10 @@ export const GAME_AUDIO = Object.freeze({
   TURBO_LAUNCH: "sfx-turbo-launch",
   TURBO_FIZZLE: "sfx-turbo-fizzle",
   SAFE_PERFECT: "sfx-safe-perfect",
+  LUCK_TAILWIND: "sfx-luck-tailwind",
+  LUCK_ENERGY_ORB: "sfx-luck-energy-orb",
+  LUCK_MUD: "sfx-luck-mud",
+  LUCK_SHIELD_BLOCKED: "sfx-luck-shield-blocked",
   HOVER_ENGINE: "loop-hover-engine",
   PROJECTOR_PLAYER_JOINED: "sfx-projector-player-joined",
   PROJECTOR_RACE_START: "sfx-projector-race-start",
@@ -60,6 +68,11 @@ export const GAME_AUDIO_MANIFEST = Object.freeze([
   { key: GAME_AUDIO.TURBO_LAUNCH, kind: AUDIO_KINDS.SFX, url: turboLaunchUrl, gain: 0.95, maxVoices: 1, cooldownMs: 1000 },
   { key: GAME_AUDIO.TURBO_FIZZLE, kind: AUDIO_KINDS.SFX, url: turboFizzleUrl, gain: 0.55, maxVoices: 1, cooldownMs: 1000 },
   { key: GAME_AUDIO.SAFE_PERFECT, kind: AUDIO_KINDS.SFX, url: safePerfectUrl, gain: 0.6, maxVoices: 1, cooldownMs: 1000 },
+  // A Luck cue plays beside the answer cue it arrives with, so it sits under it (Astra's V4 mix level).
+  { key: GAME_AUDIO.LUCK_TAILWIND, kind: AUDIO_KINDS.SFX, url: luckTailwindUrl, gain: 0.36, maxVoices: 1, cooldownMs: 1000 },
+  { key: GAME_AUDIO.LUCK_ENERGY_ORB, kind: AUDIO_KINDS.SFX, url: luckEnergyOrbUrl, gain: 0.36, maxVoices: 1, cooldownMs: 1000 },
+  { key: GAME_AUDIO.LUCK_MUD, kind: AUDIO_KINDS.SFX, url: luckMudUrl, gain: 0.36, maxVoices: 1, cooldownMs: 1000 },
+  { key: GAME_AUDIO.LUCK_SHIELD_BLOCKED, kind: AUDIO_KINDS.SFX, url: luckShieldBlockedUrl, gain: 0.36, maxVoices: 1, cooldownMs: 1000 },
   { key: GAME_AUDIO.HOVER_ENGINE, kind: AUDIO_KINDS.LOOP, url: hoverEngineUrl, gain: 0.22 },
   { key: GAME_AUDIO.PROJECTOR_PLAYER_JOINED, kind: AUDIO_KINDS.SFX, url: projectorPlayerJoinedUrl, gain: 0.3, maxVoices: 1, cooldownMs: 1000 },
   { key: GAME_AUDIO.PROJECTOR_RACE_START, kind: AUDIO_KINDS.SFX, url: projectorRaceStartUrl, gain: 0.45, maxVoices: 1, cooldownMs: 1500 },

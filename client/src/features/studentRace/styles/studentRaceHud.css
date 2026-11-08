@@ -288,7 +288,8 @@
 }
 
 .student-race-hud[data-reward="true"] .race-hud-top > .race-hud-stat:first-child,
-.race-hud-combo[data-celebrating="true"] {
+.race-hud-combo[data-celebrating="true"],
+.race-hud-stat[data-rank-pulse="true"] {
   animation: race-hud-reward-pulse var(--race-reward-duration) ease-out both;
 }
 
@@ -321,7 +322,8 @@
 @media (prefers-reduced-motion: reduce) {
   .race-hud-reward,
   .student-race-hud[data-reward="true"] .race-hud-top > .race-hud-stat:first-child,
-  .race-hud-combo[data-celebrating="true"] {
+  .race-hud-combo[data-celebrating="true"],
+  .race-hud-stat[data-rank-pulse="true"] {
     animation: none;
   }
 }

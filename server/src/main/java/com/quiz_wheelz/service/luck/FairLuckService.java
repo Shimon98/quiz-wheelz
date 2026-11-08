@@ -26,18 +26,19 @@ public class FairLuckService {
     private final FairLuckEligibilityPolicy eligibility = new FairLuckEligibilityPolicy();
     private final RaceLuckFairnessPolicy fairness = new RaceLuckFairnessPolicy();
 
-    public Optional<RacePlayerLuckDecision> afterAcceptedManualNormalAnswer(
+    // S4-06 tells the Guard Shield award as well as the decision: both come from this one pass, with no extra read.
+    public LuckAnswerResult afterAcceptedManualNormalAnswer(
             RacePlayer player, PlayerQuestion question, boolean correct, boolean firstAccepted, long instant) {
         guard.requireLocked(player);
         guard.requireOwnedAnsweredNormal(player, question);
         if (!firstAccepted) {
-            return Optional.empty();
+            return LuckAnswerResult.NONE;
         }
         var state = shields.obtainForLockedPlayer(player);
         var raceState = fairnessStates.obtainForLockedPlayer(player);
         if (sources.alreadyRecorded(player.getId(), question.getId())
                 || Objects.equals(state.getGuardShieldAwardQuestionId(), question.getId())) {
-            return Optional.empty();
+            return LuckAnswerResult.NONE;
         }
         state.setLastAcceptedManualNormalAnswerAtEpochMs(instant);
         boolean awarded = shields.afterAcceptedManualNormalAnswer(state, question, correct, true);
@@ -45,14 +46,14 @@ public class FairLuckService {
                 ownState.hasChallenge(player.getId()),
                 ownState.hasSpeedEffect(player.getId(), instant), awarded);
         if (!eligible) {
-            return Optional.empty();
+            return new LuckAnswerResult(Optional.empty(), awarded);
         }
         Long recipientId = raceState.getLastEventRecipient() == null ? null : raceState.getLastEventRecipient().getId();
         var current = new RaceLuckFairnessPolicy.Candidate(player.getId(), state.getLuckEventsReceived(),
                 state.getLastLuckRollSequence(), instant, true);
         if (fairness.defer(current, peers.readCommittedPeers(player.getRace().getId(), player.getId(), instant),
                 recipientId, raceState.getLastEventSequence(), instant, LuckRules.PROVISIONAL_ACTIVITY_WINDOW_MS)) {
-            return Optional.empty();
+            return new LuckAnswerResult(Optional.empty(), awarded);
         }
         var result = new LuckDrawPolicy(random).attempt(true, false, state.getLastLuckWasNegative(),
                 player.getSpeed(), state.getChallengeEnergy(), state.getGuardShieldCharges());
@@ -79,6 +80,6 @@ public class FairLuckService {
         decision.setOutcome(result.outcome());
         decision.setSpeedEffect(applied.effect());
         decision.setEffectiveMagnitudeOrEnergyDelta(applied.value());
-        return Optional.of(decisions.save(decision));
+        return new LuckAnswerResult(Optional.of(decisions.save(decision)), awarded);
     }
 }

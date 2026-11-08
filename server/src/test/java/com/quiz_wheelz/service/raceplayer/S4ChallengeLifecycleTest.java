@@ -122,7 +122,7 @@ class S4ChallengeLifecycleTest extends S4ChallengeIntegrationFixture {
         transactions.executeWithoutResult(status -> {
             energy(100);
             offers.afterAnswer(locked(), questionRepository.findById(questionId).orElseThrow(),
-                    Difficulty.EASY, true, T + 1);
+                    Difficulty.EASY, true, T + 1, null);
         });
         assertEquals(100, energy());
         assertEquals(id, snapshot().getGameplay().challenge().offer().offerId());

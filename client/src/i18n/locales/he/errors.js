@@ -37,4 +37,7 @@ export default {
   racePlayer: {
     sessionLost: "החיבור שלכם למרוץ לא נמצא. הצטרפו שוב עם קוד החדר.",
   },
+  question: {
+    unavailable: "אין כרגע שאלה זמינה. בקשו עזרה מהמורה.",
+  },
 };

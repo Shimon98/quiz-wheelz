@@ -8,6 +8,7 @@ import {
   RACE_GAMEPLAY_MODES,
 } from "../../../constants/raceGameplayConstants";
 import { createLocalStudentRaceChallenge } from "./localStudentRaceChallenge";
+import { createLocalStudentRaceLuck } from "./localStudentRaceLuck";
 
 const LOCAL_TICK_MS = 500;
 const DEV_TOTAL_DISTANCE = 1000;
@@ -41,20 +42,23 @@ export function createLocalStudentRaceRuntime({ scenario = resolveMotionScenario
   let intervalId = null;
   const listeners = new Set();
   const challenge = scenario === "challenge" ? createLocalStudentRaceChallenge() : null;
+  const luck = scenario === "luck" ? createLocalStudentRaceLuck(startedAtEpochMs) : null;
 
   const isSlowed = () => scenario === "slowdown"
     && elapsedMs >= DEV_SLOWDOWN.fromMs && elapsedMs < DEV_SLOWDOWN.toMs;
 
-  const slowdownTenths = () => (isSlowed()
-    ? DEV_SLOWDOWN.magnitudeTenths
-    : challenge?.slowdownTenths(snapshotAtEpochMs) ?? 0);
+  // Signed, in tenths: a slowdown takes speed away and a Luck Tailwind adds some.
+  const speedChangeTenths = () => (isSlowed()
+    ? -DEV_SLOWDOWN.magnitudeTenths
+    : (luck?.speedChangeTenths(snapshotAtEpochMs) ?? 0) - (challenge?.slowdownTenths(snapshotAtEpochMs) ?? 0));
 
-  const effectiveSpeed = () => (slowdownTenths() > 0
-    ? Math.max(DEV_MIN_EFFECTIVE_SPEED_TENTHS, Math.round(speed * 10) - slowdownTenths()) / 10
+  const effectiveSpeed = () => (speedChangeTenths() !== 0
+    ? Math.max(DEV_MIN_EFFECTIVE_SPEED_TENTHS, Math.round(speed * 10) + speedChangeTenths()) / 10
     : speed);
 
   const activeEffects = () => {
     if (challenge != null) return challenge.activeEffects(snapshotAtEpochMs);
+    if (luck != null) return luck.activeEffects(snapshotAtEpochMs);
     if (isSlowed()) {
       return [{
         effectId: 1,
@@ -95,6 +99,7 @@ export function createLocalStudentRaceRuntime({ scenario = resolveMotionScenario
         effectiveSpeed: currentEffectiveSpeed,
         activeEffects: finished ? [] : activeEffects(),
         challenge: challenge?.snapshot() ?? null,
+        ...(luck?.gameplay(snapshotAtEpochMs) ?? {}),
       },
       snapshotAtEpochMs,
       vehicleAssetKey: DEV_VEHICLE_ASSET_KEY,

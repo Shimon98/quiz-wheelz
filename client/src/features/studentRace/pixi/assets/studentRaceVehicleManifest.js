@@ -36,6 +36,10 @@ const GREEN_MASTER = Object.freeze({
   // Rear thruster glow centres and radius in the 768 px art, measured; identical on every color.
   thrusters: Object.freeze([Object.freeze({ x: 161.4, y: 583.2 }), Object.freeze({ x: 604.5, y: 582.5 })]),
   thrusterRadius: 44,
+  // The art's side in pixels, and the top of the driver's helmet in it, measured: the idle pose stands tallest (Safe
+  // tops out at row 39, Turbo at 125) on every color. Effects above the kart start clear of it.
+  artSize: 768,
+  headTop: Object.freeze({ x: 405, y: 30 }),
   poses: poses(hoverKartGreenSafe01, hoverKartGreenTurbo01),
 });
 

@@ -6,3 +6,15 @@ export const RACE_LIVE_EVENT_TYPES = Object.freeze({
   PLAYER_FINISHED: "PLAYER_FINISHED",
   RACE_FINISHED: "RACE_FINISHED",
 });
+
+// S4-06: the public facts a QUESTION_ANSWERED event may carry (server RacePublicMomentKind). A kind the client does not
+// know yet is dropped, never fatal.
+export const RACE_PUBLIC_MOMENT_KINDS = Object.freeze({
+  TURBO_SUCCESS: "TURBO_SUCCESS",
+  SAFE_PERFECT: "SAFE_PERFECT",
+  SHIELD_EARNED: "SHIELD_EARNED",
+  LUCK_TAILWIND: "LUCK_TAILWIND",
+  LUCK_ENERGY_ORB: "LUCK_ENERGY_ORB",
+  LUCK_MUD: "LUCK_MUD",
+  LUCK_SHIELD_BLOCKED: "LUCK_SHIELD_BLOCKED",
+});

@@ -24,6 +24,11 @@ export const STUDENT_RACE_VISUAL_CONFIG = Object.freeze({
   }),
   camera: Object.freeze({
     horizonYRatio: 0.34,
+    // The HUD's two rows end 121 to 137 px down (measured 360 to 960 wide). On a short frame the horizon stays
+    // below them, so the far road and the finish gate's banner show; on a landscape phone it never goes deeper
+    // than maxHorizonYRatio of the visible world, so the road keeps its room.
+    minHorizonY: 160,
+    maxHorizonYRatio: 0.45,
     vanishingPointXRatio: 0.5,
     roadTopWidthRatio: 0.09,
     roadBottomWidthRatio: 1.65,

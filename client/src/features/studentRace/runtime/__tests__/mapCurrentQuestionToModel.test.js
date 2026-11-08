@@ -22,13 +22,14 @@ function questionResponse(overrides = {}) {
 }
 
 describe("mapCurrentQuestionToModel gameplay context", () => {
-  it("carries the server's gameplay context next to the unchanged question model", () => {
+  it("carries the server's gameplay context and response time next to the question model", () => {
     expect(mapCurrentQuestionToModel(questionResponse(), RECEIVED_AT_EPOCH_MS)).toEqual({
       id: 87,
       gameplayContext: "NORMAL",
       text: "6 + 6 = ?",
       timeLimitSeconds: 30,
       expiresAtEpochMs: 130000,
+      serverTimeEpochMs: 100000,
       serverClockOffsetMs: -500,
       choices: [{ id: 101, text: "12" }, { id: 102, text: "10" }],
     });

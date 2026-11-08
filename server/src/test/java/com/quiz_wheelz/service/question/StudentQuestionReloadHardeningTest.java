@@ -54,7 +54,7 @@ class StudentQuestionReloadHardeningTest {
                 raceEngineService,
                 fixture.playerQuestionRepository,
                 clock
-        , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeExecutionService.class));
+        , org.mockito.Mockito.mock(com.quiz_wheelz.service.challenge.ChallengeExecutionService.class), org.mockito.Mockito.mock(org.springframework.beans.factory.ObjectProvider.class));
         RacePlayerGameplayTimelineService timelineService =
                 new RacePlayerGameplayTimelineService(
                         timeoutService,

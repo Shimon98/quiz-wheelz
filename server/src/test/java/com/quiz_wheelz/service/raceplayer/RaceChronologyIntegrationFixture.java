@@ -78,6 +78,7 @@ abstract class RaceChronologyIntegrationFixture {
     @Autowired RaceRepository raceRepository;
     @Autowired PlayerQuestionRepository questionRepository;
     @Autowired RaceLiveEventRepository eventRepository;
+    @Autowired RaceLiveEventPayloadCodec payloadCodec;
     @Autowired EntityManager entityManager;
     @Autowired PlatformTransactionManager transactionManager;
     @Autowired ControlledTime clock;
@@ -146,6 +147,22 @@ abstract class RaceChronologyIntegrationFixture {
         return transactions.execute(status -> eventRepository
                 .findAfterVersionOrdered(raceId, 0L, PageRequest.of(0, 100))
                 .stream().map(RaceLiveEvent::getType).toList());
+    }
+
+    // The stored JSON of every QUESTION_ANSWERED event of the race, oldest first: what the teacher stream replays.
+    List<String> answeredPayloadJson() {
+        return transactions.execute(status -> eventRepository
+                .findAfterVersionOrdered(raceId, 0L, PageRequest.of(0, 100))
+                .stream().filter(event -> event.getType() == RaceLiveEventType.QUESTION_ANSWERED)
+                .map(RaceLiveEvent::getPayloadJson).toList());
+    }
+
+    // The S4-06 public moments of every QUESTION_ANSWERED event, read back through the real codec.
+    List<List<com.quiz_wheelz.dto.liveevent.RacePublicMoment>> answeredMoments() {
+        return answeredPayloadJson().stream()
+                .map(json -> ((com.quiz_wheelz.dto.liveevent.QuestionAnsweredLiveEventPayload) payloadCodec
+                        .deserialize(RaceLiveEventType.QUESTION_ANSWERED, json)).moments())
+                .toList();
     }
 
     void secondPosition(double position) {

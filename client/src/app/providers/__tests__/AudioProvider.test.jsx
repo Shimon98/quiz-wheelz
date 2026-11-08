@@ -48,9 +48,9 @@ describe("AudioProvider", () => {
     render(<AudioProvider />);
 
     expect(configure).toHaveBeenLastCalledWith(expect.objectContaining(AUDIO_SETTINGS_DEFAULTS));
-    act(() => useAudioSettingsStore.getState().setMusicEnabled(true));
+    act(() => useAudioSettingsStore.getState().setMusicEnabled(false));
 
-    expect(configure).toHaveBeenLastCalledWith(expect.objectContaining({ musicEnabled: true }));
+    expect(configure).toHaveBeenLastCalledWith(expect.objectContaining({ musicEnabled: false }));
   });
 
   it("unlocks on every activation gesture, ignoring key auto-repeat and Escape", () => {

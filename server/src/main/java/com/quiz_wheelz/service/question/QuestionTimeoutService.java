@@ -13,7 +13,9 @@ import com.quiz_wheelz.exception.ErrorCode;
 import com.quiz_wheelz.repository.PlayerQuestionRepository;
 import com.quiz_wheelz.service.raceengine.RaceEngineService;
 import com.quiz_wheelz.service.raceengine.RaceMovementService;
+import com.quiz_wheelz.service.recovery.HiddenRecoveryService;
 import com.quiz_wheelz.utils.DateTimeUtils;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -28,19 +30,22 @@ public class QuestionTimeoutService {
     private final PlayerQuestionRepository playerQuestionRepository;
     private final Clock clock;
     private final ChallengeExecutionService challenges;
+    private final ObjectProvider<HiddenRecoveryService> recovery;
 
     public QuestionTimeoutService(
             RaceMovementService raceMovementService,
             RaceEngineService raceEngineService,
             PlayerQuestionRepository playerQuestionRepository,
             Clock clock,
-            ChallengeExecutionService challenges
+            ChallengeExecutionService challenges,
+            ObjectProvider<HiddenRecoveryService> recovery
     ) {
         this.raceMovementService = Objects.requireNonNull(raceMovementService);
         this.raceEngineService = Objects.requireNonNull(raceEngineService);
         this.playerQuestionRepository = Objects.requireNonNull(playerQuestionRepository);
         this.clock = Objects.requireNonNull(clock);
         this.challenges = Objects.requireNonNull(challenges);
+        this.recovery = Objects.requireNonNull(recovery);
     }
 
     public void processExpiredActiveQuestion(
@@ -158,6 +163,8 @@ public class QuestionTimeoutService {
         if (isActivelyRacing(lockedRacePlayer)) {
             if (question.getGameplayContext() == QuestionGameplayContext.NORMAL) {
                 raceEngineService.applyTimeoutResult(lockedRacePlayer);
+                // S4-05: only a timeout that really cost the student counts; an expiry without consequence never does.
+                recovery.ifAvailable(service -> service.observePenalizedTimeout(lockedRacePlayer, question));
             } else {
                 challenges.resolve(lockedRacePlayer, question, false, movementBeforeConsequenceEpochMs);
             }

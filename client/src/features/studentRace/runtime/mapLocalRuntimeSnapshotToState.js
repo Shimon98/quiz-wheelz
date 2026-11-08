@@ -6,6 +6,7 @@ import {
 export function mapLocalRuntimeSnapshotToState(previousState, snapshot, receivedAtEpochMs = Date.now()) {
   const gameplay = mapStudentRaceGameplay(snapshot.gameplay, {
     serverClockOffsetMs: snapshot.snapshotAtEpochMs - receivedAtEpochMs,
+    receivedAtEpochMs,
   });
 
   return {

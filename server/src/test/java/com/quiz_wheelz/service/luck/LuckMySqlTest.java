@@ -152,7 +152,7 @@ class LuckMySqlTest extends LuckOrchestrationTest {
                     await(ownLocksHeld);
                     em.find(Race.class, raceId, LockModeType.PESSIMISTIC_WRITE);
                     return luck.afterAcceptedManualNormalAnswer(player, em.find(PlayerQuestion.class, questions.get(id)),
-                            false, true, 100).orElseThrow().getDecisionSequence();
+                            false, true, 100).decision().orElseThrow().getDecisionSequence();
                 })));
             }
             var sequences = new java.util.ArrayList<Long>();
@@ -186,7 +186,7 @@ class LuckMySqlTest extends LuckOrchestrationTest {
                     em.find(Race.class, raceId, LockModeType.PESSIMISTIC_WRITE);
                     long instant = calls.incrementAndGet() == 1 ? 100 : 100000;
                     return luck.afterAcceptedManualNormalAnswer(player, em.find(PlayerQuestion.class, questionId),
-                            false, true, instant).isPresent();
+                            false, true, instant).decision().isPresent();
                 })));
             }
             int accepted = 0;

@@ -26,4 +26,12 @@ describe("teacher projector sounds", () => {
       item(TEACHER_FEED_KINDS.PLAYER_FINISHED),
     ])).toBe(GAME_AUDIO.PROJECTOR_RACE_FINISHED);
   });
+
+  it("adds no cue for leads, streaks or public moments: the student's own screen already plays those", () => {
+    const quietKinds = Object.values(TEACHER_FEED_KINDS).filter(
+      (kind) => kind !== TEACHER_FEED_KINDS.PLAYER_FINISHED && kind !== TEACHER_FEED_KINDS.RACE_FINISHED,
+    );
+
+    expect(soundForFreshFeedItems(quietKinds.map((kind) => item(kind)))).toBeNull();
+  });
 });

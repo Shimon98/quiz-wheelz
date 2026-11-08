@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const STORAGE_KEY = "qw-audio";
-const DEFAULTS = { musicEnabled: false, sfxEnabled: true, musicVolume: 0.6, sfxVolume: 0.75 };
+// Music on for a new browser since 2026-11-08; a choice the browser already saved wins (README, Audio).
+const DEFAULTS = { musicEnabled: true, sfxEnabled: true, musicVolume: 0.6, sfxVolume: 0.75 };
 
 async function loadStore() {
   vi.resetModules();
@@ -25,12 +26,12 @@ afterEach(() => {
 });
 
 describe("audio settings store", () => {
-  it("starts with music off and sound effects on", async () => {
+  it("starts a new browser with music and sound effects on", async () => {
     expect(settingsOf(await loadStore())).toEqual(DEFAULTS);
   });
 
-  it("hydrates every valid stored field", async () => {
-    const saved = { musicEnabled: true, sfxEnabled: false, musicVolume: 0.2, sfxVolume: 1 };
+  it("hydrates every valid stored field, so a saved choice beats the defaults", async () => {
+    const saved = { musicEnabled: false, sfxEnabled: false, musicVolume: 0.2, sfxVolume: 1 };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
 
     expect(settingsOf(await loadStore())).toEqual(saved);
@@ -44,44 +45,44 @@ describe("audio settings store", () => {
 
   it("keeps the valid fields of a partly corrupt object and defaults the rest", async () => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      musicEnabled: true,
+      musicEnabled: false,
       sfxEnabled: "yes",
       musicVolume: 1.5,
       sfxVolume: 0.3,
     }));
 
-    expect(settingsOf(await loadStore())).toEqual({ musicEnabled: true, sfxEnabled: true, musicVolume: 0.6, sfxVolume: 0.3 });
+    expect(settingsOf(await loadStore())).toEqual({ musicEnabled: false, sfxEnabled: true, musicVolume: 0.6, sfxVolume: 0.3 });
   });
 
   it("persists valid changes and ignores invalid ones", async () => {
     const store = await loadStore();
 
-    store.getState().setMusicEnabled(true);
+    store.getState().setMusicEnabled(false);
     store.getState().setSfxVolume(0.4);
     store.getState().setMusicVolume(-0.1);
     store.getState().setSfxEnabled(1);
     store.getState().setMusicVolume(Number.NaN);
 
-    const expected = { ...DEFAULTS, musicEnabled: true, sfxVolume: 0.4 };
+    const expected = { ...DEFAULTS, musicEnabled: false, sfxVolume: 0.4 };
     expect(settingsOf(store)).toEqual(expected);
     expect(stored()).toEqual(expected);
   });
 
   it("keeps music and sound effects independent across reloads", async () => {
     let store = await loadStore();
-    store.getState().setMusicEnabled(true);
+    store.getState().setMusicEnabled(false);
     store.getState().setSfxEnabled(false);
 
     store = await loadStore();
-    expect(settingsOf(store)).toMatchObject({ musicEnabled: true, sfxEnabled: false });
-    store.getState().setMusicEnabled(false);
+    expect(settingsOf(store)).toMatchObject({ musicEnabled: false, sfxEnabled: false });
+    store.getState().setMusicEnabled(true);
 
     store = await loadStore();
-    expect(settingsOf(store)).toMatchObject({ musicEnabled: false, sfxEnabled: false });
+    expect(settingsOf(store)).toMatchObject({ musicEnabled: true, sfxEnabled: false });
   });
 
   it("resets to the defaults and persists them", async () => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ musicEnabled: true, sfxEnabled: false, musicVolume: 0, sfxVolume: 0 }));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ musicEnabled: false, sfxEnabled: false, musicVolume: 0, sfxVolume: 0 }));
     const store = await loadStore();
 
     store.getState().resetAudioSettings();

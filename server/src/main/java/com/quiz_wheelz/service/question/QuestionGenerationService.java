@@ -31,6 +31,9 @@ public class QuestionGenerationService {
         this.answerChoiceGenerator = answerChoiceGenerator;
     }
 
+    // No production caller since S4-03: it picks the template again by its fields, so a look-alike template could
+    // replace the one whose turn it is. New code generates through QuestionTemplateFallbackService.
+    @Deprecated
     @Transactional(readOnly = true)
     public InternalGeneratedQuestion generate(QuestionPlan questionPlan) {
         if (questionPlan == null) {

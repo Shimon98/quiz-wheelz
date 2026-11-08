@@ -56,4 +56,15 @@ describe("game audio catalog", () => {
     expect(gain(GAME_AUDIO.ANSWER_CORRECT)).toBeLessThan(gain(GAME_AUDIO.RACE_FINISH));
     expect(GAME_AUDIO_MANIFEST.every((descriptor) => descriptor.gain < 1)).toBe(true);
   });
+
+  it("keeps each Luck cue under the correct answer it arrives with and over the engine, one voice at a time", () => {
+    const descriptor = (key) => GAME_AUDIO_MANIFEST.find((entry) => entry.key === key);
+    const luck = [GAME_AUDIO.LUCK_TAILWIND, GAME_AUDIO.LUCK_ENERGY_ORB, GAME_AUDIO.LUCK_MUD, GAME_AUDIO.LUCK_SHIELD_BLOCKED];
+
+    luck.forEach((key) => {
+      expect(descriptor(key).gain).toBeLessThan(descriptor(GAME_AUDIO.ANSWER_CORRECT).gain);
+      expect(descriptor(key).gain).toBeGreaterThan(descriptor(GAME_AUDIO.HOVER_ENGINE).gain);
+      expect(descriptor(key).maxVoices).toBe(1);
+    });
+  });
 });

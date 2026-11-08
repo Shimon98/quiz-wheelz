@@ -81,6 +81,7 @@ export function applyRaceSnapshot(previousState, snapshot, receivedAtEpochMs = D
 
   const gameplay = mapStudentRaceGameplay(snapshot.gameplay, {
     serverClockOffsetMs: snapshot.snapshotAtEpochMs - receivedAtEpochMs,
+    receivedAtEpochMs,
   });
 
   return {

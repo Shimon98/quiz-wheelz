@@ -9,7 +9,7 @@ the prod security/Redis topology: it proves schema mapping startup only.
 
 | Canonical property / environment input | Known local fact | Required future owner input |
 |---|---|---|
-| spring.datasource.hikari.maximum-pool-size | no repo override; actual app startup measured W=10 | explicit maximum per deployed instance, not assumed 10 |
+| spring.datasource.hikari.maximum-pool-size | the dev profile sets 10 since 2026-11-05 (no prod override); actual app startup measured W=10 | explicit maximum per deployed instance, not assumed 10 |
 | spring.datasource.hikari.connection-timeout | actual app startup measured 30000 ms | approved queue/failure envelope |
 | QUIZWHEELZ_LUCK_PEER_POOL_MAX_SIZE | R=2 default, minimumIdle=0, lazy, same primary URL/credentials | explicit R and total DB budget |
 | QUIZWHEELZ_LUCK_PEER_ACQUIRE_TIMEOUT_MS | 2000 default, validation min(1000,acquire) | approved bounded timeout |
@@ -20,8 +20,8 @@ the prod security/Redis topology: it proves schema mapping startup only.
 | MySQL @@max_connections | lab 151 only | target value, topology, proxy/replica limits |
 | DB_URL / DB_USERNAME / DB_PASSWORD | prod external; private reader copies primary | authorized target injection, privileges and rotation owner; no secret in artifacts |
 | spring.jpa.hibernate.ddl-auto | prod validate | approved schema inventory + startup gate; OFF is insufficient |
-| QUIZWHEELZ_LUCK_ANSWER_ENABLED | false injection default; no profile enables it | remain false through migration/release; activation requires separate approval |
-| LuckRules.PROVISIONAL_ACTIVITY_WINDOW_MS | 60000 unchanged | explicit product decision before activation |
+| QUIZWHEELZ_LUCK_ANSWER_ENABLED | false injection default; since 2026-11-05 true in application.properties (every normal local run, budget 1/10/2/20/5 in application-dev.properties); test and prod profiles false | prod stays false through migration/release; activation requires separate approval |
+| LuckRules.PROVISIONAL_ACTIVITY_WINDOW_MS | 60000 unchanged | approved 2026-11-04 by Shimon (project owner) as the initial product rule, for Diana's review in the PR; revisit with real usage data; the constant keeps its name |
 | REDIS_HOST/PORT/PASSWORD/SSL_ENABLED | prod requires external Redis | separately authorized readiness; unchanged |
 
 Spring canonical writer properties above should be explicitly bound and observed in
@@ -67,16 +67,17 @@ harness observations, not HTTP measurements, an SLA or a production sizing argum
 | Gate | C2 outcome / required evidence |
 |---|---|
 | SERVER_CODE_QA | unchanged A/B1/B2/C1 production identity, three test-fixture changes only; current local results listed separately in PR report |
-| LOCAL_MIGRATION_REHEARSAL | synthetic exact-main schema -> draft expansion -> validate/restart succeeds; unexpanded/partial controls fail |
+| LOCAL_MIGRATION_REHEARSAL | synthetic exact-main schema -> draft expansion -> validate/restart succeeds; unexpanded/partial controls fail. 2026-11-04: S4-05 table rehearsed on copies of a main@5ed8a39 database in the prod profile, 27/27 (C2_SCHEMA_MIGRATION_PROPOSAL_EN.md, S4-05 step) |
+| STARTUP_BUDGET_GATE | 2026-11-04, prod profile, Luck ON: refuses to serve with undeclared limits, N*(W+R) > B, an effective Hikari maximum of 20 against B=20, and B+reserved above @@max_connections; serves with 1/20/5 |
 | MIGRATION_POLICY | UNDECIDED: method/framework, ledger/version, operator, checksum, repair/restore policy require approval |
 | TARGET_SCHEMA_APPROVAL | UNKNOWN; actual authorized inventory, constraints, data, target engine and restoration rehearsal required |
 | LOCAL_CI_BLUEPRINT | design/syntax and local commands only; action pins/hosted behavior not approved |
-| HOSTED_CI_GREEN | PENDING; no authorized publication/run |
+| HOSTED_CI_GREEN | PENDING; no authorized publication/run. 2026-11-04: GitHub shows no workflow, check run or status on main or the S4-05 branch |
 | POOL_TOPOLOGY_APPROVED | BLOCKED by unknown N/W/B/reserve/max/other consumers and deploy surge |
 | PR_REVIEW_READY | recommendation for review-only artifacts, subject to exact patch/QA review; not PR creation permission |
 | MERGE_COMPATIBLE | observed remote main matches local baseline, but merge/deploy gates remain open; no merge performed |
-| MERGE/DEPLOY_READY | NO: schema/policy/CI/budget/release authorization missing |
-| LUCK_ACTIVATION_READY | NO: all release gates + product 60s approval + Shimon's client acceptance required |
+| MERGE/DEPLOY_READY | NO for deploy: schema/policy/CI/budget/release authorization missing. 2026-11-04: GitHub has no environment, deployment or workflow, so a merge deploys nothing unless an outside host is connected (the owner confirms before merging) |
+| LUCK_ACTIVATION_READY | NO: all release gates + Shimon's client acceptance (listening, physical phone) required; the 60s window is approved |
 | CLIENT_ACCEPTANCE | Shimon; no React/Pixi/HUD/animation/audio/scheduling change or acceptance claim |
 
 Release order proposal: approve migration ownership/method and real inventory ->

@@ -141,31 +141,42 @@ Order:
 
 1. S4-01 gameplay/effect foundation (DONE; Checkpoints A and B implemented,
    approved and merged in PR #74, including the shared runtime contract and handoff).
-2. S4-02 Challenge Energy, offer and choice complete locally on
-   `feature/s4-02-03-challenge-flow`; held from main until S4-03 completes execution.
+2. S4-02 Challenge Energy, offer and choice: merged with S4-03 (PR #77, built on
+   `feature/s4-02-03-challenge-flow`).
    Correct NORMAL EASY/MEDIUM/HARD answers earn 20/25/30 Energy, capped at 100.
    Below 80% post-answer progress, 100 Energy opens a 12-second offer and resets
    Energy to 0; expiry restores 50 and applies -0.1 effective speed for 4 seconds.
    S4-02 DEV verification passed; production migrations remain Phase 6.
-3. S4-03 Turbo Trial + Safe Run implemented locally / under review on the same
-   integration branch: Turbo is one HARD 15-second question (+80 progress/+40 score
+3. S4-03 Turbo Trial + Safe Run: merged (PR #77; template-safety fix in PR #81). Turbo is one HARD 15-second question (+80 progress/+40 score
    on correct; wrong/timeout gives -0.2 effective speed for 4 seconds). Safe is three
    EASY 15-second questions (+15/+8 each correct, +10/+6 perfect bonus; no wrong/timeout
    penalty). Active SPEED_SLOW suppresses a new offer and retains Energy 100; only
    the next qualifying NORMAL correct answer after expiry can create the offer.
    DEV startup/schema/health verification passed after approved DEV-only CHECK alignment.
-   End-to-end Challenge execution remains local and subject to Diana review before
-   any combined PR/main merge.
+   End-to-end Challenge execution merged with S4-02 in PR #77.
 4. S4-04 Power-Ups + fair Luck: the code reached `main` at `77cd396` with the Luck flag off by
    default. The 2026-10-24 review reproduced four Luck-ON defects (cross-race deadlock, nightly
    question cleanup, startup budget check, Tailwind at the maximum speed); the S4-04 stability
-   fixes keep every rule unchanged. Luck stays OFF and not playable until its release gates
-   pass (see `../01-server/SERVER_IMPLEMENTATION_PLAN.md`). S4-05 / S4-06 remain PLANNED; no
-   Recovery is claimed.
-5. Earned Power-Ups and fair bounded Luck.
-6. Hidden Recovery policy.
-7. Race Moments / announcements.
-8. Confirm open-race browsing requirement.
+   fixes keep every rule unchanged. Since 2026-11-05 Luck and Hidden Recovery are ON in every
+   normal (local) run; production keeps both OFF until its own release gates pass (see
+   `../01-server/SERVER_IMPLEMENTATION_PLAN.md`). S4-06 Race Moments is implemented on the same
+   branch (2026-11-05, committed, not merged yet): public moments ride on `QUESTION_ANSWERED`, with no new
+   event type and no DDL, and C5-05 tells them on the projector and a climb in place on the
+   student screen. S4-05
+   Hidden Recovery is committed on `feature/S4-05-C5-04-recovery-luck-shield` (`b096e10`, pushed,
+   not merged), first behind `QUIZWHEELZ_RECOVERY_ENABLED=false`; nothing is claimed for production
+   until the branch is reviewed. Production validates every entity at startup, so its table
+   needs the documented DDL before this build is deployed, flag on or off. Since 2026-11-02 it
+   is ON in the dev profile (Shimon's decision after live QA, kill switch by environment
+   variable) and the p50/p95 measurement is done. On 2026-11-04 Shimon, as project owner,
+   approved the two rules the 2026-10-26 review left open (finished leader, STRICT focus
+   forfeit) and Luck's 60-second activity window; Diana reviews them in the PR. The DDL is
+   rehearsed, not applied: production stays OFF until a target exists and its deployment gates
+   close (S4-05 section of the server plan).
+5. Earned Power-Ups and fair bounded Luck: S4-04, merged (item 4).
+6. Hidden Recovery policy: S4-05, on the feature branch, not merged (item 4).
+7. Race Moments / announcements: S4-06 + C5-05, on the feature branch, not merged (item 4).
+8. Confirm open-race browsing requirement: still open (`REQUIREMENTS_AND_SCOPE.md`).
 
 **Gate:** each event is server-authoritative, persisted/auditable where needed,
 bounded by fairness rules, recoverable after refresh, and rendered without client
@@ -192,6 +203,18 @@ Client checkpoint (2026-10-24): C5-02, C5-03 and client quality packages 1–3 a
 `main` with the C5 client PR (`feature/C5-02-challenge-choice-energy`); 1,689 client tests, lint
 and build pass. Next on the client: C5-04 (Luck and Guard Shield presentation) after the S4-04
 review, the physical-phone check and client quality package 4.
+
+Client checkpoint (2026-10-25): C5-04 part 1 is merged (PR #81); C5-04 part 2 (functional Luck
+and Guard Shield presentation with temporary Pixi `Graphics` and text notices, the friendly
+"no question available" message and the mode catch-up read) is implemented locally on
+`feature/S4-05-C5-04-recovery-luck-shield`. Final art and sound remain.
+
+Client checkpoint (2026-11-08): on `feature/S4-05-C5-04-recovery-luck-shield` (pushed, not merged):
+C5-04 part 2 and C5-04f (Luck and shield presentation, Astra's art, the four Luck cues) and C5-05
+(race moments on the projector, the student rank notice, the seven-row feed, Astra's moment icons
+and the playful copy). Client tests, lint and build pass; live QA passed on the isolated local stack.
+Open before the merge: Shimon's listening and physical phone and projector checks. Next: the PR,
+then client quality package 4, then C6.
 
 ## Phase 5 — Full teacher identity and 2FA
 

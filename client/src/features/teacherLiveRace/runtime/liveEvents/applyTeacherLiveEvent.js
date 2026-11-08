@@ -22,12 +22,14 @@ function recoveryRequired(runtime, recoveryReason) {
   };
 }
 
-function applied(runtime, feedItems) {
+// The mapped payload rides along for a caller that decides by it (the reducer holds a correct answer's rows).
+function applied(runtime, feedItems, payload = null) {
   return {
     kind: TEACHER_LIVE_EVENT_OUTCOMES.APPLIED,
     runtime,
     feedItems,
     recoveryReason: null,
+    payload,
   };
 }
 
@@ -47,6 +49,7 @@ function runKnownDefinition(definition, runtime, event) {
   return applied(
     nextRuntime,
     definition.deriveFeedItems(runtime, mappedEvent, nextRuntime),
+    mappedEvent.payload,
   );
 }
 

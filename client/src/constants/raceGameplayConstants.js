@@ -6,12 +6,14 @@ export const RACE_GAMEPLAY_MODES = Object.freeze({
 });
 
 export const RACE_GAMEPLAY_EFFECT_TYPES = Object.freeze({
+  SPEED_BOOST: "SPEED_BOOST",
   SPEED_SLOW: "SPEED_SLOW",
 });
 
 export const RACE_GAMEPLAY_EFFECT_SOURCES = Object.freeze({
   CHALLENGE_TIMEOUT: "CHALLENGE_TIMEOUT",
   TURBO_FAILURE: "TURBO_FAILURE",
+  LUCK_EVENT: "LUCK_EVENT",
 });
 
 export const QUESTION_GAMEPLAY_CONTEXTS = Object.freeze({
@@ -42,3 +44,6 @@ export const RACE_LUCK_OUTCOMES = Object.freeze({
   APPLIED: "APPLIED",
   BLOCKED_BY_SHIELD: "BLOCKED_BY_SHIELD",
 });
+
+// The answer streaks the game celebrates: the student's combo cues and the projector's streak line.
+export const RACE_STREAK_MILESTONES = Object.freeze({ HOT: 5, BLAZING: 10 });

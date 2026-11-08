@@ -1,9 +1,15 @@
+import { Graphics, Texture, TextureSource } from "pixi.js";
 import { describe, expect, it } from "vitest";
 
 import { STUDENT_RACE_EFFECT } from "../../../runtime/studentRaceRuntimeConstants";
 import { CHALLENGE_RESULT_DRAWERS } from "../drawChallengeResultEffect";
 
 const KART = Object.freeze({ x: 260, y: 420, size: 177, groundY: 443, bottomY: 518 });
+const SKY = 0x74c0fc;
+const art = (width, height) => new Texture({ source: new TextureSource({ width, height }) });
+const painted = (graphics) => graphics.context.instructions
+  .filter(({ action }) => action === "texture").map(({ data }) => data);
+const centreOf = ({ dx, dy, dw, dh, transform }) => transform.apply({ x: dx + dw / 2, y: dy + dh / 2 });
 
 // Records what a drawer asks Graphics to paint, without a renderer.
 function recorder() {
@@ -87,4 +93,39 @@ describe.each([STUDENT_RACE_EFFECT.SAFE_COMPLETE, STUDENT_RACE_EFFECT.SAFE_PERFE
     expect(start).toBeLessThan(middle);
     expect(end).toBeCloseTo(start);
   });
+});
+
+describe("challenge results with Astra's V4 art", () => {
+  it("puffs the painted smoke on the road behind the kart on a Turbo failure, nothing over the driver", () => {
+    const smoke = art(160, 118);
+    const front = new Graphics();
+    const behind = new Graphics();
+    CHALLENGE_RESULT_DRAWERS[STUDENT_RACE_EFFECT.TURBO_FAILURE](front,
+      { ...KART, behind, effectArt: { smokePuff: smoke } }, 0.5);
+
+    expect(front.context.instructions).toEqual([]);
+    expect(painted(behind).length).toBeGreaterThan(0);
+    painted(behind).forEach(({ image }) => expect(image).toBe(smoke));
+    front.destroy();
+    behind.destroy();
+  });
+
+  it.each([STUDENT_RACE_EFFECT.SAFE_COMPLETE, STUDENT_RACE_EFFECT.SAFE_PERFECT])(
+    "lays the painted ring flat on the road for %s, tinted sky and still restrained",
+    (effect) => {
+      const ring = art(383, 384);
+      const graphics = new Graphics();
+      CHALLENGE_RESULT_DRAWERS[effect](graphics, { ...KART, effectArt: { burstRing: ring } }, 0.5);
+      const [ripple, ...more] = painted(graphics);
+
+      expect(more).toEqual([]);
+      expect(ripple.image).toBe(ring);
+      expect(ripple.style).toBe(SKY);
+      expect(ripple.dh / ripple.dw).toBeLessThan(0.25);
+      expect(ripple.alpha).toBeLessThanOrEqual(0.4);
+      expect(centreOf(ripple).x).toBeCloseTo(KART.x);
+      expect(centreOf(ripple).y).toBeCloseTo(KART.groundY);
+      graphics.destroy();
+    },
+  );
 });

@@ -71,7 +71,7 @@ class B1LuckAnswerRollbackTest extends B1LuckIntegrationFixture {
             assertEquals(0, stateRepository.findByRacePlayerId(secondId).orElseThrow().getChallengeEnergy());
             entityManager.flush();
             throw new org.springframework.dao.DataIntegrityViolationException("injected B1 event failure");
-        }).when(recorderTarget).recordQuestionAnswered(any(), anyLong(), anyBoolean());
+        }).when(recorderTarget).recordQuestionAnswered(any(), anyLong(), anyBoolean(), anyList());
         assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () -> submit(true));
         assertRolledBack(80);
         assertEquals(2, second().getCorrectAnswers());
@@ -115,7 +115,7 @@ class B1LuckAnswerRollbackTest extends B1LuckIntegrationFixture {
                     """).setParameter("player", secondId).setParameter("question", questionId)
                     .setParameter("instant", T).executeUpdate();
             return result;
-        }).when(target).recordQuestionAnswered(any(), anyLong(), anyBoolean());
+        }).when(target).recordQuestionAnswered(any(), anyLong(), anyBoolean(), anyList());
         RuntimeException failure = assertThrows(RuntimeException.class, () -> submit(true));
         boolean unique = false;
         for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
