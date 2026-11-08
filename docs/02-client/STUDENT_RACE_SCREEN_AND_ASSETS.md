@@ -10,6 +10,9 @@
 > then update this document in the same pull request.
 ## Current status
 
+> Historical: the UI-10 / C1 stage as audited on 2026-07-30. The current client status is
+> `CLIENT_CURRENT_STATE.md`; this section stays as the record of that stage.
+
 Done:
 
 ```text
@@ -462,7 +465,7 @@ runtime.gameplay.mode / question.gameplayContext
   Safe stays steady at alpha 0.18. Both mode auras fade in/out over 320 ms with the pose
   and settle immediately under reduced motion. Opponents get nothing until the server exposes
   their mode.
-- Thrusters (C5-03, local): a player-only glow drawn on the art's own rear
+- Thrusters (C5-03, merged in PR #79): a player-only glow drawn on the art's own rear
   nozzles — centres and radius measured in the 768 px art and recorded in
   the vehicle manifest (`thrusters`, `thrusterRadius`, identical on every
   color). Turbo question entry keeps the original blue nozzles and idle pose. Only a fresh
@@ -473,7 +476,7 @@ runtime.gameplay.mode / question.gameplayContext
 - Safe results (C5-03l): a shallow thin blue ground ellipse, no stars or large driver-height
   rings. Nozzle acknowledgement stays inside its housing, with no halo, gold rays or fire.
   Safe Complete uses a shorter, quieter pulse than Safe Perfect; both ease in and out.
-- Monkey poses (C5-03, local): `hover-kart-<color>-safe-01.webp` (lounging,
+- Monkey poses (C5-03, merged in PR #79): `hover-kart-<color>-safe-01.webp` (lounging,
   banana can) and `-turbo-01.webp` (leaning forward), one per colour. Each is
   the shipped idle image with only the zone above the cockpit rim replaced by
   the aligned candidate monkey; the kart body below the rim is unchanged
@@ -499,7 +502,7 @@ runtime.gameplay.mode / question.gameplayContext
   or a filled ground disc. No camera push or special motion acceleration is applied; the
   server progress reward uses normal interpolation and live speed remains server-owned.
 
-### Challenge choice art (C5-02, committed locally)
+### Challenge choice art (C5-02, merged in PR #79)
 
 - Three WebPs in `client/src/assets/game/challenge/`: `turbo-emblem.webp`,
   `safe-emblem.webp` (choice cards) and `challenge-energy.webp` (HUD meter).
@@ -840,7 +843,9 @@ gameplay is ready and the player races, with the playback rate following the pre
 (`visual.targetSpeed`, the server's effective speed).
 `useStudentRaceMoments` hands one batch to both the renderer and `studentRaceSounds`:
 correct, combo tiers from the server streak, wrong, time up (never over answer feedback or a
-submit in flight) and finish, each once. A batch that arrives while Pixi is still starting waits
+submit in flight) and finish, each once; the challenge cues (offer, Turbo armed, launch and fizzle,
+Safe complete and perfect) and the four Luck cues (Tailwind, Energy Orb, Mud, shield block) play
+with the batch they arrive in. A batch that arrives while Pixi is still starting waits
 in `PixiStudentRaceCanvas` and is drawn once the renderer exists. BOOST has no sound until an
 authoritative boost cue exists.
 Do not trigger sounds from unconfirmed clicks or infer gameplay events.

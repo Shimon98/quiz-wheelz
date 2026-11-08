@@ -20,7 +20,8 @@ wider column (18/60/22 beside the track, 44/56 under it) that scrolls inside onl
 for 2.5 s on the existing notice line (Luck first; a climb that came with a correct answer starts once that answer's
 reward card is gone; a climb lost again is dropped) and pulses the place tile once (no pulse under reduced motion). No new stream, store or cue. Since 2026-11-07 every feed row and every
 notice shows a painted moment icon (Astra V5, C5-05e) in the slot the drawn icon had, 28 px on the projector and
-20 px on the phone, and the drawn icon comes back if a painting does not load. A fresh clone's `npm run dev` reaches the local server without a
+20 px on the phone, and the drawn icon comes back if a painting does not load. Since 2026-11-08 the
+projector and student lines speak like a playful race announcer (C5-05f, i18n only). A fresh clone's `npm run dev` reaches the local server without a
 `client/.env` (DEV-only fallback in `httpClient`). Details and tests: `CLIENT_IMPLEMENTATION_PLAN.md` (C5-05 /
 C5-06). Shimon's listening and physical-phone checks remain, so C5 stays open.
 
@@ -54,9 +55,10 @@ on only for a disposable MySQL 8.4 and Redis, real student screens showed every 
 received once, on arrival, and never again after a refresh, a network drop, a WebGL context loss or
 a student switch; 20 re-entries of a live race reused the same Luck textures. The Luck notice line
 waits for the answer feedback and the next question, so it is visible for only about 1–2 s of its
-4 s (open product decision). Sound and a physical phone remain before C5-04f closes.
+4 s (settled on 2026-11-02: Luck got its own line, see that checkpoint). Sound and a physical phone
+remain before C5-04f closes.
 
-Local checkpoint, 2026-10-29 (C5-04f F2 visual, same branch, uncommitted): the Luck effects now
+Local checkpoint, 2026-10-29 (C5-04f F2 visual, same branch, later committed in `de4cbc4`): the Luck effects now
 follow the approved mix (shield A, wind A, orb A, blocked B, mud B) and are laid out on the kart
 as drawn (`playerKartFrame`, the measured helmet top, one shared shield bubble), so the Energy Orb
 no longer starts on the helmet on tablets and short phones and the blocked hit lands on the
@@ -741,7 +743,7 @@ Current audio matrix:
 | Public Settings dialog | Music / Sound effects switches only | none | none |
 | Student join | game music (`music-game-main`, soft on phones) | none | none |
 | Student waiting room | game music, same track without a restart | race start, only on an observed WAITING to PLAYING change | none |
-| Student race | race music (`music-race-main`, soft on phones) | correct; combo in three tiers from the server streak (2+, 5+, 10+) instead of correct; wrong; time up; finish; challenge offer instead of the correct cue it arrives with; Turbo armed once the server holds the run; Turbo launch, Turbo fizzle, Safe complete (combo tier 1) and Safe perfect instead of the answer cue of their batch | hover engine while gameplay is ready and the player races; rate from the server speed |
+| Student race | race music (`music-race-main`, soft on phones) | correct; combo in three tiers from the server streak (2+, 5+, 10+) instead of correct; wrong; time up; finish; challenge offer instead of the correct cue it arrives with; Turbo armed once the server holds the run; Turbo launch, Turbo fizzle, Safe complete (combo tier 1) and Safe perfect instead of the answer cue of their batch; the four Luck cues (Tailwind, Energy Orb, Mud, shield block) beside the answer cue | hover engine while gameplay is ready and the player races; rate from the server speed |
 | Student finish ceremony | race music continues | finish (once) | engine stops at the finish |
 | Student results | game music (`music-game-main`, scene gain 0.4, below the waiting room) after the race music fades out | none | none |
 | Teacher waiting room | game music (projector level) | one soft pop per roster refresh that brings new players; race start on a successful Start | none |
@@ -793,11 +795,11 @@ Current audio matrix:
   draws one ground aura between the shadow and the kart: drawn once, recolored by tint,
   additive blending so it reads as a glow on any road color; hidden for NORMAL,
   CHALLENGE_CHOICE and unknown modes; Turbo and Safe stay steady (Turbo alpha 0.12 after C5-03j)
-- later local work: painted exhaust and restrained speed lines (C5-03j); the monkey poses,
+- later work (merged in PR #79): painted exhaust and restrained speed lines (C5-03j); the monkey poses,
   the thruster glow, the result moments and Safe progress are C5-03 (see below). The Challenge
   choice itself is C5-02 (next section).
 
-## Challenge choice and energy (C5-02, committed locally as `f6b9878`)
+## Challenge choice and energy (C5-02, `f6b9878`, merged in PR #79)
 
 - `runtime/mapStudentRaceChallenge.js` maps `gameplay.challenge` once (energy, threshold,
   offer, run, last result); a broken part drops only that part (`mapOrNull`), the offer
@@ -934,14 +936,11 @@ Current audio matrix:
 ## Immediate client priority
 
 ```text
-C5-A audio merged (PR #75); S4-01 contract merged (PR #74); C5-01 merged (PR #76);
-S4-02 + S4-03 Challenge contract merged (PR #77)
-→ C5-03 presentation groundwork + C5-01h slowdown explanation merged (PR #78)
-→ C5-02 Challenge Choice committed locally (f6b9878)
-→ C5-03 results, Safe progress and thrusters implemented locally, live QA passed (review, then
-  the commit); 2026-10-18 closeout and Turbo polish on top, live QA race 172 (23/23)
-→ C5-03k/l success-only launch, normal catch-up, clean Turbo/Safe blending and restrained Safe results:
-  local QA; final live/device QA open
-→ S4-04 handoff to the server
-→ meanwhile: the pre-release device/recovery QA
+C5-A … C5-03 merged (PR #75 … #79); S4-01 … S4-04 merged; C5-04 part 1 merged (PR #81)
+→ on feature/S4-05-C5-04-recovery-luck-shield (pushed, not merged): S4-05/S4-06, C5-04 part 2,
+  C5-04f art and sound, C5-05 race moments and icons, the 2026-11-08 playful copy
+→ Shimon: listening (Luck A/B, music default), physical phone and projector
+→ PR, review, merge
+→ client quality package 4 (waiting-room sound preload, audio loader budget, dashboard at 320 px)
+→ C6 (S5: teacher registration, 2FA) and S6 production
 ```

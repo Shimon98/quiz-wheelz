@@ -560,7 +560,8 @@ observed. Production migrations remain Phase 6 work.
 **Status:** `MERGED with S4-03 (PR #77, main@6808d16)`
 
 Integration branch: `feature/s4-02-03-challenge-flow`. S4-02 must not be merged to
-main alone; S4-03 must first implement the selected Turbo Trial / Safe Run flow.
+main alone; S4-03 must first implement the selected Turbo Trial / Safe Run flow. (Done: both merged together in
+PR #77.)
 
 - correct NORMAL EASY/MEDIUM/HARD answers earn 20/25/30 Challenge Energy, bounded
   to 0..100 in application validation and the DB check; wrong answers, timeouts,
@@ -607,16 +608,16 @@ with an enforced 0..100 CHECK. The offer table remains InnoDB with its expected
 lifecycle CHECK and player/status index unchanged. Application startup passed
 without schema errors, and overall/application, MySQL and Redis health were UP.
 H2 persistence, constraints, rollback and concurrent answer/choice/expiry tests passed.
-Production migrations remain Phase 6 work. S4-02 is still held from main until S4-03;
-S4-03 is implemented locally / under review as recorded below.
+Production migrations remain Phase 6 work. S4-02 was held from main until S4-03; both merged
+together in PR #77.
 
 ### S4-03 — Turbo Trial + Safe Run
 
 **Status:** `MERGED (PR #77, main@6808d16); template-safety bug fix below merged in PR #81 (main@5ed8a39)`
 
 Local baseline: S4-02 commit `75bcc5e288217fb898ceb70fe9492c22aa46271a` on
-`feature/s4-02-03-challenge-flow`. The combined Challenge flow is implemented locally;
-DEV startup/schema/health verification passed; Diana review remains a gate before PR/main integration.
+`feature/s4-02-03-challenge-flow`. The combined Challenge flow was implemented on that branch;
+DEV startup/schema/health verification passed; it merged in PR #77.
 
 - both ACTIVE EASY and HARD templates for the race subject are required before an
   offer consumes Energy; absence preserves Energy 100 and exposes neither choice
@@ -833,7 +834,7 @@ them. `generateFromTemplate` and `validateTemplateConfig` are in use and unchang
 
 ### S4-04 - Power-Ups + fair Luck
 
-**Status:** `A/B1/B2/C1/C2 on main (PR #79); 2026-10-24 stability fixes on main (PR #80, main@9a41ce7); rollout OFF`
+**Status:** `A/B1/B2/C1/C2 on main (PR #79); 2026-10-24 stability fixes on main (PR #80, main@9a41ce7); Luck ON in every normal run since 2026-11-05 (production OFF)`
 
 The checkpoint statuses below record each review gate as it stood at the time; every
 checkpoint reached main with PR #79, and the post-merge stability fixes with PR #80.
@@ -1476,6 +1477,16 @@ answers were unchanged. The release gates above stay open.
 
 **Status:** `IMPLEMENTED; ON in every normal run since 2026-11-05 (application.properties; dev profile alone from 2026-11-02; kill switch QUIZWHEELZ_RECOVERY_ENABLED=false), code default false, test and prod profiles OFF; on feature/S4-05-C5-04-recovery-luck-shield (pushed), not merged; product rules approved by Shimon 2026-11-04, for Diana's review; production DDL rehearsed on disposable copies, not applied to any target`
 
+Closure 2026-11-08: implemented and verified, not merged, not production-ready. Shimon, as project
+owner, approved S4-05 (with its three 2026-11-04 rules) and S4-06 without waiting for Diana's review;
+Diana has not reviewed this code. Checked by Claude: an independent code review of the server diff
+`5ed8a39..2d60286` (no Critical or Important finding; finding M1 fixed below; M2–M6 recorded as
+follow-ups), the full H2 suite (1,468 tests, 0 failures, 116 MySQL-only skipped) and the full MySQL
+8.4 suite on a disposable container (229 tests in 18 classes, 0 failures), and a live 8-player race
+on an isolated MySQL and Redis. Follow-ups from the review, not blocking: Recovery could enforce its
+own lock/lifecycle guard as Luck does (M2); a correct answer reads the Recovery row twice under the
+race lock (M3); no test sends moments over the teacher stream or a Last-Event-ID replay (M6).
+
 Eligibility requires both actually being behind and demonstrably struggling.
 Never grant assistance solely because a leading player intentionally answers wrong.
 
@@ -1493,7 +1504,8 @@ Rules (approved by Shimon on 2026-10-25, Diana's principle above), constants in
   so a meter it fills opens the offer with the same answer. When the energy after the normal
   gain is above 90 the right is kept for a later answer.
 - Nothing else changes: score, position, speed, difficulty, Luck, the API (no field, no
-  event) and the logs (nothing about the student). The flag is independent of the Luck flag.
+  event) and the logs (nothing about the student, except one `WARN` line for a question it already observed,
+  never sent to a participant). The flag is independent of the Luck flag.
 
 Design:
 - One bean, `HiddenRecoveryService`: `observeAcceptedAnswer` (from
@@ -1578,6 +1590,10 @@ three are closed):
   "behind"; and a STRICT focus forfeit counts as one failure, only because it goes through the
   penalized timeout path (`forfeitActiveQuestionAsTimeout`). Pinned by
   `aFinishedLeaderIsNotPartOfTheField` and `aStrictFocusForfeitCountsAsOneFailureInTheWindow`.
+  Review fix 2026-11-08 (finding M1 of the independent server review): a classmate already over the
+  line but still RACING until the finish sweep or arbitration settles it (its projected position is
+  the full distance) is out of the field too; an unknown position still stops the decision. Pinned by
+  `aLeaderOverTheLineIsNotPartOfTheFieldBeforeItIsMarkedFinished` (failed before the fix: +10 granted).
 - Deployment: the DDL above runs before this build is deployed. Nothing runs DDL against an
   existing database automatically or without approval. Rehearsed on 2026-11-04 (below); still
   open for a real target.
@@ -1681,6 +1697,9 @@ run's environment.
 
 **Status:** `VERIFY LOCALLY` — implemented 2026-11-05 on `feature/S4-05-C5-04-recovery-luck-shield`
 (committed on the branch, not merged yet). Evidence: `docs/vision/s4_c5_finish_2026-11-05/`.
+Closure 2026-11-08: implemented and verified, not merged, not production-ready; approved by Shimon as
+project owner, not reviewed by Diana; checked as recorded in the S4-05 closure note (independent
+review, full H2 and MySQL suites, live race).
 
 Server-owned bounded race notices use the existing RaceLiveEvent infrastructure.
 Add visible event vocabulary only when the corresponding gameplay exists.

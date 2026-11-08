@@ -182,8 +182,12 @@ question deadlines; reconnect never awards offline catch-up, and absent
 players do not keep the class race open. C2 multiplayer competition and C3 Teacher
 Live are implemented: C3-01/C3-02 merged in PR #69 and C3-03 … C3-08 are complete on
 the client. The server final-results read model is implemented by S3-01 and the C4
-teacher Result Screen and student progressive results are complete on the client; the
-next stage is Phase 4 (server S4 game events, then the C5 gameplay UI).
+teacher Result Screen and student progressive results are complete on the client. Phase 4
+(server S4 game events and the C5 gameplay UI) is implemented: S4-01 … S4-04 and C5-01 … C5-03
+are merged, and S4-05/S4-06 with C5-04/C5-05 wait on `feature/S4-05-C5-04-recovery-luck-shield`
+(pushed, not merged) for acceptance and the merge. Closure round 2026-11-08: implemented and
+verified (full client, H2 and MySQL suites, an independent server review, a live 8-player race),
+approved by Shimon as project owner (Diana has not reviewed it), not production-ready.
 
 ## Product status board
 
@@ -214,9 +218,9 @@ next stage is Phase 4 (server S4 game events, then the C5 gameplay UI).
 | Teacher live projector UI | N/A | DONE jungle-art projector with eight side-view vehicles, animated server-ordered leaderboard with the shared placement art, responsive workspace navigation (C3-03 … C3-08) | DONE |
 | Results | DONE final read model (S3-01) | DONE teacher Result Screen + student progressive results (C4) | DONE |
 | Junction/highway/dirt road | DONE as the challenge choice: Turbo Trial is the highway, Safe Run the dirt road (S4-02/S4-03) | DONE (C5-02/C5-03) | DONE |
-| Fair luck/power-ups | DONE Luck + Guard Shield (S4-04); ON in every normal run since 2026-11-05 | DONE presentation, art and cues (C5-04) on the feature branch | VERIFY LOCALLY |
-| Catch-up assistance | DONE Hidden Recovery (S4-05), ON in every normal run since 2026-11-05 | none by design: never shown | VERIFY LOCALLY |
-| Race moments / live announcements | DONE public moments on `QUESTION_ANSWERED` (S4-06) | DONE projector feed + student rank notice (C5-05) | VERIFY LOCALLY (phone and listening pending) |
+| Fair luck/power-ups | DONE Luck + Guard Shield (S4-04); ON in every normal run since 2026-11-05 | presentation, art and cues (C5-04) implemented and verified on the feature branch, not merged | VERIFY LOCALLY |
+| Catch-up assistance | Hidden Recovery (S4-05) implemented and verified on the feature branch, not merged; ON in every normal run since 2026-11-05 | none by design: never shown | VERIFY LOCALLY |
+| Race moments / live announcements | public moments on `QUESTION_ANSWERED` (S4-06) implemented and verified on the feature branch, not merged | projector feed, student rank notice, moment icons and playful copy (C5-05) implemented and verified on the feature branch, not merged | VERIFY LOCALLY (phone and listening pending) |
 | Local MySQL + automatic Redis dev setup | DONE | N/A | DONE |
 | Production migrations/deployment | PLANNED | build exists | PLANNED |
 
@@ -356,9 +360,10 @@ Server S4-01 defines the shared game effect/event contract
 
 C2, C3 Teacher Live and C4 Results are implemented on the client: C3-01/C3-02 merged in
 PR #69, C3-03 … C3-08 are COMPLETE, and C4-A … C4-C (teacher Result Screen, student
-progressive results, results art) are COMPLETE on `feature/C4-results`. The S4-01 server
+progressive results, results art) are COMPLETE and merged. The S4-01 server
 contract (PR #74) and C5-A audio (PR #75, which also delivered the C2-A race sound) are
 merged; C5-01 (PR #76), the S4-02/S4-03 Challenge contract (PR #77) and the C5 Track A
-presentation (PR #78) are merged; C5-02 (Challenge choice) is committed locally and C5-03
-(results, Safe progress, poses, painted Turbo exhaust and slowdown cues) is implemented and
-tested on the same feature branch, not merged to `main`. The required physical-device/recovery QA remains visible pre-release polish.
+presentation (PR #78) are merged; C5-02 (Challenge choice) and C5-03 (results, Safe progress,
+poses, painted Turbo exhaust and slowdown cues) are merged (PR #79), and C5-04 part 1 too (PR #81).
+The rest of Phase 4 (S4-05, S4-06, C5-04 part 2, C5-04f, C5-05) is on
+`feature/S4-05-C5-04-recovery-luck-shield`, pushed, not merged. The required physical-device/recovery QA remains visible pre-release polish.

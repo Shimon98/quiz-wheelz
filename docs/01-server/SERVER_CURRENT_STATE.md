@@ -358,7 +358,9 @@ recovery never subtracts movement awarded in degraded mode.
   `SERVER_IMPLEMENTATION_PLAN.md` (S4-05, update 2026-11-02).
 - A player who is both behind and struggling gets +10 Challenge Energy once per race player,
   on an accepted correct NORMAL answer, after the normal gain and before the offer check. It
-  changes nothing else and is hidden from every API, event and log. Rules, design and the
+  changes nothing else and is hidden from every API and event; its only trace is one server
+  `WARN` log line for a question it already observed (`HiddenRecoveryService`), never sent to a
+  participant. Rules, design and the
   production DDL of `race_player_recovery_states`: `SERVER_IMPLEMENTATION_PLAN.md` (S4-05).
 - Release closure, 2026-11-04: Shimon, as project owner, approved the two open rules (a
   finished leader is out of the field; a STRICT focus forfeit counts as one failure), and Diana
@@ -378,7 +380,7 @@ recovery never subtracts movement awarded in degraded mode.
 
 ## Partial or missing
 
-- Teacher live race client and results remain client work (C3/C4). The C2 server
+- Teacher live race client and results (C3/C4) are complete on the client. The C2 server
   contract is complete for student competition truth, synchronization and finish
   arbitration (decision-instant standings, signal-only student SSE, proof-gated
   arbitration); the teacher live-state/durable-event/SSE foundation for C3 already

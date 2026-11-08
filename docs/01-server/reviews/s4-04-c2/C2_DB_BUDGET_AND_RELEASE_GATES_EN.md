@@ -9,7 +9,7 @@ the prod security/Redis topology: it proves schema mapping startup only.
 
 | Canonical property / environment input | Known local fact | Required future owner input |
 |---|---|---|
-| spring.datasource.hikari.maximum-pool-size | no repo override; actual app startup measured W=10 | explicit maximum per deployed instance, not assumed 10 |
+| spring.datasource.hikari.maximum-pool-size | the dev profile sets 10 since 2026-11-05 (no prod override); actual app startup measured W=10 | explicit maximum per deployed instance, not assumed 10 |
 | spring.datasource.hikari.connection-timeout | actual app startup measured 30000 ms | approved queue/failure envelope |
 | QUIZWHEELZ_LUCK_PEER_POOL_MAX_SIZE | R=2 default, minimumIdle=0, lazy, same primary URL/credentials | explicit R and total DB budget |
 | QUIZWHEELZ_LUCK_PEER_ACQUIRE_TIMEOUT_MS | 2000 default, validation min(1000,acquire) | approved bounded timeout |

@@ -690,6 +690,13 @@ C5 work still required before feature activation:
   mapping implemented by B2. Browser rendering, deduplication, audio/Pixi and C5 QA
   remain unproved. No client file is changed in this checkpoint.
 
+Status 2026-11-08: C5-04 implemented this handoff on `feature/S4-05-C5-04-recovery-luck-shield`
+(not merged yet): the mapper keeps `powerUps`/`luck`; the shield renders from its charges with a
+one-time award moment; Luck moments are deduplicated by `eventId` after a first-observation
+baseline. No expiry refresh timer was needed: each effect is judged on its snapshot's server clock
+and the notice line wakes once at the next change (C5-01e in `CLIENT_IMPLEMENTATION_PLAN.md`).
+Luck answer generation is ON in every normal run since 2026-11-05; production keeps it OFF.
+
 Server fixtures: B2TimedMovementTest, B2RuntimeMovementIntegrationTest and its
 MySQL subclass, B2LuckSnapshotIntegrationTest and its MySQL subclass, and
 B2LuckEventDeliveryTest and its MySQL subclass. Review artifacts contain actual

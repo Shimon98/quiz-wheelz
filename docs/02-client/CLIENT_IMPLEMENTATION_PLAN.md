@@ -1043,12 +1043,15 @@ merged (PR #78). The server Challenge contract (S4-02 energy/offer/choice + S4-0
 execution) is merged (PR #77). C5-02 (Track B), the rest of C5-03 (Track C) and client quality
 packages 1–3 are merged to `main` with the C5 client PR from
 `feature/C5-02-challenge-choice-energy`; live QA passed on the local server. The S4-04 server
-work (Guard Shield and fair Luck) is on `main` with the Luck flag off by default and its review
-pending; C5-04 presents it after that review. C5-04 part 1 (data and moments only: the
+work (Guard Shield and fair Luck) is on `main`; since 2026-11-05 Luck is ON in every normal run
+(production keeps it OFF). C5-04 part 1 (data and moments only: the
 `powerUps`/`luck` mapping and once-only Luck moments per race player, no effect, cue or HUD) is
-merged (PR #81, `main@5ed8a39`). C5-04 part 2, the functional presentation with temporary Pixi
-`Graphics` and text notices, is committed on `feature/S4-05-C5-04-recovery-luck-shield` (`b096e10`,
-pushed), not yet merged; final art and sound remain. The gameplay UI renders server-owned game events and effects, so each further
+merged (PR #81, `main@5ed8a39`). Everything after it is implemented and verified on
+`feature/S4-05-C5-04-recovery-luck-shield` (pushed, not merged): C5-04 part 2 and C5-04f (the Luck
+and shield presentation, Astra's art and the four Luck cues), C5-05 (race moments on the projector,
+the rank notice, the seven-row feed, the moment icons and the playful copy of 2026-11-08) and C5-06.
+Before C5 is `DONE`: Shimon's listening and physical phone and projector checks, then the PR and the
+merge. The gameplay UI renders server-owned game events and effects, so each further
 part starts from an audit of that real server code; never from a text handoff alone. The
 carried-forward release QA can proceed meanwhile.
 
@@ -1131,7 +1134,7 @@ carried-forward release QA can proceed meanwhile.
   at the next change, so no extra timer in `useStudentRaceSynchronization` was needed.
 - **C5-01f vehicle overlays — PARTIAL:** the player-only mode aura (C5-03b), the thruster
   glow with one burst per result (C5-03f) and the monkey poses (C5-03h) exist; painted flames
-  and speed lines are integrated locally (C5-03j/k); final live/device acceptance is open.
+  and speed lines are merged (C5-03j/k, PR #79); final live/device acceptance is open.
 - **C5-01g DEV scenarios — DONE:** `/dev/race?motionScenario=slowdown|future-effect|future-mode`
   (Turbo/Safe added in C5-03c).
 - **C5-01h first persistent effect presentation — DONE in C5-02g:** the missed-challenge
@@ -1406,14 +1409,14 @@ with source `LUCK_EVENT`); the server decides every Luck event and the shield.
 - **C5-04f final art and sound — IN PROGRESS:** replaces the placeholders; product approval and a
   physical-phone check remain release gates. Luck was OFF on the server by default until 2026-11-05; since then it is ON in
   every normal run (production keeps it OFF).
-  - **F1 foundation — DONE (local, 2026-10-29):** five Luck art slots in the effect manifest
+  - **F1 foundation — DONE (2026-10-29; on the branch, not merged yet):** five Luck art slots in the effect manifest
     (`LUCK_EFFECT_ART`, every url null, no import of a missing file); `EffectsLayer` loads a slot
     that has a file once, beside the world, pinned by the renderer's own `prepareTexture`, and
     drops a failed or late load; the orb drawer draws approved art in the drawn orb's place with
     the same fade (`Graphics.texture`, alpha set and reset around it). Without files nothing
     changes: no request, the Graphics drawing, the four Luck cues still silent. Contract:
     `STUDENT_RACE_SCREEN_AND_ASSETS.md` (Luck and Guard Shield art slots).
-  - **F2 visual — DONE (local, 2026-10-29):** the approved mix (shield A, wind A, orb A, blocked B,
+  - **F2 visual — DONE (2026-10-29; on the branch, not merged yet):** the approved mix (shield A, wind A, orb A, blocked B,
     mud B) drawn in beats on kart-local geometry: `playerKartFrame` + `kartLocalToScreen`, the
     measured helmet top (`headTop`) and one shared `KART_SHIELD_BUBBLE`. This fixes the orb
     starting on the helmet on tablets and short phones. The standing shield is glass behind the art
@@ -1480,9 +1483,9 @@ with source `LUCK_EVENT`); the server decides every Luck event and the shield.
     WebGL context loss or a student switch in the same tab, and 20 re-entries reused the same
     textures. Not seen on a screen: a plain Mud (the shield comes on the third right answer and
     blocks it, so a plain Mud is practically a first-roll event) and a Tailwind window that
-    outlives a page reload. Found for a product decision: the Luck notice shares the line with the
+    outlives a page reload. (The plain Mud was seen later, in the 2026-11-02 live race; see above.) Found for a product decision: the Luck notice shares the line with the
     answer feedback and "loading the next question", so it shows for about 1–2 s of its 4 s.
-  - **Luck line — DONE (local, 2026-11-02):** Luck notices left the question card's status line for
+  - **Luck line — DONE (2026-11-02; on the branch, not merged yet):** Luck notices left the question card's status line for
     their own line under the HUD, mounted for the whole race (`StudentRaceLuckNotice` in
     `StudentRaceOverlay`). A notice now shows on the render its event arrives, beside the ✓/✕
     feedback, while the next question loads, with no question and beside the challenge cards. It
@@ -1584,6 +1587,20 @@ and physical phone check are still pending, so C5 is not marked DONE. Evidence: 
   (Hebrew light and English dark projectors at 7 sizes, a Hebrew 390 and an English 360 phone with
   reduced motion): every row and every notice showed its painting, loaded, with no fallback; no page
   error. Evidence: `docs/vision/s4_c5_finish_2026-11-05/moment_icons_wiring_2026-11-07/`.
+- **C5-05f playful copy (2026-11-08, Shimon's product decision):** the projector's 13 feed lines and
+  the student's lines (the four Luck notices, the climb and the lead, the answer and challenge lines
+  in the question card, the combo title and the finish headline) speak like a race announcer for
+  children, one fixed line per moment, in Hebrew and English. i18n only: no key, kind, priority,
+  timing or rule changed. The lead line lost its 🏆 (the painted gold medal shows it). The plan's
+  `ישש! {{count}} ברצף!` became the combo title (`ישש! קומבו!`) because the streak line is shared with
+  a plain correct answer and would read `ישש! 1 ברצף!`. No student line for a new shield: the student
+  has no one-shot shield moment, and none is built for one sentence. Tests: every feed line uses
+  exactly the values the feed sends; the Hebrew and English race screens have the same keys and the
+  same values; the lead line has no trophy. Live on one 8-player race (two projectors, Hebrew light
+  and English dark; a 390 Hebrew and a 360 English phone): ten of the 13 feed kinds showed their new
+  line (Tailwind, Mud and the race's end did not come up in that race), every notice and answer line
+  fit on one line, Hebrew lines with English names read in the right order, and no `{{…}}` was left.
+  Evidence: `docs/vision/s4_c5_closure_2026-11-08/evidence/`.
 - **C5-06 closure QA:** unit tests for the projector (mapper, derivers, admission, reducer,
   config coverage, cues) and the rank notice (derive, hook, notice, HUD, screen on the server's
   snapshots), the full client suite, lint and build, and a live 8-player browser run with two
