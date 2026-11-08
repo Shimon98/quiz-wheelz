@@ -1485,7 +1485,12 @@ follow-ups), the full H2 suite (1,468 tests, 0 failures, 116 MySQL-only skipped)
 8.4 suite on a disposable container (229 tests in 18 classes, 0 failures), and a live 8-player race
 on an isolated MySQL and Redis. Follow-ups from the review, not blocking: Recovery could enforce its
 own lock/lifecycle guard as Luck does (M2); a correct answer reads the Recovery row twice under the
-race lock (M3); no test sends moments over the teacher stream or a Last-Event-ID replay (M6).
+race lock (M3). M6 is closed on 2026-11-08 by `RacePublicMomentsLiveStreamIntegrationTest` (the real
+replay, cursor and dispatchers, only the connection registry stubbed): a projector reconnecting with
+`Last-Event-ID` before the answer gets the answer's QUESTION_ANSWERED once with its Tailwind or Mud
+moment, and after it nothing it already has; an open connection never sends an event twice; the
+projector's JSON carries only `racePlayerId`, `questionId`, `correct` and `moments`; the student stream
+gets the signal alone. Breaking the moments policy or the cursor advance fails four of its five tests.
 
 Eligibility requires both actually being behind and demonstrably struggling.
 Never grant assistance solely because a leading player intentionally answers wrong.

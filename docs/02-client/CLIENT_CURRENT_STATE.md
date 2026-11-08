@@ -661,6 +661,8 @@ teacher/SSE/results/auth work does not belong to that single-player gate.
 - `useFreshFeedItem` is the "something new happened" seam (lightning pulse today,
   future sound cues); the connection footer shows the Wi-Fi art only while LIVE
 - the waiting room preloads the projector, vehicle and feed moment art once and never blocks Start
+- the fullscreen toggle (live projector and results) leaves a browser refusal handled: the button keeps
+  the real state and no error escapes
 - the workspace shell collapses its navbar at `lg` on the live route (`sm` elsewhere)
   from one breakpoint key; the preferred-device notice sits below the header.
 

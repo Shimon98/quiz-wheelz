@@ -1601,6 +1601,13 @@ and physical phone check are still pending, so C5 is not marked DONE. Evidence: 
   line (Tailwind, Mud and the race's end did not come up in that race), every notice and answer line
   fit on one line, Hebrew lines with English names read in the right order, and no `{{…}}` was left.
   Evidence: `docs/vision/s4_c5_closure_2026-11-08/evidence/`.
+  Pre-PR round (2026-11-08): the three kinds that race did not draw are proved through the real
+  pipeline (server envelopes, mapper, reducer with admission, panel): a Tailwind, a Mud and the race's
+  end each show their own line and painting in Hebrew and English (`TeacherLiveFeedRareMoments.test.jsx`).
+  The projector's fullscreen toggle now catches a browser refusal: Mantine's toggle rejects (seen on a
+  headless projector as `TypeError: not granted`) while its fullscreen events keep the real state, so
+  the button stays as it is and nothing is left unhandled (`TeacherFullscreenToggle.test.jsx`; the
+  results page uses the same toggle).
 - **C5-06 closure QA:** unit tests for the projector (mapper, derivers, admission, reducer,
   config coverage, cues) and the rank notice (derive, hook, notice, HUD, screen on the server's
   snapshots), the full client suite, lint and build, and a live 8-player browser run with two
