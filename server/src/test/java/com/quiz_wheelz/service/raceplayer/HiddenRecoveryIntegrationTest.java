@@ -278,6 +278,22 @@ class HiddenRecoveryIntegrationTest extends S4ChallengeFlowFixture {
         assertNull(recoveryState().getAwardedQuestionId());
     }
 
+    // Review 2026-11-08: a leader over the line stays RACING until the finish sweep or arbitration settles it (up to a
+    // few seconds), and the projection puts it at the full distance. Shimon's 2026-11-04 rule leaves it out already.
+    @Test
+    void aLeaderOverTheLineIsNotPartOfTheFieldBeforeItIsMarkedFinished() {
+        transactions.executeWithoutResult(status -> playerRepository.findByRaceOrderByLaneNumberAsc(
+                        raceRepository.findById(raceId).orElseThrow()).stream()
+                .filter(player -> "Leader".equals(player.getDisplayName()))
+                .forEach(player -> player.setPosition(1000.0)));
+        answerFiveMixedOutcomes();
+
+        answer(true);
+
+        assertEquals(60, energy());
+        assertNull(recoveryState().getAwardedQuestionId());
+    }
+
     @Test
     void afterTheGrantLaterAnswersWriteNothing() {
         answerFiveMixedOutcomes();

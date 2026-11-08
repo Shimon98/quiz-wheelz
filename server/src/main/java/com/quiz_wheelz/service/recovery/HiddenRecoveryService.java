@@ -107,6 +107,9 @@ public class HiddenRecoveryService {
         var peers = standings.opponents().stream()
                 .filter(opponent -> opponent.status() == RacePlayerStatus.RACING)
                 .map(StudentRaceStandingResult.Opponent::position)
+                // A classmate over the line stays RACING until the finish sweep or arbitration settles it, but has left
+                // the field already (the finished-leader rule). An unknown position still stops the decision (policy).
+                .filter(position -> position == null || position < totalDistance)
                 .toList();
         return policy.standing(totalDistance, player.getPosition(), peers);
     }
